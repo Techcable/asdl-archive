@@ -5,8 +5,6 @@
 structure Module :> MODULE =
     struct
 	structure Id = ModuleId
-
-	 
 	datatype field_kind = Id | Sequence | Option
 	    
         type field_info =
@@ -54,6 +52,7 @@ structure Module :> MODULE =
 	   ME of {minfo:module_info Env.map,
 		   menv:module Env.map,
 		   penv:type_info Env.map,
+		   errs:string list,
 		  count:int}
 
         val prim_identifier = Id.fromString "identifier"
@@ -64,9 +63,10 @@ structure Module :> MODULE =
 			 (prim_string,true),
 			 (prim_identifier,true)]
 	    val prim_env =
-		ME{menv=Env.empty,penv=Env.empty,minfo=Env.empty, count=0}
+		ME{menv=Env.empty,penv=Env.empty,minfo=Env.empty,count=0,
+		   errs=[]}
 		
-	    fun declare_prim ((name,b),ME{menv,penv,minfo,count}) =
+	    fun declare_prim ((name,b),ME{menv,penv,minfo,count,errs}) =
 		let
 		    val count = count + 1
 		    val tinfo =
@@ -76,6 +76,7 @@ structure Module :> MODULE =
 			 is_prim=true,is_boxed=b}
 		in
 		    ME{menv=menv,minfo=minfo,
+		       errs=errs,
 		       penv=Env.insert(penv, name,tinfo),count=count}
 		end
 	in
@@ -150,7 +151,7 @@ structure Module :> MODULE =
 	     | (SOME (T t)) => (SOME t)
 	     | _ => NONE
 		   
-       fun declare_module (ME{menv,minfo,penv,count}) {file,decl,view} =
+       fun declare_module (ME{menv,minfo,penv,count,errs}) {file,decl,view} =
 	   let
 	       val {name,imports,defs} = decl
 	       val toMid = Id.fromString o Identifier.toString
@@ -261,7 +262,7 @@ structure Module :> MODULE =
 		       (box,List.rev cons)
 		   end
 	       
-	       fun declare_type (t,{seqs,opts,uses,defs,count,env}) =
+	       fun declare_type (t,{seqs,opts,uses,defs,count,env,errs}) =
 		   let
 		       val count = count + 1
 		       val (tid,fields,cons) =
@@ -291,27 +292,32 @@ structure Module :> MODULE =
 		       val uses = S.union (plain',S.union(opts,seqs))
 		       val defs = S.add(defs,tname)
 
-		       fun add_def (k,v,env) =
+ 		       fun add_def (k,v,(env,errs)) =
 			   case Env.find(env,k) of
-			       NONE => Env.insert(env,k,v)
-			     | (SOME _) => env
-		       val rest = add_def (tname,tinfo,env)
-		       val env =
-
+			       NONE => (Env.insert(env,k,v),errs)
+			     | (SOME _) =>
+				   (env,
+				    (String.concat
+				    ["Redefinition of ",
+				     Id.toString k])::errs)
+		       val rest = add_def (tname,tinfo,(env,errs))
+		       val (env,errs) =
 			   List.foldl
 			   (fn (x,rest) => add_def (#name x,C x,rest))
 			   rest cons
 		   in
 		       {seqs=seqs,opts=opts,uses=uses,defs=defs,env=env,
+			errs=errs,
 			count=count}
 		   end
 
-	       val {seqs,opts,uses,defs,count,env} =
+	       val {seqs,opts,uses,defs,count,env,errs} =
 		   List.foldl declare_type  {seqs=S.empty,
 					     opts=S.empty,
 					     uses=S.empty,
 					     defs=S.empty,
 					     count=count,
+					     errs=errs,
 					     env=Env.empty} defs
 	       fun externs x = S.difference(x,defs)
 	       fun locals x = S.intersection(x,defs)
@@ -353,7 +359,7 @@ structure Module :> MODULE =
 	       val menv = Env.insert(menv,name_id,m)
 
 	   in
-	       ME{minfo=minfo,penv=penv,menv=menv,count=count}
+	       ME{minfo=minfo,penv=penv,menv=menv,count=count,errs=errs}
 	   end
 
        fun get_minfo f (ME{minfo,...}) (M{name,...}) =
@@ -517,8 +523,8 @@ structure Module :> MODULE =
 	    end
 	
 	
-       fun validate_env (me as ME{menv,...}) =
-	    Env.foldl (validate me) [] menv
+       fun validate_env (me as ME{menv,errs,...}) =
+	    Env.foldl (validate me) errs menv
     end
 
 
