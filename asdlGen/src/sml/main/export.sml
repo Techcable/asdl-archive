@@ -12,7 +12,7 @@ structure Export =
     struct
 	fun mkExportFn f (y:string,x:string list) =
 	    (f x;OS.Process.success) handle e =>
-		(print ("Error: "^(exnMessage e)^"\n");
+		(Error.say ("Error: "^(exnMessage e)^"\n");
 		 OS.Process.failure)
 
 	val HTMLGenFn =  mkExportFn Main.HTML.do_it
@@ -36,7 +36,7 @@ structure Export =
 
 	fun PPPickleFn x =
 	    ((PicklePP.pickle_pp x) handle e =>
-		(print ("Error: "^(exnMessage e)^"\n");
+		(Error.say ("Error: "^(exnMessage e)^"\n");
 		 OS.Process.failure))
 
 	fun all_success [] = true
@@ -71,7 +71,7 @@ structure Export =
 	  | asdlGen (name, ("-L"::"doc"::rs)) = HTMLGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"typ"::rs)) = TypGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"check"::rs)) = CheckFn(name,rs)
-	  | asdlGen (name, ("-L"::"pp_pkl"::rs)) = PicklePP.pickle_pp(name,rs)
+	  | asdlGen (name, ("-L"::"pp_pkl"::rs)) = PPPickleFn(name,rs)
 	  | asdlGen ("pp_pkl", (rs)) = PPPickleFn("pp_pkl",rs)
 	  | asdlGen (name, ("--all"::rs)) =
 	    let
