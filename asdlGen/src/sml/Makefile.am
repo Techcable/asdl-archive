@@ -6,7 +6,7 @@ asdlGen.@HEAP_SUFFIX@: sources.cm build.sml
 	$(SML_CM) < build.sml
 
 run.@HEAP_SUFFIX@:
-	ln -s `$(SHELL) ../misc/find_runtime.sh` ./
+	ln -s `../misc/find_runtime.sh` ./
 
 
 
