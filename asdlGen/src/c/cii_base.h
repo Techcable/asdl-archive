@@ -20,14 +20,26 @@ int           read_tag(instream_ty s);
 /* int type */
 #include "pkl-int.h"
 /* TODO #ifdef for fixed nums */
+
+/* magic so code that has different notions of what an int_ty is can link
+against the same library
+*/
 #ifdef USE_BIG_INTS
 typedef MP_T  int_ty;
-#define write_int write_cii_MP_T
-#define read_int read_cii_MP_T
+#define write_int         write_cii_MP_T
+#define read_int          read_cii_MP_T
+#define write_generic_int write_generic_cii_MP_T
+#define read_generic_int  read_generic_cii_MP_T
+#define to_generic_int    to_generic_cii_MP_T
+#define from_generic_int  from_generic_cii_MP_T
 #else
 typedef int32  int_ty;
-#define write_int write_int32
-#define read_int read_int32
+#define write_int         write_int32
+#define read_int          read_int32
+#define write_generic_int write_generic_int32
+#define read_generic_int  read_generic_int32
+#define to_generic_int    to_generic_int32
+#define from_generic_int  from_generic_int32
 #endif
 
 typedef Text_T string_ty;
@@ -48,6 +60,7 @@ void           write_generic_string(void *x, outstream_ty s);
 void*          read_generic_string(instream_ty s);
 
 
+
 /* identifier type */
 void          write_identifier(identifier_ty x,outstream_ty s);
 identifier_ty read_identifier(instream_ty s);
@@ -66,6 +79,16 @@ void write_option(generic_writer_ty wr, opt_ty v, outstream_ty s);
 list_ty read_list(generic_reader_ty rd,instream_ty s);
 void write_list(generic_writer_ty wr, list_ty v, outstream_ty s);
 
+/* coercion functions */
+
+void*          to_generic_string(string_ty x);
+string_ty      from_generic_string(void * x);
+
+void*          to_generic_int(int_ty x);
+int_ty         from_generic_int(void *x);
+
+void*          to_generic_identifier(identifier_ty x);
+identifier_ty  from_generic_identifier(void* x);
 
 #endif /* _ASDL_BASE_ */
 

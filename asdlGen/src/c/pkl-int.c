@@ -154,7 +154,7 @@ void write_cii_MP_T(MP_T x,FILE* s) {
      v = tmp[0];
      if(set_neg_bit) { v = SET_NEG(v); }
      WRITE_BYTE(v,s);
-     /* free(tmp); how does one free an MP? */
+     free(tmp); 
 }
 
 MP_T read_cii_MP_T(FILE *s) {
@@ -178,6 +178,58 @@ MP_T read_cii_MP_T(FILE *s) {
      if(IS_NEG_BIT_SET(x)) {
 	  MP_neg(acc,acc);
      }
-     /* free(tmp); how does one free an MP? */
+     free(tmp);
      return acc;
+}
+
+#define DECL_READ_GENERIC(q,t) \
+void* read_generic_C_##q##_##t(FILE* s) { \
+     q t* ret = malloc(sizeof(*ret)); \
+     if (ret == NULL) die(); \
+     *ret = read_C_##q##_##t(s); \
+     return ret; }
+
+#define DECL_WRITE_GENERIC(q,t) \
+void write_generic_C_##q##_##t(void* x, FILE* s) { \
+     write_C_##q##_##t(*((q t*)x), s); }
+
+#define DECL_TO_GENERIC(q,t) \
+void* to_generic_C_##q##_##t(q t x) { \
+     q t* ret = malloc(sizeof(*ret)); \
+     if (ret == NULL) die(); \
+     *ret = x; \
+     return ret; }
+
+#define DECL_FROM_GENERIC(q,t) \
+q t from_generic_C_##q##_##t(void* x) { \
+     return *((q t*)x); }
+
+#define DECL_GENERICS(t)  \
+DECL_READ_GENERIC(signed,t)  \
+DECL_WRITE_GENERIC(signed,t) \
+DECL_READ_GENERIC(unsigned,t)  \
+DECL_WRITE_GENERIC(unsigned,t) \
+DECL_TO_GENERIC(unsigned,t) \
+DECL_FROM_GENERIC(unsigned,t) 
+
+DECL_GENERICS(char)
+DECL_GENERICS(short)
+DECL_GENERICS(int)
+DECL_GENERICS(long)
+
+
+void *read_generic_cii_MP_T(FILE *s) {
+  return (void*)(read_cii_MP_T(s));
+}
+
+void write_generic_cii_MP_T(void *x,FILE *s) {
+  write_cii_MP_T(x,s);
+}
+
+void *to_generic_cii_MP_T(MP_T x) {
+  return (void*)x;
+}
+
+MP_T from_generic_cii_MP_T(void *x) {
+  return (MP_T)x;
 }
