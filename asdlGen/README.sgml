@@ -1,0 +1,64 @@
+<!doctype linuxdoc system [   
+<!entity % decls.common system "src/doc/ldoc/common-decls.ldoc">
+  %decls.common;
+]>
+<article>
+<title>README for &asdlGen; version &asdlGen.version;
+<author>&author.danwang;
+<date>&asdlGen.release-date;
+<p>
+This is the first public beta release of &asdlGen;. It includes most all
+of the features that will make it into the final release. It is missing a
+few important library functions to handle floating point numbers and provide
+control over the precision on integers. However, &asdlGen; is flexible
+enough to allow users to replace these missing functions with their own if
+they need this functionality now. The first non-beta release will
+include the missing functions. 
+<sect>COPYRIGHT<p>
+&asdlGen; is distributed under the following terms.
+&doc.copyright;
+<sect>Installation<p>
+Both binary and source releases are available.
+See <htmlurl url="INSTALL.html" name="INSTALL"> for details. 
+
+<sect>Changes<p>
+See <htmlurl url="CHANGES.html" name="CHANGES"> for details. 
+See the <url
+ url="http://www.cs.princeton.edu/zephyr/ASDL/asdlGen-bugs.html" name="master
+ bug list"> for bug hunting details.
+
+<sect>Documentation<p>
+There is now a reference manual available in 
+<url url="src/doc/html/manual.html" name="HTML"> and
+<url url="src/doc/manual.ps/" name="Postscript">. A step by step tutorial is
+in the works. 
+
+<sect>Questions Comments?<p>
+Questions and comments should be directed to 
+<htmlurl url="&url.zephyr-discussion" name="zephyr-discusssion@virginia.edu">
+For more information about the
+Zephyr Project see <url url="&url.zephyr;"> For the latest information
+about ASDL see <url url="&url.asdlGen">
+
+For applications that wish to manipulate generic ASDL values there are
+various language specific libraries that take the type environment produced
+by the --typ option and are able to manipulate the generic values.  An
+example of this can be found in <htmlurl url="src/c/" name="src/c/xlate.c">, 
+and <htmlurl url="src/sml/pp-pickle" name="src/sml/pp-pickle.sml">, which
+depend on the ASDL descriptions found in src/asdl/generic.asdl.
+
+<sect>TODO<p>
+<itemize>
+<item> Finish support for cii and user defined types.
+<item> In the not too distant future, pickle files will come stamped with a
+magic number that identifies the type environment from which it was
+generated. If the type environments are not exactly the same. The code will
+complain. Right now the pickle code generates untyped pickles. So if you
+feed it a pickle that is of the wrong type it will break.  
+
+<item> None of the translators warn you when it has to mangle and
+identifier to avoid using a reserved keyword.
+<item> The pretty printing rules could be tweaked. 
+<item> The handling of primitive types is more ad hoc than I'd like. 
+</itemize>
+</article>

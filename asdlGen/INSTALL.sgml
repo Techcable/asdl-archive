@@ -1,0 +1,61 @@
+<!doctype linuxdoc system [   
+<!entity % decls.common system "src/doc/ldoc/common-decls.ldoc">
+  %decls.common;
+]>
+<article>
+<title>INSTALL notes for &asdlGen; version &asdlGen.version;
+<author>&author.danwang;
+<date>&asdlGen.release-date;
+
+<sect>The Binary Distribution
+<p>
+Since installing the distribution from sources requires the SML/NJ compiler,
+I'm providing a binary distribution for those who just want to use &asdlGen;
+in a development environment that does not have SML/NJ installed. Fetch the
+right binary version from 
+<url url="http://www.cs.princeton.edu/zephyr/ASDL/&num;software">.
+
+<sect1>Unix
+<p> On a Unix system with ksh all you should have to do is unpack
+the archive and put the shell script <htmlurl url="bin/asdlGen" name="">
+bin/asdlGen in your path. If your stuck on a Unix system
+without ksh you'll have to hack the script so it can locate the directory
+where you unpacked the sources.
+
+<sect1>Windows NT/95<p>
+In a Windows environment you need to set the environment variable 
+ASDL&lowbar;HOME to the location of where you unpacked the distribution. 
+Also set your path to include <url url="bin/asdlGen.bat" 
+name="bin/asdlGen.bat">. 
+
+<sect>Installing from Sources<p> 
+&asdlGen; now builds with <tt/autoconf/ and <tt/automake/. To build from
+sources you should have the latest version 
+<url url="ftp://ftp.research.bell-labs.com/dist/smlnj/working/110.0.2/"
+name="110.0.2"> of <url
+url="http://cm.bell-labs.com/cm/cs/what/smlnj/index.html" name="Standard ML
+of New Jersey">. Binary release are also available from 
+<url url="http://www.cs.princeton.edu/zephyr/ASDL/#software">.
+I plan to experiment with releasing sources via a read only
+remote CVS repository.
+
+<sect1>Unix
+<p>
+On a Unix machine run 
+<tscreen>
+./configure --prefix=<em>Your install prefix</em>
+</tscreen>
+let <tt/configure/ do it's thing, and do a <tt/make install/
+
+<sect1>Windows NT/95
+<p>
+I haven't figured out how to automatically compile the supporting Java, C,
+and C++ libraries, but here are instructions on how to build the &asdlGen;
+program itself.
+
+On a Windows machine after sml-cm starts up in <tt>src/sml/</tt>.
+<tscreen><verb>
+Standard ML of New Jersey, Version 110.0.2, January 16, 1998 
+- use "build.sml";
+</verb></tscreen>
+</article>
