@@ -14,6 +14,8 @@ the flags <tt/--mono_types true/ and <tt/--include_base asdl_base.h/.
 See src/c/asdl_base.h and src/c/asdl_base.c.
 <item>C code now generates constant pointers to statically allocated enums
 rather than using enums themselves, for non carrying value constructors.
+<item>Removed the Mod.import.{h,hxx} headers from the installed base, to
+remove perl dependencies.
 </itemize>
 <sect1>New Features<p>
 <itemize>
@@ -24,6 +26,7 @@ types for every type in the module not just types that are used as lists and
 options. See src/asdl/std-types.asdl for examples.
 <item>Vistor patterns for Java and C++.
 <item>Mangled variables to avoid name clashes.
+<item>See  lib/asdlGen/sml for precompiled support code for sml.
 </itemize>
 <sect1>Know Bugs
 <p>Handling of optional types in StdTypes module not implemented in all
