@@ -66,6 +66,7 @@ public:
   zsuif_expression*           trans_opt(Expression*);
   zsuif_statement*            trans(Statement*);
   zsuif_value_block*	      trans(ValueBlock*);
+  zsuif_value_block*	      trans_opt(ValueBlock*);
   zsuif_variable_definition*  trans(VariableDefinition*);
   zsuif_definition_block*     trans(DefinitionBlock*);
   zsuif_procedure_definition* trans(ProcedureDefinition*);

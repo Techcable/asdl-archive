@@ -13,38 +13,38 @@ class TransStatement {
     this->s = s;
     this->zstmt = NULL;
     this->vm = new VisitorMap(t->env);
-    REGVM(vm,TransStatement,this,StatementList);
-    REGVM(vm,TransStatement,this,BranchStatement);
-    REGVM(vm,TransStatement,this,DoWhileStatement);
     REGVM(vm,TransStatement,this,EvalStatement);
-    REGVM(vm,TransStatement,this,ForStatement);
     REGVM(vm,TransStatement,this,IfStatement);
+    REGVM(vm,TransStatement,this,WhileStatement);
+    REGVM(vm,TransStatement,this,DoWhileStatement);
+    REGVM(vm,TransStatement,this,ForStatement);
+    REGVM(vm,TransStatement,this,ScopeStatement);
+    REGVM(vm,TransStatement,this,VaStartStatement);
+    REGVM(vm,TransStatement,this,VaStartOldStatement);
+    REGVM(vm,TransStatement,this,VaEndStatement);
+    REGVM(vm,TransStatement,this,StoreStatement);
+    REGVM(vm,TransStatement,this,ReturnStatement);
     REGVM(vm,TransStatement,this,JumpIndirectStatement);
     REGVM(vm,TransStatement,this,JumpStatement);
-    REGVM(vm,TransStatement,this,LabelLocationStatement);
-    REGVM(vm,TransStatement,this,MarkStatement);
     REGVM(vm,TransStatement,this,MultiWayBranchStatement);
-    REGVM(vm,TransStatement,this,ReturnStatement);
-    REGVM(vm,TransStatement,this,ScopeStatement);
-    REGVM(vm,TransStatement,this,StoreStatement);
-    REGVM(vm,TransStatement,this,VaEndStatement);
-    REGVM(vm,TransStatement,this,VaStartOldStatement);
-    REGVM(vm,TransStatement,this,VaStartStatement);
-    REGVM(vm,TransStatement,this,WhileStatement);
+    REGVM(vm,TransStatement,this,LabelLocationStatement);
+    REGVM(vm,TransStatement,this,StatementList);
+    REGVM(vm,TransStatement,this,BranchStatement);
+    REGVM(vm,TransStatement,this,MarkStatement);
+    REGVM(vm,TransStatement,this,StoreVariableStatement);
   }
 
   zsuif_statement* answer(void) {
     assert(zstmt == NULL);
     assert(vm != NULL);
-    assert(s != NULL);
+    if(s == NULL) 
+      return new zsuif_NopStatement();
+
     vm->apply(s);
     delete(vm);
     vm = NULL;
-    if(zstmt) {
-      return zstmt;
-    } else {
-      return new zsuif_NopStatement();
-    }
+    assert(zstmt != NULL);
+    return zstmt;
   }
 
   MATCH(TransStatement,StatementList,stmts) {
@@ -74,10 +74,8 @@ class TransStatement {
   MATCH(TransStatement,EvalStatement,stmts) {
      zsuif_expression_list* exprs = NULL;
      s_count_t l = stmts->get_expression_count();
-     while(l--)
-     {
+     while(l--) {
         zsuif_expression *expr = t->trans(stmts->get_expression(l));
-
         exprs = new zsuif_expression_list(expr, exprs);
      }
 
@@ -214,5 +212,12 @@ class TransStatement {
       (condition, body, break_label, continue_label);
   }
 
+  MATCH(TransStatement,StoreVariableStatement,stmts) {
+    zsuif_expression* value = t->trans(stmts->get_value());
+    zsuif_variable_symbol* destination =
+      t->trans(stmts->get_destination());
+
+    zstmt = new zsuif_StoreVariableStatement(destination,value);
+  }
 };
 #endif

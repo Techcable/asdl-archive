@@ -318,7 +318,7 @@ zsuif_variable_definition* TransSuif::trans(VariableDefinition* def){
   VariableSymbol* vs = def->get_variable_symbol();
   zsuif_variable_symbol* name =  new zsuif_variable_symbol(make_symb(vs));
 
-  zsuif_value_block* vb = trans(def->get_initialization());
+  zsuif_value_block* vb = trans_opt(def->get_initialization());
   zsuif_type_id* type_id = trans(vs->get_type());
   return new zsuif_variable_definition(name,type_id,vb);
 }
@@ -328,20 +328,21 @@ zsuif_expression* TransSuif::trans(Expression *e){
   TransExpression te(this,e);
   return te.answer();
 }
-
 /*****************************************/
 zsuif_expression* TransSuif::trans_opt(Expression *e){
-  if(e != NULL) {
-    TransExpression te(this,e);
-    return te.answer();
-  } 
-  return NULL;
+  if(e == NULL) return NULL;
+  return trans(e);
 }
 /*****************************************/
 zsuif_value_block* TransSuif::trans(ValueBlock* vb) {
   assert(vb != NULL);
   TransValueBlock block(this,vb);
   return block.answer();
+}
+/*****************************************/
+zsuif_value_block* TransSuif::trans_opt(ValueBlock* vb) {
+  if(vb == NULL) return NULL;
+  return trans(vb);
 }
 /*****************************************/
 zsuif_statement* TransSuif::trans(Statement *s) {
@@ -446,12 +447,12 @@ zsuif_unop* TransSuif::get_unop(LString s) {
 
 zsuif_constant* TransSuif::trans(Constant *c) {
   assert(c != NULL);
+  if(is_kind_of<IntConstant>(c)) {
   IntConstant* ic = to<IntConstant>(c);
-  if(ic != NULL) {
     return new zsuif_IntConstant(this->trans(ic->get_value()));
   }
+  if(is_kind_of<FloatConstant>(c)) {
   FloatConstant* fc = to<FloatConstant>(c);
-  if(fc != NULL) {
     return new zsuif_FloatConstant(fc->get_value());
   }
   ERROR(this,"Don't know what to do with SUIF Constant");
