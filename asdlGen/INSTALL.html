@@ -1,12 +1,14 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
 <HTML>
 <HEAD>
-<TITLE>INSTALL notes for asdlGen version 1.0b</TITLE>
+<TITLE>INSTALL notes for asdlGen version 1.0</TITLE>
 </HEAD>
 <BODY BGCOLOR="white">
-<H1>INSTALL notes for <CODE>asdlGen</CODE> version 1.0b</H1>
+<H1>INSTALL notes for <CODE>asdlGen</CODE> version 1.0</H1>
 
-<H2>Daniel C. Wang</H2>January 30, 1998
+<H2>Daniel C. Wang</H2>January 30, 1998<P>These install notes aren't comprehensive feel free to send me email
+<CODE>danwang@cs.princeton.edu</CODE> with questions and problems.
+<P>
 <H2><A NAME="s1">1. The Binary Distribution</A></H2>
 
 <P>Since installing the distribution from sources requires the SML/NJ compiler,
@@ -34,13 +36,11 @@ Also set your path to include
 <H2><A NAME="s2">2. Installing from Sources</A></H2>
 
 <P> 
-<CODE>asdlGen</CODE> now builds with <CODE>autoconf</CODE> and <CODE>automake</CODE>. To build from
+<P><CODE>asdlGen</CODE> now builds with <CODE>autoconf</CODE>. To build from
 sources you should have the latest version 
 <A HREF="ftp://ftp.research.bell-labs.com/dist/smlnj/working/110.0.2/">110.0.2</A> of 
-<A HREF="http://cm.bell-labs.com/cm/cs/what/smlnj/index.html">Standard ML of New Jersey</A>. Binary release are also available from 
-<A HREF="http://www.cs.princeton.edu/zephyr/ASDL/#software">http://www.cs.princeton.edu/zephyr/ASDL/#software</A>.
-I plan to experiment with releasing sources via a read only
-remote CVS repository.
+<A HREF="http://cm.bell-labs.com/cm/cs/what/smlnj/index.html">Standard ML of New Jersey</A>. In the future, I plan to experiment with releasing sources
+via a read only remote CVS repository.
 <P>
 <H2>2.1 Unix</H2>
 
@@ -49,8 +49,14 @@ remote CVS repository.
 ./configure --prefix=<EM>Your install prefix</EM>
 </CODE></BLOCKQUOTE>
 
-let <CODE>configure</CODE> do it's thing, and do a <CODE>make install</CODE>
-<P>
+let <CODE>configure</CODE> do it's thing, and do a <CODE>make install</CODE>. Make install
+will install most of the required supporting C, C++, and Java libraries
+appropriately, and builds SML/NJ heap image. I'd suggest copying the heap to
+<BLOCKQUOTE><CODE>
+<EM>your sml/nj directory</EM>/bin/.heaps
+</CODE></BLOCKQUOTE>
+
+and making a symbolic link to the <CODE>.run-it</CODE> in the SML/NJ directory.
 <H2>2.2 Windows NT/95</H2>
 
 <P>I haven't figured out how to automatically compile the supporting Java, C,
