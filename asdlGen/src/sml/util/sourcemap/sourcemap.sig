@@ -1,5 +1,12 @@
 (*#line 65 "sourcemap.nw"*)(* sourcemap.sig *)
-(*#line 253 "sourcemap.nw"*)(* $Log$
+(*#line 253 "sourcemap.nw"*)(* 
+ * $Log$
+ * Revision 1.2  1997/12/03 06:49:16  danwang
+ * *** empty log message ***
+ *
+ * Revision 1.1  1997/12/03 06:40:53  danwang
+ * Initial revision
+ *
  * Revision 1.1.1.1  1997/01/14  01:38:49  george
  *   Version 109.24
  *
