@@ -53,6 +53,10 @@ ASDLGEN_HEAP = @ASDLGEN_HEAP@
 CC = @CC@
 CXX = @CXX@
 HEAP_SUFFIX = @HEAP_SUFFIX@
+INT16 = @INT16@
+INT32 = @INT32@
+INT64 = @INT64@
+INT8 = @INT8@
 JAVAC = @JAVAC@
 KSH = @KSH@
 MAKEINFO = @MAKEINFO@
@@ -256,7 +260,7 @@ asdlGen.@HEAP_SUFFIX@: sources.cm build.sml
 	$(SML_CM) < build.sml
 
 run.@HEAP_SUFFIX@:
-	ln -s `$(SHELL) ../misc/find_runtime.sh` ./
+	ln -s `../misc/find_runtime.sh` ./
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -63,6 +63,7 @@ structure Main =
 			  val prefix_ids = SOME (JavaPP.package_prefix)
 			  val int_kind = true
 			  val short_names = true)
+
        structure JavaGen =
 	   mkTranslateFromTranslator
 	   (structure T = JavaTranslator
@@ -103,11 +104,6 @@ structure Main =
 		mkMain(structure M = Module
 		       structure Parser = AsdlParser
 		       structure Gen = 
-			   struct
-			       type input = Module.module_env
-			       type output = (Params.params * input)
-			       val cfg = GenPickleTranslator.cfg
-			       fun translate p x =  (p,x)
-			   end
+			   mkDependGen(structure M = M)
 		       val dflt_view = "Check")	   
     end

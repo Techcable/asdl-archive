@@ -41,7 +41,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 			       cnstrs:T.ty_decl list,
 			       visits:T.mth list}
 
-	type option_value   = unit
+	type option_value   = {tid:T.ty_id,rd:T.mth,wr:T.mth}
 
 	type sequence_value = defined_value
 
@@ -176,7 +176,9 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 
 		val mangle_ty =  case (kind) of
 			M.Id => (fn x => x)
-		  | M.Option =>  (fn x => x)
+		      | M.Option =>
+			(if is_prim then optify_id
+			 else (fn x => x))
 		  | M.Sequence => listify_id
 
 		val tid = (trans_tid mangle_ty is_local tinfo)
@@ -187,9 +189,15 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 		val {pkl_name,natural_ty,unwrap,wrap} =
 		    wrappers props ty
 		val name = toId name
+
 		val (rf,wf) =
-		    if is_prim then (Pkl.read_prim,Pkl.write_prim)
-		    else (Pkl.read,Pkl.write)
+		    (case (is_prim,kind) of
+			 (true,_) =>
+			 (Pkl.read_prim,Pkl.write_prim)
+		       | (_,M.Option) =>
+			 (Pkl.read_option,Pkl.write_option)
+		       | (_,_) => (Pkl.read,Pkl.write))
+
 		val rd = T.Assign(T.Id name,rf pkl_name)
 		fun wr x = wf pkl_name (T.FieldSub(T.DeRef x,name))
 		val init = T.Assign(T.ThisId name,T.Id name)
@@ -702,13 +710,84 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 	    end
 	  
 
-	fun trans_option p {tinfo,name,props,also_seq} = ()
+	fun trans_option p {tinfo,name,props,also_seq} =
+	    let
+		val tid = (trans_tid (fn x => x) true tinfo)
+		val ty = T.TyId tid
+		val {pkl_name,natural_ty,unwrap,wrap} =
+		    wrappers props ty
+		val is_prim = M.type_is_prim tinfo
+		val opt_ty =
+		    if is_prim then natural_ty
+		    else (T.TyReference (natural_ty))
+		val rd =
+		    Pkl.read_option_decl
+		    {name=pkl_name,
+		     ret_ty=opt_ty,
+		     body=
+		     [T.If{test=T.NotZero(Pkl.read_tag),
+			  then_stmt=
+			  T.Assign(T.Id Pkl.ret_id,Pkl.read pkl_name),
+			  else_stmt=
+			  T.Assign(T.Id Pkl.ret_id,T.NilPtr)}]}
+		val wr =
+		    Pkl.write_option_decl
+		    {name=pkl_name,arg_ty=opt_ty,
+		     body=
+		     [T.If{test=T.NotNil(T.Id Pkl.arg_id),
+			  then_stmt=
+			  T.Block{vars=[],body=
+				  [Pkl.write_tag 1,
+				   Pkl.write pkl_name (T.Id Pkl.arg_id)]},
+			  else_stmt=Pkl.write_tag 0}]}
+	    in
+		{tid=tid,rd=rd,wr=wr}
+	    end
+	structure Env =
+	    SplayMapFn(struct
+			   type ord_key = T.TypeId.mid
+			   val compare = T.TypeId.compare
+		       end)
+	fun add_option_methods x d =
+	    let
+		val env =
+		    List.foldl (fn ({tid,wr,rd},env) =>
+				Env.insert(env,tid,[wr,rd])) Env.empty x
+		fun add_mths
+		    (c as  (T.DeclAbstractClass
+		     {name,idecls,scope,inherits,fields,mths})) =
+		    (case (Env.find (env,name)) of
+			NONE => c
+		      | SOME m =>
+			    (T.DeclAbstractClass
+			     {name=name,idecls=idecls,
+			      scope=scope,inherits=inherits,
+			      fields=fields,mths=m@mths}))
+		| add_mths
+		    (c as  (T.DeclClass
+			    {name,final,idecls,scope,inherits,
+			     cnstrs,fields,mths})) =
+		    (case (Env.find (env,name)) of
+			NONE => c
+		      | SOME m =>
+			    (T.DeclClass
+			     {final=final,
+			      cnstrs=cnstrs,
+			      name=name,idecls=idecls,
+			      scope=scope,inherits=inherits,
+			      fields=fields,mths=m@mths}))
+		  | add_mths x = x
+	    in
+		List.map add_mths d
+	    end
 
 	fun trans_all p {module,defines,options,sequences,props} =
 	    let
 		val defines = (defines@sequences:defined_value list)
+		val options = options
 		val ty_decs = List.map #ty_dec defines
-		
+		val ty_decs = add_option_methods options ty_decs
+
 		val mname = M.module_name module
 		val visits =
 		    List.foldr (op @) []  ( List.map #visits defines)

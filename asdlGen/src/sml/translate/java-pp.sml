@@ -33,6 +33,10 @@ structure JavaPP : JAVA_PP =
 	local
 	    open OOTypes
 	in
+
+	    fun fix_id {qualifier,base} =
+		SOME{qualifier=qualifier,
+		     base=String.map (fn #"." => #"_" | x => x) base}
 	    val const_class =  "g"
 	    val pp_id = PP.wrap VarId.toString 
 	    val pp_tid = PP.wrap TypeId.toString
@@ -131,7 +135,12 @@ structure JavaPP : JAVA_PP =
 		 PP.s ")"]
 	      | pp_exp (FunCall(id,es)) =
 		PP.hblock 1
-		[pp_id (VarId.prefixBase "g." id),
+		(* hack for ids of the form
+		 {qualifier=..,base="java.lang.String"}
+		 see the java portion of id_fix.sml
+		 *)
+		[pp_id (VarId.prefixBase "g."
+			(VarId.subst fix_id id)),
 		 PP.s "(",
 		 PP.seq {fmt=pp_exp,sep=comma_sep} es,
 		 PP.s ")"]

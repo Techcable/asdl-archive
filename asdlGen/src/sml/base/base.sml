@@ -10,7 +10,7 @@ signature ASDL_BASE =
 	type int = Integer.int
 	type identifier = Identifier.identifier
 	type string = String.string
-	    
+	
 	val write_int   : int -> outstream -> unit
 	val write_tag   : Int.int -> outstream -> unit
         val write_string: string -> outstream ->unit

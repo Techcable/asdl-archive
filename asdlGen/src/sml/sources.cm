@@ -32,13 +32,13 @@ frontend/parser.sml
 frontend/main.sml
 frontend/link.sml
 frontend/export.sml
+frontend/depends.sml
 
 translate/translate.sig
 translate/translate.sml
 translate/module-translate.sml
 translate/file-translate.sml
 translate/source-translate.sml
-
 
 translate/translate-format.sml
 translate/html-pp.sml 

@@ -10,11 +10,11 @@ structure AlgolPklGen : IMP_PKL_GEN =
 	type id = T.id
 	type decl = T.decl
 
-	val arg_id     = VarId.fromString "x"
-	val ret_id     = VarId.fromString "ret"
+	val arg_id     = VarId.fromString "x_"
+	val ret_id     = VarId.fromString "ret_"
 	val head_id    = VarId.fromString "head"
 	val tail_id    = VarId.fromString "tail"
-	val stream_id  = VarId.fromString "s"
+	val stream_id  = VarId.fromString "s_"
 	fun temp_id  x = VarId.fromString ("t"^(Int.toString x)^"_")
 
 	val outstream_ty = T.TyId (T.TypeId.fromString "outstream")

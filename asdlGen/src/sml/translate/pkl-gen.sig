@@ -95,6 +95,8 @@ signature OO_PKL_GEN =
 	val len_ty     : ty
     	val ret_id     : id
 
+	val optify_name : name -> name
+
 	val write_len : exp -> stmt
 	val read_len  : exp
 
@@ -104,11 +106,17 @@ signature OO_PKL_GEN =
 	val write     : name -> exp -> stmt
 	val read      : name -> exp
 
-	val write_prim: name -> exp -> stmt
-	val read_prim : name -> exp
+	val write_option  : name -> exp -> stmt
+	val read_option   : name -> exp
+
+	val write_prim : name -> exp -> stmt
+	val read_prim  : name -> exp 
 
 	val write_decl   : {name:name,arg_ty:ty,body:stmt list} -> decl
 	val read_decl    : {name:name,ret_ty:ty,body:stmt list} -> decl
+
+	val write_option_decl : {name:name,arg_ty:ty,body:stmt list} -> decl
+	val read_option_decl  : {name:name,ret_ty:ty,body:stmt list} -> decl
 
 	val write_tagged_decl:
 	    {name:name,tag:int,arg_ty:ty,body:stmt list} -> decl

@@ -19,10 +19,15 @@ signature StdTypes_SIG =
 	type uint16 = Word.word
 	type uint32 = Word32.word
 	type uint64 = IntInf.int
+        type bool = Bool.bool
     
 	val write_ieee_real : ieee_real -> outstream -> unit
 	val read_ieee_real : instream -> ieee_real
 
+	    
+	val write_bool : bool -> outstream -> unit
+	val read_bool : instream -> bool
+	    
 	val write_nat : nat -> outstream -> unit
 	val read_nat : instream -> nat
 
@@ -67,6 +72,7 @@ structure StdTypes : StdTypes_SIG =
 
 	structure PklIntInf = PklInteger(structure Integer = IntInf)
 
+        type bool = Bool.bool
 	type nat = PklInt.T
 	type int8 = PklWord8.T
 	type int16 = PklInt.T
@@ -76,11 +82,12 @@ structure StdTypes : StdTypes_SIG =
 	type uint16 = PklWord.T
 	type uint32 = PklWord32.T
 	type uint64 = PklIntInf.T
-
 	type ieee_real = Real.real
 
-	val write_nat = PklInt.write
+	fun write_bool true = PklInt.write 1
+	  | write_bool false = PklInt.write 0
 
+	val write_nat = PklInt.write
 	val write_int8 = PklWord8.write
 	val write_int16 = PklInt.write
 	val write_int32 = PklInt32.write
@@ -92,6 +99,11 @@ structure StdTypes : StdTypes_SIG =
 	val write_uint64 = PklIntInf.write
 	fun write_ieee_real _ _ = raise Error.unimplemented
 
+	fun read_bool s =
+	    (case (PklInt.read s) of
+		0 => false
+	      | _ => true)
+		    
 	val read_nat = PklInt.read
 	val read_int8 = PklWord8.read
 	val read_int16 = PklInt.read

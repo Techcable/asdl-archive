@@ -54,6 +54,7 @@ functor PklInteger(structure Integer : INTEGER) : PKL =
 		fun is_continue_bit_set (x) =
 		    not(W8.andb(x,0wx80) = 0wx0)
 		fun is_neg_bit_set (x) =  not(W8.andb(x,0wx40) = 0wx0)
+		fun mask_neg (x) =  (W8.andb(x,0wx3f))
 		fun nibble x = (w8toi(W8.andb(x,0wx7f)))
 		fun loop(x,acc,coef) =
 		    if(is_continue_bit_set x) then
@@ -62,7 +63,7 @@ functor PklInteger(structure Integer : INTEGER) : PKL =
 			     Integer.*(coef,c_128))
 		    else
 			let
-			    val v = w8toi (W8.andb(x,0wx3f))
+			    val v = w8toi (mask_neg x)
 			    val last = Integer.*(v,coef)
 			in
 			    (* take care of 2's complement asymetry*)
@@ -112,6 +113,7 @@ functor PklWord(structure Word : WORD) : PKL =
 		    not(W8.andb(x,0wx80) = 0wx0)
 		fun is_neg_bit_set (x) =  not(W8.andb(x,0wx40) = 0wx0)
 		fun nibble x = (w8tow(W8.andb(x,0wx7f)))
+		fun mask_neg (x) =  (W8.andb(x,0wx3f))
 		fun loop(x,acc,shift) =
 		    if(is_continue_bit_set x) then
 			loop(Option.valOf (IO.input1 s),
@@ -119,7 +121,7 @@ functor PklWord(structure Word : WORD) : PKL =
 			     shift+0w7)
 		    else
 			let
-			    val v = w8tow (W8.andb(x,0wx3f))
+			    val v = w8tow (mask_neg x)
 			    val acc =
 				Word.orb(acc,Word.<<(v,shift))
 			in
@@ -135,6 +137,10 @@ functor PklWord(structure Word : WORD) : PKL =
 		ret
 	    end	
     end
+
+
+
+
 
 
 
