@@ -83,8 +83,8 @@ class TransExpression {
   }
 
   MATCH(TransExpression,MultiDimArrayExpression,exp) {
-    zsuif_expression* base_array_address =
-      t->trans(exp->get_base_array_address());
+    zsuif_expression* array_address =
+      t->trans(exp->get_array_address());
     zsuif_type_id* result_type = t->trans(exp->get_result_type());
 
     zsuif_expression_list* indices = NULL;
@@ -95,15 +95,15 @@ class TransExpression {
       indices = new zsuif_expression_list(index,indices);
     }
     zsuif_expression_list* bounds = NULL;
-    int num_bounds = exp->get_bound_count();
+    int num_bounds = exp->get_element_count();
     /* cons things on backward so idx 0 is first */
     while(num_bounds--) {
-      zsuif_expression* bound = t->trans(exp->get_bound(num_bounds));
+      zsuif_expression* bound = t->trans(exp->get_element(num_bounds));
       bounds = new zsuif_expression_list(bound,bounds);
     }
 
     zexpr = new zsuif_MultiDimArrayExpression
-      (result_type, base_array_address, indices, bounds);
+      (result_type, array_address, indices, bounds);
   }
 
   MATCH(TransExpression,ArrayReferenceExpression,exp) {
