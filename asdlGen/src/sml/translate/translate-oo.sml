@@ -84,11 +84,14 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 			 (T.TyId (visitor_tid tid))}]}
 
 	val cfg = Params.empty
+	val (cfg,simple_sequences)  =  Params.declareBool cfg
+	    {name="simple_sequences",flag=NONE,default=true}
 
 	val kind_id = (T.VarId.fromString "kind")
 	val get_module = (fn x => x)
 
 	val head_id = fix_id (T.VarId.fromString "head")
+	val seq_id = fix_id (T.VarId.fromString "seq")
 	val tail_id = fix_id (T.VarId.fromString "tail")
 	    
 	fun get_tail x = (T.FieldSub(T.DeRef(x),tail_id))
@@ -604,14 +607,125 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 	    in
 		{ty_dec=ty_dec,cnstrs=cnstrs}
 	    end
-	
-	fun trans_sequence p {tinfo,name,props,also_opt} =
+
+	fun trans_sequence p (args as {tinfo,name,props,also_opt}) =
+	    if (simple_sequences p) then
+		trans_simple_sequence p args
+	    else
+		trans_native_sequence p args
+	and trans_native_sequence p {tinfo,name,props,also_opt} =
 	    let
 
 		val ty = T.TyId (trans_tid (fn x => x) true tinfo)
 		val tid_seq = trans_tid listify_id true tinfo
 		val ty_seq = (T.TyReference (T.TyId tid_seq))
 
+		val is_prim = M.type_is_prim tinfo
+		val ty =
+		    if is_prim then ty
+		    else (T.TyReference (ty))
+			
+		val {pkl_name,natural_ty,unwrap,wrap} =
+		    wrappers props ty
+
+		val elm_ty = natural_ty
+		val elm_name = pkl_name
+		val seq_v = T.Id seq_id
+		val seq_ty = T.TySequence (elm_ty)
+		
+		val seq_name = Pkl.type_name ty_seq
+		val fields = [{name=seq_id,ty=seq_ty}]
+		val cnstr =
+		    {inline=true,scope=T.Public,args=fields,
+		     body={vars=[],body=
+			   [T.Assign(T.ThisId seq_id,T.Id seq_id)]}}
+		val mfields = List.map tomfield fields
+
+		val len = T.Id (Pkl.temp_id 1)
+		val idx = T.Id (Pkl.temp_id 2)
+		val tmp = T.Id (Pkl.temp_id 3)
+
+		val arg = T.Id Pkl.arg_id
+		val ret = T.Id Pkl.ret_id
+
+		fun snoc (x,y) =
+		    T.Assign(x,T.New(tid_seq,[y,T.NilPtr]))
+		val rd =
+		    Pkl.read_decl
+		    {name=seq_name,
+		     ret_ty=ty_seq,
+		     body=
+		     [T.Block
+		     {vars=[{name=Pkl.temp_id 1,ty=Pkl.len_ty},
+			    {name=Pkl.temp_id 2,ty=Pkl.len_ty},
+			    {name=seq_id,ty=seq_ty}],
+		      body=
+		      [T.Assign(len,Pkl.read_tag),
+		       T.Assign(idx,T.Const(T.IntConst 0)),
+		       T.Assign(seq_v,T.SeqNew{elm_ty=elm_ty,len=len}),
+		       T.While{test=T.Less(idx,len),
+			       body=
+			       T.Block
+			       {vars=[],body=
+				[T.Expr (T.SeqSet{elm_ty=elm_ty,
+					  seq=seq_v,
+					  idx=idx,v=Pkl.read elm_name}),
+				 T.Assign(idx, T.PlusOne idx)]}},
+		       T.Assign(T.Id Pkl.ret_id,T.New(tid_seq,[seq_v]))]}]}
+
+		val wr =
+		    Pkl.write_decl
+		    {name=seq_name,
+		     arg_ty=ty_seq,
+		     body=[T.Block
+		     {vars=[{name=Pkl.temp_id 1,ty=Pkl.len_ty},
+			    {name=Pkl.temp_id 2,ty=Pkl.len_ty},
+			    {name=seq_id,ty=seq_ty}],
+		      body=
+		      [T.Assign(seq_v,
+				(T.FieldSub(T.DeRef(T.Id Pkl.arg_id),seq_id))),
+		       T.Assign(len,T.SeqLen{elm_ty=elm_ty,seq=seq_v}),
+		       T.Assign(idx,T.Const(T.IntConst 0)),
+		       Pkl.write_len(len),
+		       T.While{test=T.Less(idx,len),
+			       body=
+			       T.Block
+			       {vars=[],body=
+				[Pkl.write elm_name
+				 (T.SeqGet{elm_ty=elm_ty,
+					  seq=seq_v,
+					   idx=idx}),
+				 T.Assign(idx, T.PlusOne idx)]}}]}]}
+		      
+		   
+
+		val visit_name = visit_id (listify_id name)
+
+		val accept_mth = mk_accept_mth tid_seq
+		    [T.Expr
+		    (T.MthCall
+		     (T.FieldSub(T.DeRef(T.Id accept_visitor),visit_name),
+		      [T.This]))]
+		    
+		val ty_dec = T.DeclClass
+		    {name=tid_seq,
+		     final=true,
+		     idecls=[],
+		     scope=T.Public,
+		     inherits=NONE,
+		     cnstrs=[cnstr],
+		     fields=mfields,
+		     mths=[accept_mth,rd,wr]}
+	    in
+		{ty_dec=ty_dec,cnstrs=[]}
+	    end
+	and trans_simple_sequence p {tinfo,name,props,also_opt} =
+	    let
+
+		val ty = T.TyId (trans_tid (fn x => x) true tinfo)
+		val tid_seq = trans_tid listify_id true tinfo
+		val ty_seq = (T.TyReference (T.TyId tid_seq))
+		    
 		val is_prim = M.type_is_prim tinfo
 		val ty =
 		    if is_prim then ty

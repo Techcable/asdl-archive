@@ -67,7 +67,8 @@ structure JavaPP : JAVA_PP =
 	      | pp_ty_exp (TyReference te) = pp_ty_exp te (* ignore *)
 	      | pp_ty_exp (TyOption te) =  
 		PP.cat [pp_ty_exp te,PP.s "/* opt */"] 
-	      | pp_ty_exp (TySequence te) = pp_ty_exp (TyArray(te,NONE))
+	      | pp_ty_exp (TySequence te) =
+		PP.cat [PP.s "java.util.Vector"] 
 
 	    and pp_ty_decl (DeclAbstractClass
 			    {name,idecls,scope,inherits,fields,mths}) =
@@ -167,6 +168,8 @@ structure JavaPP : JAVA_PP =
 	      | pp_exp (DeRef e) = pp_exp e
 	      | pp_exp (NotNil e) = 
 		PP.cat [pp_exp e, PP.s " != null"]
+	      | pp_exp (Less(el,er)) = 
+		PP.cat [pp_exp el, PP.s " < ", pp_exp er]
 	      | pp_exp (NotZero e) = 
 		PP.cat [pp_exp e, PP.s " != 0"]
 	      | pp_exp (NotEqConst (e,c)) = 
@@ -185,7 +188,23 @@ structure JavaPP : JAVA_PP =
 		PP.cat [pp_exp e, PP.s " - 1"]
 	      | pp_exp (ArraySub (e,idx)) =
 		PP.cat [pp_exp e, PP.s "[" ,pp_exp idx,PP.s "]"]
-
+	      | pp_exp (SeqNew{elm_ty,len}) =
+		PP.cat [PP.s "new java.util.Vector(",
+			pp_exp len,
+			PP.s ")"]
+	      | pp_exp (SeqLen{elm_ty,seq}) =
+		PP.cat [PP.s "((",pp_exp seq,PP.s ").size())"]
+	      | pp_exp (SeqGet{elm_ty,seq,idx}) =
+		PP.cat [PP.s "((",
+			pp_ty_exp elm_ty,
+			PP.s ")((",pp_exp seq,PP.s ").elementAt(",
+			pp_exp idx,
+			PP.s ")))"]
+	      | pp_exp (SeqSet{elm_ty,seq,idx,v}) =
+		PP.cat [PP.s "(",pp_exp seq,PP.s ").setElementAt(",
+			pp_exp v,PP.s ", ",pp_exp idx,
+			PP.s ")"]
+			
 	    and pp_stmt (Assign(dst,src)) =
 		PP.cat [pp_exp dst, PP.s " = " ,pp_exp src,PP.s ";"]
 	      | pp_stmt (Return e) =

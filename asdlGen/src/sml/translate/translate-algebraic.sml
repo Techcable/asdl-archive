@@ -37,7 +37,6 @@ functor mkAlgebraicTranslator(structure IdFix : ID_FIX
 	val cfg = Params.empty
 	val get_module = (fn x => x)
 
-
 	fun wrappers p ty =
 	    let
 		val name = Pkl.type_name ty

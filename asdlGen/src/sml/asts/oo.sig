@@ -82,8 +82,14 @@ signature OO_TYPES = (* really more Java than anything else *)
 	  | NotEqConst of (exp * const)
 	  | NotNil     of (exp)
 	  | NotZero    of (exp)
+	  | Less       of (exp * exp)
 	  | Cast       of (ty_exp * exp)
 	  | New        of (ty_id * exp list)
+
+	  | SeqNew     of {elm_ty:ty_exp, len:exp}
+	  | SeqLen     of {elm_ty:ty_exp, seq:exp}
+	  | SeqGet     of {elm_ty:ty_exp, seq:exp, idx:exp}
+	  | SeqSet     of {elm_ty:ty_exp, seq:exp, idx:exp,v:exp}
 
 	and stmt =
 	    Nop
