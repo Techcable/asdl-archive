@@ -6,7 +6,7 @@
 <title>CHANGES
 <author>&author.danwang;
 <date>&asdlGen.release-date;
-<sect>CHANGES in 1.0b Release<p>
+<sect>CHANGES in &asdlGen.version; Release<p>
 <sect1>Bugs Fixed<p>
 Added <tt/source_name/ option to help with name collisions.
 <sect1>Incompatible Changes<p>
