@@ -43,15 +43,13 @@ structure Main =
 	  mkAlgebraicSpec(structure Ty = AlgebraicTy
 			  val streams_ty = NONE
 			  val monad_name = NONE)
-
-	structure MLPklGen = StdPickler(structure Arg = MLAlgebraicSpec)
 	structure MLTranslator =
 	  mkAlgebraicModuleTranslator
 	  (structure IdFix = IdFix.ML
 	   structure Spec = MLAlgebraicSpec
-	   val aux_decls = MLPklGen.trans
 	   val fix_fields = false)
-       structure MLGen =
+
+	structure MLGen =
 	 mkTranslateFromTranslator
 	 (structure T = MLTranslator
 	  structure G = mkSourceFileOutput(structure PP = MLPP))
@@ -64,15 +62,11 @@ structure Main =
 	 mkAlgebraicSpec(structure Ty = AlgebraicTy
 			 val streams_ty = SOME {ins="Handle",outs="Handle"}
 			 val monad_name = SOME "IO")
-
 	 
-	structure HaskellPklGen =
-	  StdPickler(structure Arg = HaskellAlgebraicSpec)
 	structure HaskellTranslator =
 	  mkAlgebraicModuleTranslator
 	  (structure IdFix = IdFix.Haskell
 	   structure Spec = HaskellAlgebraicSpec
-	   val aux_decls = HaskellPklGen.trans
 	   val fix_fields = true)
 
        structure HaskellGen =
@@ -87,14 +81,9 @@ structure Main =
 
 
        structure AnsiCAlgolSpec = mkAlgolSpec(structure Ty = AlgolTy)
-       (*       structure AnsiCPklGen =
-	StdPickler(structure Arg = AnsiCAlgolSpec)
-	*)
-       structure AnsiCPklGen = XMLPickler(structure Arg = AnsiCAlgolSpec)
        structure AnsiCTranslator =
 	 mkAlgolModuleTranslator(structure IdFix = IdFix.AnsiC
-				 structure Spec = AnsiCAlgolSpec
-				 val aux_decls = AnsiCPklGen.trans)
+				 structure Spec = AnsiCAlgolSpec)
 
        structure AnsiCGen =
 	   mkTranslateFromTranslator
