@@ -39,7 +39,7 @@ struct
       | BREAK 
       | GROUP of doc
 
-    open SMLofNJ.Susp
+    open Susp
 
 	
     datatype Doc = 

@@ -1,4 +1,19 @@
-Group is
+Library 
+  signature SEMANT
+  structure Semant
+
+  signature ASDL
+  structure Asdl
+
+  signature ASDL_PARSER
+  structure AsdlParser
+
+  signature ASDL_SEMANT
+  structure AsdlSemant
+is
+#if defined(NEW_CM)
+basis.cm
+#endif
 ml-yacc-lib.cm
 smlnj-lib.cm
 ../util/sources.cm
@@ -7,7 +22,7 @@ smlnj-lib.cm
 Asdl.sig
 Asdl.sml
 AsdlUtil.sig
-AsdlUtil.sml
+AsdlUtil.sml 
 aka.sml
 asdl.grm
 asdl.lex

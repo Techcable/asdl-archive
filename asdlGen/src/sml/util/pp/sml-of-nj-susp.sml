@@ -1,0 +1,1 @@
+structure Susp = SMLofNJ.Susp

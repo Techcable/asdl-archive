@@ -19,6 +19,10 @@ signature STD_TYPES
 signature STD_TYPES_UTIL
 
 is
+#if defined(NEW_CM)
+basis.cm
+#endif
+
 smlnj-lib.cm
 
 identifier.sig

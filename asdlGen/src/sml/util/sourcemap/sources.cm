@@ -1,3 +1,9 @@
-Group is
+Library 
+  signature SOURCE_MAP	
+  structure SourceMap
+is
+#if defined(NEW_CM)
+basis.cm
+#endif
 sourcemap.sml
 sourcemap.sig

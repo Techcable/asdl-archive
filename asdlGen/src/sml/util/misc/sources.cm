@@ -1,4 +1,29 @@
-Group is
+Library
+  signature COUNTER
+  signature SCC
+  signature COMMAND_OPTIONS
+  signature PROPERTIES
+  signature SOURCE_IDS
+  signature SOURCE_ID
+  signature CVT_CASE
+  signature FILE_SET
+  signature ERROR
+
+  structure Counter
+  structure CommandOptions
+  structure Properties
+  structure SourceIds
+  structure CvtCase	
+  structure FileSet
+  structure Error
+
+  functor mkSourceId
+  functor SCCUtilFun
+is
+#if defined(NEW_CM)
+basis.cm
+#endif
+
 smlnj-lib.cm
 ../../base/asdl-base.cm
 counter.sml

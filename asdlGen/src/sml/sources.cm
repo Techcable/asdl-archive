@@ -1,15 +1,24 @@
 (* 
  * Copyright (c) 1997, 1998 Princeton University
  *)
-Group is
+Group
+is
+#if defined(NEW_CM)
+basis.cm
+#endif
+smlnj-lib.cm
+
+util/sources.cm
 base/asdl-base.cm
 frontend/sources.cm
 translate/sources.cm
-(*type-pickle/sources.cm
-pp-pickle/sources.cm*)
-convert/sources.cm
+(*
+ type-pickle/sources.cm
+ pp-pickle/sources.cm
+ convert/sources.cm
+*)
 
-smlnj-lib.cm
+
 
 (*main/depends.sml*)
 main/main.sml

@@ -1,4 +1,28 @@
-Group is
+Library
+  signature OO_AST
+  signature LANG_AST
+  signature ALGOL_AST
+  signature ALGEBRAIC_AST
+  signature DYNAMIC_AST
+  signature ANSI_C
+  signature FORMAT_DOC
+  signature XML_DTD
+  signature YACC_GRAMMAR
+
+  structure OOAst
+  structure AlgolAst
+  structure AlgebraicAst
+  structure AnsiC
+  structure DynamicAst
+  structure FormatDoc
+  structure XMLDTD
+  structure YaccGrammar
+  structure AstMisc
+is
+#if defined(NEW_CM)
+basis.cm
+#endif
+
 ../util/sources.cm
 ../base/asdl-base.cm
 smlnj-lib.cm

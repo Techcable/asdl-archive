@@ -1,9 +1,88 @@
-Group is
+Library 
+(* dtangle/sources.cm *)
+  signature BUILD_DTANGLE
+  structure DTangle
+  functor BuildDTangle 	
+(* meta-build/sources.cm *)
+  signature CORE_BUILD
+  signature BUILD_IT
+  signature META_BUILD
+  signature EXPORTABLE_BUILD 
+  signature RUNNABLE_BUILD 
+  signature BUILD_UTIL 
+  signature CC_BUILD 
+  signature FILE_OPS_BUILD 
+  signature SML_BUILD 
+  signature BUILD_UTIL
+
+  structure BuildExport
+  structure BuildRun 
+  structure MetaBuild 
+  structure UnixBuildParams 
+  structure UnixSML 
+  structure UnixCC 
+  structure UnixFileOps 
+
+  structure Win32BuildParams 
+  structure Win32CC 
+  structure Win32SML 
+  structure Win32FileOps 
+
+  structure ConfigSML
+  structure ConfigCC
+  structure ConfigFileOps
+ 
+  functor BuildUtil
+
+(* miscs/sources.cm *)
+  signature COUNTER
+  signature SCC
+  signature COMMAND_OPTIONS
+  signature PROPERTIES
+  signature SOURCE_IDS
+  signature SOURCE_ID
+  signature CVT_CASE
+  signature FILE_SET
+  signature ERROR
+
+  structure Counter
+  structure CommandOptions
+  structure Properties
+  structure SourceIds
+  structure CvtCase	
+  structure FileSet
+  structure Error
+
+  functor mkSourceId
+  functor SCCUtilFun
+(* os/sources.cm *)
+  signature PATHS
+  signature RUN_WITH
+  signature FS_UTILS
+
+  structure Paths	
+  structure RunWith
+  structure FSUtils
+
+(* pp/sources.cm *)
+  signature WPP
+  structure Wpp		
+
+  signature PP_UTIL
+  structure PPUtil
+
+(* sourcemap/sources.cm *)
+  signature SOURCE_MAP	
+  structure SourceMap
+is
+
 dtangle/sources.cm
 meta-build/sources.cm
 misc/sources.cm
 os/sources.cm
 pp/sources.cm
 sourcemap/sources.cm
+
+
 
 

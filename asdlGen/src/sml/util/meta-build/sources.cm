@@ -1,10 +1,44 @@
-Group is
+Library 
+  signature CORE_BUILD
+  signature BUILD_IT
+  signature META_BUILD
+  signature EXPORTABLE_BUILD 
+  signature RUNNABLE_BUILD 
+  signature BUILD_UTIL 
+  signature CC_BUILD 
+  signature FILE_OPS_BUILD 
+  signature SML_BUILD 
+  signature BUILD_UTIL
+
+  structure BuildExport
+  structure BuildRun 
+  structure MetaBuild 
+
+  structure UnixBuildParams 
+  structure UnixSML 
+  structure UnixCC 
+  structure UnixFileOps 
+
+  structure Win32BuildParams 
+  structure Win32CC 
+  structure Win32SML 
+  structure Win32FileOps 
+
+  structure ConfigSML
+  structure ConfigCC
+  structure ConfigFileOps
+
+  functor BuildUtil
+is
+#if defined(NEW_CM)
+basis.cm
+#endif
+
 smlnj-lib.cm
 ../misc/sources.cm
 ../os/sources.cm
 meta-build.sig
 build-it.sig
-
 
 meta-build.sml
 build-run.sml

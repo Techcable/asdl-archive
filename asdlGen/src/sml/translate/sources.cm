@@ -1,9 +1,13 @@
 (* TODO break this up into several CM files *)
 Group is
+#if defined(NEW_CM)
+basis.cm
+#endif
 smlnj-lib.cm
 ../base/asdl-base.cm
 ../frontend/sources.cm
 ../asts/sources.cm
+../util/sources.cm
 
 support/type-decl.sig
 support/type-decl.sml

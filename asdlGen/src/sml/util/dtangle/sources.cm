@@ -2,10 +2,17 @@
 CM file for compiling everything.
 **)
 (*::*)
-Group is
+Library 
+  signature BUILD_DTANGLE
+  structure DTangle
+  functor BuildDTangle 	
+is
+#if defined(NEW_CM)
+basis.cm
+#endif
 smlnj-lib.cm
 dtangle-lexer.sml
 dtangle.sml
 build-dtangle.sml
 ../meta-build/sources.cm    
-
+../os/sources.cm    

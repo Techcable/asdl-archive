@@ -1,4 +1,16 @@
-Group is
+Library
+signature PATHS
+signature RUN_WITH
+signature FS_UTILS
+
+structure Paths	
+structure RunWith
+structure FSUtils
+is
+#if defined(NEW_CM)
+basis.cm
+#endif
+
 paths.sml
 run-with.sig
 run-with.sml
