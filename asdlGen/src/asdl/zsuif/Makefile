@@ -10,9 +10,9 @@ SRCS          =	zsuif.cxx StdTypes.cxx suif_base.cxx zsuif_gateway.cc \
 
 OBJS          =	zsuif.o StdTypes.o suif_base.o zsuif_gateway.o trans_suif.o 
 AUTOINITLIB   =  yes
-LOCALINCLDIRS = -I./ -I$(ASDLHOME)/include/asdlGen 
-LOCALLIBDIRS  = -L$(ASDLHOME)/lib/asdlGen  -lasdl -lcii
-ASDLGEN       = $(ASDLHOME)/bin/asdlGen
+LOCALINCLDIRS = -I./ -I$(ASDL_HOME)/include/asdlGen 
+LOCALLIBDIRS  = -L$(ASDL_HOME)/lib/asdlGen  -lasdl -lcii
+ASDLGEN       = $(ASDL_HOME)/bin/asdlGen
 
 all:	pass
 install-bin: install-pass
