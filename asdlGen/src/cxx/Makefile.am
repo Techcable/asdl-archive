@@ -12,7 +12,7 @@ libasdlxx_a_SOURCES = $(ASDL_OUTPUT) \
 
 
 pkginclude_HEADERS = asdl_base.hxx \
-		     AsdlValue.hxx TypePickle.hxx 
+		     AsdlValue.hxx TypePickle.hxx StdTypes.hxx
 
 pkglib_LIBRARIES = libasdlxx.a
 

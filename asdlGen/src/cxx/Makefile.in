@@ -82,7 +82,7 @@ libasdlxx_a_SOURCES = $(ASDL_OUTPUT) \
                 asdl_base.cxx asdl_base.hxx
 
 pkginclude_HEADERS = asdl_base.hxx \
-		     AsdlValue.hxx TypePickle.hxx 
+		     AsdlValue.hxx TypePickle.hxx StdTypes.hxx
 
 pkglib_LIBRARIES = libasdlxx.a
 mkinstalldirs = $(SHELL) $(top_srcdir)/src/misc/mkinstalldirs

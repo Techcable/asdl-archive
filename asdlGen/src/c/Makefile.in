@@ -90,7 +90,7 @@ xlate_LDADD =  libasdl.a libcii.a
 pkginclude_HEADERS = gpickle.h	match.h \
                      pkl-int.h \
 		     cii_base.h  cii_big_base.h  \
-		     AsdlValue.h TypePickle.h 
+		     AsdlValue.h TypePickle.h StdTypes.h
 
 pkglib_PROGRAMS = xlate
 pkglib_LIBRARIES = libasdl.a libcii.a
@@ -347,7 +347,7 @@ $(ASDL_OUTPUT): $(ASDL_INPUTS)
 
 libcii.a:
 	(cd $(CII_DIST); \
-	$(MAKE) THREADS= EXAMPLES= BUILDDIR=`pwd` )
+	$(MAKE) THREADS= EXAMPLES= BUILDDIR=./ )
 	-ln -f -s $(CII_DIST)/libcii.a .
 
 install-data-local:
