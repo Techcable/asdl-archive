@@ -1,0 +1,682 @@
+%!PS-Adobe-2.0
+%%Creator: dot version uwin98 (01-26-98)
+%%For: (danwang) Daniel Wang,GS,216,5389
+%%Title: G
+%%Pages: (atend)
+%%BoundingBox: 36 36 468 592
+%%EndComments
+%%BeginProlog
+save
+/DotDict 200 dict def
+DotDict begin
+
+%%BeginResource: procset
+/coord-font-family /Times-Roman def
+/default-font-family /Times-Roman def
+/coordfont coord-font-family findfont 8 scalefont def
+
+/InvScaleFactor 1.0 def
+/set_scale {
+	dup 1 exch div /InvScaleFactor exch def
+	dup scale
+} bind def
+
+% styles
+/solid { } bind def
+/dashed { [9 InvScaleFactor mul dup ] 0 setdash } bind def
+/dotted { [1 InvScaleFactor mul 6 InvScaleFactor mul] 0 setdash } bind def
+/invis {/fill {newpath} def /stroke {newpath} def /show {pop newpath} def} bind def
+/bold { 2 setlinewidth } bind def
+/filled { } bind def
+/unfilled { } bind def
+/rounded { } bind def
+/diagonals { } bind def
+
+% hooks for setting color 
+/nodecolor { sethsbcolor } bind def
+/edgecolor { sethsbcolor } bind def
+/graphcolor { sethsbcolor } bind def
+/nopcolor {pop pop pop} bind def
+
+/beginpage {	% i j npages
+	/npages exch def
+	/j exch def
+	/i exch def
+	/str 10 string def
+	npages 1 gt {
+		gsave
+			coordfont setfont
+			0 0 moveto
+			(() show i str cvs show (,) show j str cvs show ()) show
+		grestore
+	} if
+} bind def
+
+/set_font {
+	findfont exch
+	scalefont setfont
+} def
+
+% draw aligned label in bounding box aligned to current point
+% alignfactor tells what fraction to place on the left.
+% -.5 is centered.
+/alignedtext {			% text labelwidth fontsz alignfactor
+	/alignfactor exch def
+	/fontsz exch def
+	/width exch def
+	/text exch def
+	gsave
+		% even if node or edge is dashed, don't paint text with dashes
+		[] 0 setdash
+		currentpoint newpath moveto
+		text stringwidth pop
+		alignfactor mul fontsz -.3 mul rmoveto
+		text show
+	grestore
+} def
+
+/boxprim {				% xcorner ycorner xsize ysize
+		4 2 roll
+		moveto
+		2 copy
+		exch 0 rlineto
+		0 exch rlineto
+		pop neg 0 rlineto
+		closepath
+} bind def
+
+/ellipse_path {
+	/ry exch def
+	/rx exch def
+	/y exch def
+	/x exch def
+	matrix currentmatrix
+	newpath
+	x y translate
+	rx ry scale
+	0 0 1 0 360 arc
+	setmatrix
+} bind def
+
+/endpage { showpage } bind def
+
+/layercolorseq
+	[	% layer color sequence - darkest to lightest
+		[0 0 0]
+		[.2 .8 .8]
+		[.4 .8 .8]
+		[.6 .8 .8]
+		[.8 .8 .8]
+	]
+def
+
+/setlayer {/maxlayer exch def /curlayer exch def
+	layercolorseq curlayer get
+	aload pop sethsbcolor
+	/nodecolor {nopcolor} def
+	/edgecolor {nopcolor} def
+	/graphcolor {nopcolor} def
+} bind def
+
+/onlayer { curlayer ne {invis} if } def
+
+/onlayers {
+	/myupper exch def
+	/mylower exch def
+	curlayer mylower lt
+	curlayer myupper gt
+	or
+	{invis} if
+} def
+
+/curlayer 0 def
+
+%%EndResource
+%%EndProlog
+%%BeginSetup
+14 default-font-family set_font
+% /arrowlength 10 def
+% /arrowwidth 5 def
+%%EndSetup
+%%Page: 1 1
+%%PageBoundingBox: 36 36 468 592
+gsave
+35 35 433 557 boxprim clip newpath
+36 36 translate
+0 0 1 beginpage
+0.3383 set_scale
+0 0 translate 0 rotate
+0.000 0.000 0.000 graphcolor
+18.00 /Helvetica set_font
+
+%	semant_sig
+gsave 10 dict begin
+gsave 10 dict begin
+18.00 /Courier set_font
+703 1475 moveto (signature SEMANT) 187 18.00 -0.50 alignedtext
+end grestore
+end grestore
+
+%	translate_algebraic
+gsave 10 dict begin
+newpath 181 1320 moveto
+0 1280 lineto
+181 1240 lineto
+362 1280 lineto
+closepath
+stroke
+gsave 10 dict begin
+181 1291 moveto (functor) 51 18.00 -0.50 alignedtext
+181 1271 moveto (mkAlgebraicSemantTranslator) 221 18.00 -0.50 alignedtext
+end grestore
+end grestore
+
+%	semant_sig -> translate_algebraic
+newpath 654 1456 moveto
+563 1422 363 1348 254 1307 curveto
+stroke
+newpath 257 1311 moveto
+248 1305 lineto
+258 1306 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	translate_algol
+gsave 10 dict begin
+newpath 540 1320 moveto
+380 1280 lineto
+540 1240 lineto
+700 1280 lineto
+closepath
+stroke
+gsave 10 dict begin
+540 1291 moveto (functor) 51 18.00 -0.50 alignedtext
+540 1271 moveto (mkAlgolSemantTranslator) 191 18.00 -0.50 alignedtext
+end grestore
+end grestore
+
+%	semant_sig -> translate_algol
+newpath 688 1456 moveto
+661 1424 607 1360 573 1319 curveto
+stroke
+newpath 572 1322 moveto
+568 1313 lineto
+576 1319 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	translate_oo
+gsave 10 dict begin
+newpath 867 1320 moveto
+718 1280 lineto
+867 1240 lineto
+1016 1280 lineto
+closepath
+stroke
+gsave 10 dict begin
+867 1291 moveto (functor) 51 18.00 -0.50 alignedtext
+867 1271 moveto (mkOOSemantTranslator) 176 18.00 -0.50 alignedtext
+end grestore
+end grestore
+
+%	semant_sig -> translate_oo
+newpath 718 1456 moveto
+745 1424 799 1360 834 1319 curveto
+stroke
+newpath 831 1319 moveto
+839 1313 lineto
+835 1322 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	translate_format
+gsave 10 dict begin
+newpath 1244 1298 moveto
+1034 1298 lineto
+1034 1262 lineto
+1244 1262 lineto
+closepath
+stroke
+gsave 10 dict begin
+1139 1281 moveto (structure FormatTranslator) 193 18.00 -0.50 alignedtext
+end grestore
+end grestore
+
+%	semant_sig -> translate_format
+newpath 744 1456 moveto
+825 1420 1004 1340 1090 1301 curveto
+stroke
+newpath 1088 1299 moveto
+1098 1298 lineto
+1090 1304 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	code_pp
+gsave 10 dict begin
+gsave 10 dict begin
+18.00 /Courier set_font
+643 235 moveto (signature CODE_PP) 198 18.00 -0.50 alignedtext
+end grestore
+end grestore
+
+%	source_pp
+gsave 10 dict begin
+newpath 643 80 moveto
+500 40 lineto
+643 0 lineto
+786 40 lineto
+closepath
+stroke
+gsave 10 dict begin
+643 51 moveto (functor) 51 18.00 -0.50 alignedtext
+643 31 moveto (mkSourceFileTranslate) 167 18.00 -0.50 alignedtext
+end grestore
+end grestore
+
+%	code_pp -> source_pp
+newpath 643 216 moveto
+643 187 643 130 643 89 curveto
+stroke
+newpath 641 90 moveto
+643 80 lineto
+646 90 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	algebraic_ast
+gsave 10 dict begin
+gsave 10 dict begin
+18.00 /Courier set_font
+65 547 moveto (type output =) 152 18.00 0.00 alignedtext
+232 527 moveto (   AlgebraicAst.module list) 315 18.00 -0.50 alignedtext
+end grestore
+end grestore
+
+%	ml_pp
+gsave 10 dict begin
+newpath 295 401 moveto
+163 401 lineto
+163 365 lineto
+295 365 lineto
+closepath
+stroke
+gsave 10 dict begin
+229 384 moveto (structure MLPP) 114 18.00 -0.50 alignedtext
+end grestore
+end grestore
+
+%	algebraic_ast -> ml_pp
+newpath 232 516 moveto
+231 489 230 441 229 410 curveto
+stroke
+newpath 227 411 moveto
+229 401 lineto
+232 411 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	haskell_pp
+gsave 10 dict begin
+newpath 473 401 moveto
+313 401 lineto
+313 365 lineto
+473 365 lineto
+closepath
+stroke
+gsave 10 dict begin
+393 384 moveto (structure HaskellPP) 142 18.00 -0.50 alignedtext
+end grestore
+end grestore
+
+%	algebraic_ast -> haskell_pp
+newpath 253 516 moveto
+283 488 336 437 368 407 curveto
+stroke
+newpath 365 406 moveto
+374 401 lineto
+369 410 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	algol_ast
+gsave 10 dict begin
+gsave 10 dict begin
+18.00 /Courier set_font
+417 547 moveto (type output =) 152 18.00 0.00 alignedtext
+560 527 moveto (   AlgolAst.module list) 269 18.00 -0.50 alignedtext
+end grestore
+end grestore
+
+%	ansic_pp
+gsave 10 dict begin
+newpath 637 401 moveto
+491 401 lineto
+491 365 lineto
+637 365 lineto
+closepath
+stroke
+gsave 10 dict begin
+564 384 moveto (structure AnsicPP) 129 18.00 -0.50 alignedtext
+end grestore
+end grestore
+
+%	algol_ast -> ansic_pp
+newpath 561 516 moveto
+562 489 563 441 564 410 curveto
+stroke
+newpath 562 411 moveto
+564 401 lineto
+567 411 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	oo_ast
+gsave 10 dict begin
+gsave 10 dict begin
+18.00 /Courier set_font
+721 547 moveto (type output =) 152 18.00 0.00 alignedtext
+847 527 moveto (   OOAst.module list) 233 18.00 -0.50 alignedtext
+end grestore
+end grestore
+
+%	java_pp
+gsave 10 dict begin
+newpath 791 401 moveto
+655 401 lineto
+655 365 lineto
+791 365 lineto
+closepath
+stroke
+gsave 10 dict begin
+723 384 moveto (structure JavaPP) 119 18.00 -0.50 alignedtext
+end grestore
+end grestore
+
+%	oo_ast -> java_pp
+newpath 831 516 moveto
+808 488 767 437 743 407 curveto
+stroke
+newpath 742 410 moveto
+738 401 lineto
+746 407 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	c_plus_plus_pp
+gsave 10 dict begin
+newpath 989 401 moveto
+809 401 lineto
+809 365 lineto
+989 365 lineto
+closepath
+stroke
+gsave 10 dict begin
+899 384 moveto (structure CPlusPlusPP) 161 18.00 -0.50 alignedtext
+end grestore
+end grestore
+
+%	oo_ast -> c_plus_plus_pp
+newpath 854 516 moveto
+863 489 879 441 890 410 curveto
+stroke
+newpath 887 410 moveto
+893 401 lineto
+892 411 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	translate_sig
+gsave 10 dict begin
+gsave 10 dict begin
+18.00 /Courier set_font
+583 704 moveto (signature TRANSLATE) 222 18.00 0.00 alignedtext
+703 684 moveto ( where ...) 117 18.00 -0.50 alignedtext
+end grestore
+end grestore
+
+%	translate_sig -> algebraic_ast
+newpath 643 673 moveto
+556 644 393 589 300 559 curveto
+stroke
+newpath 300 562 moveto
+292 556 lineto
+302 557 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	translate_sig -> algol_ast
+newpath 685 673 moveto
+659 644 613 593 584 562 curveto
+stroke
+newpath 583 565 moveto
+578 556 lineto
+587 561 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	translate_sig -> oo_ast
+newpath 722 673 moveto
+747 644 794 593 822 562 curveto
+stroke
+newpath 819 561 moveto
+828 556 lineto
+823 565 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	format_ast
+gsave 10 dict begin
+gsave 10 dict begin
+18.00 /Courier set_font
+991 547 moveto (type output =) 152 18.00 0.00 alignedtext
+1134 527 moveto (  FormatAst.module list) 269 18.00 -0.50 alignedtext
+end grestore
+end grestore
+
+%	translate_sig -> format_ast
+newpath 758 673 moveto
+839 644 987 589 1071 559 curveto
+stroke
+newpath 1069 557 moveto
+1079 556 lineto
+1071 562 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	html_pp
+gsave 10 dict begin
+newpath 1187 401 moveto
+1031 401 lineto
+1031 365 lineto
+1187 365 lineto
+closepath
+stroke
+gsave 10 dict begin
+1109 384 moveto (structure HTMLPP) 138 18.00 -0.50 alignedtext
+end grestore
+end grestore
+
+%	format_ast -> html_pp
+newpath 1131 516 moveto
+1127 489 1119 441 1114 410 curveto
+stroke
+newpath 1112 411 moveto
+1112 401 lineto
+1117 410 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	semant_translate_sig
+gsave 10 dict begin
+gsave 10 dict begin
+18.00 /Courier set_font
+703 1087 moveto (signature SEMANT_TRANSLATOR) 315 18.00 -0.50 alignedtext
+end grestore
+end grestore
+
+%	translate
+gsave 10 dict begin
+newpath 703 931 moveto
+535 891 lineto
+703 851 lineto
+871 891 lineto
+closepath
+stroke
+gsave 10 dict begin
+703 902 moveto (functor) 51 18.00 -0.50 alignedtext
+703 882 moveto (mkTranslateFromTranslator) 202 18.00 -0.50 alignedtext
+end grestore
+end grestore
+
+%	semant_translate_sig -> translate
+newpath 703 1068 moveto
+703 1039 703 981 703 940 curveto
+stroke
+newpath 701 941 moveto
+703 931 lineto
+706 941 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	translate -> translate_sig
+newpath 703 851 moveto
+703 813 703 758 703 724 curveto
+stroke
+newpath 701 723 moveto
+703 713 lineto
+706 723 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	translate_algebraic -> semant_translate_sig
+newpath 249 1255 moveto
+353 1216 549 1143 645 1107 curveto
+stroke
+newpath 644 1105 moveto
+654 1104 lineto
+645 1110 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	translate_algol -> semant_translate_sig
+newpath 568 1247 moveto
+601 1208 653 1146 682 1111 curveto
+stroke
+newpath 680 1110 moveto
+688 1104 lineto
+683 1113 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	translate_oo -> semant_translate_sig
+newpath 839 1247 moveto
+806 1209 754 1146 724 1111 curveto
+stroke
+newpath 723 1113 moveto
+718 1104 lineto
+726 1110 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	semant
+gsave 10 dict begin
+newpath 775 1641 moveto
+631 1641 lineto
+631 1605 lineto
+775 1605 lineto
+closepath
+stroke
+gsave 10 dict begin
+703 1624 moveto (structure  Semant) 125 18.00 -0.50 alignedtext
+end grestore
+end grestore
+
+%	semant -> semant_sig
+newpath 703 1605 moveto
+703 1579 703 1532 703 1501 curveto
+stroke
+newpath 701 1502 moveto
+703 1492 lineto
+706 1502 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	translate_format -> semant_translate_sig
+newpath 1098 1262 moveto
+1017 1226 838 1146 752 1107 curveto
+stroke
+newpath 752 1110 moveto
+744 1104 lineto
+754 1105 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	ml_pp -> code_pp
+newpath 279 365 moveto
+357 337 504 284 586 255 curveto
+stroke
+newpath 583 254 moveto
+593 252 lineto
+585 258 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	haskell_pp -> code_pp
+newpath 424 365 moveto
+470 337 556 286 605 256 curveto
+stroke
+newpath 602 255 moveto
+612 252 lineto
+605 259 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	java_pp -> code_pp
+newpath 713 365 moveto
+699 338 672 288 656 258 curveto
+stroke
+newpath 655 262 moveto
+653 252 lineto
+660 260 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	c_plus_plus_pp -> code_pp
+newpath 868 365 moveto
+821 337 732 286 681 256 curveto
+stroke
+newpath 681 259 moveto
+674 252 lineto
+684 255 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	ansic_pp -> code_pp
+newpath 574 365 moveto
+587 339 612 292 628 261 curveto
+stroke
+newpath 626 260 moveto
+633 252 lineto
+630 262 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+
+%	html_pp -> code_pp
+newpath 1052 365 moveto
+966 337 799 284 708 255 curveto
+stroke
+newpath 708 258 moveto
+700 252 lineto
+710 253 lineto
+closepath
+gsave 0 setgray stroke grestore fill
+endpage
+grestore
+%%PageTrailer
+%%EndPage: 1
+%%Trailer
+%%Pages: 1
+end
+restore
+%%EOF
