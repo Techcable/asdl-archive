@@ -79,6 +79,9 @@ zsuif_symbol* TransSuif::make_symb(Symbol* s) {
     /* seen for the first time */
     uint32 id = this->next_symb_id++;
     identifier name = s->get_name();
+    if (name == emptyLString) {
+      name = LString("empty_id");
+    }
     zsym = new zsuif_symbol(id,name);
     smap.enter_value(s,zsym);
     return zsym;
