@@ -7,7 +7,7 @@
  *
  *)
 
-structure MLPP : ALGEBRAIC_PP =
+structure SMLPP : ALGEBRAIC_PP =
   struct 
     structure Ast = AlgebraicAst
     structure PP = PPUtil

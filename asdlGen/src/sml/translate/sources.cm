@@ -1,62 +1,64 @@
+(* TODO break this up into several CM files *)
 Group is
 smlnj-lib.cm
 ../base/asdl-base.cm
 ../frontend/sources.cm
 ../asts/sources.cm
 
-type-decl.sig
-type-decl.sml
+support/type-decl.sig
+support/type-decl.sml
+support/aux-decls.sig
+support/translate.sig
+support/translate.sml
+support/semant-translator.sig
+support/semant-translate.sml
+support/file-translate.sml
+support/source-translate.sml
+support/idfix.sml
+support/stmt-exp.sig
+support/stmt-exp.sml
 
-aux-decls.sig
-std-pickler.sml
-std-pickler.sig
-xml-pickler.sml
-xml-pickler.sig
-attrib-getter.sig
-attrib-getter.sml
+picklers/std-pickler.sml
+picklers/std-pickler.sig
+picklers/xml-pickler.sml
+picklers/xml-pickler.sig
 
-translate.sig
-translate.sml
-semant-translator.sig
-semant-translate.sml
-file-translate.sml
-source-translate.sml
+utils/attrib-getter.sig
+utils/attrib-getter.sml
 
-translate-format.sml
-html-pp.sml 
+algol/algol-spec.sig
+algol/algol-spec.sml
+algol/algol-semant-translator.sml
+algol/translate-ansi-c.sml 
+algol/ansi-c-pp.sml
 
-translate-xml-dtd.sml
-xml-dtd-pp.sml
+oo/oo-spec.sig
+oo/oo-spec.sml
+oo/oo-semant-translator.sml
+oo/oo-build-aux.sml
+oo/java-pp.sml
+oo/c-plus-plus-pp.sml 
 
-idfix.sml
+algebraic/algebraic-spec.sig
+algebraic/algebraic-spec.sml
+algebraic/algebraic-semant-translator.sml
+algebraic/sml-pp.sml
+algebraic/ocaml-pp.sml
+algebraic/haskell-pp.sml
 
-translate-ansi-c.sml 
-algol-spec.sig
-algol-spec.sml
-algol-semant-translator.sml
-ansi-c-pp.sml
-
-oo-spec.sig
-oo-spec.sml
-oo-semant-translator.sml
-oo-build-aux.sml
-java-pp.sml
-c-plus-plus-pp.sml 
-
-algebraic-spec.sig
-algebraic-spec.sml
-algebraic-semant-translator.sml
-ml-pp.sml
-haskell-pp.sml
-
-translate-yacc-grammar.sml
-yacc-grammar-pp.sml
-(* move to util *)
-stmt-exp.sig
-stmt-exp.sml
-
-dynamic-spec.sig
-dynamic-spec.sml
-dynamic-semant-translator.sml
-icon-pp.sml
+dynamic/dynamic-spec.sig
+dynamic/dynamic-spec.sml
+dynamic/dynamic-semant-translator.sml
+dynamic/icon-pp.sml
 (* perl ... scheme ... lisp *)
+
+misc/translate-format.sml
+misc/html-pp.sml 
+misc/translate-xml-dtd.sml
+misc/xml-dtd-pp.sml
+misc/translate-yacc-grammar.sml
+misc/yacc-grammar-pp.sml
+
+
+
+

@@ -635,7 +635,13 @@ Build a new module info and add it to the current module environment.
 			      decls=
 			      [mk_vd (["StdPrims","int"],"source_name","int"),
 			       mk_vd (["StdPrims","string"],"source_name",
-				"String")]}}]
+				      "String")]}},
+			     {file="<bultin>",
+			      decl=T.View
+			      {name=Identifier.fromString "OCaml",
+			       decls=
+			       [mk_vd (["StdPrims","int"],"source_name","StdPrims.std_int"),
+				mk_vd (["StdPrims","string"],"source_name","StdPrims.std_string")]}}]
 				     
 	    fun declare {view,inits} ds =
 	      let

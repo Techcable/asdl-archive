@@ -41,28 +41,53 @@ structure Link =
 	       structure Gen = YaccGrammarGen
 	       val dflt_view = "Yacc")
 	
-      structure MLAlgebraicSpec =
+      structure SMLAlgebraicSpec =
 	mkAlgebraicSpec(structure Ty = AlgebraicTy
 			val get_attribs = true
 			val ignore_labels = false
 			val streams_ty = NONE
 			val monad_name = NONE)
 	
-      structure MLTranslator =
+      structure SMLTranslator =
 	mkAlgebraicSemantTranslator
-	(structure IdFix = IdFix.ML
-	 structure Spec = MLAlgebraicSpec
+	(structure IdFix = IdFix.SML
+	 structure Spec = SMLAlgebraicSpec
 	 val fix_fields = false)
 	   
-      structure MLGen =
+      structure SMLGen =
 	mkTranslateFromTranslator
-	(structure T = MLTranslator
-	 structure G = mkSourceFileOutput(structure PP = MLPP))
-      structure ML =
+	(structure T = SMLTranslator
+	 structure G = mkSourceFileOutput(structure PP = SMLPP))
+
+      structure SML =
 	mkMain(structure S = Semant
 	       structure Parser = AsdlParser
-	       structure Gen = MLGen 
+	       structure Gen = SMLGen 
 	       val dflt_view = "SML")
+
+      structure OCamlAlgebraicSpec =
+	mkAlgebraicSpec(structure Ty = AlgebraicTy
+			val get_attribs = false
+			val ignore_labels = true
+			val streams_ty = NONE
+			val monad_name = NONE)
+	
+      structure OCamlTranslator =
+	mkAlgebraicSemantTranslator
+	(structure IdFix = IdFix.OCaml
+	 structure Spec = OCamlAlgebraicSpec
+	 val fix_fields = false)
+	   
+      structure OCamlGen =
+	mkTranslateFromTranslator
+	(structure T = OCamlTranslator
+	 structure G = mkSourceFileOutput(structure PP = OCamlPP))
+
+      structure OCaml =
+	mkMain(structure S = Semant
+	       structure Parser = AsdlParser
+	       structure Gen = OCamlGen 
+	       val dflt_view = "OCaml")
 	
        structure HaskellAlgebraicSpec =
 	 mkAlgebraicSpec(structure Ty = AlgebraicTy

@@ -21,7 +21,9 @@ structure Export =
 
 	val YaccGrammarGenFn =  mkExportFn Link.YaccGrammar.do_it
 	    
-	val MLGenFn =  mkExportFn Link.ML.do_it
+	val SMLGenFn =  mkExportFn Link.SML.do_it
+
+	val OCamlGenFn =  mkExportFn Link.OCaml.do_it
 
 	val AnsiCGenFn = mkExportFn Link.AnsiC.do_it
 
@@ -52,7 +54,8 @@ structure Export =
 	fun asdlGen (name, ("--java"::rs)) = JavaGenFn(name,rs)
 	  | asdlGen (name, ("--c"::rs)) = AnsiCGenFn(name,rs)
 	  | asdlGen (name, ("--cxx"::rs)) = CPlusPlusGenFn(name,rs)
-	  | asdlGen (name, ("--sml"::rs)) = MLGenFn(name,rs)
+	  | asdlGen (name, ("--sml"::rs)) = SMLGenFn(name,rs)
+	  | asdlGen (name, ("--ocaml"::rs)) = OCamlGenFn(name,rs)
 	  | asdlGen (name, ("--haskell"::rs)) = HaskellGenFn(name,rs)
 	  | asdlGen (name, ("--icon"::rs)) = IconGenFn(name,rs)
 	  | asdlGen (name, ("--doc"::rs)) = HTMLGenFn(name,rs)
@@ -65,7 +68,8 @@ structure Export =
 	  | asdlGen (name, ("-Ljava"::rs)) = JavaGenFn(name,rs)
 	  | asdlGen (name, ("-Lc"::rs)) = AnsiCGenFn(name,rs)
 	  | asdlGen (name, ("-Lcxx"::rs)) = CPlusPlusGenFn(name,rs)
-	  | asdlGen (name, ("-Lsml"::rs)) = MLGenFn(name,rs)
+	  | asdlGen (name, ("-Lsml"::rs)) = SMLGenFn(name,rs)
+	  | asdlGen (name, ("-Locaml"::rs)) = OCamlGenFn(name,rs)
 	  | asdlGen (name, ("-Lhaskell"::rs)) = HaskellGenFn(name,rs)
 	  | asdlGen (name, ("-Licon"::rs)) = IconGenFn(name,rs)
 	  | asdlGen (name, ("-Ldoc"::rs)) = HTMLGenFn(name,rs)
@@ -78,7 +82,8 @@ structure Export =
 	  | asdlGen (name, ("-L"::"java"::rs)) = JavaGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"c"::rs)) = AnsiCGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"cxx"::rs)) = CPlusPlusGenFn(name,rs)
-	  | asdlGen (name, ("-L"::"sml"::rs)) = MLGenFn(name,rs)
+	  | asdlGen (name, ("-L"::"sml"::rs)) = SMLGenFn(name,rs)
+	  | asdlGen (name, ("-L"::"ocaml"::rs)) = OCamlGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"haskell"::rs)) = HaskellGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"icon"::rs)) = IconGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"doc"::rs)) = HTMLGenFn(name,rs)
@@ -94,7 +99,7 @@ structure Export =
 		    List.map (fn x => (x (name,rs)))
 		    [CheckFn,TypGenFn,XMLDTDGenFn,HTMLGenFn,
 		     JavaGenFn,AnsiCGenFn,CPlusPlusGenFn,
-		     MLGenFn,HaskellGenFn]
+		     SMLGenFn,HaskellGenFn,OCamlGenFn]
 	    in
 		     if (all_success rets) then
 			 OS.Process.success

@@ -50,14 +50,19 @@ functor BuildDoc(structure DT : BUILD_DTANGLE
     val ctx = (["asdl"],DT.ADA)      
     val res = do_dir ctx res [("asdl.nw",["asdl.asdl"])]
       
-    val ctx = (["sml","translate"],DT.ML)      
+    val ctx = (["sml","translate","support"],DT.ML)      
     val res = do_dir ctx res
-      [mk "std-pickler",
-       mk "stmt-exp",
+      [mk "stmt-exp",
        mk "type-decl",
-       mk "algebraic-spec",
        mk_sig "semant-translator",
-       mk_sml "semant-translate",
+       mk_sml "semant-translate"]
+    val ctx = (["sml","translate","picklers"],DT.ML)      
+    val res = do_dir ctx res
+      [mk "std-pickler"]
+
+    val ctx = (["sml","translate","algebraic"],DT.ML)      
+    val res = do_dir ctx res
+      [mk "algebraic-spec",
        mk_sml "algebraic-semant-translator"]
 
     val ctx = (["sml","util","meta-build"],DT.ML)      

@@ -8,3 +8,5 @@ module-id.sig
 module-id.sml
 parameters.sml
 properties.sml
+source-ids.sig
+source-ids.sml

@@ -68,7 +68,7 @@ structure IdFix =
 		val ty_fix = fix_path ty_tbl
 	    end
 	
- 	structure ML =
+ 	structure SML =
 	    mkFixer(val id_map = List.map (fix_kw "'") 
 			["and", "abstraction", "abstype", "as",
 			 "case", "datatype", "else", "end", "eqtype",
@@ -81,7 +81,7 @@ structure IdFix =
 			 "where", "while", "with", "withtype",
 			 "orelse", "andalso"]
 		    val ty_map = id_map
-		    val name = "ML")
+		    val name = "SML")
 
       structure Haskell =
 	    mkFixer(val id_map = List.map (fix_kw "'") 
@@ -95,7 +95,9 @@ structure IdFix =
 		    val name = "Haskell")
 
 
-
+       structure OCaml = mkFixer(val id_map = []
+				 val ty_map = []
+				 val name = "OCaml")
 	    
        structure AnsiC =
 	   mkFixer(val id_map = List.map (fix_kw "_")
