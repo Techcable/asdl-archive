@@ -52,6 +52,7 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 
 	val seq_type = (TyId (TypeId.fromString "list"))
 	val opt_type = (TyId (TypeId.fromString "opt"))
+	val share_type = (TyId (TypeId.fromString "share"))
 	fun emalloc(dst,size) =
 	    [Exp(Assign(dst,Call(Variable new_id,[size]))),
 	     If{test=Binop(EQ,dst,Constant(NULL)),
@@ -80,8 +81,17 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 	    TyEnum(Option.map trans_id  id,trans_enumers el)
 	  | trans_ty_exp id (T.TyFunction(fl,ty)) =
 	    TyFunctionPtr(trans_fields fl,trans_ty_exp id ty)
+	  | trans_ty_exp id (T.TyOption (T.TyId tid)) =
+	    TyAnnotate(T.TypeId.toString tid,opt_type)
+	  | trans_ty_exp id (T.TySequence (T.TyId tid)) = 
+	    TyAnnotate(T.TypeId.toString tid,seq_type)
+	  | trans_ty_exp id (T.TyShare (T.TyId tid)) = 
+	    TyAnnotate(T.TypeId.toString tid,share_type) 
 	  | trans_ty_exp id (T.TyOption ty) = opt_type
 	  | trans_ty_exp id (T.TySequence ty) = seq_type
+	  | trans_ty_exp id (T.TyShare ty) = share_type
+	  | trans_ty_exp id (T.TyAnnotate (s,ty)) =
+	    TyAnnotate(s,trans_ty_exp id ty)
 
 	    
 	and trans_const (T.IntConst i) = I i
@@ -162,17 +172,15 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 			trans_block block)))
 	  | trans_decl (T.DeclConst(id,c,te)) =
 	    let
-	      (*
-		val te = TyQualified(Const,trans_ty_exp NONE te)
-		  *)
+	      (* val te = TyQualified(Const,trans_ty_exp NONE te) *)
 		val te = trans_ty_exp NONE te
-	    in
-		Var(VarDecInit(NONE,te,trans_id id,
-				Constant (trans_const c)))
+	    in Var(VarDecInit(NONE,te,trans_id id,
+			      Constant (trans_const c)))
 	    end
 	  | trans_decl (T.DeclLocalConst(id,c,te)) =
 	    let
-		val te = TyQualified(Const,trans_ty_exp NONE te)
+	      val te = trans_ty_exp NONE te
+	      (* val te = TyQualified(Const,trans_ty_exp NONE te) *)
 	    in
 		Var(VarDecInit(SOME Static,te,trans_id id,
 				Constant (trans_const c)))

@@ -1,9 +1,4 @@
 Group is
 ../translate/sources.cm
-aka.sml
-TypePickle.sig
-TypePickle.sml
-AsdlValue.sig
-AsdlValue.sml
 gpickle.sml
 gen-type-pickle.sml

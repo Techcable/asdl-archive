@@ -24,6 +24,7 @@ signature ANSI_C =
 	  | TyAggregate    of (aggregate * id option * field list)
 	  | TyQualified    of (qualifier * ty_exp)
 	  | TyGroup        of (ty_exp)
+	  | TyAnnotate     of (string * ty_exp)
 	    
 	and ty_dec =
 	    TyDec          of (ty_id * ty_exp)

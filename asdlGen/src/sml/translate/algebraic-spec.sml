@@ -24,6 +24,7 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 			val streams_ty : {outs:string,ins:string} option
 			val monad_name : string option) =
   struct
+    val aux_suffix = "Util"
     structure Arg =
       struct 
 	open Ty.Ast
@@ -40,8 +41,17 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
       else
 	(Call(Id (VarId.fromString "die"),[Tuple([],NONE)]))
 	
-	fun mk_name s  =
-	  (VarId.prefixBase (s^"_")) o VarId.fromPath o TypeId.toPath
+	fun mk_name s id =
+	  let
+	    val {qualifier,base} = TypeId.toPath id
+	    val base = s^"_"^base
+	    val qualifier =
+	      case qualifier of
+		[q] => [q^aux_suffix]
+	      | _ => qualifier
+	  in
+	    VarId.fromPath{base=base,qualifier=qualifier}
+	  end
 	  
 	val rd_name = mk_name "read"
 	val wr_name = mk_name "write"

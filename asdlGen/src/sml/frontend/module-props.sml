@@ -64,6 +64,8 @@ signature MOD_ENV_PROPS =
     val init_mono_types : bool -> init
     val pickler_kind : props -> string option
     val init_pickler_kind : string option -> init
+    val explicit_sharing : props -> bool
+    val init_explicit_sharing : bool -> init
   end
 functor CommonProps(val name : string) =
 	    struct
@@ -142,6 +144,8 @@ structure ModEnvProps :> MOD_ENV_PROPS =
 	val (pickler_kind,init_pickler_kind) =
 	  decl_string_opt p {name="pickler_kind",
 			     default=SOME "std"}
+	val (explicit_sharing,init_explicit_sharing) =
+	  decl_bool p {name="explicit_sharing",default=false}
 
     end 
 

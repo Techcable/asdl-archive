@@ -56,8 +56,8 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 	val arg_id     = VarId.fromString "_x"
 	val ret_id     = VarId.fromString "_r"
 	val stream_id  = VarId.fromString "_s"
-	val wr_tag_name = VarId.fromString "write_tag"
-	val rd_tag_name = VarId.fromString "read_tag"
+	val wr_tag_name = VarId.fromString "std_write_tag"
+	val rd_tag_name = VarId.fromString "std_read_tag"
 	val outstream_ty = TyId (TypeId.fromString "outstream")
 	val instream_ty = TyId (TypeId.fromString "instream")
 	  
@@ -198,6 +198,16 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
       let
 	val seq_rep = TySequence
 	val opt_rep = TyOption
+	fun s2p ty e =
+	  EVAL(e,TyShare ty,
+	       (fn e => RET(FnCall(VarId.fromString "share2ptr",[e]))))
+	fun p2s e =
+	  EVAL(e,TyRefAny,
+	       (fn e => RET(FnCall(VarId.fromString "ptr2share",[e]))))
+	fun id ty e = e
+	val (share_rep,p2s,s2p) =
+	  if (Module.ME.explicit_sharing m) then  (TyShare,(fn x => x),id)
+	  else ((fn t => TyAnnotate("shared",t)),p2s,s2p)
 	  
 	fun ty_exp  (Ty.Prim {ty,...}) = ty
 	  | ty_exp  (Ty.Prod {ty,...}) = ty
@@ -228,49 +238,57 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 	  
 	val rd_option_name = VarId.fromString (prefix^"read_option")
 	val wr_option_name = VarId.fromString (prefix^"write_option")
-	  
+
+	val rd_share_name = VarId.fromString (prefix^"read_share")
+	val wr_share_name = VarId.fromString (prefix^"write_share")
 
 	val seq_con =
 	  let
 	    fun ty_con (tid,t) =
-	      let
-		val ty = seq_rep (ty_exp t)
-		val rd = mk_rd rd_list_name tid
-		val wr = mk_wr wr_list_name (tid,ty)
-	      in
-		(ty,{wr=SOME wr,rd=SOME rd})
+	      let val ty = seq_rep (ty_exp t)
+		  val rd = mk_rd rd_list_name tid
+		  val wr = mk_wr wr_list_name (tid,ty)
+	      in (ty,{wr=SOME wr,rd=SOME rd})
 	      end
-	  in
-	    ty_con:Ty.ty_con
+	  in  ty_con:Ty.ty_con
 	  end
-	
 	val opt_con =
 	  let
 	    fun ty_con (tid,t) =
-	      let
-		val ty = opt_rep (ty_exp t)
-		val rd = mk_rd rd_option_name tid
-		val wr = mk_wr wr_option_name (tid,ty)
-	      in
-		(ty,{wr=SOME wr,rd=SOME rd})
+	      let val ty = opt_rep (ty_exp t)
+		  val rd = mk_rd rd_option_name tid
+		  val wr = mk_wr wr_option_name (tid,ty)
+	      in (ty,{wr=SOME wr,rd=SOME rd})
 	      end
-	  in
-	    ty_con:Ty.ty_con
+	  in ty_con:Ty.ty_con
+	  end
+	val share_con =
+	  let
+	    fun ty_con (tid,t) =
+	      let val ty = share_rep (ty_exp t)
+		  val share_ty = (TyShare (ty_exp t))
+		  val rd = (s2p share_ty) (mk_rd rd_share_name tid)
+		  val wr = (mk_wr wr_share_name (tid,share_ty)) o p2s
+	      in (ty,{wr=SOME wr,rd=SOME rd})
+	      end
+	  in ty_con:Ty.ty_con
 	  end
 	
 	val seq_tid = TypeId.suffixBase "_list" 
+	val share_tid = TypeId.suffixBase "_share" 
 	val opt_tid = TypeId.suffixBase "_option" 
       in
 	case k of
 	  Module.Sequence => {mktid=seq_tid,mkrep=seq_rep,con=seq_con}
 	| Module.Option =>  {mktid=opt_tid,mkrep=opt_rep,con=opt_con}
-	| _ => raise Error.unimplemented
+	| Module.Shared =>  {mktid=share_tid,mkrep=share_rep,con=share_con}
       end
 
     fun get_prims me =
       let
 	val {con=seq_con,mktid=seq_tid,...} = get_reps me Module.Sequence
 	val {con=opt_con,mktid=opt_tid,...} = get_reps me Module.Option
+	val {con=share_con,mktid=share_tid,...} = get_reps me Module.Shared
 
  	val prefix = pkl_kind me {xml="xml_",std="std_"}
  	fun read tid = RET (FnCall(mk_name (prefix^"read") tid,[Id stream_id]))
@@ -285,6 +303,7 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 	  in
 	    (tid,Ty.Prim {ty=TyId tid,info=info,name=s})::
 	    (seq_tid tid,Ty.App(seq_con,tid))::
+	    (share_tid tid,Ty.App(share_con,tid))::
 	    (opt_tid tid,Ty.App(opt_con,tid))::ps
 	  end
 	val prims = addPrim ("int",[])

@@ -23,8 +23,7 @@ functor mkAlgebraicModuleTranslator
       val fix_id = T.VarId.subst IdFix.id_fix
       val fix_ty = T.TypeId.subst IdFix.ty_fix
 	
-      fun trans_tid  true = fix_ty o T.TypeId.fromString o Id.getBase
-	| trans_tid false = fix_ty o T.TypeId.fromPath o Id.toPath
+      val trans_tid  = fix_ty o T.TypeId.fromPath o Id.toPath
 	
       type defined_value  = {ty_decl:Ty.ty_decl,decl:T.decl}
       type con_value      = {con:Ty.con,choice:Ty.choice,match:T.match}
@@ -37,7 +36,7 @@ functor mkAlgebraicModuleTranslator
       
       fun trans_field p {finfo,kind,name,tname,tinfo,is_local,props} =
 	let
-	  val tid = (trans_tid is_local tname)
+	  val tid = trans_tid tname
 	  val ty = (T.TyId tid)
 	  val {natural_ty,...} = Spec.get_wrappers ty props 
 	  val (ty,tid) =
@@ -92,7 +91,7 @@ functor mkAlgebraicModuleTranslator
       
       fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} =
 	let
-	  val trans_cid = fix_id o T.VarId.fromString o Id.getBase
+	  val trans_cid = fix_id o T.VarId.fromPath o Id.toPath
 	  val tag_v = M.con_tag cinfo
 	  val name = trans_cid name
 	  val {ty,fields,match_exp,bvars,mk_cnstr} =
@@ -109,7 +108,7 @@ functor mkAlgebraicModuleTranslator
       
       fun trans_defined p {tinfo,name,fields,cons=[],props} =
 	let
-	  val name = trans_tid true name
+	  val name = trans_tid name
 	  val {ty,fields,match_exp,bvars,mk_cnstr} =
 	    trans_fields (SOME name) fields
 	  val {natural_ty,unwrap,wrap,...} =
@@ -124,7 +123,7 @@ functor mkAlgebraicModuleTranslator
 	end
 	| trans_defined p {tinfo,name,fields,cons,props} =
 	let
-	  val name = trans_tid true name
+	  val name = trans_tid name
 	  val ty = (T.TyId name)
 	  fun mk_clause f {con,choice,match} =  (match,f choice)
 	  val {natural_ty,unwrap,wrap,...} = Spec.get_wrappers ty props 
@@ -144,7 +143,7 @@ functor mkAlgebraicModuleTranslator
 
       fun trans_type_con p {tinfo,name,props,kinds}  =
 	let
-	  val tid = (trans_tid true name)
+	  val tid = (trans_tid name)
 	  fun do_kind k = 
 	    let val {mktid,con,...} = Spec.get_reps p k
 	    in (mktid tid,Ty.App(con,tid))
@@ -172,11 +171,13 @@ functor mkAlgebraicModuleTranslator
 	let
 	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs) Spec.prims ms
 	  val new_decls = (Spec.get_aux_decls p (Ty.mk_env ty_decls))
-	  fun add_decls (ty_decls,(T.Module{name,imports,decls},mp)) =
-	    (T.Module{name=name,
-		     imports=imports,
-		     decls=decls@(new_decls ty_decls)},mp)
-	  val out = List.map add_decls ms 
+	  val aux_mod_name = T.ModuleId.suffixBase Spec.aux_suffix
+	  val all = (List.map (fn (_,m) => m) ms)
+	  fun mk_aux_mods (ty_decls,(T.Module{name,imports,decls},mp)) =
+	    (T.Module{name=aux_mod_name name,
+		     imports=name::imports@(List.map aux_mod_name imports),
+		     decls=(new_decls ty_decls)},mp)
+	  val out = all@(List.map mk_aux_mods ms)
 	in
 	  List.filter (not o M.Mod.suppress o #2) out
 	end

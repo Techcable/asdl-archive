@@ -16,3 +16,7 @@ field = Id | Option | Sequence
     attributes (identifier*, identifier?) 
 
 }
+view Java {
+-- sillyness for winNT
+Asdl.Con <= source_name : Cnstr
+}

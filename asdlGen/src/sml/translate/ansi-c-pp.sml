@@ -83,6 +83,8 @@ functor mkPPAnsiC(structure T: ANSI_C) : PP_ANSI_C =
 	    PP.cat [pp_ty_exp te, PP.s " * ",pp_qualifier q]
 	  | pp_ty_exp (T.TyQualified (q,te)) =
 	    PP.cat [pp_qualifier q,PP.s " ",pp_ty_exp te]
+	  | pp_ty_exp (T.TyAnnotate (s,te)) =
+	    PP.hblock 2 [PP.s "/* ",PP.s s,PP.s " */ ",pp_ty_exp te]
 	  | pp_ty_exp (T.TyGroup te) =
 	    PP.hblock 0 [PP.s "(",pp_ty_exp te,PP.s ")"]
 
@@ -126,26 +128,26 @@ functor mkPPAnsiC(structure T: ANSI_C) : PP_ANSI_C =
 		    PP.s " = ",pp_exp exp]
 
 	and pp_fun_dec (T.FunPrototypeDec(id,[],te)) =
-	    PP.cat[pp_ty_exp te,PP.s " ",pp_id id,PP.s "(void);"]
+	    PP.cat[pp_ty_exp te,PP.ws,pp_id id,PP.s "(void);"]
 	  | pp_fun_dec (T.FunPrototypeDec(id,fl,te)) =
-	    PP.cat[pp_ty_exp te,PP.s " ",
+	    PP.hblock 2 [pp_ty_exp te,PP.ws,
 		   pp_id id,
-		   PP.hblock 0 [PP.s "(",
+		   PP.vblock 1 [PP.s "(",
 				PP.seq{fmt=pp_field,sep=comma_sep} fl,
 				PP.s ");"]]
 	  | pp_fun_dec (T.FunDec(id,fl,te,b)) =
-	    PP.vblock 0 [pp_ty_exp te,PP.s " ",pp_id id,
-			 PP.hblock 0 [PP.s "(",
+	    PP.hblock 2 [pp_ty_exp te,PP.ws,pp_id id,
+			 PP.vblock 1 [PP.s "(",
 				      PP.seq{fmt=pp_field,sep=comma_sep} fl,
 				      PP.s ")"],
-			 PP.nl,pp_block b]
+			 PP.nl,PP.vblock 0 [pp_block b]]
 	  | pp_fun_dec (T.FunStaticDec(id,fl,te,b)) =
-	    PP.vblock 0 [PP.s "static ",
-			 pp_ty_exp te,PP.s " ",pp_id id,
-			 PP.hblock 0 [PP.s "(",
+	    PP.hblock 2 [PP.s "static ",
+			 pp_ty_exp te,PP.ws,pp_id id,
+			 PP.vblock 1 [PP.s "(",
 				      PP.seq{fmt=pp_field,sep=comma_sep} fl,
 				      PP.s ")"],
-			 PP.nl,pp_block b]
+			 PP.vblock 0 [pp_block b]]
 	    
 
 	and pp_decl (T.Ty td) =

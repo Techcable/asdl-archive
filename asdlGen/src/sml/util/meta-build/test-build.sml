@@ -1,82 +1,3 @@
-structure UnixBuildParams : CC_BUILD_PARAMS =
-  struct
-    structure B = MetaBuild
-
-    val comp  =
-      B.mkVAR{name=SOME "CC",
-	      doc=["Unix C compiler"],
-	      init=B.STR "gcc"}
-
-    val link  =
-      B.mkVAR{name=SOME "LD",
-	      doc=["Unix C linker"],
-	      init=B.STR "gcc"}
-
-    val mklib =
-      B.mkVAR{name=SOME "MKLIB",
-	      doc=["Unix Library Archiver"],
-	      init=B.STR "ar"}
-
-    val comp_args = [B.STR "-c"]
-    val link_args = []
-    val mklib_args = [B.STR "crs"]
-
-    fun debugFlag true  = B.STR "-g"
-      | debugFlag false = B.STR ""
-
-    fun optFlag x = B.STR ("-O"^(Int.toString x))
-    fun incFlag x = B.STR ("-I"^x)
-    fun libFlag x = B.STR ("-L"^x)
-    fun defFlag (x,NONE) = B.STR ("-D"^x)
-      | defFlag (x,SOME y) = B.STR ("-D"^x^"="^y)
-
-    fun linkOutFlag x = B.STR ("-o"^x)
-    fun compOutFlag x = B.STR ("-o"^x)
-    fun mklibOutFlag x = B.STR (x)
-
-    val lib_suffix = SOME "a"
-    val obj_suffix = SOME "o"
-    val exe_suffix = NONE
-  end
-structure Win32BuildParams : CC_BUILD_PARAMS =
-  struct
-    structure B = MetaBuild
-
-    val comp  =
-      B.mkVAR{name=SOME "CC",
-	      doc=["Win32 C  compiler"],
-	      init=B.STR "cl"}
-
-    val link  =
-      B.mkVAR{name=SOME "LD",
-	      doc=["Win32 C linker"],
-	      init=B.STR "link"}
-
-    val mklib =
-      B.mkVAR{name=SOME "MKLIB",
-	      doc=["Win32 Library Archiver"],
-	      init=B.STR "lib"}
-
-    val comp_args = [B.STR "/nologo",B.STR "/c",B.STR "/Za"]
-    val link_args = [B.STR "/nologo"]
-    val mklib_args = [B.STR "/nologo"]
-
-    fun debugFlag _ = B.STR ""
-
-    fun optFlag _ = B.STR ("/O2")
-    fun incFlag x = B.STR ("/I"^x)
-    fun libFlag x = B.STR ("/L"^x)
-    fun defFlag (x,NONE) = B.STR ("/D"^x)
-      | defFlag (x,SOME y) = B.STR ("/D"^x^"="^y)
-    fun linkOutFlag x = B.STR ("/Fe"^x)
-    fun compOutFlag x = B.STR ("/Fo"^x)
-    fun mklibOutFlag x = B.STR ("/OUT:"^x)
-    val lib_suffix = SOME "lib"
-    val obj_suffix = SOME "obj"
-    val exe_suffix = SOME "exe"
-  end
-structure Win32CCBuild = CCBuild(structure Params = Win32BuildParams)
-structure UnixCCBuild = CCBuild(structure Params = UnixBuildParams)
 
 functor TestBuild(structure CC : CC_BUILD) =
   struct
@@ -116,5 +37,5 @@ functor TestBuild(structure CC : CC_BUILD) =
 			     rules=[CC.B.RULE{valid=CC.B.INVALID,
 					      update=build}]}
   end
-structure TestUnix = TestBuild(structure CC = UnixCCBuild)
-structure TestWin32 = TestBuild(structure CC = Win32CCBuild)
+structure TestUnix = TestBuild(structure CC = UnixCC)
+structure TestWin32 = TestBuild(structure CC = Win32CC)

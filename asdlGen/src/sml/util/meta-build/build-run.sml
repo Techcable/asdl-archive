@@ -86,10 +86,9 @@ structure BuildRun :> RUNNABLE_BUILD =
        let
 	 val cmd = (join (List.map getString ((VAR x)::xs)))
        in
-	 dprint cmd;
 	 if ((OS.Process.system cmd) = OS.Process.success) then
-    (dprint "OK";OK ())
-	 else (dprint "FAIL";FAIL)
+	   (dprint ("OK:"^cmd);OK ())
+	 else (dprint ("FAIL:"^cmd);FAIL)
        end)
     val  INVALID  = ((fn () => FAIL),{targets=[],depends=[]})
     fun VALIDATE {targets,depends} =
@@ -99,19 +98,20 @@ structure BuildRun :> RUNNABLE_BUILD =
 	  if (Time.<(x,y)) then y else x
 	fun mintime (x,y) =
 	  if (Time.<(x,y)) then x else y
-	fun newer (x,y) = Time.>(x,y) 
-	  
-	  
+	fun newer (x,y) = Time.>=(x,y) 
+	  	  
 	fun do_it () =
 	  let
 	    val tmin =
 	      ((List.foldl
-		(fn (x,xs) => (mintime (mtime x,xs))) (Time.now()) targets)
-	       handle (OS.SysErr _ )=> Time.zeroTime)
+		(fn (x,SOME xs) => SOME(mintime (mtime x,xs))
+                  | (x,NONE) => (SOME (mtime x))) NONE targets)
+	       handle (OS.SysErr _ )=>  NONE)
+	    val tmin = Option.getOpt(tmin,Time.zeroTime)
 	    val dmax = List.foldl
 	      (fn (x,xs) => (maxtime (mtime x,xs))) Time.zeroTime depends
 	  in
-	     if (newer(tmin,dmax)) then OK () else FAIL
+	    if (newer(tmin,dmax)) then OK () else FAIL
 	  end 
       in
 	(do_it,{targets=List.map Paths.fileToNative targets,

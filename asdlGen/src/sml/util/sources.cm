@@ -16,3 +16,4 @@ sourcemap.sig
 sourcemap.sml
 pp.sml
 ppqueue.sml
+getopt/sources.cm

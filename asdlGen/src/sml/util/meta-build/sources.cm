@@ -6,5 +6,9 @@ meta-build.sml
 build-run.sml
 build-export.sml
 cc-build.sml
-test-build.sml
 cc-depends.sml
+
+file-ops-build.sml
+unix-build.sml
+win32-build.sml
+test-build.sml

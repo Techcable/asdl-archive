@@ -5,12 +5,12 @@ smlnj-lib.cm
 
 type-decl.sig
 type-decl.sml
+
+aux-decls.sig
 std-pickler.sml
 std-pickler.sig
-
 xml-pickler.sml
 xml-pickler.sig
-
 attrib-getter.sig
 attrib-getter.sml
 

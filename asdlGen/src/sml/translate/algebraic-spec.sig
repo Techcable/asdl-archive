@@ -31,6 +31,7 @@ signature ALGEBRAIC_SPEC =
     val inits : Module.ME.init list
     val prims : Ty.ty_decl list
 
+    val aux_suffix : string
     val get_reps : Module.ME.props ->
                    Module.field_kind -> {mkrep:Ty.ty_exp -> Ty.ty_exp,
 					 mktid:Ty.ty_id -> Ty.ty_id,

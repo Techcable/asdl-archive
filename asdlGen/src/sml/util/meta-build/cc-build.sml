@@ -1,7 +1,6 @@
 signature CC_BUILD =
   sig
     structure B : CORE_BUILD
-
     type src_file
     type obj_file
     type lib_file
@@ -37,6 +36,7 @@ signature CC_BUILD =
     val exe_path  : exe_file -> Paths.file_path
     val lib_path  : lib_file -> Paths.file_path
   end
+
 signature CC_BUILD_PARAMS =
   sig
     structure B    : CORE_BUILD
@@ -109,7 +109,7 @@ functor CCBuild(structure Params:CC_BUILD_PARAMS) : CC_BUILD =
 	  in
 	    (obj,
 	     mkRule([obj],[src],B.EXEC(Params.comp,flags@
-		   [Params.linkOutFlag (Paths.fileToNative obj),
+		   [Params.compOutFlag (Paths.fileToNative obj),
 		    B.STR (Paths.fileToNative src)])))
 	  end
 	val res = List.map comp srcs

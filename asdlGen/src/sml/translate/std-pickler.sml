@@ -6,7 +6,6 @@
  * Author: Daniel C. Wang
  *
  *)
-
 functor StdPickler (structure Arg : STD_PICKLER_ARG) : AUX_DECLS =
   struct
     structure Ty = Arg.Ty

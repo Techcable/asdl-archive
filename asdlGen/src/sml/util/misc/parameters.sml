@@ -26,7 +26,7 @@ signature PARAMETERS =
 (*	val declareConfig : cfg -> cfg    cfg_spec -> params param
 *)
 	val requireBool   : cfg -> string -> bool param
-	val requireInt    : cfg -> string -> int param
+	val requireInt    : cfg -> string -> int param 
 	val requireString : cfg -> string -> string param
 	    
 	val      fromList : cfg -> (string * string) list -> params 

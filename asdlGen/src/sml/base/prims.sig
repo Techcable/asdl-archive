@@ -2,9 +2,6 @@ signature PRIMS =
   sig
     include ASDL_TYPES
  
-    type instream
-    type outstream
-
     val die: unit -> 'a
 
     val write_int       : int -> outstream -> unit

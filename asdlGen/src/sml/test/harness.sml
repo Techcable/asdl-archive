@@ -77,11 +77,11 @@ structure UnixExternalProgs:EXTERNAL_PROGRAMS =
 	val cxx_prg = "g++"
 	val javac_prg = "javac"
 	val haskell_prg = "hugs"
-	val sml_prg = "../misc/sml-batch"
+	val sml_prg = "sh ..\\misc\\sml-batch"
 
 	fun prefix x s = x^s
 
-	fun run cmd = OS.Process.system (cmd ^ "</dev/null")
+	fun run cmd = OS.Process.system ("echo " ^ cmd )
 
 	val shpath = ListFormat.fmt
 	    {init="",final="",sep=":",fmt=(fn x => x)} 

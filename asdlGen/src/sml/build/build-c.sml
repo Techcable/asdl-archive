@@ -4,6 +4,7 @@ signature BUILD_C =
     val xml_lib  : Paths.file_path
     val asdl_lib : Paths.file_path
     val headers  : Paths.file_path list
+    val rules    : CC.B.rule list
     val build    : unit CC.B.cmd
   end
 functor BuildC (structure CC : CC_BUILD
@@ -26,9 +27,9 @@ functor BuildC (structure CC : CC_BUILD
 
     val c_headers = List.map mk_file
       ["pkl-int.h","cii_base.h","prims.h","xml_prims.h",
-       "std_prims.h","prim_env.h","asdl_types.h"]
+       "std_prims.h","prim_env.h","asdl_types.h","share.h"]
     val c_common_srcs = mk_c_srcs
-      ["pkl-int.c","xml_prims.c","std_prims.c","prims.c"]
+      ["pkl-int.c","xml_prims.c","std_prims.c","prims.c","share.c"]
     val c_xml_srcs = mk_c_srcs
       ["xml_prim_env.c"]
     val c_std_srcs = mk_c_srcs

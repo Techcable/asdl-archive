@@ -7,7 +7,6 @@
  *
  *)
 
-
 structure AlgolAst :  ALGOL_AST =
     struct
 	open LangIds
@@ -20,8 +19,10 @@ structure AlgolAst :  ALGOL_AST =
 	  | TyReference  of ty_exp
 	  | TyEnum       of enumer list
 	  | TyFunction   of field list * ty_exp
-	  | TyOption   of ty_exp
-	  | TySequence of ty_exp
+	  | TyOption     of ty_exp
+	  | TySequence   of ty_exp
+	  | TyShare      of ty_exp
+	  | TyAnnotate   of (string * ty_exp)
 
 	and const =
 	    IntConst of (int)

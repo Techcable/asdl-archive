@@ -31,8 +31,7 @@ view C {
   Slp.pos <= {
     natural_type : int
     unwrapper    : User.pos2int
-    reader       : User.pos_reader
-    writer       : User.pos_writer
+    wrapper      : User.int2pos
     user_init    : User.pos_init
   }
 
@@ -40,6 +39,7 @@ view C {
    reader    : User.exp_reader
    writer    : User.exp_writer
    user_init : User.exp_init
+   user_attribute : foo
   }
 
   module Slp <= interface_epilogue 
@@ -138,8 +138,9 @@ view SML {
     }
 
     Slp.exp <= {
-       reader : User.exp_reader
-       writer : User.exp_writer
+natural_type_con: ref
+       wrapper: ref
+     unwrapper: !	
     }
 
 module Slp <= implementation_prologue 

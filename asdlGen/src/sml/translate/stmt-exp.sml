@@ -6,69 +6,21 @@
  * Author: Daniel C. Wang
  *
  *)
-(**
-\section{Making Statements Look Like Expressions}
- Many programming languages distinguish between statements and
- expressions. Statements can be thought of as expressions that have no
- value and are usally use to describe control flow. Very often its
- useful to have expressions such as ANSI C's trinary \verb|?|, but
- generalized to arbitary control flow constructs.
-
- If you're stuck in a language without these features, you can easily
- simulate them by assignment to temporary variables, but keeping track
- of the temporaries can be quite a pain. This module implements an
- interface to make dealing with the temporaries much easier and allows
- one to coerce a language where expressions and statements are
- distinct syntactic entities into one where there is no difference.
-
- Clients construct values of type [[stmt_exp]] which is paramaterized by
- the types, identifiers, expressions, and statement AST
- nodes. Afterward a call to [[flatten]] linearizes the [[stmt_exp]] value
- into a list of statements and a list of bound variables and their type.
-**)
-(*::*)
+(**::
+ Here a straight forward implementation.
+ **)
 structure StmtExp :> STMT_EXP =
   struct
-(**:[[stmt_exp]] type:
- Perhaps I should functorize this instead.
- **) 
     datatype ('ty,'id,'exp,'stmt) stmt_exp =
-(**:[[stmt_exp]] type:The value of this [[stmt_exp]] is a normal [['exp]].
- **)
       RET  of 'exp
-(**:[[stmt_exp]] type: This [[stmt_exp]] has no return value.
- **)
     | STMT of 'stmt
-(**:[[stmt_exp]] type:
- This [[stmt_exp]] return a value by assigning to the given
- identifier of a known type when present. When a [[stmt_exp]] is
- flattened in a where the value is ignored the identifier and type
- pair are omitted. In this case one should just execute any
- side effecting code.
- **)
     | EXPR of ('id * 'ty) option -> 'stmt
-(**:[[stmt_exp]] type:
- After evaluating/flattening the [[stmt_exp]] into a real expression
- pass the expression to a function that returns a new [[stmt_exp]]. If
- the [[stmt_exp]] to be evaluated is a [[RET]] [[stmt_exp]] whose
- value is pure (no side-effects) [[flatten]] avoids creating a new
- temporary and just returns the pure expression of the [[RET]] node.
-**)
     | EVAL of  (('ty,'id,'exp,'stmt) stmt_exp * 'ty *
 		('exp -> ('ty,'id,'exp,'stmt) stmt_exp))
-
-(**:[[stmt_exp]] type:
- Binds a list of identifiers of given type to the list of [[stmt_exp]]
- expressions, and call a function with the name of the bound
- identifiers that produces a list of [[stmt_exp]]s to be
- evaluated. You should not assume that the identifiers provided in the
- [[vars]] list are the same ones passed to the [[body]] function. They
- maybe renamed to avoid name clashes.
- **)
     | BIND of {vars: ('id * 'ty) list,
 	       exps: ('ty,'id,'exp,'stmt) stmt_exp list,
 	       body: 'id list -> ('ty,'id,'exp,'stmt) stmt_exp list}
-(**)
+
     type ('ty,'id,'exp,'stmt) info =
                         {tmpId : unit -> 'id,
 			isPure : 'exp -> bool,
@@ -77,38 +29,64 @@ structure StmtExp :> STMT_EXP =
 			 getId : 'id -> 'exp,
 		      stmtScope: (('id * 'ty) list * 'stmt list) -> 'stmt}
 
-  
-(* TODO play games to avoid name capture *)
-    fun flatten {tmpId,getId,setId,isPure,stmtScope,expId}
-      (SOME (id,_)) (RET e) = ([],[setId (id,e)])
-      | flatten info ret (EXPR s) = ([],[s ret])
+
+(**:[[structure StmtExp]] [[flatten]] function:
+The [[RET]] and [[STMT]] cases are easy. For [[RET]] assign
+the expression to the variable proivded as an argument. A [[STMT]]
+has no return value so it can just ignore it. 
+**)
+    fun flatten (info:('a,'b,'c,'d) info) (SOME (id,_)) (RET e) =
+      ([],[(#setId info)(id,e)])
       | flatten info _ (STMT s) = ([],[s])
-      (* add predicate to make sure e is pure *)
+(**:[[structure StmtExp]] [[flatten]] function:
+ The [[EXPR]] case is easy too. Just apply the return argument to the
+ function carried by [[EXPR]].
+**)   
+      | flatten info ret (EXPR s) = ([],[s ret])
+(**:[[structure StmtExp]] [[flatten]] function:
+ For an [[EVAL]] check if we what we are evaluating  a pure expression.
+ If it is then use the pure expression as the value and flatten the
+ result. Otherwise call the helper [[flatten_eval]] which generates a
+ temporary variable to be use instead.
+**)       
       | flatten (info as {isPure,...}) ret (EVAL (arg as (RET e,ty,b))) = 
       if (isPure e) then  flatten info ret (b e)
       else flatten_eval info ret arg
       | flatten info ret (EVAL arg) = flatten_eval info ret arg
-      | flatten (info as {tmpId,stmtScope,expId,...}) res
-	(BIND{vars,exps,body}) =
+(**:[[structure StmtExp]] [[flatten]] function:
+ The case for [[BIND]] is straight forward. It tries to avoid
+ generating extra temporaries by reusing variables when it
+ can. Ideally it should also try to fix any name capture problems.
+ It uses the [[stmtScope]] to wrap each initialization expression in
+ it's own scope. 
+**) 
+    (* TODO play games to avoid name capture *)
+      | flatten info res (BIND{vars,exps,body}) =
 	let
+	  val {stmtScope,expId,...} = info
 	  fun getVar (RET e) = expId e
 	    | getVar _ = NONE
-	fun mk_init ((var as (id,ty),exp),(ids,vars,stmts)) =
-	  case (getVar exp) of
-	    NONE => (id::ids,var::vars,
-		     (stmtScope (flatten info (SOME var) exp))::stmts)
-	  | (SOME id) => (id::ids,vars,stmts)
-	fun do_stmt e = stmtScope (flatten info res e)
 
-	val (ids,vars,inits) =
-	  List.foldr mk_init ([],[],[])  (ListPair.zip (vars,exps))
-	val stmts = inits@(List.map do_stmt (body ids))
-      in
-	(vars,stmts) 
-      end
+	  fun mk_init ((var as (id,ty),exp),(ids,vars,stmts)) =
+	    case (getVar exp) of
+	      NONE => (id::ids,var::vars,
+		       (stmtScope (flatten info (SOME var) exp))::stmts)
+	    | (SOME id) => (id::ids,vars,stmts)
+
+	  fun do_stmt e = stmtScope (flatten info res e)
+	    
+	  val (ids,vars,inits) =
+	    List.foldr mk_init ([],[],[])  (ListPair.zip (vars,exps))
+	  val stmts = inits@(List.map do_stmt (body ids))
+	in
+	  (vars,stmts) 
+	end
       (* should check that e is pure before ignoring *)
       | flatten  _ NONE (RET e) = ([],[])
-
+(**)
+(**:[[structure StmtExp]] [[flatten_eval]] internal function:
+[[flatten_eval]] is an internal introduces new temporaries.
+**)
     and flatten_eval (info as {tmpId,getId,...}) ret (e,ty,b) =
       let
 	val id = tmpId ()
@@ -117,10 +95,5 @@ structure StmtExp :> STMT_EXP =
       in
 	(((id,ty)::vars)@vars',stmt@stmt')
       end
+(**)
   end
-
-
-
-
-
-

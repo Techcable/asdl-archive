@@ -22,6 +22,8 @@ signature ALGOL_AST =
 	  | TyFunction   of field list * ty_exp
 	  | TyOption     of ty_exp
 	  | TySequence   of ty_exp
+	  | TyShare      of ty_exp
+	  | TyAnnotate   of (string * ty_exp)
 
 	and const =
 	    IntConst of (int)
@@ -43,7 +45,6 @@ signature ALGOL_AST =
 	  | NotNil of (exp)
 	  | NotZero of (exp)
 	  | NotEqConst of (exp * const)
-
 	and stmt =
 	    Nop
 	  | Assign      of (exp * exp)

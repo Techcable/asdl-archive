@@ -1,0 +1,9 @@
+getopt
+======
+
+A port of Sven Panne's getopt library for Haskell (itself a port of the
+GNU getopt library) to SML/NJ.
+
+See getopt-sig.sml for documentation.
+
+Author: Riccardo Pucella <riccardo@research.bell-labs.com>

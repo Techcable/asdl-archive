@@ -24,6 +24,8 @@ signature PATHS =
 	val existsFile  : file_path -> bool
 	val ensureDir   : dir_path -> unit
 	    
+	val getDirParent: dir_path -> dir_path option
+
 	val getFileDir  : file_path -> dir_path
 	val getFileBase : file_path -> string
 	val getFileExt  : file_path -> string option
@@ -74,7 +76,10 @@ structure Paths :> PATHS =
 
 	fun getFileExt {dir,base,ext} = ext
 	fun setFileExt {dir,base,ext} x = {dir=dir,base=base,ext=x}
-
+	fun getDirParent {isAbs,arcs=[],vol} = NONE
+	  | getDirParent {isAbs,arcs,vol} =
+	  SOME
+	  {isAbs=isAbs,arcs=List.take(arcs,(List.length arcs) - 1),vol=vol}
 	fun dirToNative d = OS.Path.toString d
 	fun fileToNative {dir,base,ext} =
 	    OS.Path.joinDirFile

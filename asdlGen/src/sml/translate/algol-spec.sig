@@ -47,15 +47,7 @@ signature ALGOL_SPEC =
        {mkrep:Ty.ty_exp -> Ty.ty_exp,
         mktid:Ty.ty_id -> Ty.ty_id,
 	  con:Ty.ty_con}
-(*
 
-      {seq_rep : Ty.ty_exp -> Ty.ty_exp,
-       seq_con : Ty.ty_con,
-       opt_rep : Ty.ty_exp -> Ty.ty_exp,
-       opt_con : Ty.ty_con,
-       seq_tid : Ty.ty_id -> Ty.ty_id,
-       opt_tid : Ty.ty_id -> Ty.ty_id}
-*)
     val get_prims     : Module.ME.props -> Ty.ty_decl list
     val get_aux_decls : Module.ME.props -> Ty.env
                                         -> Ty.ty_decl list -> Ty.Ast.decl list

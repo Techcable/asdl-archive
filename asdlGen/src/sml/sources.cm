@@ -17,6 +17,6 @@ main/export.sml
 
 test/harness.sml
 build/build-c.sml
-
+build/install-all.sml
 
 
