@@ -33,7 +33,7 @@ the line.
 <table loc="htp">
 <tabular ca="rcl">
 <em/module/      | = | "<bf/module/" <em/id/ &lsqb; <em/imports/ &rsqb; 
-	                "<bf/{/"  { <em/definitions/ } "<bf/}/" @
+	                "<bf/{/"   <em/definitions/  "<bf/}/" @
 <em/imports/     | = | "<bf/(/" { "<bf/imports/" <em/id/ } "<bf/)/" @
 </tabular>
 </table>

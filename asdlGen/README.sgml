@@ -7,20 +7,29 @@
 <author>&author.danwang;
 <date>&asdlGen.release-date;
 <p>
-This is a very alpha relase of the most latest version of &asdlGen;. Many of
+This is an alpha release of the most latest version of &asdlGen;. Many of
 the internals have been significantly reworked, and most of the major
 internal interfaces have been documented. Consider it as a work in
-progress. The build system is completely broken, so you'll need to build
-things by hand. For the ML code this isn't any more painful than typing 
-<tt>CM.make()</tt> in <tt>src/sml/</tt>. To build the <tt/C/ support
-libraries you need to build the <tt>src/cii/</tt> by hand.
+progress. The build system is now limping along. C and C++ code gets built
+automatically on most Unix platforms. In the top-level directory
+<code>
+% ./configure --prefix=<em/install-prefix/
+% make all
+</code>
+will do something sensible. Currently it just builds the needed libraries
+and dumps a heap for asdlGen in <tt>src/sml/</tt>. The install rules will
+change in the future. It currently doesn't produce any standalone
+executables.
 
 Major features include
 <p>
-Only the SML and C backends are working everything else is stuck
-in various different states of disrepair. I'm pushing this relase out mainly
-to get some feedback, and to let people get a feel of what's going on.
 <itemize>
+<item>
+SML, C, C++, Java, Haskell, and Icon backends are now working, but untested.
+The Haskell, backend produces code that at leasts parses against
+<tt>Hugs98</tt> but doesn't use labeled records as I was having problems
+with field mangling.
+
 <item><tt>src/sml/convert</tt>Quick and dirty converters from SML and class
 hierarchies to ASDL specifications.
 
@@ -62,14 +71,6 @@ See <htmlurl url="CHANGES.html" name="CHANGES"> for details.
 See the <url
  url="http://www.cs.princeton.edu/zephyr/ASDL/asdlGen-bugs.html" name="master
  bug list"> for bug hunting details.
-
-<sect>Documentation<p>
-The refrence manual in 
-<url url="doc/html/manual.html" name="HTML"> and
-<url url="doc/manual.ps/" name="Postscript">, is out of date, but still
-might be useful.
-<url url="doc/internals/main.ps" name="Internals"> provides a road map for the
-&asdlGen; 
 </article>
 
 
