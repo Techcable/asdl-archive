@@ -5,11 +5,34 @@
  * Author: Daniel C. Wang
  *
  *)
+(**::
+The result of [[mkAlgebraicSemantTranslator]] functor is a structure
+with the [[SEMANT_TRANSLATOR]] signature. The resulting structure is
+passed as one of the arguments to the [[mkTranslateFromTranslator]]
+functor. It describes how to convert ASDL types into the types of an
+algebraic language. This should be relatively straight forward, but
+because users can customize the code in subtle ways by defining views
+there's a bit more complexity here than there should be.
+**)
+
+(**:[[functor mkAlgebraicSemantTranslator]]:
+The functor takes three arguments. The [[IdFix]] structure is a
+collection of name mangling functions to avoid keyword conflicts. The
+[[Spec]] structure defines various aspects of the translation such as
+how to represent qualified types and how to generate auxiliary code
+like the picklers. The [[fix_fields]] boolean value determines if the
+translation will mangle field names to avoid having the same field
+name for different types. This flag should be set for languages such
+as CAML or Haskell which have the restriction. Both the [[IdFix]] and
+[[fix_fields]] arguments should really be merged with the [[Spec]] structure. 
+**)
 functor mkAlgebraicSemantTranslator
   (structure IdFix  : ID_FIX
    structure Spec   : ALGEBRAIC_SPEC
    val fix_fields   : bool): SEMANT_TRANSLATOR  =
      struct
+(**:[[functor mkAlgebraicSemantTranslator]]:
+**)
       structure S = Semant
       structure Ty = Spec.Ty
       structure Ast = Ty.Ast
@@ -21,9 +44,15 @@ functor mkAlgebraicSemantTranslator
       val fix_fields = fix_fields
       val fix_id = T.VarId.subst IdFix.id_fix
       val fix_ty = T.TypeId.subst IdFix.ty_fix
-	
       val trans_tid  = fix_ty o T.TypeId.fromPath o Id.toPath
-	
+      val inits = Spec.inits
+(**:[[functor mkAlgebraicSemantTranslator]] types:
+Each  ASDL definition is translated into an AlgebraicAst tree as
+well as a AlgebraicTy type that describes the semantics
+of the type for use by the pickler generator. Modules include a list of
+properties that contain hints to control certain issues when generating
+the final output. All of this code is fairly straight forward.
+**)	
       type defined_value  = {ty_decl:Ty.ty_decl,decl:T.decl}
       type con_value      = {con:Ty.con,choice:Ty.choice,match:T.match}
       type field_value    = {fd:T.field,ty_fd:Ty.field,ulabel:bool}
@@ -31,8 +60,9 @@ functor mkAlgebraicSemantTranslator
       type type_con_value = Ty.ty_decl list
       type module_value   = Ty.ty_decl list * (T.module * S.Module.P.props)
       type output         = (T.module * S.Module.P.props) list
-      val inits = Spec.inits
-      
+(**)
+(**:[[functor mkAlgebraicSemantTranslator]] translate a single field:
+**)      
       fun trans_field p {finfo,kind,name,tname,tinfo,is_local,props} =
 	let
 	  val tid = trans_tid tname
@@ -56,7 +86,9 @@ functor mkAlgebraicSemantTranslator
 	   ulabel=ulabel,
 	   ty_fd={label=label,label'=name,tid=tid}}
 	end
-      
+(**)
+(**:[[functor mkAlgebraicSemantTranslator]] translate a list of fields:
+**)            
       fun trans_fields topt (fields:field_value list) =
 	let
 	  val no_labels =  List.all #ulabel fields
@@ -87,7 +119,9 @@ functor mkAlgebraicSemantTranslator
 	  {ty=ty, fields=dfields, match_exp=match_exp,
 	   bvars=bound_vars, mk_cnstr=mk_cnstr}
 	end
-      
+(**)
+(**:[[functor mkAlgebraicSemantTranslator]] translate constructors:
+**)            
       fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} =
 	let
 	  val trans_cid = fix_id o T.VarId.fromPath o Id.toPath
@@ -104,7 +138,9 @@ functor mkAlgebraicSemantTranslator
 	  {con=con,choice=(tag,bvars),
 	   match=T.MatchCnstr(match_exp,{name=name,ty_arg=ty})}
 	end
-      
+(**)
+(**:[[functor mkAlgebraicSemantTranslator]] translate a product type:
+**)            
       fun trans_defined p {tinfo,name,fields,cons=[],props} =
 	let
 	  val name = trans_tid name
@@ -120,6 +156,9 @@ functor mkAlgebraicSemantTranslator
 	in
 	  {decl=T.DeclTy(name,ty), ty_decl=(name,Ty.Prod product)}
 	end
+(**)
+(**:[[functor mkAlgebraicSemantTranslator]] translate a sum type:
+**)            
 	| trans_defined p {tinfo,name,fields,cons,props} =
 	let
 	  val name = trans_tid name
@@ -139,7 +178,9 @@ functor mkAlgebraicSemantTranslator
 				num_attrbs=List.length fields,
 			     cnstrs=cnstrs,match=match})}
 	end
-
+(**)
+(**:[[functor mkAlgebraicSemantTranslator]] translate qualified types:
+**)      
       fun trans_type_con p {tinfo,name,props,kinds}  =
 	let
 	  val tid = (trans_tid name)
@@ -148,10 +189,11 @@ functor mkAlgebraicSemantTranslator
 	    in (mktid tid,Ty.App(con,tid))
 	    end
 	  val ty_decls = List.map do_kind kinds
-	in
-	  ty_decls
+	in ty_decls
 	end
-
+(**)
+(**:[[functor mkAlgebraicSemantTranslator]] translate a single module:
+**)      
       fun trans_module p {module,defines,type_cons,imports,props} =
 	let
 	  fun merge ({ty_decl,decl},(ty_decls,decls)) =
@@ -165,10 +207,14 @@ functor mkAlgebraicSemantTranslator
 			     imports=List.map toMid imports,
 			     decls=decls},props))
 	end
-
+(**)
+(**:[[functor mkAlgebraicSemantTranslator]] glue several modules together:
+**)      
       fun trans p (ms:module_value list) =
 	let
 	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs) Spec.prims ms
+(* Call the Spec.aux_decls to generate pickler code as well as other useful
+   functions *)
 	  val new_decls = (Spec.get_aux_decls p (Ty.mk_env ty_decls))
 	  val aux_mod_name = T.ModuleId.suffixBase Spec.aux_suffix
 	  val all = (List.map (fn (_,m) => m) ms)
@@ -180,6 +226,7 @@ functor mkAlgebraicSemantTranslator
 	in
 	  List.filter (not o S.Module.P.suppress o #2) out
 	end
+(**)
     end
-
+(**)
 

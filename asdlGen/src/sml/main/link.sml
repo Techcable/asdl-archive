@@ -6,8 +6,6 @@
  * Author: Daniel C. Wang
  *
  *)
-
-
 structure Link =
     struct
       structure HTMLGen =
@@ -118,13 +116,11 @@ structure Link =
 	   (structure T = JavaTranslator
 	    structure G = mkSourceFileOutput(structure PP = JavaPP))
 	      
-	      
        structure Java =
 	 mkMain(structure S = Semant
 		structure Parser = AsdlParser
 		structure Gen = JavaGen
 		val dflt_view = "Java")
-	 
 	 
        structure CPlusPlusOOSpec = 
 	 mkOOSpec(structure Ty = OOTy

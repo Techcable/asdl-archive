@@ -6,8 +6,6 @@ frontend/sources.cm
 translate/sources.cm
 type-pickle/sources.cm
 pp-pickle/sources.cm
-meta-build/sources.cm
-dtangle/sources.cm
 convert/sources.cm
 
 smlnj-lib.cm

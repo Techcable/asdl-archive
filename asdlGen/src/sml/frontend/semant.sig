@@ -7,16 +7,14 @@
  *
  *)
 (**::
-The [[signature SEMANT]] provides a procedural interface to
-ASDL semantic values. The semantic entities in ASDL are
-module environments, modules, types, constructors and fields.
-After parsing a set of ASDL module declarations they are processed by 
-implementations of the [[signature SEMANT]] to check that the declarations
-are valid. In particular verifying that there are no duplicate definitions,
-no recursive module dependencies, or recursively defined product types. 
-After verifying that the definitions are valid, the implementations of
-[[signature SEMANT]] provide several functions to query the semantic
-entities about their structure and properties.
+The [[signature SEMANT]] provides a procedural interface to ASDL
+semantic values. The semantic entities in ASDL are module
+environments, modules, types, constructors and fields.  After parsing
+a set of ASDL module declarations they are processed by
+the implementation of [[signature SEMANT]]. The implementation checks
+that the declarations are valid, verifying that there are no duplicate
+definitions, no recursive module dependencies, or recursively defined
+product types. 
 **)
 signature SEMANT =
     sig
@@ -25,8 +23,10 @@ Each of the opaque types represent handles to information about specific
 semantic entities.
 \begin{description}
 \item[{[[type menv_info]]}] Describes information about a module
- environment which is a complete and closed set of ASDL modules. ASDL module defintions cannot be recursive.
-\item[{[[type module_info]]}] Describes information about modules which are a set of possibly recursive definitons.
+ environment which is a complete and closed set of ASDL modules. ASDL
+ module defintions cannot be recursive.
+\item[{[[type module_info]]}] Describes information about modules
+which are a set of possibly recursive definitons.
 \item[{[[type type_info]]}] Describes information about both ASDL product
 and sum types.  
 \item[{[[type con_info]]}] Describes a constructor for a give type.

@@ -40,7 +40,6 @@ signature SML_BUILD_PARAMS =
     val heap_arg    : string -> string
   end
 
-
 functor SMLBuild(structure Params : SML_BUILD_PARAMS) : SML_BUILD =
   struct
     open Params

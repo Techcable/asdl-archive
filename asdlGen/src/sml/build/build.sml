@@ -24,7 +24,7 @@ functor BuildWorld(structure SML      : SML_BUILD
     structure MkDT =
       BuildDTangle(structure SML = SML
 		   val debug = debug
-		   val src_dir = src_path ["sml","dtangle"])
+		   val src_dir = src_path ["sml","util","dtangle"])
     structure MkSML =
       BuildSML(structure SML = SML
 	       structure DT = MkDT

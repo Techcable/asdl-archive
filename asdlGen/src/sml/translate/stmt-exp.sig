@@ -21,10 +21,9 @@ expressions and statements are distinct syntactic entities into one
 where there is no difference.
 
 Clients construct values of type [[stmt_exp]] which is parameterized
-by the types, identifiers, expressions, and statement AST
-nodes. Afterward a call to [[flatten]] linearizes the [[stmt_exp]]
-value into a list of statements and a list of bound variables and
-their type.
+by types, identifiers, expressions, and statement. Afterward a
+call to [[flatten]] linearizes the [[stmt_exp]] value into a list of
+statements and a list of bound variables and their type.
 **)
 signature STMT_EXP =
   sig
@@ -88,7 +87,7 @@ in order to do the work.
   \item[{[[setId]]}] Assign an expression to a variable.
   \item[{[[getId]]}] Get the value of a variable. 
   \item[{[[stmtScope]]}] Declare a new scope where a list of
-  statements are executed with a list of variables of given types are declared.
+  statements are executed with a list of variables of known types declared.
 \end{description}
 **)
     type ('ty,'id,'exp,'stmt) info =

@@ -1,5 +1,5 @@
 --*::
---This is an ASDL description of the parse trees returned by the parse.
+--This is an ASDL description of the parse trees returned by the parser.
 --It currently contains construcuts that are ignored by asdlGen but are
 --include for future extension.
 --* 
@@ -14,6 +14,7 @@ decl = Module(identifier* imports,type_decl* decls)
 path  = (identifier* qualifier,identifier base) 
 
 -- ('?' | '*' | '!')
+-- N.B. shared type not fully supported yet
 type_qualifier = Option | Sequence | Shared  
 
 field = (path typ, identifier? label_opt,type_qualifier? qualifier_opt) 

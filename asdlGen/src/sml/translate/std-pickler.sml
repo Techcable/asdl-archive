@@ -7,17 +7,17 @@
  *
  *)
 (**::
- The [[StdPickler]] functor takes builds a pickler generator, which is
- a function that maps type decription into function declarations that
+ The [[StdPickler]] functor builds a pickler generator, which is
+ a function that maps a type decription into declarations that
  read and write each type. The functor is parameterized so that it is
  independent of any particular language.
 **)
 functor StdPickler (structure Arg : STD_PICKLER_ARG) : AUX_DECLS =
   struct
 (**:[[functor StdPickler]]:
-The only export function it takes a type envrionment and a list of type 
+The only exported takes a type envrionment and a list of type 
 identifiers bound in that environment and returns a list of
-declarations that are the readers and wrtiers for those bound types.
+declarations that are the readers and writers for those bound types.
 **)
     structure Ty = Arg.Ty
     type decl = Arg.decl

@@ -53,6 +53,11 @@ functor BuildDoc(structure DT : BUILD_DTANGLE
        mk "type-decl",
        mk "algebraic-spec",
        mk_sig "semant-translator",
-       mk_sml "semant-translate"]
+       mk_sml "semant-translate",
+       mk_sml "algebraic-semant-translator"]
+
+    val ctx = (["sml","util","meta-build"],DT.ML)      
+    val res = do_dir ctx res
+      [mk_sig "meta-build"]
     val (docs,rules) = res
   end

@@ -72,7 +72,7 @@ The [[Sum]] constructor describes a tagged union of values described by
 the [[cnstrs]] field. It also has an info field that may contain user
 specified functions to read and write this value. Most often the [[rd]]
 and [[wr]] info fields are left empty and readers and writers are
-generated automatically. The [[num_attrbs]] field describe how many
+generated automatically. The [[num_attrbs]] field describes how many
 of the first few fields found in a [[con]] description are actually
 attributes in the ASDL spec.
 **)
@@ -87,13 +87,13 @@ explicit so that code generated for one type can be reused for its alias.
 **)
     | Alias of  ty_id
 (**:[[signature TYPE_DECL]] [[ty]] datatype:
-The [[App]] constructors describes the {\em application} of type
-constructor to [[ty]] bound to a particular type identifier. The type
+The [[App]] constructors describes the {\em application} of a type
+constructor, [[ty_con]], to a particular type identifier. The type
 constructor is actually an arbitrary function described by the
-[[ty_con]] type which maps a [[ty_decl]] into a target language
-type as well as providing specialized readers and writers.
-The sequence, options, and shared ASDL type qualifiers are
-implemented by defining an appropriate [[ty_con]]. 
+[[ty_con]] type which maps a [[ty_decl]] into a target language type
+as well as providing specialized readers and writers.  The sequence,
+options, and shared ASDL type qualifiers are implemented by defining
+an appropriate [[ty_con]].
 
 Notice that [[ty_con]] function takes a [[ty_decl]] which includes 
 a [[ty_id]] as well as a [[ty]] value. The [[ty_id]] is provided

@@ -27,8 +27,8 @@ signature STD_PICKLER_ARG =
 The functions [[read_tag]] and [[write_tag]] construct expressions
 that reads or write a taged values from or to a pickle. The
 [[read_tag]] function takes a list of tags and expressions
-and returns an expression the evaluates the expression that matches
-the appropiate tag value. [[read_tag]] behaves like a specilized
+and returns an expression that evaluates the expression which matches
+the appropiate tag value. [[read_tag]] behaves like a specialized
 "case" or pattern match.
 **)      
     val write_tag  : Ty.tag -> Ty.exp
@@ -58,3 +58,4 @@ it into a single expression with the same semantics.
     val expSeq     : Ty.exp list -> Ty.exp
   end
 (**)
+
