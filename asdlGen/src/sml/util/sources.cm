@@ -10,6 +10,8 @@ properties.sml
 pp-util.sml
 (* stolen from sml-nj compiler *)
 scc.sml
-sourcemap.nw
+(*sourcemap.nw*)
+sourcemap.sig
+sourcemap.sml
 pp.sml
 ppqueue.sml
