@@ -6,32 +6,6 @@
  * Author: Daniel C. Wang
  *
  *)
-signature STMT_EXP =
-  sig
-  
-    datatype ('ty,'id,'exp,'stmt) stmt_exp =
-      RET  of 'exp
-    | STMT of 'stmt
-    | EXPR of ('id * 'ty) option -> 'stmt
-    | EVAL of  (('ty,'id,'exp,'stmt) stmt_exp * 'ty *
-		('exp -> ('ty,'id,'exp,'stmt) stmt_exp))
-    | BIND of {vars: ('id * 'ty) list,
-	       exps: ('ty,'id,'exp,'stmt) stmt_exp list,
-	       body: 'id list -> ('ty,'id,'exp,'stmt) stmt_exp list}
-
-    type ('ty,'id,'exp,'stmt) info =
-                        {tmpId : unit -> 'id,
-			isPure : 'exp -> bool,
-			 expId : 'exp -> 'id option,
-			 setId : 'id * 'exp -> 'stmt,
-			 getId : 'id -> 'exp,
-		      stmtScope: (('id * 'ty) list * 'stmt list) -> 'stmt}
-      
-    val flatten: ('ty,'id,'exp,'stmt) info ->
-      ('id * 'ty) option -> ('ty,'id,'exp,'stmt) stmt_exp ->
-      (('id * 'ty) list * 'stmt list)
-
-end
 (* functorize? *)
 structure StmtExp :> STMT_EXP =
   struct
@@ -83,7 +57,9 @@ structure StmtExp :> STMT_EXP =
       in
 	List.foldl do_stmt (vars,stmts) (body ids)
       end
-      | flatten _ _ _ = raise Error.internal
+      (* should check that e is pure before ignoring *)
+      | flatten  _ NONE (RET e) = ([],[])
+
     and flatten_eval (info as {tmpId,getId,...}) ret (e,ty,b) =
       let
 	val id = tmpId ()

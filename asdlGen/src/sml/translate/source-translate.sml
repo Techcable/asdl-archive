@@ -9,20 +9,18 @@
 
 
 
-signature TRANSLATE_TO_SOURCE =
-    sig
-	type input  
-	type output = (string list * PPUtil.pp) list
+signature MODULE_PP =
+  sig
+    type code
+    val cfg      : Params.cfg
+    val mkComment: string list -> PPUtil.pp
+    val pp_module: Params.params -> code -> (string list * PPUtil.pp) list
+  end
 
-	val cfg      : Params.cfg
-	val mkComment: string list -> PPUtil.pp
-	val translate: Params.params -> (input * Module.Mod.props) -> output
-    end
-
-functor mkSourceFileOutput (structure PP:TRANSLATE_TO_SOURCE) : TRANSLATE =
+functor mkSourceFileOutput (structure PP:MODULE_PP) : TRANSLATE =
     struct
 	structure Out = TextIOFileOutput
-	type input = (PP.input * Module.Mod.props)
+	type input = PP.code
 	type output = Out.output
 	val cfg = Params.mergeConfig (PP.cfg,Out.cfg)
 	val (cfg,width) =
@@ -31,7 +29,7 @@ functor mkSourceFileOutput (structure PP:TRANSLATE_TO_SOURCE) : TRANSLATE =
 
 	fun translate p arg =
 	    let
-		val src = PP.translate p arg
+		val src = PP.pp_module p arg
 		val wd = width p
 
 		fun mkpp x =

@@ -20,13 +20,12 @@ structure XMLDTDTranslator : MODULE_TRANSLATOR =
 	type sequence_value = T.element_decl
 	type con_value      = (T.children * T.element_decl)
 	type field_value    = T.children
-
+	type module_value   = T.module * T.children list
+	type output         = T.module list
 	val set_dir = true
 	val ignore_supress = true
 	val fix_fields = false
 	val cfg = Params.empty
-
-	val get_module = (fn x => x)
 	    
 	val trans_tid = T.TypeId.fromPath o Id.toPath
 	val trans_id = T.VarId.fromPath o Id.toPath
@@ -111,21 +110,35 @@ structure XMLDTDTranslator : MODULE_TRANSLATOR =
 	    {element=opt_name,content=content,att_defs=att_defs}
 	  end
 
-	fun trans_all p {module,defines,options,sequences,props} =
+	fun trans_module p {module,imports,defines,options,sequences,props} =
 	  let
 	    val tags = List.foldr (fn ((_,xs),acc) => xs@acc)
 	      (sequences@options) (defines:defined_value list) 
-	    val defines = List.map #1 defines
+	    val roots = List.map #1 defines
+
 	    fun mk_spec ({element,...}:T.element_decl) = T.Child element
-	    val cs = (List.map mk_spec defines)
-	    val mname = T.TypeId.fromString
-	      (Id.toString (M.module_name module))
-	    val root =
-	      {element=mname,
-	       content=T.Children (T.Choice (List.hd cs,List.tl cs)),
-	       att_defs=[]}
+	    val mpath = Id.toPath (M.module_name module)
+	    val toMid = Ast.ModuleId.fromPath o Id.toPath o M.module_name
 	  in
-	    root::(defines@tags)
+	    (T.Module{name=toMid module,
+		     imports=List.map toMid imports,
+		     decls=(roots@tags)},List.map mk_spec roots)
+	  end
+	fun trans p (mv:module_value list) =
+	  let
+	    val root_id = T.TypeId.fromString "root"
+	    fun do_mod ((m as (T.Module{name,...}),roots),(ms,imps,xs)) =
+	      (m::ms,name::imps,roots@xs)
+	    val (mods,imports,roots) =  List.foldr do_mod ([],[],[]) mv
+	    val root =
+	      T.Module{name=T.ModuleId.fromString "root",
+		       imports=imports,
+		       decls=[{element=root_id,
+			       content=T.Children 
+			       (T.Choice (List.hd roots,List.tl roots)),
+			       att_defs=[]}]}
+	  in
+	    root::mods
 	  end
     end
 

@@ -9,8 +9,9 @@
 
 signature ALGOL_PP =
   sig
-    structure T : ALGOL_AST
-      include TRANSLATE_TO_SOURCE  where type input =  T.module
+    structure Ast : ALGOL_AST
+      include MODULE_PP
+        where type code =  (Ast.module * Module.Mod.props)
   end
 
 signature ALGOL_TYPE_DECL =
@@ -26,7 +27,7 @@ signature ALGOL_TYPE_DECL =
 signature ALGOL_SPEC =
   sig
     structure Ty : ALGOL_TYPE_DECL
-
+    val cfg : Params.cfg
     val prims : Ty.ty_decl list
 
     val seq_rep : Ty.ty_exp -> Ty.ty_exp
@@ -45,6 +46,7 @@ signature ALGOL_SPEC =
     val get_stmt  : (Ty.Ast.id * Ty.Ast.ty_exp) option ->
                                                 Ty.exp -> Ty.Ast.stmt
 
+
     val get_info      : Ty.ty_exp -> Module.Typ.props -> Ty.ty_info
     val get_wrappers  : Ty.ty_exp -> Module.Typ.props ->
       {natural_ty: Ty.ty_exp,
@@ -55,3 +57,4 @@ signature ALGOL_SPEC =
 
     val die     : string -> Ty.Ast.stmt
   end
+

@@ -15,6 +15,7 @@ structure Main =
 	    mkTranslateFromTranslator
 	    (structure T = FormatTranslator
 	     structure G = mkSourceFileOutput(structure PP = HTMLPP))
+
 	structure HTML =  mkMain(structure M = Module
 				structure Parser = AsdlParser
 				structure Gen = HTMLGen
@@ -23,44 +24,49 @@ structure Main =
 	    mkTranslateFromTranslator
 	    (structure T = XMLDTDTranslator
 	     structure G = mkSourceFileOutput(structure PP = XMLDTDPP))
+
 	structure XMLDTD =  mkMain(structure M = Module
 				structure Parser = AsdlParser
 				structure Gen = XMLDTDGen
 				val dflt_view = "DTD")
 
-(*        structure MLTranslator =
-	    mkAlgebraicTranslator(structure IdFix = IdFix.ML
-				  structure T = AlgebraicAst
-				  structure Pkl = MLPklGen
-				  val fix_fields = false)
-*)
-	structure MLAlgebraicSpec =
-	  mkAlgebraicSpec(structure Ty = AlgebraicTy)
+	structure YaccGrammarGen =
+	  mkTranslateFromTranslator
+	  (structure T = YaccGrammarTranslator
+	   structure G = mkSourceFileOutput(structure PP = YaccGrammarPP))
+	structure YaccGrammar =  mkMain(structure M = Module
+				structure Parser = AsdlParser
+				structure Gen = YaccGrammarGen
+				val dflt_view = "Yacc")
 
+	structure MLAlgebraicSpec = mkAlgebraicSpec(structure Ty = AlgebraicTy)
 	structure MLPklGen = StdPickler(structure Arg = MLAlgebraicSpec)
-
 	structure MLTranslator =
 	  mkAlgebraicModuleTranslator
 	  (structure IdFix = IdFix.ML
 	   structure Spec = MLAlgebraicSpec
 	   val aux_decls = MLPklGen.trans
 	   val fix_fields = false)
-
        structure MLGen =
-	   mkTranslateFromTranslator
-	   (structure T = MLTranslator
-	    structure G = mkSourceFileOutput(structure PP = MLPP))
+	 mkTranslateFromTranslator
+	 (structure T = MLTranslator
+	  structure G = mkSourceFileOutput(structure PP = MLPP))
        structure ML =  mkMain(structure M = Module
 			      structure Parser = AsdlParser
 			      structure Gen = MLGen 
 			      val dflt_view = "SML")
 
+       structure HaskellAlgebraicSpec =
+	 mkAlgebraicSpec(structure Ty = AlgebraicTy)
+	structure HaskellPklGen =
+	  StdPickler(structure Arg = HaskellAlgebraicSpec)
+	structure HaskellTranslator =
+	  mkAlgebraicModuleTranslator
+	  (structure IdFix = IdFix.Haskell
+	   structure Spec = HaskellAlgebraicSpec
+	   val aux_decls = HaskellPklGen.trans
+	   val fix_fields = true)
 
-       structure HaskellTranslator =
-	   mkAlgebraicTranslator(structure IdFix = IdFix.Haskell
-				 structure T = AlgebraicAst
-				 structure Pkl = HaskellPklGen
-				 val fix_fields = true)
        structure HaskellGen =
 	   mkTranslateFromTranslator
 	   (structure T = HaskellTranslator
@@ -77,12 +83,8 @@ structure Main =
        structure AnsiCTranslator =
 	 mkAlgolModuleTranslator(structure IdFix = IdFix.AnsiC
 				 structure Spec = AnsiCAlgolSpec
-				 val aux_decls = AnsiCPklGen.trans
-				 val fix_fields = false)
-(*
-       structure AnsiCTranslator =
-	   mkAlgolTranslator(structure IdFix = IdFix.AnsiC)
-*)
+				 val aux_decls = AnsiCPklGen.trans)
+
        structure AnsiCGen =
 	   mkTranslateFromTranslator
 	   (structure T = AnsiCTranslator
@@ -92,16 +94,20 @@ structure Main =
 				 structure Gen = AnsiCGen
 				 val dflt_view = "C")
 
-	   
+       structure JavaOOSpec = mkOOSpec(structure Ty = OOTy)
+       structure JavaPklGen = StdPickler(structure Arg = JavaOOSpec)
 
        structure JavaTranslator =
-	   mkOOTranslator(structure IdFix = IdFix.Java
+	 mkOOModuleTranslator(structure IdFix = IdFix.Java
+			      structure Spec = JavaOOSpec
+			      val aux_decls = JavaPklGen.trans)
+(*	   mkOOTranslator(structure IdFix = IdFix.Java
 			  structure T = OOAst
 			  structure Pkl = JavaPklGen
 			  val prefix_ids = SOME (JavaPP.package_prefix)
 			  val int_kind = true
 			  val short_names = true)
-
+*)
        structure JavaGen =
 	   mkTranslateFromTranslator
 	   (structure T = JavaTranslator
@@ -112,15 +118,22 @@ structure Main =
 				structure Parser = AsdlParser
 				structure Gen = JavaGen
 				val dflt_view = "Java")
+  
+       structure CPlusPlusOOSpec = mkOOSpec(structure Ty = OOTy)
+       structure CPlusPlusPklGen = StdPickler(structure Arg = CPlusPlusOOSpec)
 
        structure CPlusPlusTranslator =
+	 mkOOModuleTranslator(structure IdFix = IdFix.CPlusPlus
+			      structure Spec = CPlusPlusOOSpec
+			      val aux_decls = CPlusPlusPklGen.trans)
+(*       structure CPlusPlusTranslator =
 	   mkOOTranslator(structure IdFix = IdFix.CPlusPlus
 			  structure T = OOAst
 			  structure Pkl = CxxPklGen
 			  val prefix_ids = NONE
 			  val int_kind = false
 			  val short_names = false)
-
+*)
        structure CPlusPlusGen =
 	   mkTranslateFromTranslator
 	   (structure T = CPlusPlusTranslator

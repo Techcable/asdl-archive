@@ -18,6 +18,8 @@ structure Export =
 	val HTMLGenFn =  mkExportFn Main.HTML.do_it
 
 	val XMLDTDGenFn =  mkExportFn Main.XMLDTD.do_it
+
+	val YaccGrammarGenFn =  mkExportFn Main.YaccGrammar.do_it
 	    
 	val MLGenFn =  mkExportFn Main.ML.do_it
 
@@ -53,6 +55,7 @@ structure Export =
 	  | asdlGen (name, ("--doc"::rs)) = HTMLGenFn(name,rs)
 	  | asdlGen (name, ("--typ"::rs)) = TypGenFn(name,rs)
 	  | asdlGen (name, ("--dtd"::rs)) = XMLDTDGenFn(name,rs)
+	  | asdlGen (name, ("--yacc"::rs)) = YaccGrammarGenFn(name,rs)
 	  | asdlGen (name, ("--check"::rs)) = CheckFn(name,rs)
 	  | asdlGen (name, ("--pp_pkl"::rs)) = PPPickleFn(name,rs)
 	    (* hacks fix this right *)
@@ -64,6 +67,7 @@ structure Export =
 	  | asdlGen (name, ("-Ldoc"::rs)) = HTMLGenFn(name,rs)
 	  | asdlGen (name, ("-Ltyp"::rs)) = TypGenFn(name,rs)
 	  | asdlGen (name, ("-Ldtd"::rs)) = XMLDTDGenFn(name,rs)
+	  | asdlGen (name, ("-Lyacc"::rs)) = YaccGrammarGenFn(name,rs)
 	  | asdlGen (name, ("-Lcheck"::rs)) = CheckFn(name,rs)
 	  | asdlGen (name, ("-Lpp_pkl"::rs)) = PPPickleFn(name,rs)
 	    (* hacks fix this right *)
@@ -75,6 +79,7 @@ structure Export =
 	  | asdlGen (name, ("-L"::"doc"::rs)) = HTMLGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"typ"::rs)) = TypGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"dtd"::rs)) = XMLDTDGenFn(name,rs)
+	  | asdlGen (name, ("-L"::"yacc"::rs)) = YaccGrammarGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"check"::rs)) = CheckFn(name,rs)
 	  | asdlGen (name, ("-L"::"pp_pkl"::rs)) = PPPickleFn(name,rs)
 	  | asdlGen ("pp_pkl", (rs)) = PPPickleFn("pp_pkl",rs)

@@ -9,17 +9,14 @@
 
 
 (*just a hack for now *)
-structure JavaPP :
-  sig
+structure JavaPP :  sig
     include OO_PP
     val package_prefix : string 
   end =
     struct
-	structure T = OOAst
 	structure PP = PPUtil
-	structure AST = OOAst
-	type input  = T.module
-	type output = (string list * PPUtil.pp) list
+	structure Ast = OOAst
+	type code = (Ast.module * Module.Mod.props)
 
 	val cfg = Params.empty
 	val (cfg,base_imp) =
@@ -35,7 +32,6 @@ structure JavaPP :
 	local
 	    open OOAst
 	in
-
 	    fun fix_id {qualifier,base} =
 		SOME{qualifier=qualifier,
 		     base=String.map (fn #"." => #"_" | x => x) base}
@@ -214,7 +210,7 @@ structure JavaPP :
 	      | pp_stmt Nop = PP.s ";"
 	      | pp_stmt (Expr e) =
 		PP.cat [pp_exp e,PP.s ";"]
-	      | pp_stmt (Case {test,clauses,default=T.Nop}) =
+	      | pp_stmt (Case {test,clauses,default=Nop}) =
 		PP.vblock 4
 		[PP.s "switch(",pp_exp test,PP.s ") {",PP.nl,
 		 PP.seq_term {fmt=pp_clause,sep=PP.nl} clauses,
@@ -225,16 +221,18 @@ structure JavaPP :
 		 PP.seq_term {fmt=pp_clause,sep=PP.nl} clauses,
 		 PP.s "default: ",PP.ws,pp_stmt default,
 		 PP.nl,PP.untab, PP.s "}"]
-	      | pp_stmt (T.If{test,then_stmt,else_stmt=T.Nop}) =
+	      | pp_stmt (If{test,then_stmt,else_stmt=Nop}) =
 		PP.vblock 4
 		[PP.s "if(",pp_exp test,PP.s ")",PP.ws,pp_stmt then_stmt]
-	      | pp_stmt (T.If{test,then_stmt,else_stmt}) =
+	      | pp_stmt (If{test,then_stmt,else_stmt}) =
 		PP.vblock 4
 		[PP.s "if(",pp_exp test,PP.s ")",
 		 PP.ws, pp_stmt then_stmt,PP.untab,
 		 PP.s " else",PP.ws,pp_stmt else_stmt]
+	      | pp_stmt (Block {vars=[],body}) = 
+		PP.seq {fmt=pp_stmt,sep=PP.nl} body
 	      | pp_stmt (Block b) = pp_block b
-	      | pp_stmt (T.While {test,body}) =
+	      | pp_stmt (While {test,body}) =
 		PP.cat [PP.s "while(",pp_exp test, PP.s ")",
 			PP.ws,pp_stmt body]
 
@@ -353,13 +351,13 @@ structure JavaPP :
 		in
 		    ([package_prefix,mn,fname],pp)
 		end
-	end
-	fun translate p  (T.Module{name,imports,decls},props) =
+	fun pp_module p  (Module{name,imports,decls},props) =
 	    let
 		val (cs,ds) = List.foldr do_const ([],[]) decls
-		val mn = T.ModuleId.toString name
+		val mn = ModuleId.toString name
 	    in
 		(pp_consts  mn (base_imp p) cs props)::
 		(List.map (pp_cls  mn (base_imp p)) ds)
 	    end
+	end
     end

@@ -31,7 +31,8 @@ functor mkTypeDecl(structure TypeId : MODULE_ID
 	     info : ty_info,
 	   cnstrs : con list,
 	   match  : (choice -> exp) -> exp -> exp}
-    | App  of (ty_con * ty_id)
+    | App   of (ty_con * ty_id)
+    | Alias of (ty_id)
 
     withtype field   = {label : id option,tid : ty_id}
          and match   = (field * exp)

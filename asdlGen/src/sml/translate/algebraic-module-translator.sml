@@ -10,7 +10,8 @@
 functor mkAlgebraicModuleTranslator
   (structure IdFix  : ID_FIX
    structure Spec   : ALGEBRAIC_SPEC
-   val aux_decls    : Spec.Ty.ty_decl list ->  Spec.Ty.Ast.decl list
+   val aux_decls    : Spec.Ty.ty_decl list ->
+                      Spec.Ty.ty_decl list -> Spec.Ty.Ast.decl list
    val fix_fields   : bool): MODULE_TRANSLATOR  =
      struct
       structure M = Module
@@ -32,40 +33,17 @@ functor mkAlgebraicModuleTranslator
       type con_value      = {con:Ty.con,choice:Ty.choice,match:T.match}
       type field_value    = {fd:T.field,ty_fd:Ty.field,ulabel:bool}
 	
-      type option_value = Ty.ty_decl
+      type option_value   = Ty.ty_decl
       type sequence_value = Ty.ty_decl
-	
+      type module_value   = Ty.ty_decl list * (T.module * M.Mod.props)
+      type output         = (T.module * M.Mod.props) list
       val cfg = Params.empty
-	
-      fun wrappers p ty =
-	let
-	  val ty =
-	    case (M.Typ.natural_type p,M.Typ.natural_type_con p) of
-	      (SOME t,_) =>  T.TyId (T.TypeId.fromPath t)
-	    | (NONE,SOME t) => (T.TyCon (T.TypeId.fromPath t,[ty]))
-	    | _ => ty
-	  val unwrap =
-	    case (M.Typ.unwrapper p) of
-	      (SOME x) =>
-		(fn e =>
-		 T.Call(T.Id(T.VarId.fromPath x),[e]))
-	    | NONE => (fn x => x)
-	  val wrap =
-	    case (M.Typ.wrapper p) of
-	      (SOME y) =>
-		(fn x => T.Call(T.Id(T.VarId.fromPath y),[x]))
-	    | NONE => (fn x => x)
-	in
-	  {natural_ty=ty,unwrap=unwrap,wrap=wrap}
-	end
-      
-
       
       fun trans_field p {finfo,kind,name,tname,tinfo,is_local,props} =
 	let
 	  val tid = (trans_tid is_local tname)
 	  val ty = (T.TyId tid)
-	  val {natural_ty,unwrap,wrap} = wrappers props ty  
+	  val {natural_ty,...} = Spec.get_wrappers ty props 
 	  val (ty,tid) =
 	    case kind of
 	      M.Id => (natural_ty,tid)
@@ -139,9 +117,9 @@ functor mkAlgebraicModuleTranslator
 	  val name = trans_tid true name
 	  val {ty,fields,match_exp,bvars,mk_cnstr} =
 	    trans_fields (SOME name) fields
-	  val {natural_ty,unwrap,wrap} = wrappers props ty
-	  fun match f e = T.Match(unwrap e,[(match_exp,f bvars)])
+	  val {natural_ty,unwrap,wrap,...} = Spec.get_wrappers ty props 
 	  val info = Spec.get_info props
+	  fun match f e = T.Match(unwrap e,[(match_exp,f bvars)])
 	  val product =
 	    {ty=natural_ty,fields=fields,info=info,
 	     match=match,cnstr=mk_cnstr wrap}
@@ -153,13 +131,14 @@ functor mkAlgebraicModuleTranslator
 	  val name = trans_tid true name
 	  val ty = (T.TyId name)
 	  fun mk_clause f {con,choice,match} =  (match,f choice)
-	  val {natural_ty,unwrap,wrap} = wrappers props ty  
+	  val {natural_ty,unwrap,wrap,...} = Spec.get_wrappers ty props 
+	  val info = Spec.get_info props
+	    
 	  fun match f e = T.Match(unwrap e,List.map (mk_clause f) cons)
 	  fun mk_cnstr {tag,fields,cnstr} =
 	    {tag=tag,fields=fields,cnstr=wrap o cnstr}
 	  val cnstrs =  List.map (mk_cnstr o #con) cons
 	  val cons = List.map (#c o #tag) cnstrs
-	  val info = Spec.get_info props
 	in
 	  {decl=T.DeclSum(name,cons),
 	   ty_decl=(name,Ty.Sum{ty=natural_ty,info=info,
@@ -180,14 +159,30 @@ functor mkAlgebraicModuleTranslator
 	   (Spec.opt_tid tid,Ty.App(Spec.opt_con,tid))
 	end
 
-      fun trans_all p {module,defines,options,sequences,props} =
+      fun trans_module p {module,defines,imports,options,sequences,props} =
 	let
 	  fun merge ({ty_decl,decl},(ty_decls,decls)) =
 	    (ty_decl::ty_decls,decl::decls)
 	  val (ty_decls,decls) =
 	    List.foldr merge (sequences@options,[]) defines
+	  val toMid = Ast.ModuleId.fromPath o Id.toPath o M.module_name
 	in
-	  decls@(aux_decls ty_decls)
+	  (ty_decls,(T.Module{name=toMid module,
+			     imports=List.map toMid imports,
+			     decls=decls},props))
+	end
+
+      fun trans p (ms:module_value list) =
+	let
+	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs) [] ms
+	  val new_decls = (aux_decls ty_decls)
+	  fun add_decls (ty_decls,(T.Module{name,imports,decls},mp)) =
+	    (T.Module{name=name,
+		     imports=imports,
+		     decls=decls@(new_decls ty_decls)},mp)
+	in
+	  List.map add_decls ms 
 	end
     end
+
 

@@ -138,6 +138,29 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL) =
 	in
 	  {wr=wr,rd=rd}
 	end
+
+      structure M = Module
+      fun get_wrappers ty p =
+	let
+	  val ty =
+	    case (M.Typ.natural_type p,M.Typ.natural_type_con p) of
+	      (SOME t,_) =>  TyId (TypeId.fromPath t)
+	    | (NONE,SOME t) => (TyCon (TypeId.fromPath t,[ty]))
+	    | _ => ty
+	  val unwrap =
+	    case (M.Typ.unwrapper p) of
+	      (SOME x) =>
+		(fn e =>
+		 Call(Id(VarId.fromPath x),[e]))
+	    | NONE => (fn x => x)
+	  val wrap =
+	    case (M.Typ.wrapper p) of
+	      (SOME y) =>
+		(fn x => Call(Id(VarId.fromPath y),[x]))
+	    | NONE => (fn x => x)
+	in
+	  {natural_ty=ty,unwrap=unwrap,wrap=wrap}
+	end
   end
 
 

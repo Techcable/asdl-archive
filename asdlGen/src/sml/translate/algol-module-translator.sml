@@ -9,8 +9,8 @@
 functor mkAlgolModuleTranslator
   (structure IdFix  : ID_FIX
    structure Spec   : ALGOL_SPEC
-   val aux_decls    : Spec.Ty.ty_decl list ->  Spec.Ty.Ast.decl list
-   val fix_fields   : bool): MODULE_TRANSLATOR  =
+   val aux_decls    : Spec.Ty.ty_decl list -> Spec.Ty.ty_decl list ->
+     Spec.Ty.Ast.decl list): MODULE_TRANSLATOR  =
      struct
       structure M = Module
       structure Ty = Spec.Ty
@@ -21,7 +21,7 @@ functor mkAlgolModuleTranslator
       val tag_id = T.VarId.fromString "kind"
       val set_dir = true
       val ignore_supress = false
-      val fix_fields = fix_fields
+      val fix_fields = false
       val fix_id = T.VarId.subst IdFix.id_fix
       val fix_ty = T.TypeId.subst IdFix.ty_fix
 	
@@ -38,8 +38,10 @@ functor mkAlgolModuleTranslator
 
       type option_value   = defined_value
       type sequence_value = defined_value
+      type module_value   = Ty.ty_decl list * (T.module * M.Mod.props)
+      type output         = (T.module * M.Mod.props) list
 
-      val cfg = Params.empty
+      val cfg = Spec.cfg
 
       open StmtExp
       fun trans_field p {finfo,kind,name,tname,tinfo,is_local,props} =
@@ -112,7 +114,14 @@ functor mkAlgolModuleTranslator
 	   match=match,con=con,enumer=enumer}
 	end
 
-      fun trans_defined p {tinfo,name,fields,cons=[],props} =
+      fun trans_defined p {tinfo,name, cons=[],props,
+			   fields=[{fd={ty,...},ty_fd={label=NONE,tid}}]} =
+	let
+	  val name = trans_tid name
+	in
+	  {decls=[T.DeclTy(name,ty)], ty_decl=(name,Ty.Alias(tid))}
+	end
+	| trans_defined p {tinfo,name,fields,cons=[],props} =
 	let
 	  val cname = trans_id name
 	  val name = trans_tid name
@@ -254,14 +263,28 @@ functor mkAlgolModuleTranslator
 	  {ty_decl=(name_opt,Ty.App(Spec.opt_con,name)),
 	   decls=decls}
 	end
-      fun trans_all p {module,defines,options,sequences,props} =
+      fun trans_module p {module,imports,defines,options,sequences,props} =
 	let
 	  fun merge ({ty_decl,decls},(ty_decls,rest)) =
 	    (ty_decl::ty_decls,decls@rest)
 	  val (ty_decls,decls) = List.foldr merge ([],[])
 	    (defines@options@sequences)
+	  val toMid = Ast.ModuleId.fromPath o Id.toPath o M.module_name
 	in
-	  decls@(aux_decls ty_decls)
+	  (ty_decls,(T.Module{name=toMid module,
+			     imports=List.map toMid imports,
+			     decls=decls},props))
+	end
+      fun trans p (ms:module_value list) =
+	let
+	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs) [] ms
+	  val new_decls = (aux_decls ty_decls)
+	  fun add_decls (ty_decls,(T.Module{name,imports,decls},mp)) =
+	    (T.Module{name=name,
+		     imports=imports,
+		     decls=decls@(new_decls ty_decls)},mp)
+	in
+	  List.map add_decls ms 
 	end
     end
 

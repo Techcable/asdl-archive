@@ -333,10 +333,9 @@ functor mkPPAnsiC(structure T: ANSI_C) : PP_ANSI_C =
 structure AnsiCPP : ALGOL_PP =
     struct
 	structure Trans = TranslateAnsiC
-	structure T = Trans.T
+	structure Ast = Trans.T
 	structure PP = mkPPAnsiC(structure T = AnsiC)
-	type input =  T.module
-	type output = (string list * PPUtil.pp) list
+	type code = (Ast.module * Module.Mod.props)
 
 	val cfg = Params.empty
 	val (cfg,base_inc) =
@@ -400,13 +399,13 @@ structure AnsiCPP : ALGOL_PP =
 	val body_epilogue =
 	    PPUtil.wrap Module.Mod.implementation_epilogue
 	    
-	fun translate p  (arg as (T.Module{name,decls,imports}),props)  =
+	fun pp_module p  (arg as (Ast.Module{name,decls,imports}),props)  =
 	    let
-		val mn = T.ModuleId.toString name
+		val mn = Ast.ModuleId.toString name
 		fun mk_file suffix f =
 		    OS.Path.joinBaseExt{base=f,ext=SOME suffix}
 		val x =
-		    List.map T.ModuleId.toString imports
+		    List.map Ast.ModuleId.toString imports
 
 		fun pp_inc s =  PPUtil.s ("#include \""^s^"\"")
 		val pp_incs =

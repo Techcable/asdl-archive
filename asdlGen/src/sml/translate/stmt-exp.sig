@@ -9,49 +9,26 @@
 signature STMT_EXP =
   sig
   
-    datatype ('id,'exp,'stmt) stmt_exp =
-      E of 'exp  
-    | S of {init:'id -> 'stmt,
-	    rest:'exp -> ('id,'exp,'stmt) stmt_exp}
+    datatype ('ty,'id,'exp,'stmt) stmt_exp =
+      RET  of 'exp
+    | STMT of 'stmt
+    | EXPR of ('id * 'ty) option -> 'stmt
+    | EVAL of  (('ty,'id,'exp,'stmt) stmt_exp * 'ty *
+		('exp -> ('ty,'id,'exp,'stmt) stmt_exp))
+    | BIND of {vars: ('id * 'ty) list,
+	       exps: ('ty,'id,'exp,'stmt) stmt_exp list,
+	       body: 'id list -> ('ty,'id,'exp,'stmt) stmt_exp list}
 
-    type ('id,'exp,'stmt) info = {tmpId : unit -> 'id,
-				  setId : 'id * 'exp -> 'stmt,
-				  getId : 'id -> 'exp,
-			        expStmt : 'exp -> 'stmt,
-				seqStmt : 'stmt * 'stmt -> 'stmt}
+    type ('ty,'id,'exp,'stmt) info =
+                        {tmpId : unit -> 'id,
+			isPure : 'exp -> bool,
+			 expId : 'exp -> 'id option,
+			 setId : 'id * 'exp -> 'stmt,
+			 getId : 'id -> 'exp,
+		      stmtScope: (('id * 'ty) list * 'stmt list) -> 'stmt}
       
-    val flatten: ('id,'exp,'stmt) info -> 'id option
-                                       -> ('id,'exp,'stmt) stmt_exp ->
-                                          ('id list * 'stmt)
+    val flatten: ('ty,'id,'exp,'stmt) info ->
+      ('id * 'ty) option -> ('ty,'id,'exp,'stmt) stmt_exp ->
+      (('id * 'ty) list * 'stmt list)
 
 end
-
-structure StmtExp :> STMT_EXP =
-  struct
-    datatype ('id,'exp,'stmt) stmt_exp =
-      E of 'exp  
-    | S of {init:'id -> 'stmt,
-	    rest:'exp -> ('id,'exp,'stmt) stmt_exp}
-
-    type ('id,'exp,'stmt) info = {tmpId : unit -> 'id,
-				  setId : 'id * 'exp -> 'stmt,
-				  getId : 'id -> 'exp,
-				 seqStmt: 'stmt list -> 'stmt}
-    fun flatten {tmpId,setId,getId,seqStmt,expStmt} NONE (E e) =
-      ([],expStmt e)
-      | flatten {setId,tmpId,...} (SOME i) (E e) =
-      let
-	val id = tmpId()
-      in
-	([id],setId (id,e))
-      end
-      | flatten (info as {setId,tmpId,...}) ret (S{init,rest}) =
-      let
-	val id = tmpId()
-	val stmt = init id
-	val se = rest id
-	val (ids,stmts) = flatten info ret se
-      in
-	(id::ids,seqStmt (stmt,stmts))
-      end
-  end

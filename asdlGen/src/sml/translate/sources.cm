@@ -20,32 +20,46 @@ html-pp.sml
 translate-xml-dtd.sml
 xml-dtd-pp.sml
 
-pkl-gen.sig
+
 idfix.sml
 
 
-translate-algol.sml
+
 translate-ansi-c.sml 
 algol-spec.sig
 algol-spec.sml
 algol-module-translator.sml
-algol-pkl-gen.sml
 ansi-c-pp.sml
 
 oo-spec.sig
-oo-pkl-gen.sml
+oo-spec.sml
+oo-module-translator.sml
 oo-build-aux.sml
-translate-oo.sml
 java-pp.sml
 c-plus-plus-pp.sml 
 
-translate-algebraic.sml
-algebraic-pkl-gen.sml
 algebraic-spec.sig
 algebraic-spec.sml
 algebraic-module-translator.sml
 ml-pp.sml
 haskell-pp.sml
 
+translate-yacc-grammar.sml
+yacc-grammar-pp.sml
 (* move to util *)
+stmt-exp.sig
 stmt-exp.sml
+
+
+(* obsolete
+translate-oo.sml
+translate-algebraic.sml
+translate-algol.sml
+pkl-gen.sig
+algol-pkl-gen.sml
+oo-pkl-gen.sml
+algebraic-pkl-gen.sml
+*)
+
+
+

@@ -46,9 +46,7 @@ signature OO_AST = (* really more Java than anything else *)
 	     ret:ty_exp,
 	     body:block}
 
-	  | DeclConst of {field:field,
-			  public:bool,
-			  value:exp}
+	  | DeclConst of {field:field,public:bool,value:exp}
 
 	and inner_decl =
 	    IDeclEnum of {name:ty_id,enums:enumer list}
@@ -84,15 +82,16 @@ signature OO_AST = (* really more Java than anything else *)
 	  | FieldSub   of (exp * id)
 	  | ArraySub   of (exp * exp) 
 	  | DeRef      of (exp)
+	  | Cast       of (ty_exp * exp)
+	  | New        of (ty_id * exp list)
+	    
+	  (* clean/thin these out *)
 	  | PlusOne    of (exp)
 	  | MinusOne   of (exp)
 	  | NotEqConst of (exp * const)
 	  | NotNil     of (exp)
 	  | NotZero    of (exp)
 	  | Less       of (exp * exp)
-	  | Cast       of (ty_exp * exp)
-	  | New        of (ty_id * exp list)
-
 	  | SeqNew     of {elm_ty:ty_exp, len:exp}
 	  | SeqLen     of {elm_ty:ty_exp, seq:exp}
 	  | SeqGet     of {elm_ty:ty_exp, seq:exp, idx:exp}
@@ -120,6 +119,7 @@ signature OO_AST = (* really more Java than anything else *)
 	   and clause    = {tag:const,body:stmt}
 
        include LANG_AST where type decls = ty_decl list
+       val add_methods : (ty_id * mth) list -> decls -> decls
     end
 
 

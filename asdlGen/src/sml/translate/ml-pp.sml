@@ -1,10 +1,17 @@
+(* 
+ *
+ * COPYRIGHT (c) 1997, 1998 by Princeton University. 
+ * See COPYRIGHT file for details
+ *
+ * Author: Daniel C. Wang
+ *
+ *)
+
 structure MLPP : ALGEBRAIC_PP =
     struct 
-	structure T  = AlgebraicAst
-
+	structure Ast = AlgebraicAst
 	structure PP = PPUtil
-	type input = T.module
-	type output = (string list * PPUtil.pp) list
+	type code =  (Ast.module * Module.Mod.props)
 
 	val cfg = Params.empty
 	val (cfg,base_sig) =
@@ -24,8 +31,10 @@ structure MLPP : ALGEBRAIC_PP =
 			 PP.seq_term {fmt=PP.s,sep=PP.nl} s,
 			 PP.s "*)"]
 
-	val pp_id = PP.wrap T.VarId.toString
-	val pp_ty_id = PP.wrap T.TypeId.toString
+	local open Ast
+	in
+	val pp_id = PP.wrap VarId.toString
+	val pp_ty_id = PP.wrap TypeId.toString
 	val tup_sep = PP.cat [PP.ws,PP.s "*",PP.ws]
 	val semi_sep = PP.cat [PP.s ";",PP.ws]
 	val comma_sep = PP.cat [PP.s ",",PP.ws]
@@ -57,64 +66,64 @@ structure MLPP : ALGEBRAIC_PP =
 	    PP.opt {some = (fn x => PP.cat [PP.s " : ",pp_ty_id x]),
 		    none = PP.empty}
 	    
-	fun pp_ty_exp (T.TyId tid) = pp_ty_id tid
-	  | pp_ty_exp (T.TyList te) =
+	fun pp_ty_exp (TyId tid) = pp_ty_id tid
+	  | pp_ty_exp (TyList te) =
 	    PP.cat [pp_ty_exp te,PP.s " list"]
-	  | pp_ty_exp (T.TyOption te) =
+	  | pp_ty_exp (TyOption te) =
 	    PP.cat [pp_ty_exp te,PP.s " option"]
-	  | pp_ty_exp (T.TySequence te) =
+	  | pp_ty_exp (TySequence te) =
 	    PP.cat [pp_ty_exp te,PP.s " Seq.seq"]
-	  | pp_ty_exp (T.TyCon (tid,[te])) =
+	  | pp_ty_exp (TyCon (tid,[te])) =
 	    PP.cat [pp_ty_exp te,PP.s " ",pp_ty_id tid]
-	  | pp_ty_exp (T.TyCon (tid,tes)) =
+	  | pp_ty_exp (TyCon (tid,tes)) =
 	    PP.cat [PP.s "(",PP.seq{fmt=pp_ty_exp,sep=comma_sep} tes,PP.s")",
 		    PP.s " ",pp_ty_id tid]
-	  | pp_ty_exp (T.TyVector te) =
+	  | pp_ty_exp (TyVector te) =
 	    PP.cat [pp_ty_exp te,PP.s " vector"]
-	  | pp_ty_exp (T.TyTuple []) = unit_pp
-	  | pp_ty_exp (T.TyTuple tes) =
+	  | pp_ty_exp (TyTuple []) = unit_pp
+	  | pp_ty_exp (TyTuple tes) =
 	    PP.hblock 1 [PP.s "(" ,
 			 PP.seq{fmt=pp_ty_exp,sep=tup_sep}  tes,
 			 PP.s")"]
 	    
-	  | pp_ty_exp (T.TyRecord []) = unit_pp
-	  | pp_ty_exp (T.TyRecord fes) =
+	  | pp_ty_exp (TyRecord []) = unit_pp
+	  | pp_ty_exp (TyRecord fes) =
 	    PP.vblock 1 [PP.s "{",
 			 PP.seq{fmt=pp_field,sep=comma_sep} fes,
 			 PP.s "}"]
-	  | pp_ty_exp (T.TyFunction (args,res)) =
+	  | pp_ty_exp (TyFunction (args,res)) =
 		    PP.hblock 4 [PP.seq'{fmt=pp_ty_exp,
 					 sep=fun_sep,
 					 empty=unit_pp} args,
 				 fun_sep,pp_ty_exp res]
 
-	and pp_exp (T.Id id) = pp_id id
-	  | pp_exp (T.Int i) = PP.d i
-	  | pp_exp (T.Call (e,el)) =
+	and pp_exp (Id id) = pp_id id
+	  | pp_exp (Int i) = PP.d i
+	  | pp_exp (Call (e,el)) =
 	    PP.hblock 0 [PP.s "(",
 			 PP.seq {fmt=pp_exp,sep=PP.ws}  (e::el),
 			 PP.s ")"]
-	  | pp_exp (T.Cnstr(id,T.Tuple([],_))) = pp_id id
-	  | pp_exp (T.Cnstr(id,T.Record([],[],_))) = pp_id id
-	  | pp_exp (T.Cnstr(id,e)) =
+	  | pp_exp (Cnstr(id,Tuple([],_))) = pp_id id
+	  | pp_exp (Cnstr(id,Record([],[],_))) = pp_id id
+	  | pp_exp (Cnstr(id,e)) =
 	    PP.hblock 0 [pp_id id,pp_exp e]
-	  | pp_exp (T.Tuple (el,opt_ty)) =
+	  | pp_exp (Tuple (el,opt_ty)) =
 	    PP.hblock 1
 	    [PP.s "(" ,PP.seq{fmt=pp_exp,sep=comma_sep} el, PP.s")"]
-	  | pp_exp (T.Record (el,fl,opt_ty)) =
+	  | pp_exp (Record (el,fl,opt_ty)) =
 	    let
 		fun  eq _ = false
 	    in
 		PP.cat [PP.vblock 2
 			(pp_rec_seq eq pp_exp el fl)]
 	    end
-	  | pp_exp (T.Match(e,cl)) =
+	  | pp_exp (Match(e,cl)) =
 	    PP.vblock 4 [PP.s "(case (",pp_exp e,PP.s ") of ",PP.nl,
 			 PP.s "  ",
 			 PP.seq {fmt=pp_match_clause,sep=bar_sep} cl,
 			 PP.s ")"]
-	  | pp_exp (T.LetBind([],e)) =  pp_exp e
-	  | pp_exp (T.LetBind(cl,e)) =
+	  | pp_exp (LetBind([],e)) =  pp_exp e
+	  | pp_exp (LetBind(cl,e)) =
 	    PP.vblock 4 [PP.s "let ",PP.nl,
 			 PP.seq {fmt=pp_let_clause,sep=PP.nl} cl,
 			 PP.untab,
@@ -123,9 +132,9 @@ structure MLPP : ALGEBRAIC_PP =
 			 pp_exp e,
 			 PP.untab,
 			 PP.s "end"]
-	  | pp_exp (T.Seq els) =
+	  | pp_exp (Seq els) =
 	    let
-		fun flatten (T.Seq x,xs) =  List.foldr flatten xs x
+		fun flatten (Seq x,xs) =  List.foldr flatten xs x
 		  | flatten (x,xs) = (x::xs)
 		val el = List.foldr flatten [] els
 	    in
@@ -134,28 +143,28 @@ structure MLPP : ALGEBRAIC_PP =
 		 PP.s ")"]
 	    end
 
-	and pp_match (T.MatchRecord(ml,fl,opt_ty)) = 
+	and pp_match (MatchRecord(ml,fl,opt_ty)) = 
 	    let
-		fun eq (T.MatchId (x,_),y)  = T.VarId.eq (x,y)
+		fun eq (MatchId (x,_),y)  = VarId.eq (x,y)
 		  | eq _ = false
 	    in
 		PP.cat [PP.hblock 2
 			(pp_rec_seq eq pp_match ml fl),
 			pp_opt_ty opt_ty]
 	    end
-	  | pp_match (T.MatchTuple(ml,_,opt_ty)) = 
+	  | pp_match (MatchTuple(ml,_,opt_ty)) = 
 	    PP.hblock 0 [PP.s "(",
 			 PP.seq {fmt=pp_match,sep=comma_sep} ml,
 			 PP.s ")", pp_opt_ty opt_ty]
-	  | pp_match (T.MatchId(id,_)) = pp_id id
-	  | pp_match (T.MatchCnstr(T.MatchTuple([],_,_),{name,...})) =
+	  | pp_match (MatchId(id,_)) = pp_id id
+	  | pp_match (MatchCnstr(MatchTuple([],_,_),{name,...})) =
 	    pp_id name
-	  | pp_match (T.MatchCnstr(T.MatchRecord([],_,_),{name,...})) =
+	  | pp_match (MatchCnstr(MatchRecord([],_,_),{name,...})) =
 	    pp_id name
-	  | pp_match (T.MatchCnstr(m,{name,...})) =
+	  | pp_match (MatchCnstr(m,{name,...})) =
 	    PP.cat [PP.s "(",pp_id name,pp_match m,PP.s ")"]
-	  | pp_match (T.MatchInt i) = PP.d i
-	  | pp_match (T.MatchAny) = PP.s "_"
+	  | pp_match (MatchInt i) = PP.d i
+	  | pp_match (MatchAny) = PP.s "_"
 
 	and pp_field {name,ty} =
 	    PP.cat [pp_id name,PP.s ":",pp_ty_exp ty]
@@ -166,17 +175,17 @@ structure MLPP : ALGEBRAIC_PP =
 	    PP.hblock 2 [PP.s "val ",pp_match match,PP.s " = ",PP.ws,
 			 pp_exp exp]
 
-	fun isSum (T.DeclSum _) = true
+	fun isSum (DeclSum _) = true
 	  | isSum _ = false
 
-	fun isTy (T.DeclTy _ ) = true
+	fun isTy (DeclTy _ ) = true
 	  | isTy _ = false
 
-	fun isSigFun (T.DeclFun _ ) = true
+	fun isSigFun (DeclFun _ ) = true
 	  | isSigFun _ = false
 
-	fun isStrFun (T.DeclFun _ ) = true
-	  | isStrFun ((T.DeclLocal (T.DeclFun _))) = true
+	fun isStrFun (DeclFun _ ) = true
+	  | isStrFun ((DeclLocal (DeclFun _))) = true
 	  | isStrFun _ = false
 	    
 	val sig_prologue =
@@ -188,40 +197,40 @@ structure MLPP : ALGEBRAIC_PP =
 	val struct_epilogue =
 	    PPUtil.wrap Module.Mod.implementation_epilogue
 
-	fun translate p (T.Module{name,imports,decls},props) =
+	fun pp_module p (Module{name,imports,decls},props) =
 	    let
 		val ast = decls
-		val mn = T.ModuleId.toString name
+		val mn = ModuleId.toString name
 
 		val sdecs = List.filter isSum ast
 		val decs = List.filter isTy ast
 		val sigfdecs = List.filter isSigFun ast
 		val strfdecs = List.filter isStrFun ast
 
-		fun pp_sdec (T.DeclSum (i,cnstrs)) =
+		fun pp_sdec (DeclSum (i,cnstrs)) =
 		    PP.cat
 		    [pp_ty_id i,PP.s " =",
 		     PP.vblock (~1)
 		     [PP.s " ",PP.seq {sep=bar_sep,fmt=pp_cnstr} cnstrs]]
 		  | pp_sdec _ = raise Error.impossible
 
-		and pp_cnstr{name,ty_arg=T.TyTuple([])} = pp_id name
+		and pp_cnstr{name,ty_arg=TyTuple([])} = pp_id name
 		  | pp_cnstr {name,ty_arg} =
 		    PP.cat [pp_id name,PP.s " of ",
 			    pp_ty_exp ty_arg]
 		    
-		fun pp_dec (T.DeclTy(i,te)) =
+		fun pp_dec (DeclTy(i,te)) =
 		    PP.cat [pp_ty_id i,PP.s " = ",pp_ty_exp te]
 		  | pp_dec _ = raise Error.impossible
 
-		fun pp_fun_str (T.DeclFun (id,args,body,ret)) =
+		fun pp_fun_str (DeclFun (id,args,body,ret)) =
 		    PP.vblock 4 [pp_id id,PP.s " ",
 				 PP.seq {fmt=pp_id o #name ,sep=PP.s " "} args,
 				 PP.s " = ",PP.nl, pp_exp body]
-		  | pp_fun_str (T.DeclLocal x) = pp_fun_str (x)
+		  | pp_fun_str (DeclLocal x) = pp_fun_str (x)
 		  | pp_fun_str _ = raise Error.impossible
 
-		fun pp_fun_sig (T.DeclFun (id,args,body,ret)) =
+		fun pp_fun_sig (DeclFun (id,args,body,ret)) =
 		    PP.vblock 4 [PP.s "val ",pp_id id,PP.s " : ",
 				 PP.seq {fmt=pp_ty_exp o #ty ,
 					 sep=PP.s " -> "} args,
@@ -319,6 +328,7 @@ structure MLPP : ALGEBRAIC_PP =
 	    in
 		fls
 	    end
+	  end
     end
 
 

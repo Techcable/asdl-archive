@@ -7,9 +7,9 @@
  *
  *)
 
-structure AlgolTy : ALGOL_TYPE_DECL =
+structure OOTy : OO_TYPE_DECL =
   struct
-    structure Ast = AlgolAst
+    structure Ast = OOAst
     structure T =
       mkTypeDecl(structure TypeId = Ast.TypeId
 		 type ty_exp = Ast.ty_exp
@@ -19,23 +19,20 @@ structure AlgolTy : ALGOL_TYPE_DECL =
     open T
   end
 
-functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
+functor mkOOSpec(structure Ty : OO_TYPE_DECL) =
   struct
-    type decl = Ty.Ast.decl
+    type decl = (Ty.ty_id * Ty.Ast.mth)
     structure Ty = Ty
     open Ty.Ast
     open StmtExp
-    val cfg = Params.empty
-    val (cfg,mono_types)  =  Params.declareBool cfg
-      {name="mono_types",flag=NONE,default=false}
-      
+
     fun mk_name s  =
       (VarId.prefixBase (s^"_")) o VarId.fromPath o TypeId.toPath
       
-    val rd_name = mk_name "read"
-    val wr_name = mk_name "write"
+    val rd_name = VarId.fromString "read"
+    val wr_name = VarId.fromString "write"
 
-    fun die _ =  ProcCall((VarId.fromString "die"),[])
+    fun die _ =  Expr(FunCall((VarId.fromString "die"),[]))
 
     (* should be determined by functor parmeters *)
     val grd_name = mk_name "read_generic"
@@ -57,8 +54,8 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
     fun isPure (Const _) = true
       | isPure (NilPtr) = true
       | isPure (Id _) = true
-      | isPure (VarRecSub(e,_,_)) = isPure e
-      | isPure (RecSub(e,_)) = isPure e
+      | isPure (FieldSub(e,_)) = isPure e
+      | isPure (ArraySub(e1,e2)) = (isPure e1) andalso (isPure e2)
       | isPure (DeRef e) = isPure e
       | isPure _ = false
 
@@ -85,33 +82,42 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
 
 
     fun write_tag {c,v} =
-      STMT (ProcCall(wr_tag_name,[Const(IntConst v),Id stream_id]))
+      STMT (Expr(FunCall(wr_tag_name,[Const(IntConst v),Id stream_id])))
 
     fun read_tag cs =
       let
 	fun mk_clause ret ({c,v},exp)  =
 	  {tag=IntConst v,body=get_stmt ret exp}
 	fun exp ret =
-	  Case{test=FnCall(rd_tag_name,[Id stream_id]),
+	  Case{test=FunCall(rd_tag_name,[Id stream_id]),
 	       clauses=List.map (mk_clause ret) cs,
 	       default=die "bad tag"}
       in
 	EXPR exp
       end
 
-    fun read tid = RET (FnCall(rd_name tid,[Id stream_id]))
+    fun read tid = RET (SMthCall(tid,rd_name,[Id stream_id]))
     fun write tid e =   
-      EVAL(e,TyId tid,(fn e => STMT(ProcCall(wr_name tid,[e,Id stream_id]))))
+      EVAL(e,TyId tid,(fn e =>
+		       STMT(Expr(SMthCall(tid,wr_name,[e,Id stream_id])))))
       
+    val void_ty  = TyId (TypeId.fromString "void")
     fun write_decl {name,arg,body} =
-      DeclProc(wr_name name,
-	       [{name=arg_id,ty=arg},{name=stream_id,ty=outstream_ty}],
-	       get_proc_body (body (RET(Id arg_id))))
+      (name,Mth{name=wr_name,
+		inline=false,
+		mods={scope=Public,static=true,final=true},
+		args=[{name=arg_id,ty=arg},{name=stream_id,ty=outstream_ty}],
+		ret=void_ty,
+		body=get_proc_body (body (RET(Id arg_id)))})
       
     fun read_decl {name,ret,body} =
-      DeclFun(rd_name name,[{name=stream_id,ty=instream_ty}],
-	      get_fun_body (body,ret),
-	      ret)
+      (name,Mth{name=rd_name,
+		inline=false,
+		mods={scope=Public,static=true,final=true},
+		args=[{name=stream_id,ty=instream_ty}],
+		ret=ret,
+		body=get_fun_body (body,ret)})
+
 
     fun expSeq exps = BIND {vars=[],exps=[],body=(fn _ => exps)}
       
@@ -131,11 +137,11 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
 	  let
 	    val ty = seq_rep (ty_exp t)
 	    val rd =
-	      RET (FnCall(rd_list_name,[Id (grd_name tid),Id stream_id]))
+	      RET (FunCall(rd_list_name,[Id (grd_name tid),Id stream_id]))
 	    fun wr e =
 	      EVAL(e,ty,(fn e =>
-			 STMT (ProcCall(wr_list_name,
-					[Id (gwr_name tid),e,Id stream_id]))))
+			 STMT (Expr(FunCall(wr_list_name,
+					[Id (gwr_name tid),e,Id stream_id])))))
 	  in
 	    (ty,{wr=SOME wr,rd=SOME rd})
 	  end
@@ -151,11 +157,11 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
 	  let
 	    val ty = opt_rep (ty_exp t)
 	    val rd =
-	      RET (FnCall(rd_option_name,[Id (grd_name tid),Id stream_id]))
+	      RET (FunCall(rd_option_name,[Id (grd_name tid),Id stream_id]))
 	    fun wr e =
 	      EVAL(e,ty,(fn e =>
-			 STMT (ProcCall(wr_option_name,
-					[Id (gwr_name tid),e,Id stream_id]))))
+			 STMT (Expr(FunCall(wr_option_name,
+					[Id (gwr_name tid),e,Id stream_id])))))
 	  in
 	    (ty,{wr=SOME wr,rd=SOME rd})
 	  end
@@ -169,8 +175,12 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
       fun addPrim (s,ps) =
 	let
 	  val tid = TypeId.fromString s
-	  val info = {rd=SOME(read tid),
-		      wr=SOME(write tid)}
+	  val rd = RET (FunCall(mk_name "read" tid,[Id stream_id]))
+	  fun wr e = 
+	    EVAL(e,TyId tid,(fn e =>
+			     STMT(Expr(FunCall(mk_name "write" tid,
+					       [e,Id stream_id])))))
+	  val info = {rd=SOME rd,wr=SOME wr}
 	in
 	  (tid,Ty.Prim {ty=TyId tid,info=info,name=s})::
 	  (seq_tid tid,Ty.App(seq_con,tid))::
@@ -181,7 +191,7 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
       val prims = addPrim ("string",prims)
       val prims = addPrim ("identifier",prims)
 
-      fun call_fn path args = RET (FnCall(VarId.fromPath path,args))
+      fun call_fn path args = RET (FunCall(VarId.fromPath path,args))
       fun get_info ty p =
 	let
 	  val rd =
@@ -194,7 +204,8 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
 		(fn e =>
 		 EVAL(e,ty,
 		      (fn v =>
-		       STMT(ProcCall(VarId.fromPath x,[v,Id stream_id])))))
+		       STMT(Expr(FunCall(VarId.fromPath x,
+					 [v,Id stream_id]))))))
 	    | NONE => NONE
 	in
 	  {wr=wr,rd=rd}
@@ -218,12 +229,15 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
 	  val init =
 	    case (Module.Typ.user_init p) of
 	      NONE => (fn x => x)
-	    | SOME x => (fn e => EVAL(e,ty,(fn v => call_fn x [v])))
+	    | SOME x => (fn e =>
+			 EVAL(e,ty,(fn v => RET(MthCall(Id (VarId.fromPath x),
+							[v])))))
 	in
 	  {natural_ty=natural_ty,unwrap=unwrap,wrap=wrap,init=init}
 	end
-      fun generic_fns ty_id =
+(*      fun generic_fns ty_id =
 	let
+	  val top_ty = TyRefAny
 	  val rd_decl =
 	    DeclFun(grd_name ty_id,[{name=stream_id,ty=instream_ty}],
 		     get_fun_body (read ty_id,TyRefAny),
@@ -236,7 +250,8 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
 	in
 	  [rd_decl,wr_decl]
 	end
-      val user_field_name = VarId.fromString "client_data"
+  *)
+    val user_field_name = VarId.fromString "client_data"
 
       fun get_user_fields p =
 	case (Module.Typ.user_attribute p) of

@@ -11,28 +11,27 @@
 
 signature HTML_PP =
     sig
-	structure T : FORMAT_DOC
-	include TRANSLATE_TO_SOURCE 
-                where type input = T.module
+	structure Ast : FORMAT_DOC
+	include MODULE_PP where type code = Ast.module
     end
+
 (* probably should use Reppy's HTML library in the future
    This is just a hack...
    *)
 
 structure HTMLPP : HTML_PP =
     struct 
-	structure T  = FormatDoc
-
+	structure Ast  = FormatDoc
 	structure PP = PPUtil
-	type input = T.module
-	type output = (string list * PPUtil.pp) list
+	type code = Ast.module
 	val cfg = Params.empty
 	fun mkComment _ = PP.empty
 	fun group s pp =
 	    PP.hblock 0 [PP.s ("<"^s^">"),pp,
 			 PP.s ("</"^s^">")]
-
-	open T
+	local
+	  open Ast
+	in
 	fun mk_id id =
 	    let
 		val {qualifier,base} = Id.toPath id
@@ -40,7 +39,7 @@ structure HTMLPP : HTML_PP =
 		    {init="",sep="/",final=".html#"^base,
 		     fmt=(fn x => x)} qualifier
 	    in
-		PP.s(if (List.null qualifier) then ("#"^base)
+		PP.s(if (List.null qualifier) then base
 		else path)
 	    end
 
@@ -84,9 +83,9 @@ structure HTMLPP : HTML_PP =
 				PP.s "<dd>",pp_format fmt]),
 		     sep=PP.ws} fl)
 
-	fun translate p (T.Module{name,decls={title,body},imports},_) =
+	fun pp_module p (Module{name,decls={title,body},imports}) =
 	    let
-		val base = T.ModuleId.toString name
+		val base = ModuleId.toString name
 	    in
 	    [([OS.Path.joinBaseExt{base=base,ext=SOME "html"}],
 	      PP.vblock 0 [PP.s "<HTML>",
@@ -103,6 +102,7 @@ structure HTMLPP : HTML_PP =
 			   ])]
 
 	    end
+	  end
     end
 
 

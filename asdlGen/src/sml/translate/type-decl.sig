@@ -30,8 +30,8 @@ signature TYPE_DECL =
 	     info : ty_info,
 	   cnstrs : con list,
 	   match  : (choice -> exp) -> exp -> exp}
-    | App  of (ty_con * ty_id)
-
+    | App   of (ty_con * ty_id)
+    | Alias of  ty_id
     withtype field   = {label : id option,tid : ty_id}
          and match   = (field * exp)
          and choice  = (tag * match list)
@@ -50,5 +50,5 @@ signature AUX_DECLS =
   sig
     structure Ty   : TYPE_DECL 
     type decl 
-    val trans : Ty.ty_decl list -> decl list
+    val trans : Ty.ty_decl list -> Ty.ty_decl list -> decl list
   end

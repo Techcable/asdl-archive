@@ -151,34 +151,25 @@ structure Test =
 		EQUAL => (cmp_paths(xs,ys)) 
 	      | x => x
 		
-	fun remove_dups (src,outs) =
-	    (ListMergeSort.uniqueSort String.compare src,
-	     ListMergeSort.uniqueSort String.compare outs)
+	fun remove_dups outs = ListMergeSort.uniqueSort String.compare outs
 
-	fun get_files  "" i =
-	    let
-		fun do_it ((y,x),(ys,xs)) =
-		    (y::ys,x@xs)
-	    in
-		remove_dups (List.foldr do_it ([],[]) i)
-	    end
-	  | get_files s i =
+	fun get_files  "" outs = remove_dups (List.foldr (op @) [] outs)
+	  | get_files s outs =
 	    let
 		fun is_type x =
 		    case ((OS.Path.ext o OS.Path.file) x) of
 			NONE => false
 		      | SOME x => x = s
-		fun do_it ((y,x),(ys,xs)) =
-		    (y::ys,(List.filter is_type x)@xs)
+		fun do_it (x,xs) = (List.filter is_type x)@xs
 	    in
-		remove_dups (List.foldr do_it ([],[]) i)
+		remove_dups (List.foldr do_it [] outs)
 	    end
 
 	
 	fun java_comp i =
 	    let
-		val (srcs,outs) = get_files "java" i
-		val dirs = Set.addList (Set.empty,List.map OS.Path.dir srcs)
+		val outs = get_files "java" i
+		val dirs = Set.addList (Set.empty,List.map OS.Path.dir outs)
 		val class_path = (Set.listItems dirs)@S.java_classes
 	    in
 		P.javac{class_path=class_path,inputs=outs,
@@ -187,7 +178,7 @@ structure Test =
 
 	fun sml_comp i =
 	    let
-		val (srcs,outs) = get_files "" i
+		val outs = get_files "" i
 		val cm_path = S.cm_path
 	    in
 		P.sml_batch{cm_path=cm_path,inputs="asdl-base.cm"::outs}
@@ -195,7 +186,7 @@ structure Test =
 
 	fun haskell_comp i =
 	    let
-		val (srcs,outs) = get_files "" i
+		val outs = get_files "" i
 		val haskell_path = S.haskell_path
 	    in
 		P.haskell{haskell_path=haskell_path,inputs=outs}
@@ -203,7 +194,7 @@ structure Test =
 	fun c_comp i =
 	    P.cc{include_path=S.c_includes,
 		 library_path=S.c_libs,
-		 inputs= #2 (get_files "c" i),
+		 inputs=(get_files "c" i),
 		 rest=["-fsyntax-only",
 		       "-ansi",
 		       "-pedantic","-Wall"]}
@@ -211,7 +202,7 @@ structure Test =
 	fun cxx_comp i =
 	    P.cxx{include_path=S.cxx_includes,
 		  library_path=S.cxx_libs,
-		  inputs= #2 (get_files "cxx" i),
+		  inputs= (get_files "cxx" i),
 		  rest=["-fsyntax-only","-Wall"]}
 
 

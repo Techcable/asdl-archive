@@ -11,10 +11,9 @@
 (*just a hack for now *)
 structure CPlusPlusPP : OO_PP =
     struct
-	structure T = OOAst
 	structure PP = PPUtil
-	structure AST = OOAst
-	type input =  T.module
+	structure Ast = OOAst
+	type code = (Ast.module * Module.Mod.props)
 	type output = (string list * PPUtil.pp) list
 
 	val cfg = Params.empty 
@@ -264,7 +263,7 @@ structure CPlusPlusPP : OO_PP =
 	      | pp_stmt Nop = PP.s ";"
 	      | pp_stmt (Expr e) =
 		PP.cat [pp_exp e,PP.s ";"]
-	      | pp_stmt (Case {test,clauses,default=T.Nop}) =
+	      | pp_stmt (Case {test,clauses,default=Nop}) =
 		PP.cat
 		[PP.ws,
 		 PP.vblock 4
@@ -277,24 +276,26 @@ structure CPlusPlusPP : OO_PP =
 		 PP.seq_term {fmt=pp_clause,sep=PP.nl} clauses,
 		 PP.s "default: ",PP.ws,pp_stmt default,
 		 PP.nl,PP.untab, PP.s "}"]
-	      | pp_stmt (T.If{test,then_stmt,else_stmt=T.Nop}) =
+	      | pp_stmt (If{test,then_stmt,else_stmt=Nop}) =
 		PP.vblock 4
 		[PP.s "if(",pp_exp test,PP.s ") ", pp_stmt then_stmt]
-	      | pp_stmt (T.If{test,then_stmt as (Block _),
+	      | pp_stmt (If{test,then_stmt as (Block _),
 			      else_stmt}) =
 		PP.cat
 		[PP.s "if(",pp_exp test,PP.s ") ",
 		 pp_stmt then_stmt,
 		 PP.s " else ",pp_stmt else_stmt]
-	      | pp_stmt (T.If{test,then_stmt,else_stmt}) =
+	      | pp_stmt (If{test,then_stmt,else_stmt}) =
 		PP.vblock 4
 		[PP.s "if(",pp_exp test,PP.s ")",
 		 PP.ws, pp_stmt then_stmt,PP.untab,
 		 PP.s "else",PP.ws,pp_stmt else_stmt]
+	      | pp_stmt (Block {vars=[],body}) = 
+		PP.seq {fmt=pp_stmt,sep=PP.nl} body
 	      | pp_stmt (Block b) = pp_block b
-	      | pp_stmt (T.While {test,body=Block b}) =
+	      | pp_stmt (While {test,body=Block b}) =
 		PP.cat [PP.s "while(",pp_exp test, PP.s ")",pp_block b]
-	      | pp_stmt (T.While {test,body}) =
+	      | pp_stmt (While {test,body}) =
 		PP.vblock 4 [PP.s "while(",pp_exp test, PP.s ")",
 			     PP.ws,pp_stmt body]
 		
@@ -359,8 +360,8 @@ structure CPlusPlusPP : OO_PP =
 		    fun is_big {vars=[],body=[]} = false
 		      | is_big {vars=[],body=[Case _]} = true
 		      | is_big {vars=[],body=[Case _,_]} = true
-		      | is_big {vars=[],body=[T.Block x]} = is_big x
-		      | is_big {vars=[],body=[T.Block _,T.Block _]} = true
+		      | is_big {vars=[],body=[Block x]} = is_big x
+		      | is_big {vars=[],body=[Block _,Block _]} = true
 		      | is_big {vars=[],body=[_,_]} = false
 		      | is_big {vars=[],body=[_]} = false 
 		      | is_big _ = true
@@ -491,7 +492,7 @@ structure CPlusPlusPP : OO_PP =
 		in
 		    (header,body)
 		end
-	end
+
 
 	val header_prologue =
 	    PPUtil.wrap Module.Mod.interface_prologue 
@@ -502,10 +503,10 @@ structure CPlusPlusPP : OO_PP =
 	val body_epilogue =
 	    PPUtil.wrap Module.Mod.implementation_epilogue
 
-	fun translate p (T.Module{name,imports,decls},props) =
+	fun pp_module p (Module{name,imports,decls},props) =
 	    let
-		val mn = T.ModuleId.toString name
-		val x = List.map T.ModuleId.toString imports
+		val mn = ModuleId.toString name
+		val x = List.map ModuleId.toString imports
 		fun mk_file suffix f =
 		    OS.Path.joinBaseExt{base=f,ext=SOME suffix}
 
@@ -536,7 +537,7 @@ structure CPlusPlusPP : OO_PP =
 		[([mk_file "hxx" mn],pp_interface mn header includes),
 		 ([mk_file "cxx" mn], pp_impl (mk_file "hxx" mn) body)]
 	    end
-	    
-
+	  
+	end
 		
     end

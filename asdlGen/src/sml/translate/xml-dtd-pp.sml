@@ -9,31 +9,30 @@
 
 signature XML_DTD_PP =
     sig
-	structure T : XML_DTD
-	include TRANSLATE_TO_SOURCE where type input = T.module
+	structure Ast : XML_DTD
+	include MODULE_PP where type code = Ast.module 
     end
 
 structure XMLDTDPP : XML_DTD_PP =
     struct 
-	structure T  = XMLDTD
+	structure Ast  = XMLDTD
 	structure PP = PPUtil
-	type input = T.module
-	type output = (string list * PPUtil.pp) list
+	type code = Ast.module
 	val cfg = Params.empty
 	fun mkComment _ = PP.empty
 	local
-	  open T
+	  open Ast
 	  val bar_sep = PP.cat [PP.s " |",PP.ws]
 	  val comma_sep = PP.cat [PP.s ",",PP.ws]
 	  fun parens p = PP.cat [PP.s "(",p,PP.s ")"]
-	  val pp_tid = PP.wrap T.TypeId.toString
-	  val pp_id = PP.wrap T.VarId.toString
+	  val pp_tid = PP.wrap TypeId.toString
+	  val pp_id = PP.wrap VarId.toString
 	  fun token2str ID = "ID"
 	    | token2str IDREF = "IDREF"
 	    | token2str ENTITY = "ENTITY"
 	    | token2str NMTOKEN = "NMTOKEN"
 	  fun attv2str (Str s) = s (* TODO esacpe magic *)
-	    | attv2str (EntRef i) = "&"^(T.VarId.toString i)^";"
+	    | attv2str (EntRef i) = "&"^(VarId.toString i)^";"
 	    | attv2str (CharRef x) = ""
 	in
 	  fun pp_content_spec EMPTY = PP.s "EMPTY"
@@ -96,15 +95,16 @@ structure XMLDTDPP : XML_DTD_PP =
 		    end
 	  and pp_elem_decls d =
 		    (PP.seq_term {fmt=pp_elem_decl,sep=PP.cat[PP.nl,PP.nl]} d)
-	end
-	fun translate _ (T.Module{name,decls,imports},_) =
+
+	fun pp_module _ (Module{name,decls,imports}) =
 	  let
 	    fun file_name m =
-	      [OS.Path.joinBaseExt{base=(T.ModuleId.toString  m),
+	      [OS.Path.joinBaseExt{base=(ModuleId.toString  m),
 				   ext=SOME "dtd"}]
 	  in
 	    [(file_name name,pp_elem_decls decls)]
 	  end
+	end
     end
 
 

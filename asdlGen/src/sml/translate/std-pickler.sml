@@ -16,9 +16,9 @@ functor StdPickler (structure Arg : STD_PICKLER_AUX_FUNS) : AUX_DECLS =
 	      val compare = Ty.TypeId.compare
       end)
     val penv = List.foldl Env.insert' Env.empty Arg.prims
-    fun trans tys =
+    fun trans tys = trans_env  (List.foldl Env.insert' penv tys) 
+    and trans_env env tids =
       let
-	val env = List.foldl Env.insert' penv tys
 	fun get_ty tid =
 	  (case Env.find(env,tid) of
 	    SOME ty => (tid,ty)
@@ -48,6 +48,10 @@ functor StdPickler (structure Arg : STD_PICKLER_AUX_FUNS) : AUX_DECLS =
 	      val rd = Option.valOf rd
 	    in
 	      Arg.read_decl{name=ty_id,ret=ty,body=rd}
+	    end
+	  | rd_decl (ty_id,Ty.Alias(ty_id')) =
+	    let val (_,ty) =  get_ty ty_id'
+	    in rd_decl(ty_id,ty)
 	    end
 	and rd_con {tag,fields,cnstr} =
 	  (tag,cnstr (List.map rd_field fields))
@@ -79,6 +83,10 @@ functor StdPickler (structure Arg : STD_PICKLER_AUX_FUNS) : AUX_DECLS =
 	    in
 	      Arg.write_decl{name=ty_id,arg=ty,body=wr}
 	    end
+	  | wr_decl (ty_id,Ty.Alias(ty_id')) =
+	    let val (_,ty) =  get_ty ty_id'
+	    in wr_decl(ty_id,ty)
+	    end
 	and wr_match ({label,tid},exp) =
 	  case Env.find(env,tid) of
 	    SOME (Ty.App(f,ty)) =>
@@ -88,8 +96,8 @@ functor StdPickler (structure Arg : STD_PICKLER_AUX_FUNS) : AUX_DECLS =
 	and wr_con (tag,matches) =
 	  Arg.expSeq ((Arg.write_tag tag)::(List.map wr_match matches))
 
-	val rds = List.map rd_decl tys
-	val wrs = List.map wr_decl tys
+	val rds = List.map rd_decl  tids
+	val wrs = List.map wr_decl  tids
       in
 	rds @ wrs
       end

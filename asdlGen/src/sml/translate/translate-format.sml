@@ -20,7 +20,8 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 	type sequence_value = T.format
 	type con_value      = (T.format * string option)
 	type field_value    = T.format 
-
+	type module_value   = T.module * T.ditem
+	type output         = T.module list
 	val set_dir = false
 	val ignore_supress = true
 	val fix_fields = false
@@ -29,7 +30,6 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 	val (cfg,output_directory) =  Params.declareString cfg
 	    {name="output_directory",flag=SOME #"d",default="doc"}
 
-	val get_module = (fn x => x)
 	    
 	fun trans_long_id id =  id
 	fun trans_short_id id = (Id.fromString o Id.getBase) id
@@ -119,25 +119,46 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 	fun trans_option p {props,tinfo,name,also_seq} =
 	    T.EM[id2STR (trans_long_id name)]
 
-	fun trans_all p {module,defines,options,sequences,props} =
+	fun trans_module p {module,defines,imports,options,sequences,props} =
 	    let
 		val mname = Id.toString (M.module_name module)
 		val doc =
 		    case (M.Mod.doc_string props) of
-			NONE => []
-		      | SOME s =>  [T.STR s]
+		      NONE => []
+		    | SOME s =>  [T.STR s]
+		val toMid = Ast.ModuleId.fromPath o Id.toPath o M.module_name
+		val decls =
+		  {title="Description for Module "^mname,
+		   body=[T.SECT(1,[T.STR ("Description of Module "^mname)]),
+			 T.P doc,		
+			 T.SECT(2,[T.STR ("Locally defined types")]),
+			 T.DL (defines),
+			 T.SECT(2,[T.STR ("Types used as options")]),
+			 T.UL options,
+			 T.SECT(2,[T.STR ("Types used as sequences")]),
+			 T.UL sequences]}
+		(* todo add import hyper links *)
+		val toc_entry =
+		  {tag=T.REF (Id.fromPath {base="",
+					   qualifier=[mname]},
+			      [T.BF [T.STR "module"],T.TT [T.STR  mname]]),
+		   fmt=T.RM [T.P doc]}
 	    in
-		{title="Description for Module "^mname,
-		 body=[T.SECT(1,[T.STR ("Description of Module "^mname)]),
-  		       T.P doc,		
-		       T.SECT(2,[T.STR ("Locally defined types")]),
-		       T.DL (defines),
-		       T.SECT(2,[T.STR ("Types used as options")]),
-		       T.UL options,
-		       T.SECT(2,[T.STR ("Types used as sequences")]),
-		       T.UL sequences]}
+	      (T.Module{name=toMid module,
+		       imports=List.map toMid imports,
+		       decls=decls},toc_entry)
 	    end
-
+	fun trans p (ms:module_value list) =
+	  let
+	    val toc_id = T.ModuleId.fromString "toc"
+	    val toc_entries = List.map #2 ms
+	    val mods = List.map #1 ms
+	    val toc_decl =
+	      {title="Table of Contentes ",
+	       body=[T.DL toc_entries]}
+	  in
+	    T.Module{name=toc_id,imports=[],decls=toc_decl}::mods
+	  end
     end
 
 

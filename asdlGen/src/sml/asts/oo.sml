@@ -119,4 +119,47 @@ structure OOAst: OO_AST =
 
 	structure T =  mkLangAst(type decls = ty_decl list)
 	open T
+	structure Env =
+	    SplayMapFn(struct
+			   type ord_key = TypeId.mid
+			   val compare = TypeId.compare
+		       end)
+	fun add_methods x =
+	    let
+		val env =
+		    List.foldl (fn ((tid,mth),env)   =>
+				case (Env.find(env,tid)) of
+				    NONE => Env.insert(env,tid,[mth])
+				  | SOME mths => 
+					Env.insert(env,tid,mth::mths))
+		    Env.empty x
+
+		fun add_mths
+		    (c as  (DeclAbstractClass
+			    {name,idecls,scope,inherits,fields,mths}),rest) =
+		    (case (Env.find (env,name)) of
+			 NONE => c
+		       | SOME m =>
+			     (DeclAbstractClass
+			      {name=name,idecls=idecls,
+			       scope=scope,inherits=inherits,
+			       fields=fields,mths=m@mths}))::rest
+		  | add_mths
+			 (c as (DeclClass
+				{name,final,idecls,scope,inherits,
+				 cnstrs,fields,mths}),rest) =
+			 (case (Env.find (env,name)) of
+			      NONE => c
+			    | SOME m =>
+				  (DeclClass
+				   {final=final,
+				    cnstrs=cnstrs,
+				    name=name,idecls=idecls,
+				    scope=scope,inherits=inherits,
+				    fields=fields,mths=m@mths}))::rest
+		  | add_mths (x,rest) = x::rest
+	    in
+		 List.foldr add_mths []
+	    end
+
     end

@@ -31,6 +31,8 @@ structure PicklePP =
 		TextPP.pp_value lbs outs s (rd (qid s) ins)
 	fun pp_xml (rd,lbs,ins,outs) s =
 		XMLPP.pp_value lbs outs s (rd (qid s) ins)
+	fun pp_ascii (rd,lbs,ins,outs) s =
+		ASCIIPP.pp_value lbs outs s (rd (qid s) ins)
 
 
 	fun do_it (f,t,p,vs) =
@@ -47,7 +49,9 @@ structure PicklePP =
 	    end
 
 	fun pickle_pp (_,"--text"::t::p::xs) =
-	    (do_it (pp_txt,t,p,xs); OS.Process.success)
+	  (do_it (pp_txt,t,p,xs); OS.Process.success)
+	  | pickle_pp (_,"--ascii"::t::p::xs) =
+	    (do_it (pp_ascii,t,p,xs); OS.Process.success)
 
 	  | pickle_pp (_,"--xml"::t::p::xs) =
 	    (do_it (pp_xml,t,p,xs); OS.Process.success)

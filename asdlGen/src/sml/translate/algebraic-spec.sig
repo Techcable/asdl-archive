@@ -9,8 +9,9 @@
 
 signature ALGEBRAIC_PP =
   sig
-    structure T : ALGEBRAIC_AST
-      include TRANSLATE_TO_SOURCE  where type input =  T.module
+    structure Ast : ALGEBRAIC_AST
+      include MODULE_PP
+        where type code = (Ast.module * Module.Mod.props)
   end
 
 signature ALGEBRAIC_TYPE_DECL =
@@ -40,4 +41,9 @@ signature ALGEBRAIC_SPEC =
 
     val get_info: Module.Typ.props -> Ty.ty_info
 
+    val get_wrappers  : Ty.ty_exp -> Module.Typ.props ->
+      {natural_ty: Ty.ty_exp,
+             wrap: Ty.exp -> Ty.exp,
+           unwrap: Ty.exp -> Ty.exp}
   end
+
