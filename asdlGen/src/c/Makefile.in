@@ -116,8 +116,6 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP = --best
-DEP_FILES =  .deps/AsdlValue.P .deps/TypePickle.P .deps/asdl_base.P \
-.deps/assoc.P .deps/gpickle.P .deps/xlate.P
 SOURCES = $(libasdl_a_SOURCES) $(xlate_SOURCES)
 OBJECTS = $(libasdl_a_OBJECTS) $(xlate_OBJECTS)
 
@@ -126,9 +124,9 @@ default: all
 .SUFFIXES:
 .SUFFIXES: .c .o
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
-	cd $(top_srcdir) && $(AUTOMAKE) --foreign src/c/Makefile
+	cd $(top_srcdir) && $(AUTOMAKE) --foreign --include-deps src/c/Makefile
 
-Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status $(BUILT_SOURCES)
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
@@ -251,42 +249,12 @@ distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 subdir = src/c
 
 distdir: $(DISTFILES)
-	here=`cd $(top_builddir) && pwd`; \
-	top_distdir=`cd $(top_distdir) && pwd`; \
-	cd $(top_srcdir) \
-	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(top_srcdir) --output-dir=$$top_distdir --foreign src/c/Makefile
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  test -f $(distdir)/$$file \
 	  || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
 	  || cp -p $$d/$$file $(distdir)/$$file; \
 	done
-
-MKDEP = gcc -M $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
-
-DEPS_MAGIC := $(shell mkdir .deps > /dev/null 2>&1 || :)
--include .deps/.P
-.deps/.P: $(BUILT_SOURCES)
-	echo > $@
-
--include $(DEP_FILES)
-
-mostlyclean-depend:
-
-clean-depend:
-
-distclean-depend:
-
-maintainer-clean-depend:
-	rm -rf .deps
-
-.deps/%.P: %.c
-	@echo "Computing dependencies for $<..."
-	@o='o'; \
-	test -n "$o" && o='$$o'; \
-	$(MKDEP) $< >$@.tmp \
-	  && sed "s,^\(.*\)\.o:,\1.$$o \1.l$$o $@:," < $@.tmp > $@ \
-	  && rm -f $@.tmp
 info:
 dvi:
 check: all
@@ -327,20 +295,20 @@ maintainer-clean-generic:
 	test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 mostlyclean:  mostlyclean-pkglibLIBRARIES mostlyclean-compile \
 		mostlyclean-binPROGRAMS mostlyclean-tags \
-		mostlyclean-depend mostlyclean-generic
+		mostlyclean-generic
 
 clean:  clean-pkglibLIBRARIES clean-compile clean-binPROGRAMS clean-tags \
-		clean-depend clean-generic mostlyclean
+		clean-generic mostlyclean
 
 distclean:  distclean-pkglibLIBRARIES distclean-compile \
-		distclean-binPROGRAMS distclean-tags distclean-depend \
-		distclean-generic clean
+		distclean-binPROGRAMS distclean-tags distclean-generic \
+		clean
 	rm -f config.status
 
 maintainer-clean:  maintainer-clean-pkglibLIBRARIES \
 		maintainer-clean-compile maintainer-clean-binPROGRAMS \
-		maintainer-clean-tags maintainer-clean-depend \
-		maintainer-clean-generic distclean
+		maintainer-clean-tags maintainer-clean-generic \
+		distclean
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 
@@ -352,9 +320,8 @@ mostlyclean-binPROGRAMS distclean-binPROGRAMS clean-binPROGRAMS \
 maintainer-clean-binPROGRAMS uninstall-binPROGRAMS install-binPROGRAMS \
 uninstall-pkgincludeHEADERS install-pkgincludeHEADERS tags \
 mostlyclean-tags distclean-tags clean-tags maintainer-clean-tags \
-distdir mostlyclean-depend distclean-depend clean-depend \
-maintainer-clean-depend info dvi installcheck install-exec install-data \
-install uninstall all installdirs mostlyclean-generic distclean-generic \
+distdir info dvi installcheck install-exec install-data install \
+uninstall all installdirs mostlyclean-generic distclean-generic \
 clean-generic maintainer-clean-generic clean mostlyclean distclean \
 maintainer-clean
 
