@@ -84,12 +84,12 @@ structure SupportFiles: SUPPORT_FILES =
 structure UnixExternalProgs : EXTERNAL_PROGRAMS =
     struct
 	val cc_prg  = "gcc"
-	val cxx_prg = "g++"
-	val javac_prg = "javac"
-	val haskell_prg = "hugs +q -c1000"
-	val icont_prg = "icont"
-	val sml_prg = "sh ../misc/sml-batch"
-	val ocaml_prg = "sh ../misc/ocaml-batch"
+	val cxx_prg = "echo g++"
+	val javac_prg = "echo javac"
+	val haskell_prg = "echo hugs +q -c1000"
+	val icont_prg = "echo icont"
+	val sml_prg = "echo sh ../misc/sml-batch"
+	val ocaml_prg = "echo sh ../misc/ocaml-batch"
 	fun prefix x s = x^s
 
 	fun run cmd = OS.Process.system ((*"echo " ^ *)cmd )

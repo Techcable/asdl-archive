@@ -11,7 +11,7 @@ signature ALGOL_PP =
   sig
     structure Ast : ALGOL_AST
       include CODE_PP
-        where type code =  (Ast.module * Semant.Module.P.props)
+        where type code =  (Ast.module * Semant.module_info)
   end
 
 signature ALGOL_TYPE_DECL =

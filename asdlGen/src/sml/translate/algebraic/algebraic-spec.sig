@@ -24,7 +24,7 @@ signature ALGEBRAIC_PP =
   sig
     structure Ast : ALGEBRAIC_AST
       include CODE_PP
-        where type code = (Ast.module * Semant.Module.P.props)
+        where type code = (Ast.module * Semant.module_info)
   end
 (**)
 (**:[[signature ALGEBRAIC_TYPE_DECL]]:

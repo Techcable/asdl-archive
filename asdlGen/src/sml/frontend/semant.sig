@@ -93,10 +93,10 @@ and user defined ASDL types.
 **)
 	    val is_prim  : type_info -> bool
 (**:[[signature SEMANT]] [[structure Type]]:
-The function [[is_enum]] is a predicate that returns true iff a sum type
-is just a finite enumeration of constants. 
+The function [[is_boxed]] is a predicate that returns true iff a type
+should be represented as a boxed object.
 **)
-	    val is_enum  : type_info -> bool
+	    val is_boxed  : type_info -> bool
 (**:[[signature SEMANT]] [[structure Type]]:
 [[uses]] simply returns the qualified identifier of types used on the
 right hand side of a type declaration. Its internally by the validation

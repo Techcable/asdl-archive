@@ -70,7 +70,7 @@ Sets of qualifers.
 	    uses:S.set,
 	  fields:field_info list, 
 	    cons:con_info list,
-	 is_enum:bool, (* should move them into props *)
+	 is_boxed:bool, (* should move them into props *)
 	 is_prim:bool,
 	   props:TypProps.props}
 
@@ -118,7 +118,7 @@ Sets of qualifers.
 	      mk_src_name Id.fromPath (name x,P.source_name (props x))
 	    val cons = #cons o get_t
 	    val fields = #fields o get_t
-	    val is_enum = #is_enum o get_t
+	    val is_boxed = #is_boxed o get_t
 	    val is_prim  = #is_prim o get_t
 	    val uses = S.listItems o #uses o get_t
 	  end
@@ -471,7 +471,7 @@ Declare a type and update all the necessary book keeping.
 		       val fields = mk_field_info 0 [mname,basename] fields
 		       val c = List.length fields
 		       val (box_cons,cons) = mk_con_info c tname cons
-		       val is_enum = box_cons orelse (not (List.null fields))
+		       val is_boxed = box_cons orelse (not (List.null fields))
 		       val ty_uses = types_used t
 		       val inits = TypProps.parse (view (TId.toSid tname))
 		       val props = TypProps.new (inits)
@@ -481,7 +481,7 @@ Declare a type and update all the necessary book keeping.
 				      fields=fields,
 				      cons=cons,
 				      props=props,
-				      is_enum=is_enum,
+				      is_boxed=is_boxed,
 				      uses=
 				      Env.foldli (fn (k,_,s) => S.add(s,TId.fromSid k))
 				      S.empty ty_uses}
@@ -537,7 +537,7 @@ Build a new module info and add it to the current module environment.
 		 val tinfo =
 		   {tag=count,name=full_name,
 		    uses=S.empty,fields=[],cons=[],
-		    props=TypProps.new inits,is_prim=true,is_enum=false}
+		    props=TypProps.new inits,is_prim=true,is_boxed=false}
 	       in ME{menv=menv,errs=errs,props=props,uenv=uenv,
 		     penv=Env.insert(penv,TId.toSid short_name,tinfo),count=count}
 	       end

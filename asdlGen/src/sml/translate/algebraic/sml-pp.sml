@@ -18,7 +18,7 @@ structure SMLPP : ALGEBRAIC_PP =
     open PP
     open Ast
 
-    type code =  (Ast.module * Semant.Module.P.props)
+    type code =  (Ast.module * Semant.module_info)
     val opts = CommandOptions.empty
     fun mkComment s = vb 1 (str "(*") (seq nl str s) (str " *)")
     val mkDeps = PPDepends.cmfile
@@ -35,11 +35,14 @@ structure SMLPP : ALGEBRAIC_PP =
       | isStrFun _ = false
 
     fun pp_mlstr s = str ("\""^(String.toString s)^"\"")
-      fun pp_code p (Module{name,imports,decls},props) =
+      fun pp_code p (Module{name,imports,decls},minfo) =
 	let
-	  val pp_id = local_vid name
-	  val pp_ty_id = local_tid name
-	    
+	  val props = Semant.Module.props minfo
+	  val toMid = Ast.ModuleId.fromPath o Semant.Module.Id.toPath o
+	    Semant.Module.name
+	  val mname = toMid minfo
+	  val pp_id = local_vid mname
+	  val pp_ty_id = local_tid mname
 	  fun pp_rec_seq eq fmt x y =
 	    let
 	      fun zip_fields ([],[]) = []

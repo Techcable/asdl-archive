@@ -64,8 +64,8 @@ the final output. All of this code is fairly straight forward.
       type field_value    = {fd:T.field,ty_fd:Ty.field,ulabel:bool}
 	
       type type_con_value = Ty.ty_decl list
-      type module_value   = Ty.ty_decl list * (T.module * S.Module.P.props)
-      type output         = (T.module * S.Module.P.props) list
+      type module_value   = Ty.ty_decl list * (T.module * S.module_info)
+      type output         = (T.module * S.module_info) list
 (**)
 (**:[[functor mkAlgebraicSemantTranslator]] translate a single field:
 **)      
@@ -208,11 +208,10 @@ the final output. All of this code is fairly straight forward.
 	  val (ty_decls,decls) =
 	    List.foldr merge (ty_cons,[]) defines
 	  val toMid =
-	    Ast.ModuleId.fromPath o S.Module.Id.toPath o S.Module.name
-	in
-	  (ty_decls,(T.Module{name=toMid module,
-			     imports=List.map toMid imports,
-			     decls=decls},props))
+	    Ast.ModuleId.fromPath o S.Module.Id.toPath o S.Module.src_name
+	in (ty_decls,(T.Module{name=toMid module,
+			       imports=List.map toMid imports,
+			       decls=decls},module))
 	end
 (**)
 (**:[[functor mkAlgebraicSemantTranslator]] glue several modules together:
@@ -239,7 +238,8 @@ the final output. All of this code is fairly straight forward.
 		     decls=(new_decls ty_decls)},mp)
 
 	  val out = (all@(List.map mk_aux_mods ms))
-	in List.filter (not o S.Module.P.suppress o #2) out
+	  val emit = (not o S.Module.P.suppress o S.Module.props o #2)
+	in List.filter emit out
 	end
 (**)
     end

@@ -33,8 +33,8 @@ functor mkAlgolSemantTranslator
       type type_con_value = {ty_decls:Ty.ty_decl list,gdecls:T.decl list}
       type module_value   = {ty_decls:Ty.ty_decl list,
 			       gdecls:T.decl list,
-			         mdec: (T.module * S.Module.P.props)}
-      type output         = (T.module * S.Module.P.props) list
+			         mdec: (T.module * S.module_info)}
+      type output         = (T.module * S.module_info) list
 
       val inits = Spec.inits
 
@@ -61,7 +61,7 @@ functor mkAlgolSemantTranslator
 	let
 	  val tname = trans t2t (S.Type.src_name tinfo)
 	  val name = trans c2v name
-	  val is_enum = S.Type.is_enum tinfo
+	  val is_boxed = S.Type.is_boxed tinfo
 	  val num_attrbs = List.length attrbs
 	  val all = (attrbs@fields:field_value list)
 	  val vars = List.map (fn {fd={name,ty},...} => (name,ty)) all
@@ -95,7 +95,7 @@ functor mkAlgolSemantTranslator
 	  val tag = {c=name,v=(S.Con.tag cinfo)}
 	  val choice = {name=name,fields=List.map #fd fields}
 	  val con =
-	    {tag=tag,fields=List.map #ty_fd all, cnstr=mk_cnstr is_enum}
+	    {tag=tag,fields=List.map #ty_fd all, cnstr=mk_cnstr is_boxed}
 	  val enumer = {name=name,value=(S.Con.P.enum_value cprops)}
 	  fun match c =
 	    (tag,(List.map (sub_attrb c) attrbs)@
@@ -162,7 +162,7 @@ functor mkAlgolSemantTranslator
 	| trans_defined p {tinfo,name,fields,cons,props} =
 	let
 	  val name = trans t2t name
-	  val is_enum = S.Type.is_enum tinfo
+	  val is_boxed = S.Type.is_boxed tinfo
 	  val fds = List.map #fd (fields:field_value list)
 	  val enumers = List.map #enumer (cons:con_value list)
 	  val enum_name = T.TypeId.suffixBase "_enum" name
@@ -170,8 +170,7 @@ functor mkAlgolSemantTranslator
 	  val user_fields = Spec.get_user_fields props
 	  (* todo handle case of user fields with enums *)
 	  val (decls,get_tag) =
-	    if is_enum then
-	      let
+	    if is_boxed then let
 		val choices = List.map #choice (cons:con_value list)
 		val variant = {tag=tag_id,tag_ty=enumers,choices=choices}
 		val ty_exp = T.TyReference
@@ -225,7 +224,7 @@ functor mkAlgolSemantTranslator
 	    end
 
 	  val cnstrs =
-	    (List.foldr (op @) [] (List.map (cnstr_decl is_enum) cons))
+	    (List.foldr (op @) [] (List.map (cnstr_decl is_boxed) cons))
 	in {decls=decls@cnstrs,ty_decl=ty_decl}
 	end
 
@@ -250,12 +249,12 @@ functor mkAlgolSemantTranslator
 	  val (gty_decls,gdecls) = List.foldr (merge_ty) ([],[]) type_cons
 	  val (ty_decls,decls) =  List.foldr merge ([],[]) defines
 	  val toMid =
-	    Ast.ModuleId.fromPath o S.Module.Id.toPath o S.Module.name
+	    Ast.ModuleId.fromPath o S.Module.Id.toPath o S.Module.src_name
 	in
 	  {ty_decls=ty_decls@gty_decls,gdecls=gdecls,
 	   mdec=(T.Module
 		 {name=toMid module,
-		  imports=List.map toMid imports,decls=decls},props)}
+		  imports=List.map toMid imports,decls=decls},module)}
 	end
       fun get_tags (Ty.Sum{cnstrs,...},xs) =
 	List.foldr (fn ({tag,...},xs) => tag::xs) xs cnstrs
@@ -275,7 +274,6 @@ functor mkAlgolSemantTranslator
 		 val mdec' = (T.Module{name=name,imports=prim_mods@imports,
 				       decls=decls},mp)
 		 val aux_mod_name = T.ModuleId.suffixBase suffix
-		 val mp = S.Module.P.new []
 	       in mdec'::(T.Module{name=aux_mod_name name,
 				  imports=name::imports
 				  @(List.map aux_mod_name imports),
@@ -292,7 +290,8 @@ functor mkAlgolSemantTranslator
 	  val out = case S.MEnv.P.aux_mod_suffix p of
 	    NONE => List.foldr add_decls [] ms
 	  | SOME s => List.foldr (mk_aux_mods s) [] ms
-	in (List.filter (not o S.Module.P.suppress o #2) out)
+	  val emit = (not o S.Module.P.suppress o S.Module.props o #2)
+	in (List.filter emit out)
 	end
     end
 

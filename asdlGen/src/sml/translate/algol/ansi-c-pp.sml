@@ -12,7 +12,6 @@ signature PP_ANSI_C =
     sig
 	structure T : ANSI_C
 	type pp = PPUtil.pp
-
 	val pp_ty_prim       : T.ty_prim -> pp
 	val pp_ty_exp        : T.ty_exp -> pp
 	val pp_ty_dec        : T.ty_dec -> pp
@@ -49,7 +48,7 @@ functor mkPPAnsiC(structure T: ANSI_C) : PP_ANSI_C =
 
 	val pp_ty_prim = PP.str o toString_ty_prim
 	val semi_sep = cat [str ";",nl]
-	fun pp_ty_id id = cat [PP.tid id,str "_ty"] 
+	fun pp_ty_id id = PP.tid id
 	val pp_id = PP.vid
 
 	fun pp_ty_exp (T.TyPrim x) = pp_ty_prim x
@@ -284,9 +283,9 @@ structure AnsiCPP : ALGOL_PP =
 	structure Trans = TranslateAnsiC
 	structure Ast = Trans.T
 	structure PP = mkPPAnsiC(structure T = AnsiC)
-	type code = (Ast.module * Semant.Module.P.props)
+	type code = (Ast.module * Semant.module_info)
 
-	val opts = CommandOptions.empty
+	val opts = Trans.opts
 	val mkDeps = PPDepends.makefile
 	local
 	    open AnsiC
@@ -344,8 +343,9 @@ structure AnsiCPP : ALGOL_PP =
 	val body_epilogue =
 	    PPUtil.wrap Semant.Module.P.implementation_epilogue
 	    
-	fun pp_code p  (arg as (Ast.Module{name,decls,imports}),props)  =
+	fun pp_code p  (arg as (Ast.Module{name,decls,imports}),minfo) =
 	  let
+	    val props = Semant.Module.props minfo
 	    val mn = Ast.ModuleId.toString name
 	    val mn = case mn of "" => "Ast" | x => x
 	    fun mk_file b x =
