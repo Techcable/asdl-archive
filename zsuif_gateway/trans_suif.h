@@ -46,6 +46,7 @@ public:
 
   void init_entry_attribs(zsuif_symbol_table_entry*,Symbol*);
   void do_table(SymbolTable *);
+  void do_FileBlock(FileBlock*);
 
   int                         get_data_type_alignment(DataType *);
   zsuif_suif_int*             get_data_type_size(DataType *);
@@ -64,15 +65,13 @@ public:
   zsuif_expression*           trans(Expression*);
   zsuif_statement*            trans(Statement*);
   zsuif_value_block*	      trans(ValueBlock*);
-
+  zsuif_variable_definition*  trans(VariableDefinition*);
+  zsuif_definition_block*     trans(DefinitionBlock*);
   zsuif_procedure_definition* trans(ProcedureDefinition*);
+
   /* TODO */
   zsuif_statement_list*       trans(StatementList*);
   zsuif_constant*	      trans(Constant*);
-  zsuif_variable_definition*  trans(VariableDefinition*);
-  zsuif_definition_block*     trans(DefinitionBlock*);
-  zsuif_file_block*           trans(FileBlock*);
-
   zsuif_binop* get_binop(LString);
   zsuif_binop* get_cmpop(LString);
   zsuif_unop*  get_unop(LString);

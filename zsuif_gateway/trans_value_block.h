@@ -20,53 +20,45 @@ public:
     REGVM(vm,TransValueBlock,this,RepeatValueBlock);
     REGVM(vm,TransValueBlock,this,UndefinedValueBlock);
   }
-
   zsuif_value_block * answer() { 
     assert(vm != NULL);
     vm->apply(vb);
     delete(vm);
     vm = NULL;
     assert(zvb != NULL);
+    // Set type of value block
+    zvb->data_type = t->trans(vb->get_type());
     return zvb; 
   }
   
   MATCH(TransValueBlock,ExpressionValueBlock,vb) {
-#ifdef BOGUS    
-    zsuif_source_op* expression = t->trans(&(vb->get_expression()));
-    zvb = new zsuif_Expression_value_block(expression);
-#endif
+    zsuif_expression* expression = t->trans(vb->get_expression());
+    zvb = new zsuif_ExpressionValueBlock(expression);
   }
 
   MATCH(TransValueBlock,MultiValueBlock,vb) {
-#ifdef BOGUS    
+    int count = vb->get_sub_block_count();
     zsuif_multi_value_block_init_list* inits = NULL;
-    s_count_t num_sub_blocks = (vb->num_sub_blocks());
-    /* cons thing on in reverse so the idx 0 is the first in the list */
-    while(num_sub_blocks--) {
-      int bit_offset = (vb->bit_offset(num_sub_blocks)).c_int();
-      trans_value_block sub_block(t,vb->sub_block(num_sub_blocks));
-      
+    while(count--) {
+      MultiValueBlock::sub_block_pair sp = vb->get_sub_block(count);
+      int bit_offset = sp.first.c_int();
+      TransValueBlock sub_block(t,sp.second);
       zsuif_multi_value_block_init *init =
 	new zsuif_multi_value_block_init(bit_offset,
 					 sub_block.answer());
       inits =
 	new zsuif_multi_value_block_init_list(init,inits);
     }
-    zvb = new zsuif_Multi_value_block(inits);
-#endif
+    zvb = new zsuif_MultiValueBlock(inits);
   }
   MATCH(TransValueBlock,RepeatValueBlock,vb) {
-#ifdef BOGUS    
-    zsuif_suif_int* count = t->trans(vb->num_repetitions());
-    trans_value_block sub_block(t,vb->sub_block());
+    int count = vb->get_num_repetitions();
+    TransValueBlock sub_block(t,vb->get_sub_block());
     zsuif_value_block* block = sub_block.answer();
-    zvb = new zsuif_Repeat_value_block(count,block);
-#endif
+    zvb = new zsuif_RepeatValueBlock(count,block);
   }
   MATCH(TransValueBlock,UndefinedValueBlock,vb) {
-#ifdef BOGUS    
-    zvb = new zsuif_Undefined_value_block();
-#endif
+    zvb = new zsuif_UndefinedValueBlock();
   }
 };
 #endif

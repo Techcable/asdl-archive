@@ -45,13 +45,14 @@ class TransExpression {
     vm->apply(e);
     delete(vm);
     vm = NULL;
-    //    assert(zexpr != NULL);
     // for debugging only
     if (zexpr == NULL) {
-      fprintf(stderr,"returning bogus expression");
-      return new zsuif_Constant(new zsuif_type_id(0),
-				new zsuif_IntConstant(t->trans(IInteger(0))));
+      fprintf(stderr,"returning bogus expression\n");
+      zexpr = new zsuif_Constant
+	(new zsuif_type_id(0),
+	 new zsuif_IntConstant(t->trans(IInteger(0))));
     }
+    assert(zexpr != NULL);
     return zexpr;
   }
 

@@ -78,7 +78,7 @@ variable_definition = (variable_symbol name,
 value_block = 
     ExpressionValueBlock(expression expression)
   | MultiValueBlock(multi_value_block_init* inits)
-  | RepeatValueBlock(suif_int count, value_block block) 
+  | RepeatValueBlock(int count, value_block block) 
   | UndefinedValueBlock
   attributes(type_id data_type)
 

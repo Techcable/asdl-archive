@@ -189,7 +189,7 @@ public:
     zsuif_group_field_list* group_fields = NULL;
     REV_MAP(SymbolTableObject*,fiter,fidx,farray) {
       FieldSymbol* fs = to<FieldSymbol>(farray[fidx]);
-      if(fs) {
+      assert(fs != NULL);
 	zsuif_field_symbol* name = trans->trans(fs);
 	
 	TransType ft(trans,fs->get_type());
@@ -202,7 +202,6 @@ public:
 	  new zsuif_group_field(name,field_type,bit_offset);
       	group_fields = 
 	  new zsuif_group_field_list(group_field, group_fields);
-      }
     }
     typ = new zsuif_Data
       (new zsuif_GroupType(bit_size, bit_alignment, x->get_name(), 

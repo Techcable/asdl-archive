@@ -23,12 +23,12 @@ public:
     if(trans->in_table(symb)) {
       return trans->make_symb(symb);
     }
+    assert(vm != NULL);
     vm->apply(symb);
-    if(zsymb) {
-      return zsymb;
-    } else { /*  error(-1,"Bad symbol\n"); */
-      return NULL;
-    }
+    delete(vm);
+    vm = NULL;
+    assert(zsymb != NULL);
+    return zsymb;
   }
   void return_entry(zsuif_symbol_table_entry* e, Symbol* s) {
     trans->init_entry_attribs(e,s);
@@ -41,15 +41,14 @@ public:
   }
   MATCH(TransSymbol,ProcedureSymbol,s) { 
       ProcedureSymbol* ps = s;
+      zsuif_procedure_symbol* name =  
+	new zsuif_procedure_symbol(trans->make_symb(ps));
       zsuif_procedure_definition* def;
       ProcedureDefinition* pd = s->get_definition();
       if(pd == NULL) { 
-	zsuif_procedure_symbol* name =  
-	  new zsuif_procedure_symbol(trans->make_symb(ps));
 	TransType typ(trans,ps->get_type());
 	zsuif_procedure_type* procedure_type = typ.get_procedure_type();
 	zsuif_qualification_list* qualifications = typ.get_qualifications();
-	
 	def = new zsuif_procedure_definition
 	  (name, qualifications, procedure_type, NULL); 
       } else {
@@ -79,6 +78,7 @@ public:
     zsuif_expression* bit_offset = trans->trans(s->get_bit_offset());
     zsuif_symbol_table_entry* e = 
       new zsuif_FieldEntry(bit_offset);
+    return_entry(e,s);
   }
 
   MATCH(TransSymbol,VariableSymbol,s) {
@@ -94,6 +94,7 @@ public:
       zsuif_type_id* type_id = trans->trans(s->get_type());
 	zsuif_variable_definition* def = 
 	  new zsuif_variable_definition(vs,type_id,NULL);
+
 	if(trans->is_extern(s)) {
 	  zsuif_symbol_table_entry* e = 
 	    new zsuif_VariableEntry(def,StdTypes_FALSE);
@@ -109,6 +110,7 @@ public:
     zsuif_expression* bit_offset = trans->trans(s->get_bit_offset());
     zsuif_symbol_table_entry* e = 
       new zsuif_FieldEntry(bit_offset);
+    return_entry(e,s);
   }
 };
 #endif

@@ -37,7 +37,11 @@ void TransSuif::trans_suif(void) {
   fprintf(stderr,"Walking File Set Symbol Table\n");
   this->do_table(fsb->get_file_set_symbol_table());
 
-
+  fprintf(stderr,"Walking File Blocks Symbol Table\n");
+  Iter<FileBlock*> fbiter = fsb->get_file_block_iterator();
+  REV_MAP(FileBlock*,fbiter,fbidx,fbarray) {
+    do_FileBlock(fbarray[fbidx]);
+  }
   zsuif_type_table* type_table = 
     new zsuif_type_table(this->type_table_entries);
 
@@ -309,16 +313,13 @@ zsuif_procedure_definition* TransSuif::trans(ProcedureDefinition* def){
 
 /*****************************************/
 zsuif_variable_definition* TransSuif::trans(VariableDefinition* def){ 
-#ifdef BOGUS
   assert(def != NULL);
-  variable_symbol* vs = def->get_variable_symbol();
+  VariableSymbol* vs = def->get_variable_symbol();
   zsuif_variable_symbol* name =  new zsuif_variable_symbol(make_symb(vs));
 
-  zsuif_value_block* vb = trans(def->initialization());
-  trans_type vtype(this,vs->get_type());
-  return new zsuif_variable_definition(name,vtype.get_type(),vb); 
-#endif
-  return NULL;
+  zsuif_value_block* vb = trans(def->get_initialization());
+  zsuif_type_id* type_id = trans(vs->get_type());
+  return new zsuif_variable_definition(name,type_id,vb); 
 }
 /*****************************************/
 zsuif_expression* TransSuif::trans(Expression *e){ 
@@ -350,4 +351,36 @@ zsuif_statement* TransSuif::trans(ExecutionObject *eo) {
   ERROR(this,"Don't know what to do with SUIF object");
   return NULL; /* NOT REACHED */
 }
+/*****************************************/
+void TransSuif::do_FileBlock(FileBlock *fb) {
+  assert(fb != NULL);
+  string source_file_name = fb->get_source_file_name();
+  zsuif_definition_block *zdb = trans(fb->get_definition_block());
+  do_table(fb->get_symbol_table());
+  zsuif_file_block *zfb = 
+    new zsuif_file_block(source_file_name,zdb);
+  file_blocks = new zsuif_file_block_list(zfb,file_blocks);
+  
+}
+/*****************************************/
+zsuif_definition_block* TransSuif::trans(DefinitionBlock* db) {
+  assert(db != NULL);
+  zsuif_variable_symbol_list *defined_variables   = NULL;
+  zsuif_procedure_symbol_list *defined_procedures = NULL;
 
+  Iter<VariableDefinition*> viter = db->get_variable_definition_iterator();
+  REV_MAP(VariableDefinition*,viter,vidx,varray) {
+    VariableSymbol *vs = varray[vidx]->get_variable_symbol();
+    defined_variables = 
+      new zsuif_variable_symbol_list(trans(vs),defined_variables);
+  }
+
+  Iter<ProcedureDefinition*> piter = db->get_procedure_definition_iterator();
+  REV_MAP(ProcedureDefinition*,piter,pidx,parray) {
+    ProcedureSymbol *ps = parray[pidx]->get_procedure_symbol();
+    defined_procedures = 
+      new zsuif_procedure_symbol_list(trans(ps),defined_procedures);
+  }
+  
+  return new zsuif_definition_block(defined_variables,defined_procedures);
+}
