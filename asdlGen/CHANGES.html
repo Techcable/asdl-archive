@@ -9,6 +9,9 @@
 For bug fixes and current open bugs see
 <a href=http://www.cs.princeton.edu/zephyr/ASDL/asdlGen-bugs.html>
 <tt>http://www.cs.princeton.edu/zephyr/ASDL/asdlGen-bugs.html</tt></a>
+<h2>Incompatible Changes</h2>
+Changed the representation of int_option_ty in <tt>asdl_base</tt> to be a
+unboxed int. The NONE value is now INT_MIN as defined by limits.h. 
 <h2>New Features</h2>
 <ul>
 <li> Support for writting and reading pickled values preceded by a unique
