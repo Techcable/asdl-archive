@@ -63,6 +63,7 @@ public:
 
   zsuif_statement*            trans(ExecutionObject*);
   zsuif_expression*           trans(Expression*);
+  zsuif_expression*           trans_opt(Expression*);
   zsuif_statement*            trans(Statement*);
   zsuif_value_block*	      trans(ValueBlock*);
   zsuif_variable_definition*  trans(VariableDefinition*);

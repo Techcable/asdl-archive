@@ -162,7 +162,7 @@ class TransStatement {
 
   MATCH(TransStatement,ReturnStatement,stmts) {
     zsuif_expression* return_value =
-      t->trans(stmts->get_return_value());
+      t->trans_opt(stmts->get_return_value());
     zstmt = new zsuif_ReturnStatement(return_value);
   }
 

@@ -330,6 +330,14 @@ zsuif_expression* TransSuif::trans(Expression *e){
 }
 
 /*****************************************/
+zsuif_expression* TransSuif::trans_opt(Expression *e){
+  if(e != NULL) {
+    TransExpression te(this,e);
+    return te.answer();
+  } 
+  return NULL;
+}
+/*****************************************/
 zsuif_value_block* TransSuif::trans(ValueBlock* vb) {
   assert(vb != NULL);
   TransValueBlock block(this,vb);
