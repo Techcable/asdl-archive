@@ -12,15 +12,15 @@ private:
   FileSetBlock *fsb;
   BasicSymbolTable* extern_symtab;
 
-  zsuif_type_table_entry_list* type_table_entries; 
+  zsuif_type_table_entry_list* type_table_entries;
   zsuif_symbol_table_entry_list* symbol_table_entries;
   zsuif_symbol_table_entry_list* extern_symbol_table_entries;
   zsuif_global_information_block* information_block;
   zsuif_file_block_list* file_blocks;
-  
+
   zsuif_symbol* null_symb;
   zsuif_type_id* null_type;
-  
+
   suif_hash_map<Type*, zsuif_type_id*> tmap;
   suif_hash_map<Symbol*,zsuif_symbol*> smap;
   int next_symb_id;
@@ -31,7 +31,7 @@ public:
   TransSuif(FILE* out,SuifEnv *env,FileSetBlock *fsb);
 
   void error(const char* file_name,int line_number,const char* msg);
-  void trans_suif(void); 
+  void trans_suif(void);
 
   zsuif_symbol* make_symb(Symbol*);
   zsuif_symbol* add_entry(zsuif_symbol_table_entry*);
@@ -58,7 +58,7 @@ public:
   zsuif_parameter_symbol*     trans(ParameterSymbol*);
   zsuif_field_symbol*         trans(FieldSymbol*);
   zsuif_procedure_symbol*     trans(ProcedureSymbol*);
-  zsuif_variable_symbol*      trans(VariableSymbol*);  
+  zsuif_variable_symbol*      trans(VariableSymbol*);
   zsuif_type_id*	      trans(Type*);
 
   zsuif_statement*            trans(ExecutionObject*);

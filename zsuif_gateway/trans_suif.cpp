@@ -22,7 +22,7 @@ TransSuif::TransSuif(FILE* out,SuifEnv *env,FileSetBlock *fsb) {
     this->next_type_id = 1;
     this->null_symb = new zsuif_symbol(0,LString("null"));
     this->null_type = new zsuif_type_id(0);
-    (void)MP_set(64); 
+    (void)MP_set(64);
 }
 
 void TransSuif::error(const char* file_name,int line_number,const char* msg) {
@@ -42,20 +42,20 @@ void TransSuif::trans_suif(void) {
   REV_MAP(FileBlock*,fbiter,fbidx,fbarray) {
     do_FileBlock(fbarray[fbidx]);
   }
-  zsuif_type_table* type_table = 
+  zsuif_type_table* type_table =
     new zsuif_type_table(this->type_table_entries);
 
-  zsuif_symbol_table* symbol_table = 
+  zsuif_symbol_table* symbol_table =
     new zsuif_symbol_table(this->symbol_table_entries);
 
-  zsuif_symbol_table* extern_symbol_table = 
+  zsuif_symbol_table* extern_symbol_table =
     new zsuif_symbol_table(this->extern_symbol_table_entries);
-  
+
     // TODO need to flesh this out
-  zsuif_global_information_block* information_block = 
+  zsuif_global_information_block* information_block =
      zsuif_C_information_block;
 
-  zsuif_file_set_block *zfsb = 
+  zsuif_file_set_block *zfsb =
     new zsuif_file_set_block(this->file_blocks,
 			     type_table,
 			     symbol_table,
@@ -74,7 +74,7 @@ zsuif_symbol* TransSuif::make_symb(Symbol* s) {
     if (iter != smap.end())  {
       zsym = (*iter).second;
       return zsym;
-    } 
+    }
     /* seen for the first time */
     uint32 id = this->next_symb_id++;
     identifier name = s->get_name();
@@ -84,7 +84,7 @@ zsuif_symbol* TransSuif::make_symb(Symbol* s) {
   } else {
     return null_symb;
   }
-}  
+}
 
 zsuif_symbol* TransSuif::add_entry(zsuif_symbol_table_entry *e) {
   /* just cons it on the list */
@@ -116,7 +116,7 @@ bool TransSuif::is_extern(Symbol* s) {
 void TransSuif::init_entry_attribs(zsuif_symbol_table_entry* e, Symbol* s) {
 
   e->key = make_symb(s);
-  e->address_taken = (s->get_is_address_taken() ? 
+  e->address_taken = (s->get_is_address_taken() ?
 		       StdTypes_TRUE : StdTypes_FALSE);
 }
 
@@ -128,7 +128,7 @@ zsuif_type_id* TransSuif::make_type_id(Type* t) {
     if (iter != tmap.end())  {
       ztid = (*iter).second;
       return ztid;
-    } 
+    }
     /* seen for the first time */
     uint32 id = this->next_type_id++;
     ztid = new zsuif_type_id(id);
@@ -137,7 +137,7 @@ zsuif_type_id* TransSuif::make_type_id(Type* t) {
   } else {
     return null_type;
   }
-}  
+}
 bool TransSuif::in_table(Type* s) {
   if(s != NULL) {
     suif_hash_map<Type*, zsuif_type_id*>::iterator iter = tmap.find(s);
@@ -178,7 +178,7 @@ public:
     REGVM(vm,TransSymbolTable,this,FieldSymbol);
   }
   void doit(void) {
-    for(Iter<SymbolTableObject*> entries = 
+    for(Iter<SymbolTableObject*> entries =
 	  symtab->get_symbol_table_object_iterator();
 	entries.is_valid();
 	entries.next()) {
@@ -211,7 +211,7 @@ zsuif_suif_int* TransSuif::trans(IInteger i) {
     MP_T  res, final;
 
     i.write(&buf[0]);
-    
+
     sign = MP_new(1);
     if (buf[0] == '-') {
       sign = MP_fromint(sign, -1);
@@ -274,12 +274,12 @@ int TransSuif::get_data_type_alignment(DataType *t) {
 }
 
 /*****************************************/
-zsuif_type_id* TransSuif::trans(Type* t){ 
+zsuif_type_id* TransSuif::trans(Type* t){
   TransType trans(this,t);
   return trans.get_type_id();
 }
 /*****************************************/
-zsuif_procedure_definition* TransSuif::trans(ProcedureDefinition* def){ 
+zsuif_procedure_definition* TransSuif::trans(ProcedureDefinition* def){
   assert(def != NULL);
   ProcedureSymbol* ps = def->get_procedure_symbol();
   zsuif_procedure_symbol* name = this->trans(ps);
@@ -289,7 +289,7 @@ zsuif_procedure_definition* TransSuif::trans(ProcedureDefinition* def){
 
   if(def->get_body()) {
     zsuif_statement* body = trans(def->get_body());
-    zsuif_definition_block* definition_block = 
+    zsuif_definition_block* definition_block =
       trans(def->get_definition_block());
     do_table(def->get_symbol_table());
     zsuif_statement* sbody =
@@ -303,26 +303,26 @@ zsuif_procedure_definition* TransSuif::trans(ProcedureDefinition* def){
     }
 
     return new zsuif_procedure_definition
-      (name, qualifications, procedure_type,       
+      (name, qualifications, procedure_type,
        new zsuif_procedure_body(params,sbody));
   } else {
     return new zsuif_procedure_definition
-      (name, qualifications, procedure_type, NULL); 
+      (name, qualifications, procedure_type, NULL);
   }
 }
 
 /*****************************************/
-zsuif_variable_definition* TransSuif::trans(VariableDefinition* def){ 
+zsuif_variable_definition* TransSuif::trans(VariableDefinition* def){
   assert(def != NULL);
   VariableSymbol* vs = def->get_variable_symbol();
   zsuif_variable_symbol* name =  new zsuif_variable_symbol(make_symb(vs));
 
   zsuif_value_block* vb = trans(def->get_initialization());
   zsuif_type_id* type_id = trans(vs->get_type());
-  return new zsuif_variable_definition(name,type_id,vb); 
+  return new zsuif_variable_definition(name,type_id,vb);
 }
 /*****************************************/
-zsuif_expression* TransSuif::trans(Expression *e){ 
+zsuif_expression* TransSuif::trans(Expression *e){
   assert(e != NULL);
   TransExpression te(this,e);
   return te.answer();
@@ -347,7 +347,7 @@ zsuif_statement* TransSuif::trans(ExecutionObject *eo) {
   if(is_kind_of<Expression>(eo)) {
     zsuif_expression* ze = this->trans(to<Expression>(eo));
     return new zsuif_EvalStatement(new zsuif_expression_list(ze,NULL));
-  } 
+  }
   ERROR(this,"Don't know what to do with SUIF object");
   return NULL; /* NOT REACHED */
 }
@@ -357,10 +357,10 @@ void TransSuif::do_FileBlock(FileBlock *fb) {
   string source_file_name = fb->get_source_file_name();
   zsuif_definition_block *zdb = trans(fb->get_definition_block());
   do_table(fb->get_symbol_table());
-  zsuif_file_block *zfb = 
+  zsuif_file_block *zfb =
     new zsuif_file_block(source_file_name,zdb);
   file_blocks = new zsuif_file_block_list(zfb,file_blocks);
-  
+
 }
 /*****************************************/
 zsuif_definition_block* TransSuif::trans(DefinitionBlock* db) {
@@ -371,16 +371,42 @@ zsuif_definition_block* TransSuif::trans(DefinitionBlock* db) {
   Iter<VariableDefinition*> viter = db->get_variable_definition_iterator();
   REV_MAP(VariableDefinition*,viter,vidx,varray) {
     VariableSymbol *vs = varray[vidx]->get_variable_symbol();
-    defined_variables = 
+    defined_variables =
       new zsuif_variable_symbol_list(trans(vs),defined_variables);
   }
 
   Iter<ProcedureDefinition*> piter = db->get_procedure_definition_iterator();
   REV_MAP(ProcedureDefinition*,piter,pidx,parray) {
     ProcedureSymbol *ps = parray[pidx]->get_procedure_symbol();
-    defined_procedures = 
+    defined_procedures =
       new zsuif_procedure_symbol_list(trans(ps),defined_procedures);
   }
-  
+
   return new zsuif_definition_block(defined_variables,defined_procedures);
+}
+
+// ??? have to provide stubs for these functions for now
+zsuif_statement_list* TransSuif::trans(StatementList*)
+{
+   return NULL;
+}
+
+zsuif_constant*	TransSuif::trans(Constant*)
+{
+   return NULL;
+}
+
+zsuif_binop* TransSuif::get_cmpop(LString)
+{
+   return NULL;
+}
+
+zsuif_binop* TransSuif::get_binop(LString)
+{
+   return NULL;
+}
+
+zsuif_unop* TransSuif::get_unop(LString)
+{
+   return NULL;
 }

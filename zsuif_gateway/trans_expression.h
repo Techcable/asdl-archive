@@ -7,7 +7,7 @@ class TransExpression {
   TransSuif* t;
   VisitorMap* vm;
  public:
-  TransExpression(TransSuif* t, Expression *e)  { 
+  TransExpression(TransSuif* t, Expression *e)  {
     this->t = t;
     this->zexpr = NULL;
     this->vm = new VisitorMap(t->env);
@@ -37,7 +37,7 @@ class TransExpression {
     REGVM(vm,TransExpression,this,IntConstant);
     REGVM(vm,TransExpression,this,FloatConstant);
   }
-    
+
   zsuif_expression* answer(void) {
     assert(zexpr == NULL);
     assert(e != NULL);
@@ -57,328 +57,196 @@ class TransExpression {
   }
 
   MATCH(TransExpression,BinaryExpression,exp) {
-#ifdef BOGUS
-    zsuif_binop* opcode = t->get_binop(exp->opcode());
-    zsuif_source_op* source1 = t->trans(&(exp->source1()));
-    zsuif_source_op* source2 = t->trans(&(exp->source2()));
-    zsuif_type_id* result_type = t->trans(exp->result_type(0));
-    zsuif_destination_op* destination_op = 
-      t->trans(&(exp->get_destination_op()));
-      
-    zexpr = new zsuif_Binary_arithmetic_instruction
-      (opcode, source1, source2, result_type, destination_op);
-#endif
+    zsuif_binop* opcode = t->get_binop(exp->get_opcode());
+    zsuif_expression* source1 = t->trans(exp->get_source1());
+    zsuif_expression* source2 = t->trans(exp->get_source2());
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
+
+    zexpr = new zsuif_BinaryExpression(result_type, opcode, source1, source2);
   }
-    
+
   MATCH(TransExpression,UnaryExpression,exp) {
-#ifdef BOGUS
-    zsuif_unop* opcode = t->get_unop(exp->opcode());
-    zsuif_source_op* source = t->trans(&(exp->source()));
-    zsuif_type_id* result_type = t->trans(exp->result_type(0));
-    zsuif_destination_op* destination_op = 
-      t->trans(&(exp->get_destination_op()));
-      
-    zexpr = new zsuif_Unary_arithmetic_instruction
-      (opcode, source, result_type, destination_op);
-#endif
+    zsuif_unop* opcode = t->get_unop(exp->get_opcode());
+    zsuif_expression* source = t->trans(exp->get_source());
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
+
+    zexpr = new zsuif_UnaryExpression(result_type, opcode, source);
   }
-    
+
   MATCH(TransExpression,CopyExpression,exp) {
-#ifdef BOGUS
-    zsuif_source_op* source = t->trans(&(exp->source()));
-    zsuif_type_id* result_type = t->trans(exp->result_type(0));
-      
-    zsuif_destination_op* destination_op = NULL;
-    zsuif_destination_op_list* destination_ops = NULL;
-      
-    s_count_t num_destinations = exp->num_destination_ops();
-    assert(num_destinations > 0);
-    /* cons things on backward so idx 0 is first */
-    while(num_destinations--) {
-      destination_op =  
-	t->trans(&(exp->get_destination_op(num_destinations)));
-	
-      /* treat first one specially */
-      if(num_destinations > 0) {
-	destination_ops = 
-	  new zsuif_destination_op_list
-	  (destination_op,destination_ops);
-      }
-    }
-    zexpr = new zsuif_Copy_instruction
-      (source, result_type, destination_op, destination_ops);
-#endif
+    zsuif_expression* source = t->trans(exp->get_source());
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
+
+    zexpr = new zsuif_CopyExpression(result_type, source);
   }
+
   MATCH(TransExpression,SelectExpression,exp) {
-#ifdef BOGUS
-    zsuif_source_op* selector = t->trans(&(exp->selector()));
-    zsuif_source_op* selection1 = t->trans(&(exp->selection1()));
-    zsuif_source_op* selection2 = t->trans(&(exp->selection2()));
-    zsuif_type_id* result_type = t->trans(exp->result_type(0));
-    zsuif_destination_op* destination_op = 
-      t->trans(&(exp->get_destination_op()));
-      
-    zexpr = new zsuif_Select_instruction
-      (selector, selection1, selection2, result_type, destination_op);
-#endif
+    zsuif_expression* selector = t->trans(exp->get_selector());
+    zsuif_expression* selection1 = t->trans(exp->get_selection1());
+    zsuif_expression* selection2 = t->trans(exp->get_selection2());
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
+
+    zexpr = new zsuif_SelectExpression
+      (result_type, selector, selection1, selection2);
   }
 
   MATCH(TransExpression,ArrayReferenceExpression,exp) {
-#ifdef BOGUS
-    zsuif_source_op* base_array_address = 
-      t->trans(&(exp->base_array_address()));
-    zsuif_source_op* index = t->trans(&(exp->index()));
-    zsuif_type_id* result_type = t->trans(exp->result_type(0));
-    zsuif_destination_op* destination_op = 
-      t->trans(&(exp->get_destination_op()));
-	 
-    zexpr = new zsuif_Array_reference_instruction
-      (base_array_address, index, result_type, destination_op);
-#endif
+    zsuif_expression* base_array_address =
+      t->trans(exp->get_base_array_address());
+    zsuif_expression* index = t->trans(exp->get_index());
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
+
+    zexpr = new zsuif_ArrayReferenceExpression
+      (result_type, base_array_address, index);
   }
 
   MATCH(TransExpression,FieldAccessExpression,exp) {
-#ifdef BOGUS
-    zsuif_source_op* base_group_address = 
-      t->trans(&(exp->base_group_address()));
-    zsuif_field_symbol* field = t->trans(exp->field());
-    zsuif_type_id* result_type = t->trans(exp->result_type(0));
-    zsuif_destination_op* destination_op = 
-      t->trans(&(exp->get_destination_op()));
+    zsuif_expression* base_group_address =
+      t->trans(exp->get_base_group_address());
+    zsuif_field_symbol* field = t->trans(exp->get_field());
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
 
-    zexpr = new zsuif_Field_access_instruction
-      (base_group_address, field, result_type, destination_op);
-#endif
+    zexpr = new zsuif_FieldAccessExpression
+      (result_type, base_group_address, field);
   }
 
   MATCH(TransExpression,BitSizeOfExpression,exp) {
-#ifdef BOGUS
-    zsuif_type_id* ref_type = t->trans(exp->ref_type());
-    zsuif_type_id* result_type = t->trans(exp->result_type(0));
-    zsuif_destination_op* destination_op = 
-      t->trans(&(exp->get_destination_op()));
-	 
-    zexpr = new zsuif_Bit_size_of_instruction
-      (ref_type, result_type, destination_op);
-#endif
-  }
-    
-  MATCH(TransExpression,BitAlignmentOfExpression,exp) {
-#ifdef BOGUS
-    zsuif_type_id* ref_type = t->trans(exp->ref_type());
-    zsuif_type_id* result_type = t->trans(exp->result_type(0));
-    zsuif_destination_op* destination_op = 
-      t->trans(&(exp->get_destination_op()));
+    zsuif_type_id* ref_type = t->trans(exp->get_ref_type());
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
 
-    zexpr = new zsuif_Bit_alignment_of_instruction
-      (ref_type, result_type, destination_op);
-#endif
+    zexpr = new zsuif_BitSizeOfExpression(result_type, ref_type);
+  }
+
+  MATCH(TransExpression,BitAlignmentOfExpression,exp) {
+    zsuif_type_id* ref_type = t->trans(exp->get_ref_type());
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
+
+    zexpr = new zsuif_BitAlignmentOfExpression(result_type, ref_type);
   }
 
   MATCH(TransExpression,BitOffsetOfExpression,exp) {
-#ifdef BOGUS
-    zsuif_field_symbol* field = t->trans(exp->field());
-    zsuif_type_id* result_type = t->trans(exp->result_type(0));
-    zsuif_destination_op* destination_op = 
-      t->trans(&(exp->get_destination_op()));
-    
-    zexpr = new zsuif_Bit_offset_of_instruction
-      (field, result_type, destination_op);
-#endif
-  }
-  
-  MATCH(TransExpression,ByteSizeOfExpression,exp) {
-#ifdef BOGUS
-    zsuif_type_id* ref_type = t->trans(exp->ref_type());
-    zsuif_type_id* result_type = t->trans(exp->result_type(0));
-    zsuif_destination_op* destination_op = 
-      t->trans(&(exp->get_destination_op()));
+    zsuif_field_symbol* field = t->trans(exp->get_field());
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
 
-    zexpr = new zsuif_Byte_size_of_instruction
-      (ref_type, result_type, destination_op);
-#endif
+    zexpr = new zsuif_BitOffsetOfExpression(result_type, field);
+  }
+
+  MATCH(TransExpression,ByteSizeOfExpression,exp) {
+    zsuif_type_id* ref_type = t->trans(exp->get_ref_type());
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
+
+    zexpr = new zsuif_ByteSizeOfExpression(result_type, ref_type);
   }
 
   MATCH(TransExpression,ByteAlignmentOfExpression,exp) {
-#ifdef BOGUS
-    zsuif_type_id* ref_type = t->trans(exp->ref_type());
-    zsuif_type_id* result_type = t->trans(exp->result_type(0));
-    zsuif_destination_op* destination_op = 
-      t->trans(&(exp->get_destination_op()));
+    zsuif_type_id* ref_type = t->trans(exp->get_ref_type());
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
 
-    zexpr = new zsuif_Byte_alignment_of_instruction
-      (ref_type, result_type, destination_op);
-#endif
+    zexpr = new zsuif_ByteAlignmentOfExpression(result_type, ref_type);
   }
 
   MATCH(TransExpression,ByteOffsetOfExpression,exp) {
-#ifdef BOGUS
-    zsuif_field_symbol* field = t->trans(exp->field());
-    zsuif_type_id* result_type = t->trans(exp->result_type(0));
-    zsuif_destination_op* destination_op = 
-      t->trans(&(exp->get_destination_op()));
+    zsuif_field_symbol* field = t->trans(exp->get_field());
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
 
-    zexpr = new zsuif_Byte_offset_of_instruction
-      (field, result_type, destination_op);
-#endif
+    zexpr = new zsuif_ByteOffsetOfExpression(result_type, field);
   }
 
   MATCH(TransExpression,VaArgExpression,exp) {
-#ifdef BOGUS
-    zsuif_source_op* ap_address = t->trans(&(exp->ap_address()));
-    zsuif_type_id* result_type = t->trans(exp->result_type(0));
-    zsuif_destination_op* destination_op = 
-      t->trans(&(exp->get_destination_op()));
+    zsuif_expression* ap_address = t->trans(exp->get_ap_address());
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
 
-    zexpr = new zsuif_Va_arg_instruction
-      (ap_address, result_type, destination_op);
-#endif
+    zexpr = new zsuif_VaArgExpression(result_type, ap_address);
   }
 
   MATCH(TransExpression,ScAndExpression,exp) {
-#ifdef BOGUS
-    zsuif_source_op* source1 = t->trans(&(exp->source1()));
-    zsuif_source_op* source2 = t->trans(&(exp->source2()));
-    zsuif_type_id* result_type = t->trans(exp->result_type(0));
-    zsuif_destination_op* destination_op = 
-      t->trans(&(exp->get_destination_op()));
+    zsuif_expression* source1 = t->trans(exp->get_source1());
+    zsuif_expression* source2 = t->trans(exp->get_source2());
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
 
-    zexpr = new zsuif_Sc_and_instruction
-      (source1, source2, result_type, destination_op);
-#endif
+    zexpr = new zsuif_ScAndExpression(result_type, source1, source2);
   }
 
   MATCH(TransExpression,ScOrExpression,exp) {
-#ifdef BOGUS
-    zsuif_source_op* source1 = t->trans(&(exp->source1()));
-    zsuif_source_op* source2 = t->trans(&(exp->source2()));
-    zsuif_type_id* result_type = t->trans(exp->result_type(0));
-    zsuif_destination_op* destination_op = 
-      t->trans(&(exp->get_destination_op()));
+    zsuif_expression* source1 = t->trans(exp->get_source1());
+    zsuif_expression* source2 = t->trans(exp->get_source2());
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
 
-    zexpr = new zsuif_Sc_or_instruction
-      (source1, source2, result_type, destination_op);
-#endif
+    zexpr = new zsuif_ScOrExpression(result_type, source1, source2);
   }
 
   MATCH(TransExpression,ScSelectExpression,exp) {
-#ifdef BOGUS
-    zsuif_source_op* selector = t->trans(&(exp->selector()));
-    zsuif_source_op* selection1 = t->trans(&(exp->selection1()));
-    zsuif_source_op* selection2 = t->trans(&(exp->selection2()));
-    zsuif_type_id* result_type = t->trans(exp->result_type(0));
-    zsuif_destination_op* destination_op = 
-      t->trans(&(exp->get_destination_op()));
+    zsuif_expression* selector = t->trans(exp->get_selector());
+    zsuif_expression* selection1 = t->trans(exp->get_selection1());
+    zsuif_expression* selection2 = t->trans(exp->get_selection2());
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
 
-    zexpr = new zsuif_Sc_select_instruction
-      (selector, selection1, selection2, result_type, destination_op);
-#endif
+    zexpr = new zsuif_ScSelectExpression
+      (result_type, selector, selection1, selection2);
   }
 
   MATCH(TransExpression,LoadExpression,exp) {
-#ifdef BOGUS
-    zsuif_source_op* source_address = t->trans(&(exp->source_address()));
-    zsuif_type_id* result_type = t->trans(exp->result_type(0));
-    zsuif_destination_op* destination_op = 
-      t->trans(&(exp->get_destination_op()));
+    zsuif_expression* source_address = t->trans(exp->get_source_address());
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
 
-    zexpr = new zsuif_Load_instruction
-      (source_address, result_type, destination_op);
-#endif
+    zexpr = new zsuif_LoadExpression(result_type, source_address);
   }
 
   MATCH(TransExpression,SymbolAddressExpression,exp) {
-#ifdef BOGUS
-    zsuif_symbol* addressed_symbol = t->trans(exp->addressed_symbol());
-    zsuif_type_id* result_type = t->trans(exp->result_type(0));
-    zsuif_destination_op* destination_op = 
-      t->trans(&(exp->get_destination_op()));
+    zsuif_symbol* addressed_symbol = t->trans(exp->get_addressed_symbol());
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
 
-    zexpr = new zsuif_Load_address_instruction
-      (addressed_symbol, result_type, destination_op);
-#endif
+    zexpr = new zsuif_SymbolAddressExpression(result_type, addressed_symbol);
   }
 
   MATCH(TransExpression,LoadValueBlockExpression,exp) {
-#ifdef BOGUS
     zsuif_value_block* value_block = t->trans(exp->get_value_block());
-    zsuif_type_id* result_type = t->trans(exp->result_type(0));
-    zsuif_destination_op* destination_op = 
-      t->trans(&(exp->get_destination_op()));
-	 
-    zexpr = new zsuif_Load_value_block_instruction
-      (value_block, result_type, destination_op);
-#endif
-  }
-  MATCH(TransExpression,CallExpression,exp) {
-#ifdef BOGUS
-    zsuif_source_op* callee_address = 
-      t->trans(&(exp->callee_address()));
-    zsuif_source_op_list* arguments = NULL;
-    zsuif_return_value_list* return_values = NULL;
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
 
-    s_count_t num_arguments    = exp->num_arguments();
+    zexpr = new zsuif_LoadValueBlockExpression(result_type, value_block);
+  }
+
+  MATCH(TransExpression,CallExpression,exp) {
+    zsuif_expression* callee_address = t->trans(exp->get_callee_address());
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
+
+    zsuif_expression_list* arguments = NULL;
+    s_count_t num_arguments = exp->get_argument_count();
     /* cons things on backward so idx 0 is first */
     while(num_arguments--) {
-      zsuif_source_op* argument = 
-	t->trans(&(exp->argument(num_arguments)));
-      arguments = 
-	new zsuif_source_op_list(argument,arguments);
+      zsuif_expression* argument = t->trans(exp->get_argument(num_arguments));
+      arguments = new zsuif_expression_list(argument,arguments);
     }
-    /* cons things on backward so idx 0 is first */
-    s_count_t num_destinations = exp->num_destination_ops();
-    while(num_destinations--) {
-      zsuif_destination_op* dst_op = 
-	t->trans(&(exp->get_destination_op(num_destinations)));
-      zsuif_type_id* res_typ = 
-	t->trans(exp->result_type(num_destinations));
-      zsuif_return_value* return_value = 
-	new zsuif_return_value(dst_op, res_typ);
 
-      return_values =
-	new zsuif_return_value_list(return_value, return_values);
-    }
-    zexpr = new zsuif_Call_instruction
-      (callee_address, arguments, return_values);
-#endif
+    zexpr = new zsuif_CallExpression(result_type, callee_address, arguments);
   }
 
   MATCH(TransExpression,SsaPhiExpression,exp) {
-#ifdef BOGUS
-    zsuif_type_id* result_type = t->trans(exp->result_type(0));
-    zsuif_destination_op* destination_op = 
-      t->trans(&(exp->get_destination_op()));
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
     zsuif_variable_symbol_list* variables = NULL;
-	
+
     /* cons things on backward so idx 0 is first */
-    s_count_t num_merged = exp->num_merged();
+    s_count_t num_merged = exp->get_merged_variable_count();
     while(num_merged--) {
-      zsuif_variable_symbol* variable = 
-	t->trans(exp->merged_variable(num_merged));
-      variables = 
+      zsuif_variable_symbol* variable =
+	t->trans(exp->get_merged_variable(num_merged));
+      variables =
 	new zsuif_variable_symbol_list(variable,variables);
     }
-    zexpr = new zsuif_Ssa_phi_instruction
-      (variables, result_type, destination_op);
-#endif
+    zexpr = new zsuif_SsaPhiExpression(result_type, variables);
   }
 
   MATCH(TransExpression,LoadVariableExpression,exp) {
-#ifdef BOGUS
-    zsuif_source_op* source_address = t->trans(&(exp->source_address()));
-    zsuif_type_id* result_type = t->trans(exp->result_type(0));
-    zsuif_destination_op* destination_op = 
-      t->trans(&(exp->get_destination_op()));
+    zsuif_expression* source_address = NULL; // ??? t->trans(exp->get_source());
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
 
-    zexpr = new zsuif_Load_instruction
-      (source_address, result_type, destination_op);
-#endif
+    zexpr = new zsuif_LoadExpression(result_type, source_address);
   }
+
   MATCH(TransExpression,IntConstant,cnst) {
   }
+
   MATCH(TransExpression,FloatConstant,cnst) {
   }
 };
 #endif
-
-
