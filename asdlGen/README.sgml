@@ -3,7 +3,7 @@
   %decls.common;
 ]>
 <article>
-<title>README for &asdlGen; version 2.0-beta;
+<title>README for &asdlGen; version &asdlGen.version;
 <author>&author.danwang;
 <date>&asdlGen.release-date;
 <p>
@@ -30,7 +30,7 @@ may not exploit or produce the most idiomatic code for a given language,
 advice on how to improve the code for a given language will be appreciated. 
 
 <code>
-% ./configure --prefix=<em>install-prefix</em>
+% ./configure --prefix=<install-prefix>
 % make all
 </code>
 Dumps a SML/NJ heap for asdlGen in <tt>src/sml/</tt>. The install rules will
@@ -44,7 +44,7 @@ Major Changes/Features include
 <item>
 Reworked command line handling and command line options. &asdlGen;
 <tt>--help</tt> is now much more informative.  
-<item> &asdlGen; can optionally output dependency information for <tt/make/
+<item> &asdlGen; can optionally output dependency information for <tt>make</tt>
 or language appropriate build system.
 <item>Reworked pretty printing for all the backends to produce more 
 readable code.  
@@ -76,24 +76,22 @@ primitive module StdPrims {
 </code>
 &asdlGen; tacks this on to any set of input files to remain compatible with
 existing code. Users, can add their own primitive types by simply including
-there own primitive module declaration. See <tt>src/asdl/std-types.asdl</tt>
+there own primitive module declaration. See 
+<htmlurl url="src/asdl/std-types.asdl" name="src/asdl/std-types.asdl">
 for an example that defines a richer set fix width integer and word types,
 for various languages.
 <item> Support for an unnamed "Toplevel" module. Allowing one to generate less
 verbose code for pedagogical purposes. See
-<tt>src/asdl/tests/toplevel.asdl</tt> for an example usage.
-
+<htmlurl url="src/asdl/tests/toplevel.asdl" 
+name="src/asdl/tests/toplevel.asdl"> for an example usage.
 </itemize>
 
 <sect>COPYRIGHT<p>
 &asdlGen; is distributed under the following terms.
 &doc.copyright;
 <sect>Installation<p>
-Both binary and source releases are available.
+Only a source release is available.
 See <htmlurl url="INSTALL.html" name="INSTALL"> for details. 
-
-<sect>Changes<p>
-See <htmlurl url="CHANGES.html" name="CHANGES"> for details. 
 See the <url
  url="http://www.cs.princeton.edu/zephyr/ASDL/asdlGen-bugs.html" name="master
  bug list"> for bug hunting details.
