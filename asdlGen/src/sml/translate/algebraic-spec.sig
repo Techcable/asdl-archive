@@ -39,4 +39,5 @@ signature ALGEBRAIC_SPEC =
     val opt_tid : Ty.ty_id -> Ty.ty_id
 
     val get_info: Module.Typ.props -> Ty.ty_info
+
   end

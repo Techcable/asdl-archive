@@ -184,11 +184,10 @@ functor mkAlgolModuleTranslator
 	      end
 	    else 
 	      let
-		val ty_exp =  T.TyEnum enumers
-		val enum_decl = 
-		  T.DeclTy(name,T.TyReference(T.TyId enum_name))
+		val enum_decl = T.DeclTy(enum_name,T.TyEnum enumers)
+		val decl =  T.DeclTy(name,T.TyReference(T.TyId enum_name))
 	      in
-		([enum_decl,T.DeclTy(enum_name,ty_exp)],T.DeRef)
+		([enum_decl,decl],T.DeRef)
 	      end
 	  val ty = (T.TyId name)
 	  val {natural_ty,unwrap,wrap,init} = Spec.get_wrappers ty props
@@ -204,7 +203,7 @@ functor mkAlgolModuleTranslator
 		  EXPR (fn ret =>
 			T.Case{test=get_tag v, 
 			       clauses=List.map
-			       (mk_clause (ret,get_tag v,f)) cons,
+			       (mk_clause (ret,T.DeRef v,f)) cons,
 			       default=Spec.die "bad tag"})))
 	  val ty_decl =
 	    (name,Ty.Sum {ty=natural_ty,

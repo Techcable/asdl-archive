@@ -23,7 +23,13 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL) =
     type decl = Ty.Ast.decl
     structure Ty = Ty
     open Ty.Ast
-
+    val monad = NONE
+    fun die _ =
+      if Option.isSome monad then
+	(Id (VarId.fromString "die"))
+      else
+	(Call(Id (VarId.fromString "die"),[Tuple([],NONE)]))
+	
     fun mk_name s  =
       (VarId.prefixBase (s^"_")) o VarId.fromPath o TypeId.toPath
       
@@ -43,7 +49,7 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL) =
 	fun mk_clause ({c,v},exp) =  (MatchInt v,exp)
       in
 	Match(Call(Id rd_tag_name,[Id stream_id]),
-	      List.map mk_clause cs)
+	      (List.map mk_clause cs)@[(MatchAny,die "bad tag")])
       end
     
     fun read tid = Call(Id (rd_name tid),[Id stream_id])
