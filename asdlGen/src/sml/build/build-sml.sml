@@ -23,7 +23,8 @@ functor BuildSML (structure SML : SML_BUILD
 
     val rules = BU.mBind(asdl_heap,(fn heap =>
 	       BU.mUnit {lib=[SML.heap_path heap],
-		     includes=[]:Paths.file_path list,
+	            includes=[]:Paths.file_path list,
+		   cleanable=[]:Paths.file_path list,
 		       share=[]:Paths.file_path list,
 			 doc=[]:Paths.file_path list,
 			 bin=[]:Paths.file_path list}))

@@ -21,6 +21,7 @@ build/build-c.sml
 build/build-cxx.sml
 build/build-sml.sml
 build/build-install.sml
+build/build-clean.sml
 build/build-doc.sml
 build/build.sml
 

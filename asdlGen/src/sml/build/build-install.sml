@@ -44,7 +44,7 @@ functor BuildInstall(structure BuildC   : BUILD_IT
 
     fun do_pkg rules f r root =
       let
-	val ({lib,includes,share,doc,bin},r) =
+	val ({lib,includes,cleanable,share,doc,bin},r) =
 	  f (P.pathFromArcs root) r
 	val rules = List.foldl install_includes rules includes
 	val rules = List.foldl install_libs rules lib

@@ -6,6 +6,7 @@ signature BUILD_IT =
   includes:Paths.file_path list,
      share:Paths.file_path list,
        doc:Paths.file_path list,
+ cleanable:Paths.file_path list,
        bin:Paths.file_path list} BU.M
   end
   

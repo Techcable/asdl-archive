@@ -5,6 +5,7 @@ signature BUILD_WORLD =
     val c     : unit -> bool
     val cxx   : unit -> bool
     val all   : unit -> bool
+    val clean : unit -> bool
     val install : unit -> bool
   end
 functor BuildWorld(structure SML      : SML_BUILD
@@ -54,14 +55,21 @@ functor BuildWorld(structure SML      : SML_BUILD
 		   structure BuildDoc = MkDoc
 		   structure FileOps = FO
 		   val install_dir = install_root)
+    structure Clean =
+      BuildClean(structure BuildC = MkC
+		 structure BuildCXX = MkCXX
+		 structure BuildSML = MkSML
+		 structure BuildDoc = MkDoc
+		 structure FileOps = FO)
+
     fun wrap s r = do_it (#2(BU.getRules (src_path [s]) r))
     fun heaps () = wrap "sml" MkSML.rules
     fun c () = wrap "c" MkC.rules
     fun cxx () = wrap "cxx" MkCXX.rules
-
     fun docs () = do_it MkDoc.rules
     fun install () = do_it I.rules
     fun all x = (heaps x) andalso (c x) andalso (cxx x)
+    fun clean () = do_it Clean.rules
   end
 
 structure Build =
@@ -114,6 +122,7 @@ structure Build =
 		 val debug = true
 		 val install_root =  Paths.pathFromNative ConfigPaths.prefix
 		 val src_root = Paths.pathFromNative "..")
+
     structure ConfigE =
       BuildWorld(structure SML = ConfigSML
 		 structure CC = ConfigCC

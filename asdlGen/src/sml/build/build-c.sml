@@ -47,16 +47,19 @@ functor BuildC (structure CC : CC_BUILD
     val xml_lib = make_lib "libxml"
       (merge_objs (xml_objs,common_objs))
 
-      
+    val cleanable = merge_objs(merge_objs (xml_objs,std_objs),common_objs)
+
     val rules = BU.mBind(xml_lib,(fn xml_lib =>
       	        BU.mBind(std_lib,(fn std_lib =>
 	        BU.mBind(headers,(fn headers =>
+	        BU.mBind(cleanable,(fn cleanable =>
 		BU.mUnit{lib=[CC.lib_path xml_lib,
 			      CC.lib_path std_lib],
-			includes=headers,
+			 cleanable=List.map CC.obj_path cleanable,
+			 includes=headers,
 			 share=[]:Paths.file_path list,
 			 doc=[]:Paths.file_path list,
-			 bin=[]:Paths.file_path list}))))))
+			 bin=[]:Paths.file_path list}))))))))
 
   end
     
