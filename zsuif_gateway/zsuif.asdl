@@ -123,7 +123,7 @@ statement =
  | VaStartOldStatement(expression ap_address)
  | VaEndStatement(expression ap_address)
  | StoreStatement(expression data_operand, expression destination_address)
- | ReturnStatement(expression* return_values)
+ | ReturnStatement(expression return_values)
  | JumpStatement(code_label_symbol target)
  | JumpIndirectStatement(expression itarget)
  | BranchStatement(expression decision_operand, code_label_symbol target)

@@ -194,21 +194,9 @@ class TransStatement {
   }
 
   MATCH(TransStatement,ReturnStatement,stmts) {
-#ifdef BOGUS
-
-    /* cons things on backward so idx 0 is first */
-    zsuif_source_op_list* return_values = NULL;
-    s_count_t num_return_values = stmt->num_return_values();
-
-    while(num_return_values--) {
-      zsuif_source_op* return_value = 
-	t->trans(&(stmt->return_value(num_return_values)));
-      return_values = 
-	new zsuif_source_op_list(return_value,return_values);
-    }
-
-    zstmt = new zsuif_Return_statement(return_values);
-#endif
+    zsuif_expression* return_value =  
+      t->trans(stmts->get_return_value());
+    zstmt = new zsuif_ReturnStatement(return_value);
   }
 
   MATCH(TransStatement,ScopeStatement,stmts) {
@@ -259,17 +247,15 @@ class TransStatement {
   }
 
   MATCH(TransStatement,WhileStatement,stmts) {
-#ifdef BOGUS
-    zsuif_source_op* condition = t->trans(&(stmt->condition()));
-    zsuif_statement* body = t->trans(stmt->body()); 
+    zsuif_expression* condition = t->trans(stmts->get_condition());
+    zsuif_statement* body = t->trans(stmts->get_body()); 
     zsuif_code_label_symbol* break_label = 
-      t->trans(stmt->break_label()); 
+      t->trans(stmts->get_break_label()); 
     zsuif_code_label_symbol*
-      continue_label = t->trans(stmt->continue_label());
+      continue_label = t->trans(stmts->get_continue_label());
 	 
-    zstmt = new zsuif_While_statement
+    zstmt = new zsuif_WhileStatement
       (condition, body, break_label, continue_label); 
-#endif
   }
 
 };
