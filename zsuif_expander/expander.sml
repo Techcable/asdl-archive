@@ -16,7 +16,7 @@ end
 (*                                                                           *)
 functor Expander (M : MACHINE) : EXPANDER =
 struct
-   (* shorthands *)
+   (* Shorthands *)
    structure Z   = zsuif
    structure W   = Word
    structure L   = List
@@ -45,19 +45,19 @@ struct
 		  else Group (B.getGroupSize t)
        | false => Atomic
 
-   (* Compiles a zsuif file to a VPO rtl file. *)
+   (* Compile a zsuif file to a VPO rtl file. *)
    fun compileFile (inFile, outFile) =
    let
       fun finally f x g y = (f x before g y) handle e => (g y; raise e)
 
-      (* Apply a function n times *)
+      (* Apply a function n times. *)
       fun appn 0 _ = ()
 	| appn n f = (f (); appn (n - 1) f)
 
-      (* Print a string to the output file *)
+      (* Print a string to the output file. *)
       fun emit s  = TextIO.output (outFile, s)
 
-      (* Print a formated string to the output file *)
+      (* Print a formated string to the output file. *)
       fun emt fmt = F.formatf fmt emit
 	 handle F.BadFormat => (print fmt; raise F.BadFormat)
 
