@@ -101,6 +101,8 @@ structure OCamlPP : ALGEBRAIC_PP =
 		val el = List.foldr flatten [] els
 	    in vb 2 (str "begin") (seq (cat [str";",nl]) pp_exp el) (str "end")
 	    end
+	  | pp_exp (Error (id,s)) =
+	    (cat [str "raise (",pp_id id,str " ",pp_mlstr s,str ")"])
 	and pp_match (MatchRecord(ml,fl,opt_ty)) = 
 	  let fun eq (MatchId (x,_),y)  = VarId.eq (x,y)
 		| eq _ = false

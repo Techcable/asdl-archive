@@ -26,7 +26,7 @@ lang-ast.sig
 lang-ast.sml
 yacc-grammar.sig
 yacc-grammar.sml
-
+(*
 AsdlValue.sig
 AsdlValue.sml
 TypePickle.sig
@@ -36,3 +36,4 @@ AsdlValueUtil.sml
 TypePickleUtil.sig
 TypePickleUtil.sml
 aka.sml
+*)

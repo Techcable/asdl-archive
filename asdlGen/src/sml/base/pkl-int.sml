@@ -124,8 +124,8 @@ functor PklWord(structure Word : WORD) : PKL =
 				Word.orb(acc,Word.<<(v,shift))
 			in
 			    if (is_neg_bit_set x) then
-				(Error.warn
-				["Ignoring sign bit on unsigned read"];
+				(TextIO.output(TextIO.stdErr,
+				"Ignoring sign bit on unsigned read\n");
 				 acc)
 			    else
 				acc

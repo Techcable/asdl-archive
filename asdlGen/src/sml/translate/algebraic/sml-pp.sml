@@ -106,7 +106,8 @@ structure SMLPP : ALGEBRAIC_PP =
 	      (cat [str "(",seq (cat [str";",nl]) pp_exp el,str ")"])
 	      empty
 	    end
-
+	  | pp_exp (Error (id,s)) =
+	    (cat [str "raise (",pp_id id,str " ",pp_mlstr s,str ")"])
 	  and pp_match (MatchRecord(ml,fl,opt_ty)) = 
 	    let fun eq (MatchId (x,_),y)  = VarId.eq (x,y)
 		  | eq _ = false

@@ -136,13 +136,13 @@ structure StdTypesUtil :> STD_TYPES_UTIL =
       val write_uint16 = PklWord.write
       val write_uint32 = PklWord32.write
       val write_uint64 = PklIntInf.write
-      fun write_ieee_real _ _ = raise Error.unimplemented
+      fun write_ieee_real _ _ = raise (Fail "write_ieee_real unimplemented")
 	
       fun read_bool s =
 	(case (PklInt.read s) of
 	   2 => false
 	 | 1 => true
-	 | _ => raise Error.fatal)
+	 | _ => raise (StdPkl.IOError "read_bool"))
 	   
       val read_nat = PklInt.read
       val read_int8 = PklWord8.read
@@ -154,7 +154,7 @@ structure StdTypesUtil :> STD_TYPES_UTIL =
       val read_uint16 = PklWord.read
       val read_uint32 = PklWord32.read
       val read_uint64 = PklIntInf.read
-      fun read_ieee_real _ = raise Error.unimplemented
+      fun read_ieee_real _ = raise (Fail "read_ieee_real unimplemented")
 	
       fun out_value tag f x s =
 	(SexpPkl.wr_lp s;

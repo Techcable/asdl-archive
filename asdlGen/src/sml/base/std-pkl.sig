@@ -3,7 +3,7 @@ signature STD_PKL =
     type instream = BinIO.instream
     type outstream = BinIO.outstream
 
-    val die: unit -> 'a
+    exception IOError of string
 
     val write_tag    : Int.int -> outstream -> unit
     val read_tag     : instream -> Int.int

@@ -78,7 +78,7 @@ structure LibFiles =
     in val java = add_files [std_pkl_lib,std_prims_lib,std_types_lib]
     end
     local
-      val sources = ["error.sig", "error.sml", "identifier.sig",
+      val sources = ["identifier.sig",
 	  "identifier.sml", "pkl.sig", "pkl-int.sml", "std-pkl.sig",
 	  "std-pkl.sml", "sexp-pkl.sig", "sexp-pkl.sml",
 	  "sexp-lex.sig", "sexp-lex.sml", "std-prims.sig",

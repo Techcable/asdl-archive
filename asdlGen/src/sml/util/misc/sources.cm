@@ -15,5 +15,6 @@ cvt-case.sml
 
 file-set.sig
 file-set.sml
-
+error.sig
+error.sml
 ../pp/sources.cm

@@ -4,7 +4,7 @@ structure StdPkl :> STD_PKL =
     type instream = BinIO.instream
     type outstream = BinIO.outstream
 
-    fun die () = raise Error.error ["Std Pickler Error"]
+    exception IOError of string
 
     val write_tag =  PklInt.write
     val read_tag = PklInt.read
@@ -21,7 +21,7 @@ structure StdPkl :> STD_PKL =
       case (read_tag s) of
 	0 => NONE
       | 1 => SOME (f s)
-      | _ => die ()
+      | _ => raise (IOError "read_option")
 
     fun read_share rd ins =
       let
@@ -30,7 +30,7 @@ structure StdPkl :> STD_PKL =
 	  Byte.bytesToString (BinIO.inputN(ins,l))
 	val v =
 	  case (Int.compare(t,0)) of
-	    EQUAL => die()
+	    EQUAL => raise (IOError "read_share")
 	  | LESS => Share.vDEF (rd_key (~t),rd ins)
 	  | GREATER => Share.vUSE (rd_key t)
       in v end

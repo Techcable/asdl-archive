@@ -144,6 +144,9 @@ structure HaskellPP : ALGEBRAIC_PP =
 		val el = List.foldr flatten [] els
 	    in vb 2 (str "do {") (seq semi pp_exp el) (str "}")
 	    end
+	  | pp_exp (Error (_,s)) =
+	    (cat [str "Prelude.ioError (Prelude.userError ",
+		  pp_mlstr s,str ")"])
 	(* end hacks *)
 	and pp_match (MatchRecord(ml,fl,opt_ty)) = 
 	  let fun eq (MatchId (x,_),y)  = VarId.eq (x,y)

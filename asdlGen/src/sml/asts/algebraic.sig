@@ -33,7 +33,7 @@ signature ALGEBRAIC_AST =
 	  | LetBind of (clause list * exp)
 	  | Let     of (clause list * exp)
 	  | Seq     of (exp list)
-
+	  | Error   of (id * string)
 	and match =
 	    MatchRecord of match list * field list  * ty_id option
 	  | MatchTuple  of match list * ty_exp list * ty_id option

@@ -1,7 +1,6 @@
 type instream = in_channel
 type outstream = out_channel
-    
-let die () = raise (Failure "Std Pickler Error")
+exception IOError of string    
 let write_tag x s = PklInt.write_int x s
 let read_tag s = PklInt.read_int s
 let write_list f xs s =
@@ -28,7 +27,7 @@ let read_option f s =
       match (read_tag s) with
 	0 -> None
       | 1 -> Some (f s)
-      | _ -> die ()
+      | _ -> raise (IOError "read_option")
 
 let read_share rd ins =
       let t = (read_tag ins) in
@@ -42,7 +41,7 @@ let read_share rd ins =
       if t < 0 then
 	Share.DEFv (rd_key (-t),rd ins)
       else if t > 0 then Share.USEv (rd_key t)
-      else die ()
+      else raise (IOError "read_share")
 
 let write_share wr x outs =
   match x with

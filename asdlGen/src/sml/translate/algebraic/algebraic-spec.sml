@@ -116,7 +116,7 @@ functor mkAlgebraicSpec(structure Ty    : ALGEBRAIC_TYPE_DECL
 		  body (Id arg_id),wrapout unit_ty)
 	fun decl_read f {name,ret,body} =
 	  DeclFun(f name,[{name=stream_id,ty=instream_ty}],body,wrapin ret)
-	fun die _ = call (pkl_lib "die") [Tuple([],NONE)]
+	fun die s = Error(pkl_lib "IOError",s)
       end
 (**:[[functor mkAlgebraicSpec]] [[structure Arg]]:**)
     structure StdPklArg =

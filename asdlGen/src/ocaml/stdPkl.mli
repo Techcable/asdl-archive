@@ -1,8 +1,8 @@
 (* Should be in binary mode *)
 type instream = in_channel
 and outstream = out_channel
+exception IOError of string
 
-val die : unit -> 'a
 val write_tag : int -> outstream -> unit
 val read_tag : instream -> int
 
