@@ -1,9 +1,11 @@
 
 module zsuif (imports StdTypes) {
--- hacked
-suif_int = (int)
-lstring  = (identifier)
 
+suif_int = Finite(int)
+         | PlusInf
+         | NegInf
+         | UnsignedInf
+         | Undetermined
 
 -- Zephyr SUIF a simplified interface for SUIF 2.0
 
@@ -13,16 +15,16 @@ constant = ConstInt(suif_int)
 
 source_op =
            SrcVar(variable_symbol var)
-         | SrcReg(register_symbol reg, type type)
+         | SrcReg(register_symbol reg, type_id type)
          | SrcDst(instruction instr, StdTypes.nat op_num)
           
 destination_op = 
            DstTmp -- unnamed destination 
          | DstVar(variable_symbol var)
-         | DstReg(register_symbol reg, type type)
+         | DstReg(register_symbol reg, type_id type)
          | DstSrc(instruction instr, StdTypes.nat op_num)
 
-int_or_source_op = Int(suif_int)
+int_or_source_op = Int(int)
                  | SrcOp(source_op)
 
 symbol = (StdTypes.nat uid, identifier name)
@@ -38,8 +40,8 @@ type = Data(data_type)
 procedure_type = 
     Basic_procedure_type(type result_type, type* args)
 
-    attributes(int_or_source_op? bit_size,
-               int_or_source_op? bit_alignment)
+    attributes(int_or_source_op bit_size,
+               int_or_source_op bit_alignment)
 
 data_type =
      Boolean_type 
@@ -53,16 +55,15 @@ data_type =
       int_or_source_op lower_bound,
       int_or_source_op upper_bound)
    | Group_type(string name, group_field* fields)
-   | Lookup_type(type_id)
 
-   attributes(int_or_source_op? bit_size, 
-              int_or_source_op? bit_alignment)
+   attributes(int_or_source_op bit_size, 
+              int_or_source_op bit_alignment)
 
 group_field    = (field_symbol name, type type, int_or_source_op bit_offset)
 enumerate_case = (string name, suif_int case_constant)
 qualification  = (string qualifier)
 
-type_table_entry = (type_id key, type)
+type_table_entry = (type_id key, type value)
 type_table       = (type_table_entry* entries)
 
 code_label_symbol = (symbol)
@@ -79,7 +80,7 @@ symbol_table_entry =
      | VariableEntry(variable_definition def)
      | ParameterEntry(parameter_symbol name,
                       int_or_source_op bit_alignment,
-                      type type, procedure_symbol proc)
+                      type_id type, procedure_symbol proc)
      | FieldEntry(int_or_source_op bit_offset)
      | NestedVariable(variable_symbol start, int_or_source_op bit_offset)
      attributes (symbol key, StdTypes.bool address_taken)
@@ -90,8 +91,9 @@ procedure_definition =
   (procedure_symbol name,
    qualification* qualifications, 
    procedure_type procedure_type,
-   parameter_symbol* params,
-   statement body)
+   procedure_body? procedure_body)
+
+procedure_body = (parameter_symbol* params, statement body)
 
 variable_definition = (variable_symbol name,
                        type type,
@@ -104,7 +106,7 @@ value_block =
   | Multi_value_block(multi_value_block_init* inits)
   | Repeat_value_block(suif_int count, value_block block) 
   | Undefined_value_block
-  attributes(data_type data_type)
+  attributes(type_id data_type)
 
 definition_block = 
   (variable_symbol*  defined_variables,
@@ -147,7 +149,7 @@ statement =
       source_op lower_bound,
       source_op upper_bound, 
       source_op step,
-      lstring init_comparison_opcode, 
+      identifier init_comparison_opcode, 
       statement body,
       statement? pre_pad, 
       statement? post_pad,
@@ -182,7 +184,7 @@ statement =
      (source_op itarget)
 
  | Branch_statement        
-     (lstring opcode, 
+     (identifier opcode, 
       source_op decision_operand,
       code_label_symbol target)
 
@@ -201,21 +203,21 @@ statement =
 
 instruction =
    Binary_arithmetic_instruction
-           (lstring opcode, 
+           (identifier opcode, 
             source_op source1,
             source_op source2,
-            data_type result_type, 
+            type_id result_type, 
 	    destination_op destination_op)
 
  | Unary_arithmetic_instruction
-	   (lstring opcode, 
+	   (identifier opcode, 
             source_op source,            
-            data_type result_type, 
+            type_id result_type, 
 	    destination_op destination_op)
 
  | Copy_instruction
            (source_op source,            
-            data_type result_type, 
+            type_id result_type, 
             destination_op destination_op,
 	    destination_op* destination_ops)
  
@@ -223,19 +225,19 @@ instruction =
            (source_op selector, 
             source_op selection1,
             source_op selection2,            
-            data_type result_type, 
+            type_id result_type, 
 	    destination_op destination_op)
 
  | Array_reference_instruction
            (source_op base_array_address,
             source_op index,            
-            data_type result_type, 
+            type_id result_type, 
 	    destination_op destination_op)
 
  | Field_access_instruction
            (source_op base_group_address,
             field_symbol field,            
-            data_type result_type, 
+            type_id result_type, 
 	    destination_op destination_op)
  
  | Extract_fields_instruction 
@@ -247,7 +249,7 @@ instruction =
 	   (source_op base_group_op,
             field_src  field_src,
 	    field_src* field_srcs,            
-            data_type result_type, 
+            type_id result_type, 
 	    destination_op destination_op)
 
  | Extract_elements_instruction 
@@ -263,77 +265,77 @@ instruction =
 
  | Bit_size_of_instruction
            (type_id ref_type,            
-            data_type   result_type, 
+            type_id   result_type, 
 	    destination_op destination_op)
 
  | Bit_alignment_of_instruction
            (type_id ref_type,            
-            data_type result_type, 
+            type_id result_type, 
 	    destination_op destination_op)
 
  | Bit_offset_of_instruction
             (field_symbol field,            
-             data_type result_type, 
+             type_id result_type, 
 	     destination_op destination_op)
 
 -- add bit to byte coercions and avoid these 
  | Byte_size_of_instruction
             (type_id ref_type,            
-             data_type result_type, 
+             type_id result_type, 
 	     destination_op destination_op)
  
  | Byte_alignment_of_instruction
             (type_id ref_type,            
-             data_type result_type, 
+             type_id result_type, 
 	     destination_op destination_op)
 
  | Byte_offset_of_instruction
             (field_symbol field,            
-             data_type result_type, 
+             type_id result_type, 
 	     destination_op destination_op)
 
  | Va_arg_instruction
             (source_op ap_address,
-             data_type result_type, 
+             type_id result_type, 
 	     destination_op destination_op)
 
  | Sc_and_instruction 
             (source_op source1, 
              source_op source2,
-             data_type result_type, 
+             type_id result_type, 
 	     destination_op destination_op)
 
  | Sc_or_instruction 
              (source_op source1, 
               source_op source2,
-              data_type result_type, 
+              type_id result_type, 
 	      destination_op destination_op)
 
  | Sc_select_instruction 
              (source_op selector, 
               source_op selection1,
               source_op selection2,
-              data_type result_type, 
+              type_id result_type, 
 	      destination_op destination_op)
 
  | Load_instruction 
              (source_op source_address,
-              data_type result_type, 
+              type_id result_type, 
 	      destination_op destination_op)
 
  | Load_address_instruction 
              (symbol addressed_symbol,
-              data_type result_type, 
+              type_id result_type, 
 	      destination_op destination_op)
 
  | Load_constant_instruction
              (constant constant,              
-              data_type result_type, 
+              type_id result_type, 
 	      destination_op destination_op)
 
  | Load_value_block_instruction 
-             (constant constant,
-              data_type result_type, 
+             (value_block constant,
+              type_id result_type, 
 	      destination_op destination_op)
 
  | Call_instruction 
@@ -344,7 +346,7 @@ instruction =
 
  | Ssa_phi_instruction 
              (variable_symbol* variables,
-              data_type result_type, 
+              type_id result_type, 
 	      destination_op destination_op)
 
  | Mark_instruction 
@@ -357,7 +359,7 @@ instruction =
 -- | Return_instruction(source_op* return_values)
 -- | Jump_instruction(code_label_symbol target) 
 -- | Jump_indirect_instruction(source_op target)
--- | Branch_instruction(lstring opcode, 
+-- | Branch_instruction(identifier opcode, 
 --              source_op decision_operand,
 --              code_label_symbol target)
 -- | Multi_way_branch_instruction(source_op decision_operand,
@@ -369,31 +371,46 @@ instruction =
 
 -- attributes( )
 
- element_dst = (data_type result_type,
+ element_dst = (type_id result_type,
                 destination_op destination_op,
                 source_op index)
 
  element_src = (source_op index, source_op element)
 
- field_dst = (data_type result_type,
+ field_dst = (type_id result_type,
               destination_op destination_op, 
               field_symbol field)
 
  field_src  = (field_symbol field,  source_op source_op)
  
  return_value  = (destination_op destination_op, 
-                  data_type result_type)
+                  type_id result_type)
 
  multi_way_branch_case = (constant case_constant,
                           code_label_symbol case_target)
 
 
-multi_value_block_init = (suif_int bit_offset, value_block block)
+multi_value_block_init = (int bit_offset, value_block block)
 
 -- just stubbed out for now 
 global_information_block = C_information_block 
-
-
+--     (type_id signed_char_type,	
+--   	type_id unsigned_char_type,
+--   	type_id	char_type,
+--	type_id	signed_short_type,
+--	type_id	unsigned_short_type,
+--	type_id	signed_int_type,
+--	type_id	unsigned_int_type,
+--	type_id	signed_long_type,
+--	type_id	unsigned_long_type,
+--	type_id	signed_long_long_type,
+--	type_id	unsigned_long_long_type,
+--	type_id	float_type,
+--	type_id	double_type,
+--	type_id	long_double_type,
+--	type_id	type file_type,
+--	type_id	ptrdiff_t_type,
+--	type_id	size_t_type)
 }
 
 view Doc { 
@@ -455,7 +472,6 @@ view Java {
 -- remap names in java
 <= source_name {
   zsuif.suif_int               : SuifInt 
-  zsuif.lstring                : Lstring 
   zsuif.constant               : Constant 
   zsuif.source_op              : SourceOp 
   zsuif.destination_op         : DestinationOp 
@@ -497,5 +513,9 @@ view Java {
 
 }
 
+view Cxx {
+module StdTypes <= suppress : false
+module StdTypes <= is_library : false
+}
 
 
