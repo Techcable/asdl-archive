@@ -8,12 +8,12 @@
  *)
 
 
-functor AlgebraicPklGen (val instream_ty  : AlgebraicTypes.ty_exp
-			 val outstream_ty : AlgebraicTypes.ty_exp
-			 val monad        : AlgebraicTypes.ty_id  option)
+functor AlgebraicPklGen (val instream_ty  : AlgebraicAst.ty_exp
+			 val outstream_ty : AlgebraicAst.ty_exp
+			 val monad        : AlgebraicAst.ty_id  option)
     : FUN_PKL_GEN =
     struct
-	structure T = AlgebraicTypes
+	structure T = AlgebraicAst
 	structure VarId = T.VarId
 	type ty = T.ty_exp
 	type name = T.VarId.path
@@ -64,7 +64,7 @@ functor AlgebraicPklGen (val instream_ty  : AlgebraicTypes.ty_exp
 		Call(Id(VarId.fromString "read_option"),
 		     [Id (mk_name "read" name),Id stream_id])
 
-	    fun write_tag x = 
+	    fun write_tag _ x = 
 		Call(Id (VarId.fromString "write_tag"),[Int x,Id stream_id])
 	    val read_tag =
 		Call(Id (VarId.fromString "read_tag"),[Id stream_id])
@@ -87,7 +87,7 @@ functor AlgebraicPklGen (val instream_ty  : AlgebraicTypes.ty_exp
 	fun write_tagged_decl {name,tag,arg_ty,body} =
 	    DeclFun(mk_name "write_tagged" name,
 		    [{name=arg_id,ty=arg_ty},{name=stream_id,ty=outstream_ty}],
-		    Seq[write_tag tag,body],(wrap write_ret_ty))
+		    Seq[write_tag "" tag,body],(wrap write_ret_ty))
 
 	fun read_tagged_decl {name,tag,ret_ty,body} =
 	    DeclFun(mk_name "read_tagged" name,
@@ -98,21 +98,21 @@ functor AlgebraicPklGen (val instream_ty  : AlgebraicTypes.ty_exp
 
 
     end
-structure MLPklGen =
+(* structure MLPklGen =
     AlgebraicPklGen(val outstream_ty =
-			AlgebraicTypes.TyId
-			(AlgebraicTypes.TypeId.fromString "outstream")
+			AlgebraicAst.TyId
+			(AlgebraicAst.TypeId.fromString "outstream")
 		    val instream_ty =
-			AlgebraicTypes.TyId
-			(AlgebraicTypes.TypeId.fromString "instream")
-		    val monad = NONE)
+			AlgebraicAst.TyId
+			(AlgebraicAst.TypeId.fromString "instream")
+		    val monad = NONE) *)
 
 structure HaskellPklGen =
     AlgebraicPklGen(val outstream_ty =
-			AlgebraicTypes.TyId
-			(AlgebraicTypes.TypeId.fromString "Handle")
+			AlgebraicAst.TyId
+			(AlgebraicAst.TypeId.fromString "Handle")
 		    val instream_ty =
-			AlgebraicTypes.TyId
-			(AlgebraicTypes.TypeId.fromString "Handle")
+			AlgebraicAst.TyId
+			(AlgebraicAst.TypeId.fromString "Handle")
 		    val monad =
-			SOME (AlgebraicTypes.TypeId.fromString "IO"))
+			SOME (AlgebraicAst.TypeId.fromString "IO"))

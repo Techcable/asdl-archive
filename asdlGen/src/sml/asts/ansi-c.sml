@@ -11,7 +11,7 @@
 structure AnsiC:ANSI_C =
     struct
 	
-	open LT
+	open LangIds
 
 	datatype ty_prim   =   VOID | INT | CHAR
 
@@ -105,7 +105,8 @@ structure AnsiC:ANSI_C =
 			   var_decs:var_dec list,
 			    stmts:stmt list}
 
-	type decls = {name:mod_id,imports:mod_id list,decls:decl list}
+	structure T = mkLangAst(type decls = decl list)
+	  open T
     end
 
 

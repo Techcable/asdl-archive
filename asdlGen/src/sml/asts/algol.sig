@@ -8,10 +8,9 @@
  *)
 
 
-signature ALGOL_TYPES =
+signature ALGOL_AST =
     sig
-	include LANG_TYPES
-
+	include LANG_IDS
 	datatype ty_exp =
 	    TyRefAny 
 	  | TyId         of ty_id
@@ -74,8 +73,7 @@ signature ALGOL_TYPES =
              and clause       = {tag:const,body:stmt}
              and block        = {vars:field list,body:stmt list}
 
-	type decls = {name:mod_id,imports:mod_id list,decls:decl list}
-
+	 include LANG_AST where type decls = decl list
     end
 
 

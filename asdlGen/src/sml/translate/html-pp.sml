@@ -12,9 +12,8 @@
 signature HTML_PP =
     sig
 	structure T : FORMAT_DOC
-	include TRANSLATE_TO_SOURCE
-	(* replace sharing constriant with where clause *)    
-	sharing type input = T.decls
+	include TRANSLATE_TO_SOURCE 
+                where type input = T.module
     end
 (* probably should use Reppy's HTML library in the future
    This is just a hack...
@@ -25,7 +24,7 @@ structure HTMLPP : HTML_PP =
 	structure T  = FormatDoc
 
 	structure PP = PPUtil
-	type input = T.decls
+	type input = T.module
 	type output = (string list * PPUtil.pp) list
 	val cfg = Params.empty
 	fun mkComment _ = PP.empty
@@ -85,7 +84,7 @@ structure HTMLPP : HTML_PP =
 				PP.s "<dd>",pp_format fmt]),
 		     sep=PP.ws} fl)
 
-	fun translate p ({name,decls={title,body},imports},_) =
+	fun translate p (T.Module{name,decls={title,body},imports},_) =
 	    let
 		val base = T.ModuleId.toString name
 	    in

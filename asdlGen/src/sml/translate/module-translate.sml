@@ -11,11 +11,9 @@
 
 signature MODULE_TRANSLATOR =
     sig
-	structure M : MODULE
-	structure T : LANG_TYPES
+	structure M   : MODULE
+	structure Ast : LANG_AST
 
-	type input_value 
-	type output_value
 	type defined_value
 	type sequence_value
 	type option_value
@@ -23,7 +21,6 @@ signature MODULE_TRANSLATOR =
 	type field_value
 
 	val cfg : Params.cfg
-	val get_module : input_value -> M.module
 
 	val set_dir : bool
 	val ignore_supress : bool
@@ -71,7 +68,7 @@ signature MODULE_TRANSLATOR =
 	      props: M.Mod.props,
 	    defines: defined_value list,
 	    options: option_value list,
-          sequences: sequence_value list} -> output_value
+          sequences: sequence_value list} -> Ast.decls
     end
 
 signature TRANSLATE_FROM_MODULE =
@@ -84,13 +81,12 @@ signature TRANSLATE_FROM_MODULE =
     end
 
 functor mkTranslateFromTranslator
-    (structure T : MODULE_TRANSLATOR
-     structure G : TRANSLATE where type input =
-	 ({name:T.T.mod_id,decls:T.output_value,
-	   imports:T.T.mod_id list} * T.M.Mod.props)) =
+  (structure T : MODULE_TRANSLATOR 
+     structure G : TRANSLATE where
+     type input = (T.Ast.module * T.M.Mod.props)) =
     struct
 	structure M = T.M
-	structure AST = T.T
+	structure Ast = T.Ast
 	type output = (string * G.output) list
 	type input = M.module_env 
 	val cfg = Params.empty
@@ -269,13 +265,14 @@ functor mkTranslateFromTranslator
 			    {module=m,defines=defines,props=props,
 			     options=options,sequences=sequences}
 
-			val get_mid = (AST.ModuleId.fromPath o
+			val get_mid = (Ast.ModuleId.fromPath o
 				       Id.toPath o M.module_src_name)
 			val imports =
 			    List.map get_mid (M.module_imports m)
 			val name = get_mid m
 		    in
-			({imports=imports,decls=decls,name=name},props)
+		      (Ast.Module{imports=imports,decls=decls,name=name},
+		       props)
 		    end
 	    end
 

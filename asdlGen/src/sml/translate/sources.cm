@@ -3,6 +3,10 @@ smlnj-lib.cm
 ../frontend/sources.cm
 ../asts/sources.cm
 
+type-decl.sig
+type-decl.sml
+std-pickler.sml
+
 translate.sig
 translate.sml
 module-translate.sml
@@ -12,25 +16,35 @@ source-translate.sml
 translate-format.sml
 html-pp.sml 
 
-pkl-gen.sig
-oo-pkl-gen.sml
-oo-build-aux.sml
-algebraic-pkl-gen.sml
-algol-pkl-gen.sml
+translate-xml-dtd.sml
+xml-dtd-pp.sml
 
+pkl-gen.sig
 idfix.sml
 
-translate-algebraic.sml
-ml-pp.sml
-haskell-pp.sml
 
 translate-algol.sml
 translate-ansi-c.sml 
+algol-spec.sig
+algol-spec.sml
+algol-module-translator.sml
+algol-pkl-gen.sml
 ansi-c-pp.sml
 
+oo-spec.sig
+oo-pkl-gen.sml
+oo-build-aux.sml
 translate-oo.sml
 java-pp.sml
 c-plus-plus-pp.sml 
 
-translate-xml-dtd.sml
-xml-dtd-pp.sml
+translate-algebraic.sml
+algebraic-pkl-gen.sml
+algebraic-spec.sig
+algebraic-spec.sml
+algebraic-module-translator.sml
+ml-pp.sml
+haskell-pp.sml
+
+(* move to util *)
+stmt-exp.sml

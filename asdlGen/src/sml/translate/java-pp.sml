@@ -8,22 +8,17 @@
  *)
 
 
-signature JAVA_PP =
-    sig
-	structure T : OO_TYPES
-	include TRANSLATE_TO_SOURCE
-	sharing type input = T.decls    
-	val package_prefix : string
-    end
-
-
 (*just a hack for now *)
-structure JavaPP : JAVA_PP =
+structure JavaPP :
+  sig
+    include OO_PP
+    val package_prefix : string 
+  end =
     struct
-	structure T = OOTypes
+	structure T = OOAst
 	structure PP = PPUtil
-	structure AST = OOTypes
-	type input  = T.decls
+	structure AST = OOAst
+	type input  = T.module
 	type output = (string list * PPUtil.pp) list
 
 	val cfg = Params.empty
@@ -38,7 +33,7 @@ structure JavaPP : JAVA_PP =
 	     PPUtil.seq_term {fmt=PPUtil.s,sep=PPUtil.nl} s,
 	     PPUtil.s "*/"]
 	local
-	    open OOTypes
+	    open OOAst
 	in
 
 	    fun fix_id {qualifier,base} =
@@ -359,7 +354,7 @@ structure JavaPP : JAVA_PP =
 		    ([package_prefix,mn,fname],pp)
 		end
 	end
-	fun translate p  ({name,imports,decls},props) =
+	fun translate p  (T.Module{name,imports,decls},props) =
 	    let
 		val (cs,ds) = List.foldr do_const ([],[]) decls
 		val mn = T.ModuleId.toString name

@@ -8,9 +8,9 @@
  *)
 
 
-signature ALGEBRAIC_TYPES =
+signature ALGEBRAIC_AST =
     sig
-	include LANG_TYPES
+	include LANG_IDS
 	datatype ty_exp =
 	    TyId        of ty_id
 	  | TyList      of ty_exp
@@ -51,7 +51,7 @@ signature ALGEBRAIC_TYPES =
 	    and field  = {name:id,ty:ty_exp}
 	    and clause = (match * exp)
 
-	type decls = {name:mod_id,imports:mod_id list,decls:decl list}
+      include LANG_AST where type decls = decl list
     end
 
 

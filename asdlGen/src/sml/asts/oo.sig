@@ -8,9 +8,9 @@
  *)
 
 
-signature OO_TYPES = (* really more Java than anything else *)
+signature OO_AST = (* really more Java than anything else *)
     sig
-	include LANG_TYPES
+	include LANG_IDS
 
 	datatype ty_exp =
 	    TyId         of (ty_id)
@@ -119,7 +119,7 @@ signature OO_TYPES = (* really more Java than anything else *)
 	   and mfield    = {mods:modifiers,field:field}
 	   and clause    = {tag:const,body:stmt}
 
-	type decls = {name:mod_id,imports:mod_id list,decls:ty_decl list}
+       include LANG_AST where type decls = ty_decl list
     end
 
 

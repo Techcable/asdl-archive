@@ -330,19 +330,12 @@ functor mkPPAnsiC(structure T: ANSI_C) : PP_ANSI_C =
 	    PP.cat[PP.seq {fmt=pp_decl,sep=PP.nl} dl,PP.nl]		    
     end
 
-signature ANSI_C_PP =
-    sig
-	structure T : ALGOL_TYPES
-	include TRANSLATE_TO_SOURCE
-	sharing type input = T.decls    
-    end
-
-structure AnsiCPP : ANSI_C_PP =
+structure AnsiCPP : ALGOL_PP =
     struct
 	structure Trans = TranslateAnsiC
 	structure T = Trans.T
 	structure PP = mkPPAnsiC(structure T = AnsiC)
-	type input =  T.decls
+	type input =  T.module
 	type output = (string list * PPUtil.pp) list
 
 	val cfg = Params.empty
@@ -407,7 +400,7 @@ structure AnsiCPP : ANSI_C_PP =
 	val body_epilogue =
 	    PPUtil.wrap Module.Mod.implementation_epilogue
 	    
-	fun translate p  (arg as {name,decls,imports},props)  =
+	fun translate p  (arg as (T.Module{name,decls,imports}),props)  =
 	    let
 		val mn = T.ModuleId.toString name
 		fun mk_file suffix f =
@@ -435,7 +428,8 @@ structure AnsiCPP : ANSI_C_PP =
 		     PPUtil.nl,
 		     header_epilogue props,PPUtil.nl,
 		     PPUtil.s ("#endif /* _"^name^"_ */"), PPUtil.nl]
-		val {decls,name,imports} = Trans.translate p arg
+		val (Trans.Ast.Module{decls,name,imports}) =
+		  Trans.translate p arg
 		val (header,body) = fix_decls decls
 
 		    

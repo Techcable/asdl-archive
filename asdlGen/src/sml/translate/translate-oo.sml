@@ -10,7 +10,7 @@
 
 signature TRANSLATE_TO_OO =
     sig
-	structure AST: OO_TYPES
+	structure AST: OO_AST
 	structure M:  MODULE
 
 	include TRANSLATE where type input = M.module
@@ -20,7 +20,7 @@ signature TRANSLATE_TO_OO =
 
 functor mkOOTranslator(structure IdFix : ID_FIX
 		       structure Pkl : OO_PKL_GEN
-		       structure T : OO_TYPES
+		       structure T : OO_AST
 		       sharing type Pkl.ty = T.ty_exp
 			   and type Pkl.exp = T.exp
 			   and type Pkl.stmt = T.stmt
@@ -31,6 +31,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
     struct
 
 	structure M = Module
+	structure Ast = T
 	structure T = T
 	structure IdFix = IdFix
 	structure Pkl = Pkl
@@ -40,8 +41,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 	val fix_fields = false
 
 	type input_value    = M.module
-	type output_value   = T.ty_decl list
-
+	
 	type defined_value  = {ty_dec:T.ty_decl,
 			       cnstrs:T.ty_decl list}
 
@@ -245,6 +245,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 	fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} =
 	    let
 		val is_boxed = M.type_is_boxed tinfo
+		val tag_str = (Id.toString name)
 		val con_tid = tid_base  name
 		val con = id_base name
 		val visit_name = visit_id name
@@ -298,13 +299,14 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 					unwrap(T.Const (T.VarConst con)))}
 
 		fun wr_body arg =
-		    if List.null wr_fields then (Pkl.write_tag tag_v)
+		  if List.null wr_fields then
+		    (Pkl.write_tag tag_str tag_v)
 		    else
 			T.Block
 			{vars=[{name=tmp_id,ty=con_ty}],
 			 body=
 			 (T.Assign(T.Id tmp_id,T.Cast(con_ty,arg)))::
-			 (Pkl.write_tag tag_v)::wr_fields}
+			 (Pkl.write_tag tag_str tag_v)::wr_fields}
 			
 		fun wr arg = {tag=T.EnumConst(tid,tag_n),body=wr_body arg}
 
@@ -861,9 +863,9 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 		     [T.If{test=T.NotNil(T.Id Pkl.arg_id),
 			  then_stmt=
 			  T.Block{vars=[],body=
-				  [Pkl.write_tag 1,
+				  [Pkl.write_tag "SOME" 1,
 				   Pkl.write pkl_name (T.Id Pkl.arg_id)]},
-			  else_stmt=Pkl.write_tag 0}]}
+			  else_stmt=Pkl.write_tag "NONE" 0}]}
 	    in
 		{tid=tid,rd=rd,wr=wr}
 	    end

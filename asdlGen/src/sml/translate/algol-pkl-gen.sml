@@ -1,6 +1,6 @@
 structure AlgolPklGen : IMP_PKL_GEN =
     struct
-	structure T = AlgolTypes
+	structure T = AlgolAst
 	structure VarId = T.VarId
 	type ty = T.ty_exp
 	type exp = T.exp
@@ -43,7 +43,7 @@ structure AlgolPklGen : IMP_PKL_GEN =
 	    val read_tag =
 		FnCall(VarId.fromString "read_tag",[Id stream_id])
 
-	    val write_tag = write_len o Const o IntConst
+	    fun write_tag _ = write_len o Const o IntConst
 	    val read_len = read_tag
 
 	    fun write name exp =
@@ -100,7 +100,7 @@ structure AlgolPklGen : IMP_PKL_GEN =
 			 [{name=arg_id,ty=arg_ty},
 			  {name=stream_id,ty=outstream_ty}],
 			 {vars=[],body=
-			  (write_tag tag)::body})
+			  (write_len(Const(IntConst tag)))::body})
 				  
 	    fun die _ =  ProcCall((VarId.fromString "die"),[])
 	    fun read_tagged_decl {name,ret_ty,body,tag} =

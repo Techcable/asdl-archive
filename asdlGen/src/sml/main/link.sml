@@ -28,11 +28,24 @@ structure Main =
 				structure Gen = XMLDTDGen
 				val dflt_view = "DTD")
 
-        structure MLTranslator =
+(*        structure MLTranslator =
 	    mkAlgebraicTranslator(structure IdFix = IdFix.ML
-				  structure T = AlgebraicTypes
+				  structure T = AlgebraicAst
 				  structure Pkl = MLPklGen
 				  val fix_fields = false)
+*)
+	structure MLAlgebraicSpec =
+	  mkAlgebraicSpec(structure Ty = AlgebraicTy)
+
+	structure MLPklGen = StdPickler(structure Arg = MLAlgebraicSpec)
+
+	structure MLTranslator =
+	  mkAlgebraicModuleTranslator
+	  (structure IdFix = IdFix.ML
+	   structure Spec = MLAlgebraicSpec
+	   val aux_decls = MLPklGen.trans
+	   val fix_fields = false)
+
        structure MLGen =
 	   mkTranslateFromTranslator
 	   (structure T = MLTranslator
@@ -45,7 +58,7 @@ structure Main =
 
        structure HaskellTranslator =
 	   mkAlgebraicTranslator(structure IdFix = IdFix.Haskell
-				 structure T = AlgebraicTypes
+				 structure T = AlgebraicAst
 				 structure Pkl = HaskellPklGen
 				 val fix_fields = true)
        structure HaskellGen =
@@ -58,8 +71,18 @@ structure Main =
 			      val dflt_view = "Haskell")
 
 
+
+       structure AnsiCAlgolSpec = mkAlgolSpec(structure Ty = AlgolTy)
+       structure AnsiCPklGen = StdPickler(structure Arg = AnsiCAlgolSpec)
+       structure AnsiCTranslator =
+	 mkAlgolModuleTranslator(structure IdFix = IdFix.AnsiC
+				 structure Spec = AnsiCAlgolSpec
+				 val aux_decls = AnsiCPklGen.trans
+				 val fix_fields = false)
+(*
        structure AnsiCTranslator =
 	   mkAlgolTranslator(structure IdFix = IdFix.AnsiC)
+*)
        structure AnsiCGen =
 	   mkTranslateFromTranslator
 	   (structure T = AnsiCTranslator
@@ -73,7 +96,7 @@ structure Main =
 
        structure JavaTranslator =
 	   mkOOTranslator(structure IdFix = IdFix.Java
-			  structure T = OOTypes
+			  structure T = OOAst
 			  structure Pkl = JavaPklGen
 			  val prefix_ids = SOME (JavaPP.package_prefix)
 			  val int_kind = true
@@ -92,7 +115,7 @@ structure Main =
 
        structure CPlusPlusTranslator =
 	   mkOOTranslator(structure IdFix = IdFix.CPlusPlus
-			  structure T = OOTypes
+			  structure T = OOAst
 			  structure Pkl = CxxPklGen
 			  val prefix_ids = NONE
 			  val int_kind = false

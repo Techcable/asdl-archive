@@ -30,8 +30,8 @@ signature FUN_PKL_GEN =
         type exp
         type decl
 	    
-	val write_tag : int -> exp
-	val read_tag  : exp
+	val write_tag    : string -> int -> exp
+	val read_tag     :  exp
 
 	val write        : name -> exp -> exp
 	val read         : name -> exp 
@@ -62,7 +62,7 @@ signature IMP_PKL_GEN =
 	val len_ty       : ty
 	val ret_id       : id
 
-	val write_tag    : int -> stmt
+	val write_tag    : string -> int -> stmt
 	val read_tag     : exp
 
 	val write_len    : exp -> stmt
@@ -107,7 +107,7 @@ signature OO_PKL_GEN =
 	val write_len : exp -> stmt
 	val read_len  : exp
 
-	val write_tag : int -> stmt
+	val write_tag : string -> int -> stmt
 	val read_tag  : exp
 
 	val write     : name -> exp -> stmt

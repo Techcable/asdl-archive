@@ -7,10 +7,9 @@
  *
  *)
 
-
-structure FormatDoc:FORMAT_DOC =
+structure FormatDoc : FORMAT_DOC =
     struct
-	open LT
+	open LangIds
 	(* LaTeX intersect HTML *)
 	datatype format =
 	    STR   of string 
@@ -34,5 +33,7 @@ structure FormatDoc:FORMAT_DOC =
 	withtype ditem = {tag:format,fmt:format}
 
 	type format_doc = {title:string,body:format list}
-	type decls      = {name:mod_id,decls:format_doc,imports:mod_id list}
+	structure T =
+	  mkLangAst(type decls = format_doc)
+	open T
     end

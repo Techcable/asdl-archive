@@ -1,27 +1,9 @@
-(* 
- *
- * COPYRIGHT (c) 1997, 1998 by Princeton University. 
- * See COPYRIGHT file for details
- *
- * Author: Daniel C. Wang
- *
- *)
-
-
-signature ML_PP =
-    sig
-	structure T : ALGEBRAIC_TYPES
-	include TRANSLATE_TO_SOURCE
-
-	sharing type input =  T.decls
-    end
-
-structure MLPP : ML_PP =
+structure MLPP : ALGEBRAIC_PP =
     struct 
-	structure T  = AlgebraicTypes
+	structure T  = AlgebraicAst
 
 	structure PP = PPUtil
-	type input = T.decls
+	type input = T.module
 	type output = (string list * PPUtil.pp) list
 
 	val cfg = Params.empty
@@ -206,7 +188,7 @@ structure MLPP : ML_PP =
 	val struct_epilogue =
 	    PPUtil.wrap Module.Mod.implementation_epilogue
 
-	fun translate p ({name,imports,decls},props) =
+	fun translate p (T.Module{name,imports,decls},props) =
 	    let
 		val ast = decls
 		val mn = T.ModuleId.toString name

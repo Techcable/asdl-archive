@@ -10,7 +10,7 @@
 
 signature FORMAT_DOC =
     sig
-	include LANG_TYPES
+	include LANG_IDS
 	(* LaTeX intersect HTML *)
 	datatype format =
 	    STR   of string 
@@ -32,7 +32,7 @@ signature FORMAT_DOC =
 	  | REF   of Id.mid * format list
 
 	withtype ditem = {tag:format,fmt:format}
-
 	type format_doc = {title:string,body:format list}
-	type decls      = {name:mod_id,decls:format_doc,imports:mod_id list}
+      
+      include LANG_AST where type decls = format_doc 
     end

@@ -8,9 +8,9 @@
  *)
 
 
-structure AlgebraicTypes :  ALGEBRAIC_TYPES =
+structure AlgebraicAst :  ALGEBRAIC_AST =
     struct
-	open LT
+	open LangIds
 	    
 	datatype ty_exp =
 	    TyId        of ty_id
@@ -52,7 +52,10 @@ structure AlgebraicTypes :  ALGEBRAIC_TYPES =
 	withtype cnstr = {name:id,ty_arg:ty_exp}
 	    and field  = {name:id,ty:ty_exp}
 	    and clause = (match * exp)
-		
-	type decls = {name:mod_id,imports:mod_id list,decls:decl list}
+	structure T = mkLangAst(type decls = decl list)
+	open T
     end
+
+
+
 

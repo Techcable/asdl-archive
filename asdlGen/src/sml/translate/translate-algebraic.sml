@@ -10,7 +10,7 @@
 
 functor mkAlgebraicTranslator(structure IdFix : ID_FIX
 			      structure Pkl : FUN_PKL_GEN
-			      structure T : ALGEBRAIC_TYPES
+			      structure T : ALGEBRAIC_AST
 			      sharing type Pkl.ty = T.ty_exp
 				      and type Pkl.exp = T.exp
 				      and type Pkl.id = T.id
@@ -19,6 +19,7 @@ functor mkAlgebraicTranslator(structure IdFix : ID_FIX
     struct
 	structure M = Module
 	structure T = T
+	structure Ast = T
 	structure IdFix = IdFix
 	structure Pkl = Pkl
 
@@ -31,7 +32,6 @@ functor mkAlgebraicTranslator(structure IdFix : ID_FIX
 	fun trans_tid  true = fix_ty o T.TypeId.fromString o Id.getBase
 	  | trans_tid false = fix_ty o T.TypeId.fromPath o Id.toPath
 
-	type input_value    = M.module
 	type output_value   = T.decl list
 	type defined_value  = {ty:T.decl,rd:T.decl list,
 			                 wr:T.decl list}
@@ -42,7 +42,6 @@ functor mkAlgebraicTranslator(structure IdFix : ID_FIX
 	type sequence_value = unit
 	    
 	val cfg = Params.empty
-	val get_module = (fn x => x)
 
 	fun wrappers p ty =
 	    let
@@ -148,6 +147,7 @@ functor mkAlgebraicTranslator(structure IdFix : ID_FIX
 	    let
 		val trans_cid = fix_id o T.VarId.fromString o Id.getBase
 		val tag_v = M.con_tag cinfo
+		val tag_str = (Id.toString name)
 		val name = trans_cid name
 
 		val (ty_arg,match,exp,wr_exp,bind_clauses)
@@ -158,7 +158,7 @@ functor mkAlgebraicTranslator(structure IdFix : ID_FIX
 		     T.LetBind(bind_clauses,T.Cnstr(name,exp)))
 		val wr = 
 		    (T.MatchCnstr(match,cnstr),
-		     T.Seq ((Pkl.write_tag tag_v)::wr_exp))
+		     T.Seq ((Pkl.write_tag tag_str tag_v)::wr_exp))
 	    in
 		{con=cnstr,rd=rd,wr=wr}
 	    end

@@ -1,5 +1,5 @@
 
-functor mkOOBuildAux(structure T : OO_TYPES
+functor mkOOBuildAux(structure T : OO_AST
 		     val mk_tid : (Id.mid * string) -> T.ty_id
 		     val visit_id : T.ty_id -> T.id) =
     struct

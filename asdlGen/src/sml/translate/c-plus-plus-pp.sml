@@ -8,21 +8,13 @@
  *)
 
 
-signature C_PLUS_PLUS_PP =
-    sig
-	structure T : OO_TYPES
-	include TRANSLATE_TO_SOURCE
-	sharing type input = T.decls    
-    end
-
-
 (*just a hack for now *)
-structure CPlusPlusPP : C_PLUS_PLUS_PP =
+structure CPlusPlusPP : OO_PP =
     struct
-	structure T = OOTypes
+	structure T = OOAst
 	structure PP = PPUtil
-	structure AST = OOTypes
-	type input =  T.decls
+	structure AST = OOAst
+	type input =  T.module
 	type output = (string list * PPUtil.pp) list
 
 	val cfg = Params.empty 
@@ -36,7 +28,7 @@ structure CPlusPlusPP : C_PLUS_PLUS_PP =
 	     PPUtil.seq_term {fmt=PPUtil.s,sep=PPUtil.nl} s,
 	     PPUtil.s "*/"]
 	local
-	    open OOTypes
+	    open OOAst
 	in
 	    val pp_id = PP.wrap (VarId.toString' "_")
 	    val pp_tid = PP.wrap (TypeId.toString' "_")
@@ -510,7 +502,7 @@ structure CPlusPlusPP : C_PLUS_PLUS_PP =
 	val body_epilogue =
 	    PPUtil.wrap Module.Mod.implementation_epilogue
 
-	fun translate p ({name,imports,decls},props) =
+	fun translate p (T.Module{name,imports,decls},props) =
 	    let
 		val mn = T.ModuleId.toString name
 		val x = List.map T.ModuleId.toString imports

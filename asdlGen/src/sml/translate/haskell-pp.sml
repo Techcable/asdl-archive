@@ -12,21 +12,12 @@
  * http://www.dcs.gla.ac.uk/~reig/
  *)
 
-
- signature HASKELL_PP =
-    sig
-	structure T : ALGEBRAIC_TYPES
-	include TRANSLATE_TO_SOURCE
-
-	sharing type input =  T.decls
-    end
-
-structure HaskellPP : HASKELL_PP =
+structure HaskellPP : ALGEBRAIC_PP =
     struct 
-	structure T  = AlgebraicTypes
+	structure T  = AlgebraicAst
 
 	structure PP = PPUtil
-	type input =  T.decls
+	type input =  T.module
 	type output = (string list * PPUtil.pp) list
 
 	val cfg = Params.empty
@@ -268,7 +259,7 @@ structure HaskellPP : HASKELL_PP =
 	val module_epilogue =
 	    PPUtil.wrap Module.Mod.implementation_epilogue
 
-	fun translate p ({name,decls,imports},props) =
+	fun translate p (T.Module{name,decls,imports},props) =
 	    let
 		val ast = decls
 		val mn = T.ModuleId.toString name

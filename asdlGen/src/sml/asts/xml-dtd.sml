@@ -8,7 +8,7 @@
  *)
 structure XMLDTD :> XML_DTD =
   struct 
-    open LT
+    open LangIds
     datatype content_spec =
         EMPTY
       | ANY
@@ -42,6 +42,7 @@ structure XMLDTD :> XML_DTD =
     withtype att_def       = {name:id,att_type:att_type,default:att_default}
          and element_decl  = {element:ty_id,
 			      content:content_spec,att_defs:att_def list}
-    type decls = {name:mod_id,imports:mod_id list,decls:element_decl list}
+    structure T = mkLangAst(type decls = element_decl list)
+      open T
   end
 

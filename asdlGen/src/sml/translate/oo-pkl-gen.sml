@@ -1,7 +1,7 @@
-functor OOPklGen(val instream_ty  : OOTypes.ty_exp
-		 val outstream_ty : OOTypes.ty_exp)  =
+functor OOPklGen(val instream_ty  : OOAst.ty_exp
+		 val outstream_ty : OOAst.ty_exp)  =
     struct
-	structure T = OOTypes
+	structure T = OOAst
 	structure Id = T.VarId
 	type ty = T.ty_exp
 	type exp = T.exp
@@ -51,7 +51,7 @@ functor OOPklGen(val instream_ty  : OOTypes.ty_exp
 	    fun write_len x =
 		Expr (FunCall(Id.fromString "write_tag",[x,Id stream_id]))
 
-	    val write_tag = write_len o Const o IntConst
+	    fun write_tag _ = (write_len o Const o IntConst)
 
 	    val read_tag =
 		FunCall(Id.fromString "read_tag",[Id stream_id])
@@ -120,7 +120,7 @@ functor OOPklGen(val instream_ty  : OOTypes.ty_exp
 		     args=[{name=arg_id,ty=arg_ty},
 			   {name=stream_id,ty=outstream_ty}],
 		     ret=void_ty,
-		     body={vars=[],body=(write_tag tag)::body}}
+		     body={vars=[],body=(write_tag "" tag)::body}}
 				  
 	    fun die _ =
 		Expr(FunCall(Id.fromString "die",[]))
@@ -154,19 +154,19 @@ functor OOPklGen(val instream_ty  : OOTypes.ty_exp
 
 structure CxxPklGen : OO_PKL_GEN =
     OOPklGen(val outstream_ty =
-		 OOTypes.TyId (OOTypes.TypeId.fromPath {base="outstream",
+		 OOAst.TyId (OOAst.TypeId.fromPath {base="outstream",
 					    qualifier=[]})
 	     val instream_ty =
-		 OOTypes.TyId (OOTypes.TypeId.fromPath
+		 OOAst.TyId (OOAst.TypeId.fromPath
 				{base="instream",qualifier=[]}))
 
 structure JavaPklGen : OO_PKL_GEN =
     OOPklGen(val outstream_ty =
-		 OOTypes.TyId (OOTypes.TypeId.fromPath
+		 OOAst.TyId (OOAst.TypeId.fromPath
 			       {base="java.io.OutputStream",
 				       qualifier=[]})
 	     val instream_ty =
-		 OOTypes.TyId (OOTypes.TypeId.fromPath
+		 OOAst.TyId (OOAst.TypeId.fromPath
 			       {base="java.io.InputStream",
 					    qualifier=[]}))
     

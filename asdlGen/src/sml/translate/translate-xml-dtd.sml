@@ -11,9 +11,10 @@
 structure XMLDTDTranslator : MODULE_TRANSLATOR =
     struct
 	structure M = Module
-	structure T = XMLDTD
+	structure Ast = XMLDTD
+	structure T = Ast
+
 	type input_value    = M.module
-	type output_value   = T.element_decl list
 	type defined_value  = T.element_decl  * T.element_decl list
 	type option_value   = T.element_decl 
 	type sequence_value = T.element_decl

@@ -11,7 +11,8 @@
 functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
     struct
 	structure M = Module
-	structure T = AlgolTypes
+	structure Ast = AlgolAst
+	structure T = AlgolAst
 	structure IdFix = IdFix
 	structure Pkl = AlgolPklGen
 	    
@@ -156,6 +157,7 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 	    let
 		val is_boxed = M.type_is_boxed tinfo
 		val tag_v  = M.con_tag cinfo
+		val tag_str  = (Id.toString name)
 		val tag_enum  = M.Con.enum_value cprops
 		val name = (fix_id o T.VarId.fromPath o Id.toPath) name
 		val tid = trans_tid (fn x => x) tinfo
@@ -196,7 +198,8 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 		     else T.Assign(T.Id x,T.Id name)}
 		    				      
 		val wr = {tag=T.EnumConst name,body=mk_block
-			  ((Pkl.write_tag tag_v)::(wr_attrbs@wr_fields))}
+			  ((Pkl.write_tag tag_str tag_v)::
+			   (wr_attrbs@wr_fields))}
 
 		val ret_exp =
 		    case Option.map (fix_id o T.VarId.fromPath)
@@ -493,9 +496,9 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 		     body=
 		     [T.If {test=test (T.Id Pkl.arg_id),
 			 then_stmt=mk_block
-			    [Pkl.write_tag 1, Pkl.write pkl_name
+			    [Pkl.write_tag "SOME" 1 , Pkl.write pkl_name
 			     (T.Id Pkl.arg_id)],
-			    else_stmt=Pkl.write_tag 0}]}
+			    else_stmt=Pkl.write_tag "NONE" 0}]}
 		val rd = Pkl.read_decl 
 		    {name=opt_name,ret_ty=ty_opt,
 		     body=

@@ -8,9 +8,9 @@
  *)
 
 
-structure AlgolTypes :  ALGOL_TYPES =
+structure AlgolAst :  ALGOL_AST =
     struct
-	open LT
+	open LangIds
 	datatype ty_exp =
 	    TyRefAny
 	  | TyId         of ty_id
@@ -72,5 +72,7 @@ structure AlgolTypes :  ALGOL_TYPES =
              and variant_init = {tag:id,name:id,fields:field_init list}
              and clause       = {tag:const,body:stmt}
              and block        = {vars:field list,body:stmt list}
-	type decls = {name:mod_id,imports:mod_id list,decls:decl list}
+
+	structure T = mkLangAst(type decls = decl list)
+	open T
     end

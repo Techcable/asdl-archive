@@ -8,10 +8,9 @@
  *)
 
 
-structure OOTypes: OO_TYPES =
+structure OOAst: OO_AST =
     struct
-	open LT
-
+	open LangIds
 
 	datatype ty_exp =
 	    TyId         of (ty_id)
@@ -118,5 +117,6 @@ structure OOTypes: OO_TYPES =
 	   and mfield    = {mods:modifiers,field:field}
 	   and clause    = {tag:const,body:stmt}
 
-	type decls = {name:mod_id,imports:mod_id list,decls:ty_decl list}
+	structure T =  mkLangAst(type decls = ty_decl list)
+	open T
     end

@@ -11,6 +11,7 @@
 structure FormatTranslator : MODULE_TRANSLATOR =
     struct
 	structure M = Module
+	structure Ast = FormatDoc
 	structure T = FormatDoc
 	type input_value    = M.module
 	type output_value   = T.format_doc

@@ -10,27 +10,21 @@
 
 signature TRANSLATE_TO_ANSI_C =
     sig
-	structure     T: ALGOL_TYPES
-	structure   AST: ANSI_C
+	structure     T: ALGOL_AST
+	structure   Ast: ANSI_C
 
-(* valid SML97 rejected by current incarnation of sml/nj
-        include TRANSLATE where type input = M.module
-*)
-	    include TRANSLATE
-	sharing type input   =  T.decls
-   	    and type output  =  AST.decls
-
+        include TRANSLATE where type input = T.module
+ 		            and type output = Ast.module
     end
-
 
 structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
     struct
-	structure AST = AnsiC
-	structure T = AlgolTypes
+	structure Ast = AnsiC
+	structure T = AlgolAst
 
-	open AST
-	type input = T.decls
-	type output = AST.decls
+	open Ast
+	type input = T.module
+	type output = Ast.module
 
 	val cfg = Params.empty
 
@@ -49,10 +43,10 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 	val trans_eid = 
 	    VarId.fromPath o  T.VarId.toPath o (T.VarId.suffixBase "_enum")
 	    
-	val variant_id = T.VarId.fromString "v"
-	val temp_id = T.VarId.fromString "t"
-	val new_id = T.VarId.fromString "malloc";
-	val die_id = T.VarId.fromString "die";
+	val variant_id = Ast.VarId.fromString "v"
+	val temp_id = Ast.VarId.fromString "t"
+	val new_id = Ast.VarId.fromString "malloc";
+	val die_id = Ast.VarId.fromString "die";
 
 	fun inc x = (Assign(x,Binop(PLUS,x,Constant (I 1))))
 
@@ -167,7 +161,10 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 			trans_block block)))
 	  | trans_decl (T.DeclConst(id,c,te)) =
 	    let
+	      (*
 		val te = TyQualified(Const,trans_ty_exp NONE te)
+		  *)
+		val te = trans_ty_exp NONE te
 	    in
 		Var(VarDecInit(NONE,te,trans_id id,
 				Constant (trans_const c)))
@@ -243,11 +240,15 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 
 	and mk_block s = Block {ty_decs=[],var_decs=[],stmts=s}
 
-	fun translate p {name,imports,decls} =
-	    {name=name,
-	     imports=imports,
-	     decls=List.map trans_decl decls}
-		
+	fun translate p (T.Module{name,imports,decls}) =
+	  let
+	    val trans_mid = Ast.ModuleId.fromPath o T.ModuleId.toPath
+	    val decls = List.map trans_decl decls
+	    val name = trans_mid name
+	    val imports = List.map trans_mid imports
+	  in
+	    Ast.Module {name=name,imports=imports,decls=decls}
+	  end
     end
 
 

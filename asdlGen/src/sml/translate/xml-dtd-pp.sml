@@ -10,14 +10,14 @@
 signature XML_DTD_PP =
     sig
 	structure T : XML_DTD
-	include TRANSLATE_TO_SOURCE where type input = T.decls
+	include TRANSLATE_TO_SOURCE where type input = T.module
     end
 
 structure XMLDTDPP : XML_DTD_PP =
     struct 
 	structure T  = XMLDTD
 	structure PP = PPUtil
-	type input = T.decls
+	type input = T.module
 	type output = (string list * PPUtil.pp) list
 	val cfg = Params.empty
 	fun mkComment _ = PP.empty
@@ -97,7 +97,7 @@ structure XMLDTDPP : XML_DTD_PP =
 	  and pp_elem_decls d =
 		    (PP.seq_term {fmt=pp_elem_decl,sep=PP.cat[PP.nl,PP.nl]} d)
 	end
-	fun translate _ ({name,decls,imports},_) =
+	fun translate _ (T.Module{name,decls,imports},_) =
 	  let
 	    fun file_name m =
 	      [OS.Path.joinBaseExt{base=(T.ModuleId.toString  m),
