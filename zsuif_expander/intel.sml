@@ -332,6 +332,7 @@ struct
        )
     | emitVarReference (emt, reg, loc as Loc (_, false)) =
       (
+       (* emt "# this emitVarReference \n" [];  *)
        emt "+%s=A[%s+%s]" [REG reg, REG sp, B.LOC loc];
        doKilledRegs (emt, ["NZ"], [])
        )
@@ -440,7 +441,7 @@ struct
               end;
           emt "+%s=L[A[%s]]\tNZ%s%s\n" [ftReg, fsReg, fsReg, !ddreg];
           emt "+L[A[%s]]=%s\tNZ%s%s\n" [fdReg, ftReg, ftReg,
-                                   if killdest then fdReg else F.STR ""]
+                                        if killdest then fdReg else F.STR ""]
       end
 
   fun getCondCode (_, "!")        = "?"
@@ -493,17 +494,30 @@ struct
       val emitJumpIfNotZero = jumpWhenRegIs "!"
   end
 
-  fun emitRegMulConst (emt, reg as Reg (typ, _), n, res, kr) =
+  fun emitRegMulConst (emt, reg as Reg (typ, _), n, res as Reg (typ2, _), kr) =
       let
-          val sReg = REG reg
+          val sReg = REG reg 
           val sRes = REG res
-          val newTemp = newReg (typ)
+          val newTemp = newReg (typ2)
           val sn   = F.STR (Inf.toString n)
+          
       in
           emt "+%s=%s" [REG newTemp, sn];
           doKilledRegs (emt, ["NZ"], []);
-          emt "+%s=%s*%s" [sRes, sReg, REG newTemp];
-          doKilledRegs (emt, ["NZ"], newTemp ::kr)
+          if B.isChar typ  orelse B.isShort typ then
+              (
+               let
+                   val convReg = newReg (typ2)
+               in (
+                   emt "+%s=%s" [REG convReg, REG reg];
+                   doKilledRegs (emt, ["NZ"], []);
+                   emt "+%s=%s*%s" [sRes, REG convReg, REG newTemp];
+                   doKilledRegs (emt, ["NZ"], convReg :: newTemp ::kr))
+              end)
+          else
+              (
+                emt "+%s=%s*%s" [sRes, sReg, REG newTemp];
+                doKilledRegs (emt, ["NZ"], newTemp ::kr))
       end
 	 | emitRegMulConst _ = raise (Fail ("Erroneous arguments to emitRegMulConst intel.sml line 508\n"))
 
@@ -707,11 +721,37 @@ struct
                emt "+D[A[r[14]]]=%s" [REG x];
                doKilledRegs (emt, ["NZ"], [x]);
                8)
-            | getArgSize x =
+            | getArgSize (x as Reg (Fp32Bit, _)) =
               (
-               emt "+L[A[dr[14]]]=%s" [REG x];
-               doKilledRegs (emt, ["NZ"], [x]);
-               4)
+               let 
+                   val newFP64Reg = newReg Fp64Bit
+               in (
+                   emt "+r[14]=r[14]-8" [];
+                   doKilledRegs (emt, ["NZ"], []);
+                   emt "+%s=%s" [REG newFP64Reg, REG x];
+                   doKilledRegs (emt, ["NZ"], [x]);
+                   emt "+D[A[r[14]]]=%s" [REG newFP64Reg];
+                   doKilledRegs (emt, ["NZ"], [newFP64Reg]);
+                   8)
+              end )
+            | getArgSize (x as Reg (typ, _)) =
+              (
+               if (B.isChar typ orelse B.isUChar typ) then
+                   let
+                       val intReg = newReg (Int32Bit)
+                   in
+                       (
+                        emt "+%s=%s" [REG intReg, REG x];
+                        doKilledRegs (emt, ["NZ"], [x]);
+                        emt "+L[A[dr[14]]]=%s" [REG intReg];
+                        doKilledRegs (emt, ["NZ"], [intReg]);
+                        4)
+                   end
+               else 
+                   (
+                    emt "+L[A[dr[14]]]=%s" [REG x];
+                    doKilledRegs (emt, ["NZ"], [x]);
+                    4))
       in
           ([],foldr (op +) 0 (map getArgSize (rev regs)))
       end
@@ -720,7 +760,7 @@ struct
       let
           val rt = REG reg1 and r1 = REG reg1 and r2 = REG reg2
       in 
-          emt "builtinOper......\n" [];
+          emt "# builtinOper......\n" [];
           emt "+%s=%s%s%s" [r1, r1, F.STR oper, r2];
           doKilledRegs (emt, ["NZ"], []);
           emt "+%s=%s" [rt, r1];
@@ -796,13 +836,17 @@ struct
                        if cond1 orelse cond2 then 
                            if cond1 then
                                let
+                                   val intReg = newReg (Int32Bit)
                                    val _ = ()
                                in 
                                    emitUnaryOp(emt, Z.Convert,
                                                regfrom, regfrom,
                                                [], ctx);
-                                   emt "+%s=%s" [regtot,regfromt];
-                                   doKilledRegs (emt, ["NZ"],  kr)
+                                   
+                                   (* Changed to remove problem of f[]=b[]...etc *)
+                                   convAssign (intReg, regfrom, []);
+                                   emt "+%s=%s" [regtot, REG intReg];
+                                   doKilledRegs (emt, ["NZ"], intReg :: kr)
                                end 
                            else 
                                let
@@ -861,18 +905,21 @@ struct
                                         B.LOC loc0, regfromt])
                                    end; 
                                    emitUnaryOp(emt, Z.Convert, newIReg,
-                                               regto, [newIReg], ctx))
+                                               regto, [newIReg], ctx)
+                                   )
                                end 
                        else if B.isSChar from andalso not (B.isChar to) then
                            emt "+%s=ME,%s\tNZ%s\n" 
                            [regtot, regfromt, regfromt]
                        else if from <> to andalso (B.isChar to orelse B.isChar from) then
-                           emt ( if (B.isUChar from) then "+%s=MZ,%s\tNZ%s\n" else "+%s=%s\tNZ%s\n")
+                           (* ..andalse not (B.isChar to) ... added to avoid the UCHAR to CHAR problem *)
+                           emt ( if (B.isUChar from) andalso not (B.isChar to) then "+%s=MZ,%s\tNZ%s\n" else "+%s=%s\tNZ%s\n")
                                 [regtot, regfromt, regfromt]
                        else if B.isSShort from andalso not (B.isShort to) then
                            emt "+%s=ME,%s\tNZ%s\n" [regtot, regfromt, regfromt] 
                        else if from <> to andalso (B.isShort to orelse B.isShort from) then
-                           emt ( if B.isUShort from then "+%s=MZ,%s\tNZ%s\n" else "+%s=%s\tNZ%s\n")
+                           (* ..andalse not (B.isShort to) ... added to avoid the problem *)
+                           emt ( if B.isUShort from andalso not (B.isShort to) then "+%s=MZ,%s\tNZ%s\n" else "+%s=%s\tNZ%s\n")
                                [regtot, regfromt, regfromt]
                        else same()
 						 end
@@ -999,7 +1046,7 @@ struct
               | doCase _ = raise (Fail "Bad constant in switch statement")
       in
           emitConstIntToReg (emt, n, first);
-          emt "+%s=%s-%s\tNZ%s\n" [REG newReg, REG newReg, REG first, REG first];
+          emt "+%s=%s-%s\tNZ\n" [REG newReg, REG newReg, REG first];
           emt "+%s=%s{2\tNZ\n" [REG newReg, REG newReg];
           emitVarReference (emt, addrReg, tabLab);
           emt "+%s=L[A[%s+%s]]\tNZ%s%s\n" [REG first, REG newReg, REG addrReg,

@@ -29,7 +29,7 @@ val go =
  "p6",
  "p7"
 ]
-val file = "t"
+val file = "c"
 val dir  = "../test/"
 (*
 val files = ["bnode", "canon", "cover", "duple", "hash", "merge", "misc",

@@ -55,6 +55,7 @@ struct
 
    fun newAddrReg () = newReg UInt64Bit
    fun newIntReg  () = newReg Int64Bit
+   fun newRegInt ty  = if B.isInt ty then newReg ty else newIntReg()
 
    (* Emit the register map.       *)
    (* b byte register                            (8-bit)  *)
@@ -78,12 +79,11 @@ struct
    (* Define special registers. *)
    val fp  = newFixedReg (Int64Bit, 30)  (* Frame pointer   *)
    val sp  = newFixedReg (Int64Bit, 30)  (* Stack pointer   *)
-   val r0  = newFixedReg (Int32Bit, 0)   (* Return register *)
    val q26 = newFixedReg (Int64Bit, 26)  (* Function call related registers *)
    val q27 = newFixedReg (Int64Bit, 27)
    val q29 = newFixedReg (Int64Bit, 29)
 
-   fun getReturnReg _  = r0
+   fun getReturnReg regTy  = newFixedReg(regTy, 0)
 
    (* Convert a register type to a letter. *)
    fun regToLetter (reg as Reg(regTy, _), ucase) =
@@ -210,15 +210,12 @@ struct
    fun emitZeroOut (emt, reg) = emt "+%s=0\n" [REG reg]
    fun emitAddOne  (emt, reg) = emt "+%s=%s+1\n" [REG reg, REG reg]
 
-   fun emitInitConst (emt, name, true) =
-      emt "-\t.word\t.%s\n" [F.STR name]
-     | emitInitConst (emt, name, false) =
-      emt "-\t.word\t%s\n" [F.STR name]
+   fun emitInitConst (emt, name, _) = emt "-\t.quad\t%s\n" [F.STR name]
 
    fun emitInitConstExp (emt, name, n, true) =
-      emt "-\t.word\t.%s+%s\n" [F.STR name, F.STR (U.infToString n)]
+      emt "-\t.quad\t.%s+%s\n" [F.STR name, F.STR (U.infToString n)]
      | emitInitConstExp (emt, name, n, false) =
-      emt "-\t.word\t%s+%s\n" [F.STR name, F.STR (U.infToString n)]
+      emt "-\t.quad\t%s+%s\n" [F.STR name, F.STR (U.infToString n)]
 
    fun emitConstIntToReg (emt, n, r) =
       emt "+%s=%s\n" [REG r, F.STR (U.infToString n)]
@@ -313,7 +310,7 @@ struct
 
    fun emitConditionalJump (emt, r1 as Reg(regTy, _), oper, r2, kr, t) =
       let
-	 val rd = newIntReg ()
+	 val rd = newRegInt regTy
       in
 	 emitComparisonOp (emt, rd, r1, oper, r2, kr);
 	 emitJumpIfZero (emt, rd, t, [rd])

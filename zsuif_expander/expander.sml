@@ -379,6 +379,16 @@ struct
 	    in
 	       M.emitInitConstExp (emt, name, n, fromLabel)
 	    end
+	   | compileVB (SOME (Z.ExpressionValueBlock
+			      {expression = Z.UnaryExpression
+			       {source = Z.SymbolAddressExpression
+				{addressed_symbol = sym, ...},
+				...}, ...}), _) =
+	    let
+	       val (name, fromLabel) = getSymName (#1 (findSymbolRef sym))
+	    in
+	       M.emitInitConst (emt, name, fromLabel)
+	    end
 	   | compileVB (SOME (Z.ExpressionValueBlock _), _) =
 	    raise (Fail "Bad initialization in value block")
 

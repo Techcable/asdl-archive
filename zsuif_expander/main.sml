@@ -6,7 +6,7 @@ end
 structure Ztv : ZTV =
 struct
   structure L = List
-  structure M = Alpha
+  structure M = Sparc
   structure Exp = Expander (M)
 
   fun mkOutFile iFile =
@@ -48,9 +48,9 @@ struct
       in
           (print ("Compiling file " ^ file ^ "\n");
 	   Exp.compileFile (inFile, outFile);
-	   OS.Process.success) (* handle e =>
+	   OS.Process.success) handle e =>
 	  (List.app print (SMLofNJ.exnHistory e);
-	   print "\n"; OS.Process.failure) *)
+	   print "\n"; OS.Process.failure)
       end
     | main _ =
       let

@@ -28,6 +28,7 @@ struct
                       (fn x => (Inf.pow (two, x), x))
                       (fn x => x + 1) 1
                   end
+
   local
       val r = ref 32
   in
@@ -50,7 +51,8 @@ struct
 	| regToLetter _ = raise (Fail "Non-Register passed to regToLetter")
 
       fun newFixedReg (typ, n) = Reg (typ, n)
-      fun newReg typ           = Reg (typ, !r) before r := !r + 1
+      fun newReg typ           = Reg (typ, !r) before  r := !r + 1
+
       fun regToString (r' as (Reg (typ, n)), rcase) =
 	  let
 	      val is    = I.toString n
@@ -223,7 +225,7 @@ struct
           emt ("+PC=" ^ condReg ^ oper ^ "0,%s\n") [B.LAB lab]
       end
 
-  fun initProcedure() = (initRegCount  ();
+  fun initProcedure() = (initRegCount  (); xfer := NONE;
                          initSEmited   ())
 
   fun emitLabel (emit, lab) = ((emit "%s\n") o (fn x => [x]) o B.LAB) lab
@@ -692,11 +694,11 @@ struct
                                    end
                                else (4, []))
 
-                        | (Reg (_, _)) =>
+                        | (Reg (regTy, _)) =>
                               if offset < 92 then
                                   let
                                       val r = newFixedReg
-                                          (Int32Bit, 8 + (!argCnt))
+                                          (regTy, 8 + (!argCnt))
                                   in
                                       incArgCnt ();
                                       emitRegAssign (emt, r, reg, false,

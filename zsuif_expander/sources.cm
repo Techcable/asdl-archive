@@ -4,14 +4,15 @@ Group is
   util.sig
   util.sml
   base.sig
-  alpha_base.sml
+  base.sml
   label.sml
   label.sig
   expander.sml
   suifsymtabs.sml
   machine.sig
-  sparc.sml
   alpha.sml
+  sparc.sml
+  intel.sml
   test.sml
 
   /u/danwang/Research/scratch/zsuif_gateway/sources.cm
