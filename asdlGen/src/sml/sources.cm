@@ -1,70 +1,21 @@
 (* 
- * Copyright (c) 1997 by Daniel C. Wang 
+ * Copyright (c) 1997, 1998 Princeton University
  *)
 Group is
-ml-yacc-lib.cm
+frontend/sources.cm
+translate/sources.cm
+type-pickle/sources.cm
+pp-pickle/sources.cm
+
 smlnj-lib.cm
 
-util/sources.cm
-asts/sources.cm
-base/asdl-base.cm
-
-frontend/Asdl.sig
-frontend/Asdl.sml
-frontend/aka.sml
-
-type-pickle/aka.sml
-type-pickle/TypePickle.sig
-type-pickle/TypePickle.sml
-type-pickle/AsdlValue.sig
-type-pickle/AsdlValue.sml
-type-pickle/gpickle.sml
-
-pp-pickle/pp-pickle.sml
-
-
-frontend/asdl.grm
-frontend/asdl.lex
-frontend/module.sig
-frontend/module-props.sml
-frontend/module.sml
-frontend/parser.sml
-frontend/main.sml
-frontend/link.sml
-frontend/export.sml
-frontend/depends.sml
-
-translate/translate.sig
-translate/translate.sml
-translate/module-translate.sml
-translate/file-translate.sml
-translate/source-translate.sml
-
-translate/translate-format.sml
-translate/html-pp.sml 
-
-translate/pkl-gen.sig
-translate/oo-pkl-gen.sml
-translate/oo-build-aux.sml
-translate/algebraic-pkl-gen.sml
-translate/algol-pkl-gen.sml
-
-translate/idfix.sml
-
-translate/translate-algebraic.sml
-translate/ml-pp.sml
-translate/haskell-pp.sml
-
-translate/translate-algol.sml
-translate/translate-ansi-c.sml 
-translate/ansi-c-pp.sml
-
-translate/translate-oo.sml
-translate/java-pp.sml
-translate/c-plus-plus-pp.sml 
-
-type-pickle/gen-type-pickle.sml
+main/depends.sml
+main/main.sml
+main/link.sml
+main/export.sml
 
 test/harness.sml
+
+
 
 

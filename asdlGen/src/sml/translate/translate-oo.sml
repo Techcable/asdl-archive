@@ -28,7 +28,6 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 	structure IdFix = IdFix
 	structure Pkl = Pkl
 
-	val cfg = Params.empty
 	val set_dir = true
 	val ignore_supress = false
 	val fix_fields = false
@@ -86,6 +85,13 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 	val cfg = Params.empty
 	val (cfg,simple_sequences)  =  Params.declareBool cfg
 	    {name="simple_sequences",flag=NONE,default=true}
+
+	val (cfg,copy_code)  =  Params.declareBool cfg
+	    {name="copy_code",flag=NONE,default=false}
+
+	val (cfg,walker_code)  =  Params.declareBool cfg
+	    {name="walker_code",flag=NONE,default=false}
+
 
 	val kind_id = (T.VarId.fromString "kind")
 	val get_module = (fn x => x)
@@ -631,7 +637,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 		val elm_ty = natural_ty
 		val elm_name = pkl_name
 		val seq_v = T.Id seq_id
-		val seq_ty = T.TySequence (elm_ty)
+		val seq_ty = T.TyReference(T.TySequence (elm_ty))
 		
 		val seq_name = Pkl.type_name ty_seq
 		val fields = [{name=seq_id,ty=seq_ty}]
@@ -891,7 +897,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 	    in
 		List.map add_mths d
 	    end
-
+	
 	fun trans_all p {module,defines,options,sequences,props} =
 	    let
 		val defines = (defines@sequences:defined_value list)
@@ -900,13 +906,14 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 		val ty_decs = add_option_methods options ty_decs
 
 		val mname = M.module_name module
-
+		val aux_flags = {walker_code=walker_code p,
+				 copy_code=copy_code p}
 		val rest = 
 		    List.foldr (fn (x,xs) => (#cnstrs x)@xs) []
 		    defines
 		val decls = (ty_decs@rest)
 	    in
-		BuildAux.build_aux mname decls
+		BuildAux.build_aux mname aux_flags decls
 	    end
 
     end

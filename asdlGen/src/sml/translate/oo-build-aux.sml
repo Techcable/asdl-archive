@@ -9,6 +9,7 @@ functor mkOOBuildAux(structure T : OO_TYPES
 		      vars:{name:id,tid:ty_id} list,abstract:bool}
 	  | Const of {name:ty_id,inherits:ty_id option}
 
+	    
 	type aux_fn =
 	    (aux_info * ((ty_id * mth) list)) ->  (ty_id * mth) list
 
@@ -283,30 +284,34 @@ functor mkOOBuildAux(structure T : OO_TYPES
 				      else_stmt=T.Nop})
 			else NONE		  
 		    end
+		val shallow_copy_vars = List.map mk_shallow_copy_vars vars
+		val deep_copy_vars = (List.mapPartial (mk_deep_copy_vars) vars)
 		val shallow_copy_exp =
 		    if List.null vars then T.This
 		    else
-			(T.New(name,List.map mk_shallow_copy_vars vars))
+			(T.New(name,shallow_copy_vars))
 
 		val deep_copy_body =
 		    [T.Assign(T.Id copy_temp_id,shallow_copy_exp)]@
-		    (List.mapPartial (mk_deep_copy_vars) vars)@
+		    (deep_copy_vars)@
 		    [T.Return (T.Id copy_temp_id)]
 		val shallow_copy_body = [T.Return shallow_copy_exp]
+		val shallow_copy_mth =
+		    T.Mth {name=shallow_copy_id,
+			   inline=false,
+			   body={vars=[],
+				 body=shallow_copy_body},
+			   mods={scope=T.Public,static=false, final=false},
+			   args=args,ret=ret_ty}
+		val deep_copy_mth =
+		    T.Mth {name=deep_copy_id,
+			   inline=false,
+			   body={vars=[{name=copy_temp_id,ty=my_ty}],
+				 body=deep_copy_body},
+			   mods={scope=T.Public,static=false, final=false},
+			   args=args,ret=ret_ty}
     	    in
-		[(name,
-		  T.Mth {name=shallow_copy_id,
-			 inline=false,
-			 body={vars=[],
-			       body=shallow_copy_body},
-			 mods={scope=T.Public,static=false, final=false},
-			 args=args,ret=ret_ty}),
-		 (name,T.Mth {name=deep_copy_id,
-			      inline=false,
-			      body={vars=[{name=copy_temp_id,ty=my_ty}],
-				    body=deep_copy_body},
-			      mods={scope=T.Public,static=false, final=false},
-			      args=args,ret=ret_ty})]
+		[(name,deep_copy_mth), (name,shallow_copy_mth)]
 	    end
 	  | mk_copy (Class{name,inherits,vars,abstract=true}) =
 	    let
@@ -327,7 +332,7 @@ functor mkOOBuildAux(structure T : OO_TYPES
 	    
 	fun copy_aux (x,rest) = (mk_copy x)@rest
 
-	fun build_aux mname decls =
+	fun build_aux mname {walker_code,copy_code} decls =
 	    let
 		val visit_tid = mk_tid (mname,"Visitor")
 
@@ -335,12 +340,21 @@ functor mkOOBuildAux(structure T : OO_TYPES
 
 		val walk_tid = mk_tid (mname,"Walker")
 		val walker = mk_walker_class walk_tid visit_tid
-		    
+		val aux_classes =  [visitor] 
 		val aux_fn = (visit_aux visit_tid)
-		val aux_fn = compose_fn aux_fn (walk_aux walk_tid)
-		val aux_fn = compose_fn aux_fn copy_aux
+		val (aux_fn,aux_classes) =
+		    if walker_code then
+			(compose_fn aux_fn (walk_aux walk_tid),
+			 walker::aux_classes)
+		    else (aux_fn,aux_classes)
+			
+		val aux_fn =
+		    if copy_code then (compose_fn aux_fn copy_aux)
+		    else aux_fn
+
 		val new_mths = fold_decls_inherit aux_fn [] decls
-		val new_decls = add_methods new_mths decls [visitor,walker] 
+		val new_decls = add_methods new_mths decls
+		    aux_classes
 	    in
 		new_decls
 	    end
