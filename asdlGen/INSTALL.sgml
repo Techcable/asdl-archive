@@ -11,7 +11,7 @@ The only <tt/make/ file of any interest is the toplevel
 one. It calls SML to build the system. The ML code determines certain
 useful pieces of information about the current system  using <tt/GNU autoconf/.
 <code>
-% ./configure --prefix=<em>install-prefix/</em>
+% ./configure --prefix=<em>install-prefix</em>
 % make all
 </code>
 </article>

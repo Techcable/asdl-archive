@@ -30,7 +30,7 @@ may not exploit or produce the most idiomatic code for a given language,
 advice on how to improve the code for a given language will be appreciated. 
 
 <code>
-% ./configure --prefix=<em>install-prefix/</em>
+% ./configure --prefix=<em>install-prefix</em>
 % make all
 </code>
 Dumps a SML/NJ heap for asdlGen in <tt>src/sml/</tt>. The install rules will
