@@ -97,7 +97,7 @@ static int ent2char(char *src) {
      else { return *src; }
 }
 /* messy clean it up */
-static int scan_string(char **res,int *len,FILE *s) {
+static int scan_string(const char **res,int *len,FILE *s) {
      int max = 32;
      int i = 0;
      char *buf = malloc(max);
@@ -203,13 +203,13 @@ string_ty xml_read_string(instream_ty s) {
   if (eat_ws(s) && match_char('<',s) &&
       eat_ws(s) && match_string("string",s) &&
       eat_ws(s) && match_string("v=",s) &&
-      scan_string(&((char*)ret.str),&ret.len,s) && eat_till('>',s))  {
+      scan_string(&ret.str,&ret.len,s) && eat_till('>',s))  {
        return ret;
   } else {  die(); }
   return Text_null; /* not reached */
 }
 identifier_ty xml_read_identifier(instream_ty s) {
-  char *buf;
+  const char *buf;
   const char *ret;
   int len;
   if (eat_ws(s) && match_char('<',s) &&
@@ -217,7 +217,7 @@ identifier_ty xml_read_identifier(instream_ty s) {
       eat_ws(s) && match_string("v=",s) &&
       scan_string(&buf,&len,s) && eat_till('>',s)) {
        ret = Atom_new(buf,len);
-       free(buf); /* free space allocated by scan_string */
+       free((void*)buf); /* free space allocated by scan_string */
        return  ret;
   } else {  die(); }
   return NULL; /* not reached */

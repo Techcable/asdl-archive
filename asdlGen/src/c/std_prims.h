@@ -28,4 +28,8 @@ opt_ty std_read_option(generic_reader_ty rd,instream_ty s);
 
 void std_write_list(generic_writer_ty wr,list_ty v, outstream_ty s);
 void std_write_option(generic_writer_ty wr,opt_ty v, outstream_ty s);
+
+void           write_tag(int x,outstream_ty s);
+int_ty         read_tag(instream_ty s);
 #endif /* _STD_PRIMS */
+
