@@ -77,19 +77,21 @@ BUILT_SOURCES = $(ASDL_OUTPUT) AsdlValue.import.h TypePickle.import.h
 CLEANFILES = $(BUILT_SOURCES)
 CII_DIST = @top_srcdir@/src/cii
 
-libasdl_a_SOURCES = $(ASDL_OUTPUT) \
-        StdTypes.h StdTypes.c \
-	assoc.h assoc.c \
-        gpickle.c gpickle.h \
-	pkl-int.h pkl-int.c \
-        cii_base.c cii_base.h 
+#libasdl_a_SOURCES = $(ASDL_OUTPUT) \
+#        StdTypes.h StdTypes.c \
+#	assoc.h assoc.c \
+#        gpickle.c gpickle.h \
+libasdl_a_SOURCES = pkl-int.h pkl-int.c \
+        cii_base.c cii_base.h \
+	std_prims.c xml_prims.c  prims.c
 
 xlate_SOURCES = xlate.c 
 xlate_LDADD =  libasdl.a libcii.a
 
 pkginclude_HEADERS = gpickle.h	match.h \
                      pkl-int.h \
-		     cii_base.h  cii_big_base.h  \
+		     cii_base.h \
+	             prims.h xml_prims.h std_prims.h prim_env.h  \
 		     AsdlValue.h TypePickle.h StdTypes.h
 
 pkglib_PROGRAMS = xlate
@@ -104,8 +106,8 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libasdl_a_LIBADD = 
-libasdl_a_OBJECTS =  AsdlValue.o TypePickle.o StdTypes.o assoc.o \
-gpickle.o pkl-int.o cii_base.o
+libasdl_a_OBJECTS =  pkl-int.o cii_base.o std_prims.o xml_prims.o \
+prims.o
 libcii_a_LIBADD = 
 libcii_a_SOURCES = libcii.a.c
 libcii_a_OBJECTS =  libcii.a.o

@@ -14,6 +14,9 @@
 #define WRITE_BYTES(x,sz,s) (fwrite(x,sizeof(char),sz,s))
 #define READ_BYTE(x,s) (x=getc(s))
 #define READ_BYTES(x,sz,s) (fread(x,sizeof(char),sz,s))
+#define die() (fprintf(stderr,"%s:%d: Fatal Error\n",__FILE__,__LINE__), \
+		exit(-1))
+
 /* todo handle IO errors */     
 
 
