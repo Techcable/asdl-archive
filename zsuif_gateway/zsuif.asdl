@@ -8,24 +8,8 @@ suif_int = Finite(big_int)
 
 -- Zephyr SUIF a simplified interface for SUIF 2.0
 
-constant = ConstInt(suif_int)
-         | ConstString(string)
-         | ConstBits(string)
-
-source_op =
-           SrcVar(variable_symbol var)
-         | SrcReg(register_symbol reg, type_id type)
-         | SrcDst(instruction instr, StdTypes.nat op_num)
-         | SrcZero
-    
-destination_op = 
-           DstTmp -- unnamed destination 
-         | DstVar(variable_symbol var)
-         | DstReg(register_symbol reg, type_id type)
-         | DstSrc(instruction instr, StdTypes.nat op_num)
-
-int_or_source_op = Int(int)
-                 | SrcOp(source_op)
+constant = IntConstant(suif_int)
+         | FloatConstant(string)
 
 symbol = (StdTypes.nat uid, identifier name)
 
@@ -38,28 +22,24 @@ type = Data(data_type)
      | Void 
 
 procedure_type = 
-    Basic_procedure_type(type* result_types, type* args)
-
-    attributes(int_or_source_op bit_size,
-               int_or_source_op bit_alignment)
-
+    CProcedureType(type result_type, 
+	           StdTypes.bool has_varargs,
+	           StdTypes.bool arguments_known,
+                   int bit_alignment,
+	           type* args)
 data_type =
-     Boolean_type 
-   | Integer_type  
-   | UInteger_type 
-   | Floating_point_type
-   | Enumerated_type(string name, enumerate_case* cases)
-   | Pointer_type(type_id reference_type)
-   | Array_type 
-     (type element_type, 
-      int_or_source_op? lower_bound,
-      int_or_source_op? upper_bound)
-   | Group_type(string name, group_field* fields)
+     BooleanType 
+   | IntegerType  
+   | UIntegerType 
+   | FloatingPointType
+   | EnumeratedType(string name, enumerate_case* cases)
+   | PointerType(type_id reference_type)
+   | ArrayType(type element_type, 
+	       expression lower_bound, expression upper_bound)
+   | GroupType(string name, StdTypes.bool is_complete, group_field* fields)
+   attributes(suif_int bit_size,int bit_alignment)
 
-   attributes(int_or_source_op bit_size, 
-              int_or_source_op bit_alignment)
-
-group_field    = (field_symbol name, type type, int_or_source_op bit_offset)
+group_field    = (field_symbol name, type type, expression bit_offset)
 enumerate_case = (string name, suif_int case_constant)
 qualification  = (string qualifier)
 
@@ -68,7 +48,6 @@ type_table       = (type_table_entry* entries)
 
 code_label_symbol = (symbol)
 procedure_symbol  = (symbol)
-register_symbol   = (symbol)
 variable_symbol   = (symbol)
 field_symbol      = (symbol)
 parameter_symbol  = (symbol)
@@ -76,13 +55,10 @@ parameter_symbol  = (symbol)
 symbol_table_entry = 
        CodeLabelEntry
      | ProcedureEntry(procedure_definition def)
-     | RegisterEntry(suif_int size)
      | VariableEntry(variable_definition def, StdTypes.bool is_local)
-     | ParameterEntry(parameter_symbol name,
-                      int_or_source_op bit_alignment,
-                      type_id type, procedure_symbol proc)
-     | FieldEntry(int_or_source_op bit_offset)
-     | NestedVariable(variable_symbol start, int_or_source_op bit_offset)
+     | ParameterEntry(parameter_symbol name, type_id type)
+     | FieldEntry(expression bit_offset)
+     | NestedVariable(variable_symbol start, expression bit_offset)
      attributes (symbol key, StdTypes.bool address_taken)
 
 symbol_table = (symbol_table_entry* entries)
@@ -96,15 +72,14 @@ procedure_definition =
 procedure_body = (parameter_symbol* params, statement body)
 
 variable_definition = (variable_symbol name,
-                       type type,
+                       type_id type,
                        value_block? value_block)
 
 value_block = 
-    Constant_value_block(constant constant)
-  | Expression_value_block(source_op expression)
-  | Multi_value_block(multi_value_block_init* inits)
-  | Repeat_value_block(suif_int count, value_block block) 
-  | Undefined_value_block
+    ExpressionValueBlock(expression expression)
+  | MultiValueBlock(multi_value_block_init* inits)
+  | RepeatValueBlock(suif_int count, value_block block) 
+  | UndefinedValueBlock
   attributes(type_id data_type)
 
 definition_block = 
@@ -122,86 +97,45 @@ file_set_block =
    global_information_block information_block)
 
 statement =
-  Eval_statement -- order of evaluation undefined 
-     (instruction* instructions)
+   EvalStatement(expression* expressions)
+ | StatementList(statement* statements)
+ | IfStatement(expression condition, statement then_part, statement else_part)
+ | WhileStatement(expression condition, statement body,
+                  code_label_symbol? break_label,
+                  code_label_symbol? continue_label)
+ | DoWhileStatement(expression condition, statement body,
+                    code_label_symbol? break_label,
+                    code_label_symbol? continue_label)
 
- | Sequence_statement -- sequential semantics
-     (statement* statements)
+ | ForStatement(variable_symbol index, 
+	        expression lower_bound,
+                expression upper_bound, 
+                expression step,
+                binop init_comparison_opcode, 
+                statement body,
+                statement? pre_pad, 
+                statement? post_pad,
+                code_label_symbol? break_label,
+                code_label_symbol? continue_label)
+ | ScopeStatement(statement body, definition_block definition_block)
+ | MarkStatement
+ | VaStartStatement(expression ap_address, parameter_symbol parmn)
+ | VaStartOldStatement(expression ap_address)
+ | VaEndStatement(expression ap_address)
+ | StoreStatement(expression data_operand, expression destination_address)
+ | ReturnStatement(expression* return_values)
+ | JumpStatement(code_label_symbol target)
+ | JumpIndirectStatement(expression itarget)
+ | BranchStatement(expression decision_operand, code_label_symbol target)
+ | MultiWayBranchStatement(expression decision_operand,
+	                   code_label_symbol default_target,
+                           multi_way_branch_case* cases)
+ | LabelLocationStatement (code_label_symbol defined_label)
+ | StoreVariableStatement(variable_symbol destination, expression value)
+ | NopStatement
 
- | If_statement
-     (source_op condition, 
-      statement then_part,
-      statement else_part)
-
- | While_statement 
-     (source_op condition, statement body,
-      code_label_symbol? break_label,
-      code_label_symbol? continue_label)
-
- | Do_while_statement 
-     (source_op condition, statement body,
-      code_label_symbol? break_label,
-      code_label_symbol? continue_label)
-
- | For_statement 
-     (variable_symbol index, 
-      source_op lower_bound,
-      source_op upper_bound, 
-      source_op step,
-      binop init_comparison_opcode, 
-      statement body,
-      statement? pre_pad, 
-      statement? post_pad,
-      code_label_symbol? break_label,
-      code_label_symbol? continue_label)
-
- | Scope_statement 
-     (statement body, definition_block definition_block)
-
- | Mark_statement -- possibly redundant
-
- | Va_start_statement      
-     (source_op ap_address, parameter_symbol parmn)
-
- | Va_start_old_statement  
-     (source_op ap_address)
-
- | Va_end_statement        
-     (source_op ap_address)
-
- | Store_statement         
-     (source_op data_operand, 
-      source_op destination_address)
-
- | Return_statement        
-     (source_op* return_values)
-
- | Jump_statement          
-     (code_label_symbol target)
-
- | Jump_indirect_statement 
-     (source_op itarget)
-
- | Branch_true_statement        
-     (source_op decision_operand,
-      code_label_symbol target)
-
- | Branch_false_statement        
-     (source_op decision_operand,
-      code_label_symbol target)
-
- | Multi_way_branch_statement 
-     (source_op decision_operand,
-      code_label_symbol default_target,
-      multi_way_branch_case* cases)
-
- | Label_location_statement (code_label_symbol defined_label)
-
- | Assert_statement(source_op asserted_value) 
-
- | Nop_statement
---  attributes(?? )
-
+multi_way_branch_case = (constant case_constant,
+                         code_label_symbol case_target)
 binop =
    Add
  | Subtract
@@ -238,200 +172,36 @@ unop =
 
 -- all instructions have at least one dest op listed in the attributes code
 
-instruction =
-   Binary_arithmetic_instruction
-           (binop binop,
-            source_op source1,
-            source_op source2,
-            type_id result_type, 
-	    destination_op destination_op)
-
- | Unary_arithmetic_instruction
-	   (unop unop,
-            source_op source,            
-            type_id result_type, 
-	    destination_op destination_op)
-
- | Copy_instruction
-           (source_op source,            
-            type_id result_type, 
-            destination_op destination_op,
-	    destination_op* destination_ops)
- 
- | Select_instruction 
-           (source_op selector, 
-            source_op selection1,
-            source_op selection2,            
-            type_id result_type, 
-	    destination_op destination_op)
-
- | Array_reference_instruction
-           (source_op base_array_address,
-            source_op index,            
-            type_id result_type, 
-	    destination_op destination_op)
-
- | Field_access_instruction
-           (source_op base_group_address,
-            field_symbol field,            
-            type_id result_type, 
-	    destination_op destination_op)
- 
- | Extract_fields_instruction 
-           (source_op base_group_op,            
-            field_dst  field_dst,
-	    field_dst* field_dsts)
-
- | Set_fields_instruction 
-	   (source_op base_group_op,
-            field_src  field_src,
-	    field_src* field_srcs,            
-            type_id result_type, 
-	    destination_op destination_op)
-
- | Extract_elements_instruction 
-	   (source_op base_array_op,           
-            element_dst  element_dst,
-            element_dst* element_dsts)
-
- | Set_elements_instruction 
-           (source_op base_array_op,
-	    element_src  element_src,
-            element_src* element_srcs)
-
- | Bit_size_of_instruction
-           (type_id ref_type,            
-            type_id   result_type, 
-	    destination_op destination_op)
-
- | Bit_alignment_of_instruction
-           (type_id ref_type,            
-            type_id result_type, 
-	    destination_op destination_op)
-
- | Bit_offset_of_instruction
-            (field_symbol field,            
-             type_id result_type, 
-	     destination_op destination_op)
-
--- add bit to byte coercions and avoid these 
- | Byte_size_of_instruction
-            (type_id ref_type,            
-             type_id result_type, 
-	     destination_op destination_op)
- 
- | Byte_alignment_of_instruction
-            (type_id ref_type,            
-             type_id result_type, 
-	     destination_op destination_op)
-
- | Byte_offset_of_instruction
-            (field_symbol field,            
-             type_id result_type, 
-	     destination_op destination_op)
-
- | Va_arg_instruction
-            (source_op ap_address,
-             type_id result_type, 
-	     destination_op destination_op)
-
- | Sc_and_instruction 
-            (source_op source1, 
-             source_op source2,
-             type_id result_type, 
-	     destination_op destination_op)
-
- | Sc_or_instruction 
-             (source_op source1, 
-              source_op source2,
-              type_id result_type, 
-	      destination_op destination_op)
-
- | Sc_select_instruction 
-             (source_op selector, 
-              source_op selection1,
-              source_op selection2,
-              type_id result_type, 
-	      destination_op destination_op)
-
- | Load_instruction 
-             (source_op source_address,
-              type_id result_type, 
-	      destination_op destination_op)
-
- | Load_address_instruction 
-             (symbol addressed_symbol,
-              type_id result_type, 
-	      destination_op destination_op)
-
- | Load_constant_instruction
-             (constant constant,              
-              type_id result_type, 
-	      destination_op destination_op)
-
- | Load_value_block_instruction 
-             (value_block constant,
-              type_id result_type, 
-	      destination_op destination_op)
-
- | Call_instruction 
-             (source_op callee_address,
-              source_op* arguments, 	        
-	      return_value* return_values)
-
- | Ssa_phi_instruction 
-             (variable_symbol* variables,
-              type_id result_type, 
-	      destination_op destination_op)
-
--- redundant might disappear
- | Mark_instruction 
- | Va_start_instruction(source_op ap_address, parameter_symbol parmn)
- | Va_start_old_instruction(source_op ap_address)
- | Va_end_instruction(source_op ap_address)
- | Store_instruction(source_op data_operand, source_op destination_address)
- | Return_instruction(source_op* return_values)
- | Jump_instruction(code_label_symbol target) 
- | Jump_indirect_instruction(source_op target)
-
- | Branch_true_instruction
-     (source_op decision_operand,
-      code_label_symbol target)
-
- | Branch_false_instruction       
-     (source_op decision_operand,
-      code_label_symbol target)
-
- | Multi_way_branch_instruction(source_op decision_operand,
-              code_label_symbol default_target,
-              multi_way_branch_case* cases)
- | Label_location_instruction(code_label_symbol defined_label)
- | Assert_instruction(source_op asserted_value)
-
-
--- attributes( )
-
- element_dst = (type_id result_type,
-                destination_op destination_op,
-                source_op index)
-
- element_src = (source_op index, source_op element)
-
- field_dst = (type_id result_type,
-              destination_op destination_op, 
-              field_symbol field)
-
- field_src  = (field_symbol field,  source_op source_op)
- 
- return_value  = (destination_op destination_op, 
-                  type_id result_type)
-
- multi_way_branch_case = (constant case_constant,
-                          code_label_symbol case_target)
+expression =
+   BinaryExpression(binop binop, expression source1, expression source2)
+ | UnaryExpression(unop unop,expression source)
+ | CopyExpression(expression source)
+ | SelectExpression(expression selector, expression selection1,
+	            expression selection2)
+ | ArrayReferenceExpression(expression base_array_address, expression index)
+ | FieldAccessExpression(expression base_group_address, field_symbol field) 
+ | BitSizeOfExpression(type_id ref_type)            
+ | ByteSizeOfExpression(type_id ref_type)
+ | BitAlignmentOfExpression(type_id ref_type)
+ | ByteAlignmentOfExpression(type_id ref_type)	
+ | BitOffsetOfExpression(field_symbol field)
+ | ByteOffsetOfExpression(field_symbol field)
+ | VaArgExpression(expression ap_address)
+ | ScAndExpression(expression source1, expression source2)
+ | ScOrExpression(expression source1, expression source2)
+ | ScSelectExpression(expression selector, expression selection1,
+	              expression selection2)
+ | LoadExpression(expression source_address)
+ | SymbolAddressExpression(symbol addressed_symbol)
+ | LoadValueBlockExpression(value_block value_block)
+ | CallExpression(expression callee_address,expression* arguments) 	       
+ | LoadVariableExpression(variable_symbol variable)
+ | SsaPhiExpression(variable_symbol* variables)
+ | Constant(constant value)
+attributes(type_id result_type)
 
 
 multi_value_block_init = (int bit_offset, value_block block)
-
 -- just stubbed out for now 
 global_information_block = C_information_block 
 --     (type_id signed_char_type,	
@@ -515,7 +285,6 @@ view Java {
   zsuif.constant               : Constant 
   zsuif.source_op              : SourceOp 
   zsuif.destination_op         : DestinationOp 
-  zsuif.int_or_source_op       : IntOrSourceOp
   zsuif.symbol                 : Symbol  
   zsuif.type_id                : TypeId  
   zsuif.type                   : Type 

@@ -52,7 +52,7 @@ main(int argc, char **argv)
 
     FileSetBlock *fsb = suif->get_file_set_block();
     TransSuif ts(pkl_file,suif,fsb);
-    ts.do_it();
+    ts.trans_suif();
     exit(0);
 }
 

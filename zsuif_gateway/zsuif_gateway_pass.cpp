@@ -38,7 +38,7 @@ public:
 
     SuifEnv *s = get_suif_env();
     TransSuif ts(pkl_file,s,fsb);
-    ts.do_it();
+    ts.trans_suif();
   }
 
 
