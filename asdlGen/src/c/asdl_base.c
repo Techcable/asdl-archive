@@ -137,7 +137,7 @@ identifier_ty mk_identifier(char *x) {
 void write_int_option(int_option_ty x,outstream_ty s) {
      if(x!=NONE) {
 	  write_int(1,s);
-	  write_int(*x,s);
+	  write_int(x,s);
      } else 
 	  write_int(0,s);
 
