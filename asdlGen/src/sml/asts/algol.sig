@@ -4,34 +4,38 @@
 signature ALGOL_TYPES =
     sig
 	include LANG_TYPES
+
 	datatype ty_exp =
-	    TyId         of ty_id
+	    TyRefAny 
+	  | TyId         of ty_id
 	  | TyArray      of (ty_exp * int option)
 	  | TyRecord     of {fixed:field list,
 			     variant:variant option}
 	  | TyReference  of ty_exp
 	  | TyEnum       of enumer list
 	  | TyFunction   of field list * ty_exp
-	  | TyOption   of ty_exp
-	  | TySequence of ty_exp
+	  | TyOption     of ty_exp
+	  | TySequence   of ty_exp
 
 	and const =
 	    IntConst of (int)
 	  | EnumConst of (id)
-
+	  | NoneConst 
 	and exp =
 	    Const of const
 	  | NilPtr
-	  | FnCall of (exp * exp list)
+	  | FnCall of (id * exp list)
 	  | Id  of (id)
 	  | RecSub of (exp * id)
 	  | VarRecSub of (exp * id * id)
 	  | ArraySub of (exp * exp)
+	  | Addr of (exp)
 	  | DeRef of (exp)
 	  | PlusOne of (exp)
 	  | MinusOne of (exp)
 	  | NotNil of (exp)
 	  | NotZero of (exp)
+	  | NotEqConst of (exp * const)
 
 	and stmt =
 	    Nop
@@ -42,7 +46,7 @@ signature ALGOL_TYPES =
 	  | While       of {test:exp,body:stmt}
 	  | Case        of {test:exp,clauses:clause list,default:stmt}
 	  | Block       of (block)
-	  | ProcCall    of (exp * exp list)
+	  | ProcCall    of (id * exp list)
 	  | Return      of (exp)
 
 	and decl =

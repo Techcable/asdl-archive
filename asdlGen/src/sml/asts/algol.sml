@@ -5,7 +5,8 @@ structure AlgolTypes :  ALGOL_TYPES =
     struct
 	open LT
 	datatype ty_exp =
-	    TyId         of ty_id
+	    TyRefAny
+	  | TyId         of ty_id
 	  | TyArray      of (ty_exp * int option)
 	  | TyRecord     of {fixed:field list,
 			     variant:variant option}
@@ -18,20 +19,22 @@ structure AlgolTypes :  ALGOL_TYPES =
 	and const =
 	    IntConst of (int)
 	  | EnumConst of (id)
-
+	  | NoneConst 
 	and exp =
 	    Const of const
 	  | NilPtr
-	  | FnCall of (exp * exp list)
+	  | FnCall of (id * exp list)
 	  | Id  of (id)
 	  | RecSub of (exp * id)
 	  | VarRecSub of (exp * id * id)
 	  | ArraySub of (exp * exp)
+	  | Addr of (exp)
 	  | DeRef of (exp)
 	  | PlusOne of (exp)
 	  | MinusOne of (exp)
 	  | NotNil of (exp)
 	  | NotZero of (exp)
+	  | NotEqConst of (exp * const)
 
 	and stmt =
 	   Nop
@@ -42,7 +45,7 @@ structure AlgolTypes :  ALGOL_TYPES =
 	  | While       of {test:exp,body:stmt}
 	  | Case        of {test:exp,clauses:clause list,default:stmt}
 	  | Block       of (block)
-	  | ProcCall    of (exp * exp list)
+	  | ProcCall    of (id * exp list)
 	  | Return      of (exp)
 
 	
@@ -60,6 +63,5 @@ structure AlgolTypes :  ALGOL_TYPES =
              and variant_init = {tag:id,name:id,fields:field_init list}
              and clause       = {tag:const,body:stmt}
              and block        = {vars:field list,body:stmt list}
-
 	type decls = {name:mod_id,imports:mod_id list,decls:decl list}
     end
