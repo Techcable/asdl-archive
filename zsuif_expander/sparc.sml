@@ -228,6 +228,10 @@ struct
     | getFloatAlignment _       =
       raise (Fail "Bad Float in getFloatAlignment")
 
+  fun getGroupAlignment () = 8
+
+  fun getProcAlignment () = 8
+
   local
       fun emitSingleFloat (emt, str, lab) =
           emt "-.%s:\t.single\t0r%s\n" [B.LAB lab, F.STR str]
@@ -241,9 +245,9 @@ struct
         | emitFloat _ = raise (Fail "Bad Float in emitFloat")
   end
 
-  fun getGroupAlignment () = 8
-
-  fun emitProcedureDecl (emt, name) = emt "f%s\n" [F.STR name]
+  fun emitProcedureDecl (emt, name, static) =
+    (emitVariableDecl (emt, name, static, false);
+     emt "f%s\n" [F.STR name])
 
   fun emitPlusInf     emt = emt "%s\n" [F.STR "-\t.word\t2147483647"]
   fun emitNegInf      emt = emt "%s\n" [F.STR "-\t.word\t-2147483648"]

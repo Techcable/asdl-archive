@@ -30,6 +30,7 @@ sig
 
   val getFloatAlignment      : B.regtype -> int
   val getGroupAlignment      : unit -> int
+  val getProcAlignment       : unit -> int
 
   val emitFloat              : emtTyp * string * B.operand * B.regtype -> unit
   val emitPlusInf            : emtTyp -> unit
@@ -40,7 +41,7 @@ sig
 
   val emitVariableDecl       : emtTyp * string * bool * bool -> unit
   val emitGroupVarDecl       : emtTyp * string * int * int * bool -> unit
-  val emitProcedureDecl      : emtTyp * string -> unit
+  val emitProcedureDecl      : emtTyp * string * bool -> unit
 
   val emitLocVariableDef     : emtTyp * int * string * B.operand * B.regtype *
                                int -> unit

@@ -1259,9 +1259,8 @@ struct
 	    (print ("  Compiling procedure " ^ name ^ "\n");
 	     M.emitComment (emt, "Compilation of function " ^ name);
 	     M.beginTextSection emt;
-	     M.alignData (emt, 8); (* ??? 8 is hard-coded here *)
-	     M.emitVariableDecl (emt, name, static, false);
-	     M.emitProcedureDecl (emt, name))
+             M.alignData (emt, M.getProcAlignment ());
+	     M.emitProcedureDecl (emt, name, static))
 
 	 fun compileProcParameters params =
 	    let
