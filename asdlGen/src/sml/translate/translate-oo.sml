@@ -637,7 +637,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 		val elm_ty = natural_ty
 		val elm_name = pkl_name
 		val seq_v = T.Id seq_id
-		val seq_ty = T.TyReference(T.TySequence (elm_ty))
+		val seq_ty = T.TySequence (elm_ty)
 		
 		val seq_name = Pkl.type_name ty_seq
 		val fields = [{name=seq_id,ty=seq_ty}]

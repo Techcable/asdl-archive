@@ -58,7 +58,7 @@ Functions whose first argument is a read or write
 function for a specific type that reads or writes a option of that type.
 </descrip>
 
-<sect1>Note about <tt/--mono_types false/ for C<p>
+<sect1>Note about <tt/--mono_types=false/ for C<p>
 For the <tt/--mono_types false/ option in C these function expect functions
 pointers that correspond to the following C <tt/typedefs/
 <tscreen><verb>

@@ -1,4 +1,4 @@
-(* 
+ (* 
  * Copyright (c) 1997 by Daniel C. Wang 
  *)
 signature C_PLUS_PLUS_PP =
@@ -86,7 +86,8 @@ structure CPlusPlusPP : C_PLUS_PLUS_PP =
 		PP.cat [pp_ty_exp te,PP.s "*"]
 	      | pp_ty_exp (TyOption te) =  
 		PP.cat [pp_ty_exp te,PP.s "/* opt */"] 
-	      | pp_ty_exp (TySequence te) = pp_ty_exp (TyArray(te,NONE))
+	      | pp_ty_exp (TySequence te) =
+		PP.cat [PP.s "Seq<",pp_ty_exp te,PP.s ">*"] 
 
 	    and pp_ty_decl (DeclAbstractClass
 			    {name,idecls,scope,inherits,fields,mths}) =
@@ -225,6 +226,8 @@ structure CPlusPlusPP : C_PLUS_PLUS_PP =
 		PP.cat [pp_exp e, PP.s " != NULL"]
 	      | pp_exp (NotZero e) = 
 		PP.cat [pp_exp e, PP.s " != 0"]
+	      | pp_exp (Less(l,r)) = 
+		PP.cat [pp_exp l, PP.s " <", pp_exp r]
 	      | pp_exp (NotEqConst (e,c)) = 
 		PP.cat [pp_exp e, PP.s " != ",pp_const c]
 	      | pp_exp (Cast(t,e)) =
@@ -241,7 +244,20 @@ structure CPlusPlusPP : C_PLUS_PLUS_PP =
 		PP.cat [pp_exp e, PP.s " - 1"]
 	      | pp_exp (ArraySub (e,idx)) =
 		PP.cat [pp_exp e, PP.s "[" ,pp_exp idx,PP.s "]"]
-
+	      | pp_exp (SeqNew {elm_ty,len}) =
+		PP.cat [PP.s "new Seq<" ,pp_ty_exp elm_ty,
+			PP.s ">(",pp_exp len,PP.s")"]
+	      | pp_exp (SeqLen {elm_ty,seq}) =
+		PP.cat [PP.s"((",pp_exp seq, PP.s ")->len())"]
+	      | pp_exp (SeqGet {elm_ty,seq,idx}) =
+		PP.cat [PP.s "((",pp_exp seq, PP.s ")->get(",pp_exp idx,
+			PP.s "))"]
+	      | pp_exp (SeqSet {elm_ty,seq,idx,v}) =
+		PP.cat [PP.s "((",pp_exp seq, PP.s ")->set(",
+			pp_exp idx,
+			PP.s ", ",
+			pp_exp v,
+			PP.s "))"]
 	    and pp_stmt (Assign(dst,src)) =
 		PP.cat [pp_exp dst, PP.s " = " ,pp_exp src,PP.s ";"]
 	      | pp_stmt (Return e) =

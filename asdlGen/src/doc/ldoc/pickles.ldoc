@@ -28,7 +28,7 @@ XML/SGML</em>
 
 <sect1>Pretty Printing Pickles<p>
 <tscreen>
-asdlGen --pp_pkl [ --text | --html ] <em/file.typ/ <em/file.pkl/
+asdlGen --pp_pkl [ --text | (--html [--lists|--tables]) ] <em/file.typ/ <em/file.pkl/
 <em/type-id/ ...
 </tscreen>
 

@@ -4,7 +4,7 @@
 
 <!entity author.danwang "Daniel C. Wang" >
 <!entity doc.version "1.1" >
-<!entity doc.date "Februaru 27, 1998" >
+<!entity doc.date "February 27, 1998" >
 <!entity doc.copyright system "copyright.ldoc">
 
 <!entity asdlGen.supported-languages 

@@ -1,6 +1,6 @@
 #ifndef _ASDL_BASE_XX_
 #define _ASDL_BASE_XX_
-
+#include <assert.h>
 #include <stdio.h>
 typedef FILE* outstream;
 typedef FILE* instream;
@@ -18,8 +18,27 @@ typedef string  string_option;
 typedef identifier identifier_option;
 
 typedef int* int_option;
-
-
+#ifndef _MY_SEQS_
+template <class T> 
+class Seq {
+private:
+  int len_;
+  T* elems;
+public:  
+  Seq(int len) {
+    elems = new T[len];
+  }
+  int len() { return len_; }
+  T get(int idx) { 
+    assert((idx >= 0) && (idx < len_));
+    return elems[idx];
+  }
+  void set(int idx,T v) {
+    assert((idx >= 0) && (idx < len_));
+    elems[idx] = v;
+  }
+};
+#endif
 
 template <class T> 
 class List {

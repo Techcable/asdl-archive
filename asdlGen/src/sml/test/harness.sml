@@ -275,10 +275,15 @@ structure Test =
 	val cii_test =
 	    [test ("cii",do_c,["--view=C",
 				mk_path ["slp3.asdl"]])]
+	val seq_test =
+	    [test ("seq",do_java,["--simple_sequences=false",
+			       mk_path ["slp3.asdl"]])]@
+	    [test ("seq",do_cxx,["--simple_sequences=false",
+			       mk_path ["slp3.asdl"]])]
 	    
 	val tests =
+	    seq_test@
 	    pattern_test@
-	    modTest1@
 	    modTest2@
 	    asdl_test@
 	    slp_test@

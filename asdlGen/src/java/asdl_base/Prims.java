@@ -28,15 +28,16 @@ public  class Prims {
   
   /* boolean */
   public static void write_java_boolean(boolean x,OutputStream s) {
+    /* bools are tags that begin at 1 */
     if(x) {
-      write_java_int(1,s);
+      write_java_int(2,s); 
     } else {
-      write_java_int(0,s);
+      write_java_int(1,s);
     }
   }
 
   public static boolean read_java_boolean(InputStream s) {
-       return (read_java_int(s) != 0);   
+       return (read_java_int(s) != 1);   
   }
   /* byte */
   public static void write_java_byte(byte x,OutputStream s) {
