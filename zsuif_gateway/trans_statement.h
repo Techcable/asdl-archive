@@ -145,8 +145,9 @@ class TransStatement {
     zstmt = new zsuif_LabelLocationStatement(defined_label);
   }
 
-  MATCH(TransStatement,MarkStatement,stmts) {
-    zstmt = new zsuif_MarkStatement();
+  MATCH(TransStatement,MarkStatement,stmt) {
+    zsuif_src_pos* sp = t->get_src_pos_opt(stmt);
+    zstmt = new zsuif_MarkStatement(sp);
   }
 
   MATCH(TransStatement,MultiWayBranchStatement,stmts) {

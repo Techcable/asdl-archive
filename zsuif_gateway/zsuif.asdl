@@ -1,4 +1,5 @@
 module zsuif (imports StdTypes) {
+src_pos  = (string file,int line)
 big_int  = (int)
 suif_int = Finite(big_int)
          | PlusInf
@@ -122,7 +123,7 @@ statement =
                 code_label_symbol? break_label,
                 code_label_symbol? continue_label)
  | ScopeStatement(statement body, definition_block definition_block)
- | MarkStatement
+ | MarkStatement(src_pos)
  | VaStartStatement(expression ap_address, parameter_symbol parmn)
  | VaStartOldStatement(expression ap_address)
  | VaEndStatement(expression ap_address)

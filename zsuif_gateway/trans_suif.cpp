@@ -403,6 +403,11 @@ zsuif_statement_list* TransSuif::trans(StatementList *sl) {
   zsuif_statement_list* zstmts = NULL;
   REV_MAP(Statement*,iter,idx,array) {
     zstmts = new zsuif_statement_list(this->trans(array[idx]),zstmts);
+    /* check and add source position annotations */
+    zsuif_src_pos* sp = this->get_src_pos_opt(array[idx]);
+    if(sp != NULL) {
+      zstmts = new zsuif_statement_list(new zsuif_MarkStatement(sp),zstmts);
+    }
   }
   return zstmts;
 } 
@@ -462,5 +467,18 @@ zsuif_constant* TransSuif::trans(Constant *c) {
   return NULL; /* NOT REACHED */
 }
 
+static LString src_pos_annote_name("line");
 
-
+zsuif_src_pos* TransSuif::get_src_pos_opt(Statement* s) {
+  Annote* annote = s->lookup_annote_by_name(src_pos_annote_name);
+  if(is_kind_of<BrickAnnote>(annote)) {
+    BrickAnnote *brick = to<BrickAnnote>(annote);
+    IntegerBrick* line_num = to<IntegerBrick>(brick->get_brick(0));
+    StringBrick* file_name = to<StringBrick>(brick->get_brick(1));
+    zsuif_src_pos* sp =
+      new zsuif_src_pos(file_name->get_value(),
+			(line_num->get_value()).c_int());
+    return sp;
+  }
+  return NULL;
+}

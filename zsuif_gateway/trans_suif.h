@@ -31,8 +31,12 @@ public:
   SuifEnv *env;
   TransSuif(FILE* out,SuifEnv *env,FileSetBlock *fsb);
 
+
+
   void error(const char* file_name,int line_number,const char* msg);
   void trans_suif(void);
+
+  zsuif_src_pos*  get_src_pos_opt(Statement*);
 
   zsuif_symbol* make_symb(Symbol*);
   zsuif_symbol* add_entry(zsuif_symbol_table_entry*);
