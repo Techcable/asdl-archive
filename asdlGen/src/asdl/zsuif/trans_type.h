@@ -129,7 +129,12 @@ public:
        zsuif_int_or_source_op* bit_size = trans->get_type_size(x);
        zsuif_int_or_source_op* bit_alignment = trans->get_type_alignment(x); 
 
-       typ =  new zsuif_Data(new zsuif_Integer_type(bit_size,bit_alignment));
+       if(x->is_signed()) {
+	 typ =  new zsuif_Data(new zsuif_Integer_type(bit_size,bit_alignment));
+       } else {
+	 typ = 
+	   new zsuif_Data(new zsuif_UInteger_type(bit_size,bit_alignment));
+       }
   }
 
 
