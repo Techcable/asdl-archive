@@ -29,58 +29,46 @@
 (*::*)
 structure StmtExp :> STMT_EXP =
   struct
-(**
-Perhaps I should functorize this instead.
-**)
-    (*:[[stmt_exp]] type:*)
+(**:[[stmt_exp]] type:
+ Perhaps I should functorize this instead.
+ **) 
     datatype ('ty,'id,'exp,'stmt) stmt_exp =
-    (**)      
-(**
-    The value of this [[stmt_exp]] is a normal [['exp]].
-**)
-   (*:[[stmt_exp]] type:*)
+(**:[[stmt_exp]] type:The value of this [[stmt_exp]] is a normal [['exp]].
+ **)
       RET  of 'exp
-    (**)      
-(**
-    This [[stmt_exp]] has no return value.
-**)
-    (*:[[stmt_exp]] type:*)
+(**:[[stmt_exp]] type: This [[stmt_exp]] has no return value.
+ **)
     | STMT of 'stmt
-    (**)      
-(**
-    This [[stmt_exp]] return a value by assigning to the given
-    identifier of a known type when present. When a [[stmt_exp]] is
-    flattened in a where the value is ignored the identifier and type
-    pair are omitted. In this case one should just execute any
-    side effecting code.
-**)
-    (*:[[stmt_exp]] type:*)
+(**:[[stmt_exp]] type:
+ This [[stmt_exp]] return a value by assigning to the given
+ identifier of a known type when present. When a [[stmt_exp]] is
+ flattened in a where the value is ignored the identifier and type
+ pair are omitted. In this case one should just execute any
+ side effecting code.
+ **)
     | EXPR of ('id * 'ty) option -> 'stmt
-    (**)      
-(**
+(**:[[stmt_exp]] type:
  After evaluating/flattening the [[stmt_exp]] into a real expression
  pass the expression to a function that returns a new [[stmt_exp]]. If
  the [[stmt_exp]] to be evaluated is a [[RET]] [[stmt_exp]] whose
  value is pure (no side-effects) [[flatten]] avoids creating a new
  temporary and just returns the pure expression of the [[RET]] node.
 **)
-    (*:[[stmt_exp]] type:*)
     | EVAL of  (('ty,'id,'exp,'stmt) stmt_exp * 'ty *
 		('exp -> ('ty,'id,'exp,'stmt) stmt_exp))
-    (**)
-(**
+
+(**:[[stmt_exp]] type:
  Binds a list of identifiers of given type to the list of [[stmt_exp]]
  expressions, and call a function with the name of the bound
  identifiers that produces a list of [[stmt_exp]]s to be
  evaluated. You should not assume that the identifiers provided in the
  [[vars]] list are the same ones passed to the [[body]] function. They
  maybe renamed to avoid name clashes.
-**)   
-    (*:[[stmt_exp]] type:*)
+ **)
     | BIND of {vars: ('id * 'ty) list,
 	       exps: ('ty,'id,'exp,'stmt) stmt_exp list,
 	       body: 'id list -> ('ty,'id,'exp,'stmt) stmt_exp list}
-    (**)      
+(**)
     type ('ty,'id,'exp,'stmt) info =
                         {tmpId : unit -> 'id,
 			isPure : 'exp -> bool,
