@@ -11,7 +11,7 @@ structure MLPP : ALGEBRAIC_PP =
   struct 
     structure Ast = AlgebraicAst
     structure PP = PPUtil
-    type code =  (Ast.module * Module.Mod.props)
+    type code =  (Ast.module * Semant.Module.P.props)
 
     val cfg = Params.empty
     val (cfg,base_sig) =
@@ -54,7 +54,7 @@ structure MLPP : ALGEBRAIC_PP =
       val dec_sep = PP.cat [PP.nl,PP.s "and "]
       val unit_pp = PP.s "unit"
 
-      fun pp_module p (Module{name,imports,decls},props) =
+      fun pp_code p (Module{name,imports,decls},props) =
 	let
 	  val modq = [ModuleId.getBase name]
 	  fun pp_id id =
@@ -197,13 +197,13 @@ structure MLPP : ALGEBRAIC_PP =
 			 pp_exp exp]
 	      	      
 	  val sig_prologue =
-	    PPUtil.wrap Module.Mod.interface_prologue 
+	    PPUtil.wrap Semant.Module.P.interface_prologue 
 	  val sig_epilogue =
-	    PPUtil.wrap Module.Mod.interface_epilogue
+	    PPUtil.wrap Semant.Module.P.interface_epilogue
 	  val struct_prologue =
-	    PPUtil.wrap Module.Mod.implementation_prologue 
+	    PPUtil.wrap Semant.Module.P.implementation_prologue 
 	  val struct_epilogue =
-	    PPUtil.wrap Module.Mod.implementation_epilogue
+	    PPUtil.wrap Semant.Module.P.implementation_epilogue
 	      
 	  val ast = decls
 	  val mn = ModuleId.toString name

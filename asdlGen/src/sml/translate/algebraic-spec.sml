@@ -198,21 +198,21 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
     val prims = addPrim ("string",prims)
     val prims = addPrim ("identifier",prims)
       
-    fun get_reps me Module.Sequence =
+    fun get_reps me Semant.Sequence =
       {mktid=seq_tid,mkrep=seq_rep,con=seq_con}
-      | get_reps me Module.Option =
+      | get_reps me Semant.Option =
       {mktid=opt_tid,mkrep=opt_rep,con=opt_con}
-      | get_reps me Module.Shared = 
+      | get_reps me Semant.Shared = 
       {mktid=share_tid,mkrep=share_rep,con=share_con}
 
     fun get_info p =
       let
 	val rd =
-	  case (Module.Typ.reader p) of
+	  case (Semant.Type.P.reader p) of
 	    (SOME x) => SOME (Call(Id(VarId.fromPath x),[Id stream_id]))
 	  | NONE => NONE
 	val wr =
-	  case (Module.Typ.writer p) of
+	  case (Semant.Type.P.writer p) of
 	    (SOME x) =>
 	      SOME (fn e => Call(Id(VarId.fromPath x),[e,Id stream_id]))
 	  | NONE => NONE
@@ -220,22 +220,22 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 	{wr=wr,rd=rd}
       end
     
-    structure M = Module
+    structure S = Semant
     fun get_wrappers ty p =
       let
 	val ty =
-	  case (M.Typ.natural_type p,M.Typ.natural_type_con p) of
+	  case (S.Type.P.natural_type p,S.Type.P.natural_type_con p) of
 	    (SOME t,_) =>  TyId (TypeId.fromPath t)
 	  | (NONE,SOME t) => (TyCon (TypeId.fromPath t,[ty]))
 	  | _ => ty
 	val unwrap =
-	  case (M.Typ.unwrapper p) of
+	  case (S.Type.P.unwrapper p) of
 	    (SOME x) =>
 	      (fn e =>
 	       Call(Id(VarId.fromPath x),[e]))
 	  | NONE => (fn x => x)
 	val wrap =
-	  case (M.Typ.wrapper p) of
+	  case (S.Type.P.wrapper p) of
 	    (SOME y) =>
 	      (fn x => Call(Id(VarId.fromPath y),[x]))
 	  | NONE => (fn x => x)

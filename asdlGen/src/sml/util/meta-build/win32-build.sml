@@ -1,6 +1,17 @@
 structure Win32BuildParams =
   struct
     structure B = MetaBuild
+    val run_cm  =
+      B.mkVAR{name=SOME "SML_CM",
+	      doc=["SML with compilation manager"],
+	      init=B.STR "sml-cm"}
+    val heap_suffix = (Compiler.architecture)^"-win32"
+    val run_heap  =
+      B.mkVAR{name=SOME "RUN_SML_HEAP",
+	      doc=["Run ML heap"],
+	      init=B.STR ("run."^heap_suffix)}
+
+    fun heap_arg x = "@SMLload="^x
 
     val comp  =
       B.mkVAR{name=SOME "CC",
@@ -62,8 +73,6 @@ structure Win32BuildParams =
 
   end
 
-structure Win32CC =
-  CCBuild(structure Params = Win32BuildParams)
-
-structure Win32FileOps =
-  FileOpsBuild(structure Params = Win32BuildParams)
+structure Win32CC = CCBuild(structure Params = Win32BuildParams)
+structure Win32SML = SMLBuild(structure Params = Win32BuildParams)
+structure Win32FileOps = FileOpsBuild(structure Params = Win32BuildParams)

@@ -10,8 +10,8 @@
 signature OO_PP =
     sig
 	structure Ast : OO_AST
-	include MODULE_PP 
-	  where type code = (Ast.module * Module.Mod.props)
+	include CODE_PP 
+	  where type code = (Ast.module * Semant.Module.P.props)
     end
 
 signature OO_TYPE_DECL =
@@ -29,7 +29,7 @@ signature OO_SPEC =
   sig
     structure Ty : OO_TYPE_DECL
 
-    val inits  : Module.ME.init list
+    val inits  : Semant.MEnv.P.init list
     val fix_id : Ty.Ast.id -> Ty.Ast.id
     val fix_ty : Ty.Ast.ty_id -> Ty.Ast.ty_id
 
@@ -49,13 +49,13 @@ signature OO_SPEC =
     val get_stmt  : (Ty.Ast.id * Ty.Ast.ty_exp) option ->
                                                 Ty.exp -> Ty.Ast.stmt
 
-    val get_info      : Ty.ty_exp -> Module.Typ.props -> Ty.ty_info
-    val get_wrappers  : Ty.ty_exp -> Module.Typ.props ->
+    val get_info      : Ty.ty_exp -> Semant.Type.P.props -> Ty.ty_info
+    val get_wrappers  : Ty.ty_exp -> Semant.Type.P.props ->
       {natural_ty: Ty.ty_exp,
              init: Ty.exp -> Ty.exp,
              wrap: Ty.exp -> Ty.exp,
            unwrap: Ty.exp -> Ty.exp}
-    val get_user_fields : Module.Typ.props -> Ty.Ast.field list
+    val get_user_fields : Semant.Type.P.props -> Ty.Ast.field list
 
     val die    : string -> Ty.Ast.stmt
   end

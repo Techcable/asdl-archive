@@ -16,7 +16,7 @@ structure JavaPP :  sig
     struct
 	structure PP = PPUtil
 	structure Ast = OOAst
-	type code = (Ast.module * Module.Mod.props)
+	type code = (Ast.module * Semant.Module.P.props)
 
 	val cfg = Params.empty
 	val (cfg,base_imp) =
@@ -328,9 +328,9 @@ structure JavaPP :  sig
 	      | do_const (x,(cs,ds)) = (cs,x::ds)
 
 	val body_prologue =
-	    PPUtil.wrap Module.Mod.implementation_prologue 
+	    PPUtil.wrap Semant.Module.P.implementation_prologue 
 	val body_epilogue =
-	    PPUtil.wrap Module.Mod.implementation_epilogue
+	    PPUtil.wrap Semant.Module.P.implementation_epilogue
 
 	    fun pp_consts mn imp x props =
 		let
@@ -352,7 +352,7 @@ structure JavaPP :  sig
 		in
 		    ([package_prefix,mn,fname],pp)
 		end
-	fun pp_module p  (Module{name,imports,decls},props) =
+	fun pp_code p  (Module{name,imports,decls},props) =
 	    let
 		val (cs,ds) = List.foldr do_const ([],[]) decls
 		val mn = ModuleId.toString name

@@ -137,16 +137,18 @@ functor mkPPAnsiC(structure T: ANSI_C) : PP_ANSI_C =
 				PP.s ");"]]
 	  | pp_fun_dec (T.FunDec(id,fl,te,b)) =
 	    PP.hblock 2 [pp_ty_exp te,PP.ws,pp_id id,
-			 PP.vblock 1 [PP.s "(",
-				      PP.seq{fmt=pp_field,sep=comma_sep} fl,
-				      PP.s ")"],
+			 if List.null fl then PP.s "(void)"
+			 else (PP.vblock 1
+			       [PP.s "(",PP.seq{fmt=pp_field,sep=comma_sep} fl,
+				PP.s ")"]),
 			 PP.nl,PP.vblock 0 [pp_block b]]
 	  | pp_fun_dec (T.FunStaticDec(id,fl,te,b)) =
 	    PP.hblock 2 [PP.s "static ",
 			 pp_ty_exp te,PP.ws,pp_id id,
-			 PP.vblock 1 [PP.s "(",
-				      PP.seq{fmt=pp_field,sep=comma_sep} fl,
-				      PP.s ")"],
+			 if List.null fl then PP.s "(void)"
+			 else (PP.vblock 1
+			       [PP.s "(",PP.seq{fmt=pp_field,sep=comma_sep} fl,
+				PP.s ")"]),
 			 PP.vblock 0 [pp_block b]]
 	    
 
@@ -353,7 +355,7 @@ structure AnsiCPP : ALGOL_PP =
 	structure Trans = TranslateAnsiC
 	structure Ast = Trans.T
 	structure PP = mkPPAnsiC(structure T = AnsiC)
-	type code = (Ast.module * Module.Mod.props)
+	type code = (Ast.module * Semant.Module.P.props)
 
 	val cfg = Params.empty
 	val (cfg,base_inc) =
@@ -409,15 +411,15 @@ structure AnsiCPP : ALGOL_PP =
 			 PPUtil.seq_term {fmt=PPUtil.s,sep=PPUtil.nl} s,
 			 PPUtil.s "*/"]
 	val header_prologue =
-	    PPUtil.wrap Module.Mod.interface_prologue 
+	    PPUtil.wrap Semant.Module.P.interface_prologue 
 	val header_epilogue =
-	    PPUtil.wrap Module.Mod.interface_epilogue
+	    PPUtil.wrap Semant.Module.P.interface_epilogue
 	val body_prologue =
-	    PPUtil.wrap Module.Mod.implementation_prologue 
+	    PPUtil.wrap Semant.Module.P.implementation_prologue 
 	val body_epilogue =
-	    PPUtil.wrap Module.Mod.implementation_epilogue
+	    PPUtil.wrap Semant.Module.P.implementation_epilogue
 	    
-	fun pp_module p  (arg as (Ast.Module{name,decls,imports}),props)  =
+	fun pp_code p  (arg as (Ast.Module{name,decls,imports}),props)  =
 	    let
 		val mn = Ast.ModuleId.toString name
 		fun mk_file suffix f =

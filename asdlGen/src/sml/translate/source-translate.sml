@@ -7,17 +7,15 @@
  *
  *)
 
-
-
-signature MODULE_PP =
+signature CODE_PP =
   sig
     type code
     val cfg      : Params.cfg
     val mkComment: string list -> PPUtil.pp
-    val pp_module: Params.params -> code -> (string list * PPUtil.pp) list
+    val pp_code: Params.params -> code -> (string list * PPUtil.pp) list
   end
 
-functor mkSourceFileOutput (structure PP:MODULE_PP) : TRANSLATE =
+functor mkSourceFileOutput (structure PP:CODE_PP) : TRANSLATE =
     struct
 	structure Out = TextIOFileOutput
 	type input = PP.code
@@ -29,7 +27,7 @@ functor mkSourceFileOutput (structure PP:MODULE_PP) : TRANSLATE =
 
 	fun translate p arg =
 	    let
-		val src = PP.pp_module p arg
+		val src = PP.pp_code p arg
 		val wd = width p
 
 		fun mkpp x =

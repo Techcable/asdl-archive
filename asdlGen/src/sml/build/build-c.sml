@@ -1,18 +1,17 @@
 signature BUILD_C =
   sig
-    structure CC : CC_BUILD
+    include BUILD_IT
+
     val xml_lib  : Paths.file_path
     val asdl_lib : Paths.file_path
     val headers  : Paths.file_path list
-    val rules    : CC.B.rule list
-    val build    : unit CC.B.cmd
   end
 functor BuildC (structure CC : CC_BUILD
 		val debug : bool
 		val src_dir : Paths.path) : BUILD_C =
   struct
     structure P = Paths
-    structure CC = CC
+    structure B = CC.B
     fun mk_abs root arcs = P.pathConcat(root,P.pathFromArcs arcs)
     val c_comp_env =
       CC.mk_comp_env {ipath=List.map P.dirFromPath [src_dir],
@@ -61,7 +60,6 @@ functor BuildC (structure CC : CC_BUILD
     val xml_lib = CC.lib_path c_xml_lib
     val asdl_lib = CC.lib_path c_asdl_lib
     val headers = c_headers
-    val build = CC.B.BUILD{name=NONE,rules=rules}
   end
     
 

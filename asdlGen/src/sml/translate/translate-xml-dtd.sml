@@ -8,13 +8,13 @@
  *)
 
 
-structure XMLDTDTranslator : MODULE_TRANSLATOR =
+structure XMLDTDTranslator : SEMANT_TRANSLATOR =
     struct
-	structure M = Module
+	structure S = Semant
 	structure Ast = XMLDTD
 	structure T = Ast
 
-	type input_value    = M.module
+	type input_value    = S.module_info
 	type defined_value  = T.element_decl  * T.element_decl list
 	type con_value      = (T.children * T.element_decl)
 	type field_value    = T.children
@@ -51,8 +51,8 @@ structure XMLDTDTranslator : MODULE_TRANSLATOR =
 	      val tname =
 		case (kind) of
 		NONE => tname
-	      | SOME M.Option => mangle_opt tname
-	      | SOME M.Sequence => mangle_seq tname
+	      | SOME S.Option => mangle_opt tname
+	      | SOME S.Sequence => mangle_seq tname
 	      | _ => raise Error.unimplemented
 	    in
 	      T.Child tname
@@ -60,7 +60,7 @@ structure XMLDTDTranslator : MODULE_TRANSLATOR =
 	fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} =
 	  let
 	    val name = trans_tid name
-	    val tag_v = M.con_tag cinfo
+	    val tag_v = S.Con.tag cinfo
 	    val content =
 	      case (attrbs,fields) of
 		([],[]) => T.EMPTY
@@ -101,11 +101,11 @@ structure XMLDTDTranslator : MODULE_TRANSLATOR =
 	    val opt_name = mangle_opt name
 	    val seq_name = mangle_seq name
 	    val att_defs = sz_attrib::(common_attrbs p)
-	    fun do_kind M.Sequence =
+	    fun do_kind S.Sequence =
 	      {element=seq_name,
 	       content=T.Children (T.ZeroOrMore child),
 	       att_defs=att_defs}
-	      | do_kind M.Option =
+	      | do_kind S.Option =
 	      {element=opt_name,content=T.Children (T.ZeroOrOne child),
 	       att_defs=att_defs}
 	  in
@@ -120,8 +120,8 @@ structure XMLDTDTranslator : MODULE_TRANSLATOR =
 	    val roots = List.map #1 defines
 
 	    fun mk_spec ({element,...}:T.element_decl) = T.Child element
-	    val mpath = Id.toPath (M.module_name module)
-	    val toMid = Ast.ModuleId.fromPath o Id.toPath o M.module_name
+	    val mpath = Id.toPath (S.Module.name module)
+	    val toMid = Ast.ModuleId.fromPath o Id.toPath o S.Module.name
 	  in
 	    (T.Module{name=toMid module,
 		     imports=List.map toMid imports,

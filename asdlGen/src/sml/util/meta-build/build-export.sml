@@ -12,6 +12,7 @@ structure BuildExport :> EXPORTABLE_BUILD =
     | c_WRITE of cmd'
     | c_CONCAT of cmd' list
     | c_EXEC of var * cmd' list
+    | c_EXEC_WITH_INPUT of var * cmd' list * cmd'
     | c_EXIT of cmd'
     | c_OR of cmd' list
     | c_AND of cmd' list
@@ -39,6 +40,7 @@ structure BuildExport :> EXPORTABLE_BUILD =
     val WRITE = c_WRITE
     val CONCAT = c_CONCAT
     val EXEC = c_EXEC
+    val EXEC_WITH_INPUT = c_EXEC_WITH_INPUT
     val EXIT = c_EXIT
     val OR = c_OR
     val AND = c_AND
@@ -64,6 +66,8 @@ structure BuildExport :> EXPORTABLE_BUILD =
       | listVars (c_IGN c,env) = listVars (c,env)
       | listVars (c_EXIT c,env) = listVars(c,env)
       | listVars (c_EXEC (v,cs),env) = List.foldl listVars (S.add'(v,env)) cs
+      | listVars (c_EXEC_WITH_INPUT (v,cs,i),env) =
+      List.foldl listVars (S.add'(v,env)) (i::cs)
       | listVars (c_BUILD{name,rules},env) =
       let
 	fun doRule (c_RULE{update,...},e) = listVars(update,e)
@@ -98,6 +102,8 @@ structure BuildExport :> EXPORTABLE_BUILD =
       | toTokens (c_CONCAT cs) = Cat (List.map toTokens cs)
       | toTokens (c_EXEC (v,cs)) =
 	 Seq (List.foldr (fn (c,ts) => (toTokens c)::ts) [] ((c_VAR v)::cs))
+      | toTokens (c_EXEC_WITH_INPUT (v,cs,i)) =
+	 Seq[Str "echo",Lit (toTokens i),Str "|",toTokens (c_EXEC(v,cs))]
       | toTokens (c_EXIT c) =
 	 Seq[Str "echo",Lit (toTokens c),Str "; exit 1"]
 

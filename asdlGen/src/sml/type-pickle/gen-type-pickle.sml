@@ -10,7 +10,7 @@
 
 structure GenPickleTranslator:TRANSLATE =
     struct
-	structure M = Module
+	structure S = Semant
 	structure T = TypePickle
 	structure Output = BinIOFileOutput
 
@@ -24,11 +24,11 @@ structure GenPickleTranslator:TRANSLATE =
 
 	fun make_keys menv (m,(type_map,cnstr_map)) =
 	    let
-		val defs = (M.defined_types m)
-		val get_cons = M.type_cons o (M.lookup_type m)
+		val defs = (S.Module.types m)
+		val get_cons = S.Type.cons o (S.Module.type_info m)
 		fun insert_ci (x,xs) =
 		    List.foldl insert_item xs
-		    (List.map M.con_name (get_cons x))
+		    (List.map S.Con.name (get_cons x))
 
 		val type_map = List.foldl insert_item type_map defs
 		val cnstr_map = List.foldl insert_ci cnstr_map defs
@@ -39,9 +39,9 @@ structure GenPickleTranslator:TRANSLATE =
 
 	val prim_map =
 	    List.foldl (fn ((x,y),env) => Env.insert(env,x,y)) Env.empty
-	    [(M.prim_int,T.Int),
-	     (M.prim_string,T.String),
-	     (M.prim_identifier,T.Identifier)]
+	    [(S.Prim.int,T.Int),
+	     (S.Prim.string,T.String),
+	     (S.Prim.identifier,T.Identifier)]
 
 	    
 	val cfg = Output.cfg
@@ -52,15 +52,15 @@ structure GenPickleTranslator:TRANSLATE =
 	    Params.declareString cfg
 	    {name="output_directory",flag=SOME #"d",default=OS.Path.currentArc}
 
-	type input = M.module_env
+	type input = S.menv_info
 	type output = Output.output
 	    
 	fun translate p menv =
 	    let
-		val modules = M.module_env_modules menv
+		val modules = S.MEnv.modules menv
 		fun file_name p (m::ms) =
 		    let
-			val input = M.module_file m
+			val input = S.Module.file m
 			val {dir,file} = OS.Path.splitDirFile input
 			val dir =
 			    if dir = "" then OS.Path.currentArc
@@ -71,9 +71,9 @@ structure GenPickleTranslator:TRANSLATE =
 		    end
 		  | file_name p _ = p
 		val p = file_name p modules 
-		val prim_info = M.module_env_prims menv
+		val prim_info = S.MEnv.prim_types menv
 		val type_map =  List.foldl
-		    (fn (x,y) => insert_item (M.type_name  x,y))
+		    (fn (x,y) => insert_item (S.Type.name  x,y))
 		    Env.empty prim_info
 		    
 		val (type_map,cnstr_map) =
@@ -104,40 +104,40 @@ structure GenPickleTranslator:TRANSLATE =
 		      | (SOME i) => i
 			    
 		fun field_type_key m  =
-			    (type_key o M.type_name o (M.field_type m))
+			    (type_key o S.Type.name o (S.Module.field_type m))
 			    
 		fun cnstr_type_key m  =
-		    (type_key o M.type_name o (M.con_type m))
+		    (type_key o S.Type.name o (S.Module.con_type m))
 		    
 		fun mk_field m fi =
 		    let
 			val kind =
-			    case (M.field_kind fi) of
+			    case (S.Field.kind fi) of
 				NONE => T.Id
-			      | SOME M.Sequence => T.Sequence
-			      | SOME M.Option => T.Option
+			      | SOME S.Sequence => T.Sequence
+			      | SOME S.Option => T.Option
 			      | _ => raise Error.unimplemented
 			val type_map_key = field_type_key m fi
-			val label = M.field_src_name fi
+			val label = S.Field.src_name fi
 		    in
 			kind {type_map_key=type_map_key,label=label}
 		    end
 		
 		and mk_type m ti =
 		    let
-			val key = type_key (M.type_name ti)
+			val key = type_key (S.Type.name ti)
 			val fields =
-			    List.map (mk_field m)  (M.type_fields ti)
-			val name = mk_qid (M.type_name ti)
+			    List.map (mk_field m)  (S.Type.fields ti)
+			val name = mk_qid (S.Type.name ti)
 			val cnstr_map_keys =
-			    List.map (cnstr_key o M.con_name)
-			    (M.type_cons ti)
-			val pkl_tag = M.type_tag ti
-			val is_prim = M.type_is_prim ti
+			    List.map (cnstr_key o S.Con.name)
+			    (S.Type.cons ti)
+			val pkl_tag = S.Type.tag ti
+			val is_prim = S.Type.is_prim ti
 			val v =
 			    if is_prim then
 				T.Prim{pkl_tag=pkl_tag,
-				       p=mk_prim (M.type_name ti)}
+				       p=mk_prim (S.Type.name ti)}
 			    else
 				T.Defined
 				{pkl_tag=pkl_tag,
@@ -150,12 +150,12 @@ structure GenPickleTranslator:TRANSLATE =
 		
 		and mk_cnstr m ci =
 		    let
-			val key = cnstr_key (M.con_name ci)
-			val name = mk_qid (M.con_name ci)
+			val key = cnstr_key (S.Con.name ci)
+			val name = mk_qid (S.Con.name ci)
 			val type_map_key = cnstr_type_key m ci
 			val fields =
-			    List.map (mk_field m)  (M.con_fields ci)
-			val pkl_tag = M.con_tag ci
+			    List.map (mk_field m)  (S.Con.fields ci)
+			val pkl_tag = S.Con.tag ci
 			val v =
 			    {pkl_tag=pkl_tag,
 			     type_map_key=type_map_key,
@@ -166,9 +166,8 @@ structure GenPickleTranslator:TRANSLATE =
 		
 		and mk_module (key,m) =
 		    let
-			val name =
-			    mk_qid (M.module_name  m)
-			val file = M.module_file m
+			val name = mk_qid (S.Module.name  m)
+			val file = S.Module.file m
 			val v =	{name=name,file=file}
 		    in
 			{key=key,v=v}:T.module_map_entry
@@ -176,12 +175,12 @@ structure GenPickleTranslator:TRANSLATE =
 		
 		fun make_maps menv (m,(types,cnstrs)) =
 		    let
-			val defs = (M.defined_types m)
+			val defs = (S.Module.types m)
 			fun do_type (id,(tis,cis)) =
 			    let
-				val ti = (M.lookup_type m) id
-				val get_cons = M.type_cons ti
-				val cons = M.type_cons ti
+				val ti = (S.Module.type_info m) id
+				val get_cons = S.Type.cons ti
+				val cons = S.Type.cons ti
 				val tis = (mk_type m ti)::tis
 				val cis =
 				    (List.map (mk_cnstr m) cons)@cis
@@ -197,8 +196,8 @@ structure GenPickleTranslator:TRANSLATE =
 		    
 		fun make_prim ti =
 		    let
-			val pkl_tag = M.type_tag ti
-			val name = (M.type_name ti)
+			val pkl_tag = S.Type.tag ti
+			val name = (S.Type.name ti)
 			val key = type_key name
 			val v = T.Prim{p=mk_prim name,pkl_tag=pkl_tag}
 		    in

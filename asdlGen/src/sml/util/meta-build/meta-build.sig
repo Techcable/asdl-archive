@@ -13,6 +13,8 @@ signature CORE_BUILD =
     val WRITE : string cmd -> unit cmd
     val CONCAT: string cmd list -> string cmd
     val EXEC  : (var * string cmd list) -> unit cmd
+    val EXEC_WITH_INPUT : (var * string cmd list * string cmd) -> unit cmd
+
     val EXIT  : string cmd -> 'a cmd 
 
     val OR    : 'a cmd list -> unit cmd

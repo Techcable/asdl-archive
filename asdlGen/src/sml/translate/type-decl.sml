@@ -6,6 +6,11 @@
  * Author: Daniel C. Wang
  *
  *)
+(**::
+The functor [[mkTypeDecl]] generates a structure that matches the
+[[TYPE_DECL]] signature. The functor is parameterized by all the
+target language specific details.
+**)
 functor mkTypeDecl(structure TypeId : MODULE_ID
 		   structure VarId : MODULE_ID
 		   type ty_exp

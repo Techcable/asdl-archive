@@ -114,14 +114,14 @@ structure DTangle =
     (*:function to dump stream to stdout:*)
     fun printFile ins outs = let
       fun loop ("") = ()
-	loop s = (TextIO.output(outs,s);loop(TextIO.inputLine ins))
+	| loop s = (TextIO.output(outs,s);loop(TextIO.inputLine ins))
     in
       loop(TextIO.inputLine ins);
       TextIO.closeIn ins
     end
     (**)
     (*:process an input:*)      
-    fun doInput (fname,spec,outs) =
+    fun doInput (keepp,fname,spec,outs) =
       let
 	val inputs = TextIO.openIn fname
 (**:get a token:
@@ -174,9 +174,20 @@ created for each file.
 	  | build_tree (L.EOF{pos},{num,name,doc,nodes}) = 
 	    (TextIO.closeIn inputs;
 	     Node {name=name,num=num,doc=doc,nodes=rev nodes})
-	    
+(**:figure the name of the root chunck:
+  Use a Unix style path after trimming some user defined leading arcs.
+**)
+	val {arcs,...} = OS.Path.fromString fname
+	val trimp = 
+	  Int.max(0,
+		  if keepp = 0 then 0
+		  else (List.length arcs) - keepp)
+	val arcs = List.drop (arcs,trimp)
+	val cname = ListFormat.fmt
+	  {sep="/",init="",final="",fmt=(fn x => x)} arcs
+(**)
 	val tree =
-	  build_tree (gettok(),{name=fname,num=0,doc=[],nodes=[]})
+	  build_tree (gettok(),{name=cname,num=0,doc=[],nodes=[]})
 (**)
 (**:flatten the tree:
 Intentionally ignore the toplevel value produced by [[flatten_tree]]
@@ -199,17 +210,27 @@ different commenting conventions can be processed together.
 **)	
     structure G = GetOpt 
     datatype opts =
-      Spec of L.token_spec
+        Spec of L.token_spec
       | Input of string
       | Output of string 
       | Str of string
+      | KeepPath of int
       | Inc of string
-      | Help 
-
-    fun spec_opt ((n,spec),rest) =
-      {short="",long=[n],
-       desc=G.NoArg(Spec spec),
-       help="Set comment style to '"^n^"'"}::rest
+      | ArgErr of string
+      | Usage 
+    fun tp_arg x =
+      case (Int.fromString x) of
+	NONE => ArgErr("Bad trim path value")
+      | SOME x =>
+	  if x > (~1) then  (KeepPath x)
+	  else ArgErr("Bad trim path value")
+    fun spec_opt "tex" = (Spec L.tex_spec)
+      | spec_opt "c" = (Spec L.c_spec)
+      | spec_opt "ml" = (Spec L.ml_spec)
+      | spec_opt "sh" = (Spec L.shell_spec)
+      | spec_opt "ada" = (Spec L.ada_spec)
+      | spec_opt "lisp" = (Spec L.lisp_spec)
+      | spec_opt _ = ArgErr("unknown comment style")
 
     val desc =
       [{short="",long=["inc"],
@@ -218,33 +239,33 @@ different commenting conventions can be processed together.
        {short="o",long=["output"],
 	desc=G.ReqArg(Output,"file"),
 	help="File to place output"},
+       {short="p",long=["keep-path"],
+	desc=G.ReqArg(tp_arg,"{0,1,... n} default=0"),
+	help="Keep n leading paths componets for chunk name.\n"},
+       {short="l",long=["lang"],
+	desc=G.ReqArg(spec_opt,"{tex,c,ml,sh,ada,lisp}"),
+	help="Input comment style"},
        {short="s",long=["string"],
 	desc=G.ReqArg(Str,"string"),
 	help="Output a line consisting of string"},
        {short="h?",long=["help"],
-	desc=G.NoArg Help, help="help"}]
-      
-    val desc =
-      List.foldl spec_opt desc
-      [("tex",L.tex_spec),
-       ("c",L.c_spec),
-       ("ml",L.ml_spec),
-       ("sh",L.shell_spec),
-       ("ada",L.ada_spec),
-       ("lisp",L.lisp_spec)]
+	desc=G.NoArg Usage, help="help"}]
       
     val desc = List.rev desc
     val usage = G.usageInfo "Usage: dtangle options files ... options file ...\n" desc
     val parseOpts = G.getOpt (G.ReturnInOrder Input) desc
       
-    fun doOpts (Spec s,{spec,outs,close}) = {spec=s,outs=outs,close=close}
-      | doOpts (Input s,x as {spec,outs,...}) = (doInput (s,spec,outs);x)
+    fun doOpts (Spec s,{spec,outs,close,kp}) =
+      {spec=s,outs=outs,close=close,kp=kp}
+      | doOpts (KeepPath kp,{spec,outs,close,...}) =
+      {spec=spec,outs=outs,close=close,kp=kp}
+      | doOpts (Input s,x as {kp,spec,outs,...}) = (doInput (kp,s,spec,outs);x)
       | doOpts (Inc s,x as {outs,...}) = (printFile (TextIO.openIn s) outs; x)
       | doOpts (Str s,x as {outs,...}) = (TextIO.output(outs,s^"\n"); x)
-      | doOpts (Output f,{spec,outs,close}) =
+      | doOpts (Output f,{spec,outs,close,kp}) =
       let val outs = TextIO.openOut f
       in close ();
-	{spec=spec,outs=outs,close=(fn () => TextIO.closeOut outs)}
+	{spec=spec,outs=outs,kp=kp,close=(fn () => TextIO.closeOut outs)}
       end
       | doOpts (_,x) = x
       
@@ -252,15 +273,20 @@ different commenting conventions can be processed together.
     (*:main function to pass to [[SMLofNJ.exportFN]]:*)
     fun main (argv,args) =
       let
-	val dflt = {spec=L.null_spec,outs=TextIO.stdOut,
+	val dflt = {spec=L.null_spec,outs=TextIO.stdOut,kp=0,
 		    close=(fn () => TextIO.flushOut TextIO.stdOut)}
 	val (opts,non_opts,errs) = parseOpts args
-	val help =
-	  List.exists (fn Help => true | _ => false) opts
+	fun find_arg_errs (ArgErr x,xs) = x::xs
+	  | find_arg_errs (Usage,xs) = xs
+	  | find_arg_errs (_,xs) = xs
+	val opt_arg_err = List.foldl find_arg_errs [] opts
+	fun do_usage [] = (print usage;OS.Process.success)
+	  | do_usage x = (List.app print x; print usage;OS.Process.failure)
       in
 	(if List.null errs then
-	   if help then (print usage;OS.Process.success)
-	   else (#close(List.foldl doOpts dflt opts)();OS.Process.success)
+	   if (List.null opt_arg_err) then
+	     (#close(List.foldl doOpts dflt opts)();OS.Process.success)
+	   else (do_usage opt_arg_err)
 	 else
 	   (List.app print errs; OS.Process.failure))
 	   handle e =>

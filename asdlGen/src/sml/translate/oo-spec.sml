@@ -286,11 +286,11 @@ functor mkOOSpec(structure Ty   : OO_TYPE_DECL
       fun get_info ty p =
 	let
 	  val rd =
-	    case (Module.Typ.reader p) of
+	    case (Semant.Type.P.reader p) of
 	      (SOME x) => SOME (call_fn x [Id stream_id])
 	    | NONE => NONE
 	  val wr =
-	    case (Module.Typ.writer p) of
+	    case (Semant.Type.P.writer p) of
 	      (SOME x) => SOME
 		(fn e =>
 		 EVAL(e,ty,
@@ -304,21 +304,21 @@ functor mkOOSpec(structure Ty   : OO_TYPE_DECL
       fun get_wrappers ty p =
 	let
 	  val natural_ty =
-	    case (Module.Typ.natural_type p) of
+	    case (Semant.Type.P.natural_type p) of
 	      SOME t => TyId (TypeId.fromPath t)
 	    | NONE => ty
 
 	  val unwrap =
-	    case (Module.Typ.unwrapper p) of
+	    case (Semant.Type.P.unwrapper p) of
 	      SOME x =>	(fn e => EVAL(e,natural_ty,(fn v => call_fn x [v])))
 	    | NONE => (fn x => x)
 
 	  val wrap =
-	    case (Module.Typ.wrapper p) of
+	    case (Semant.Type.P.wrapper p) of
 	      SOME x => (fn e => EVAL(e,ty,(fn v => call_fn x [v])))
 	    | NONE => (fn x => x)
 	  val init =
-	    case (Module.Typ.user_init p) of
+	    case (Semant.Type.P.user_init p) of
 	      NONE => (fn x => x)
 	    | SOME x => (fn e =>
 			 EVAL(e,ty,(fn v => RET(MthCall(Id (VarId.fromPath x),
@@ -329,7 +329,7 @@ functor mkOOSpec(structure Ty   : OO_TYPE_DECL
     val user_field_name = VarId.fromString "client_data"
 
       fun get_user_fields p =
-	case (Module.Typ.user_attribute p) of
+	case (Semant.Type.P.user_attribute p) of
 	  NONE => []
 	| SOME x =>
 	    [{name=user_field_name, ty=TyId (TypeId.fromPath x)}]

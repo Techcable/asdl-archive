@@ -6,13 +6,13 @@
  *
  *)
 
-functor mkOOModuleTranslator
+functor mkOOSemantTranslator
   (structure Spec   : OO_SPEC
    val aux_decls    : Spec.Ty.env ->
                       Spec.Ty.ty_decl list ->
-  (Spec.Ty.ty_id * Spec.Ty.Ast.mth) list) : MODULE_TRANSLATOR  =
+  (Spec.Ty.ty_id * Spec.Ty.Ast.mth) list) : SEMANT_TRANSLATOR  =
      struct
-      structure M = Module
+      structure S = Semant
       structure Ty = Spec.Ty
       structure Ast = Ty.Ast
       structure T = Ast
@@ -38,8 +38,8 @@ functor mkOOModuleTranslator
 			     enumer:T.enumer}
 	
       type type_con_value = Ty.ty_decl list
-      type module_value   = Ty.ty_decl list * (T.module * M.Mod.props)
-      type output         = (T.module * M.Mod.props) list
+      type module_value   = Ty.ty_decl list * (T.module * S.Module.P.props)
+      type output         = (T.module * S.Module.P.props) list
 
       val inits = Spec.inits
       open StmtExp
@@ -93,15 +93,15 @@ functor mkOOModuleTranslator
       fun trans_field p {finfo,kind,name,tname,tinfo,is_local,props} =
 	let
 	  val tid = (trans_tid tname)
-	  val is_prim = M.type_is_prim tinfo
+	  val is_prim = S.Type.is_prim tinfo
 	  val ty = (T.TyReference (T.TyId tid))
 	  val {natural_ty,...} = Spec.get_wrappers ty props 
 	  val (ty,tid) =
 	    case kind of
 	      NONE => (natural_ty,tid)
-	    | SOME M.Sequence =>
+	    | SOME S.Sequence =>
 		(Spec.seq_rep natural_ty,Spec.seq_tid tid)
-	    | SOME M.Option =>
+	    | SOME S.Option =>
 		(Spec.opt_rep natural_ty,Spec.opt_tid tid)
 	    | _ => raise Error.unimplemented
 	  val ty = if is_prim then (T.TyId tid) else ty
@@ -109,15 +109,15 @@ functor mkOOModuleTranslator
 	    (fix_id o T.VarId.fromString o Identifier.toString)
 		  val name = trans_fid name
 	  val fd = {name=name,ty=ty}
-	  val label = Option.map trans_fid (M.field_name finfo) 
+	  val label = Option.map trans_fid (S.Field.name finfo) 
 	in
 	  {fd=fd,ty_fd={label=label,label'=name,tid=tid}}
 	end
 
       fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} =
 	let
-	  val is_boxed = M.type_is_boxed tinfo
-	  val tname = trans_tid (M.type_src_name tinfo)
+	  val is_boxed = S.Type.is_boxed tinfo
+	  val tname = trans_tid (S.Type.src_name tinfo)
 	  val (cname,name) = (trans_id name,trans_tid name)
 	  val all = attrbs@fields
 	  val vars = List.map (fn {fd={name,ty},...} => (name,ty)) all
@@ -130,13 +130,13 @@ functor mkOOModuleTranslator
 	    (ty_fd,RET (T.FieldSub (e,id)))
 
 	  val tag_n = T.VarId.suffixBase "_enum" cname
-	  val tag_enum  = M.Con.enum_value cprops
+	  val tag_enum  = S.Con.P.enum_value cprops
 	  val tag_c = T.Const(T.EnumConst(tname,tag_n))
-	  val tag = {c=tag_n,v=(M.con_tag cinfo)}
+	  val tag = {c=tag_n,v=(S.Con.tag cinfo)}
 
 	  val con = {tag=tag,fields=List.map #ty_fd all,
 		     cnstr=mk_cnstr is_boxed}
-	  val enumer = {name=tag_n,value=(M.Con.enum_value cprops)}
+	  val enumer = {name=tag_n,value=(S.Con.P.enum_value cprops)}
 	  fun match c = (tag,List.map (sub_field c) all)
 	  val ty = T.TyReference (T.TyId tname)
 	  val cty = T.TyReference (T.TyId name)
@@ -202,7 +202,7 @@ functor mkOOModuleTranslator
 			   match=match,cnstr=wrap o cnstr})
 
 	  val base_class =  Option.map
-	    (T.TypeId.fromPath) (M.Typ.base_class props)
+	    (T.TypeId.fromPath) (S.Type.P.base_class props)
 
 	  val accept_mth =
 	    mk_accept_mth name
@@ -225,7 +225,7 @@ functor mkOOModuleTranslator
 	let
 	  val cname = trans_id name
 	  val name = trans_tid name
-	  val is_boxed = M.type_is_boxed tinfo
+	  val is_boxed = S.Type.is_boxed tinfo
 	  val fds = List.map #fd (fields:field_value list)
 	  val user_fields = Spec.get_user_fields props
 	  val ty = T.TyReference (T.TyId name)
@@ -255,7 +255,7 @@ functor mkOOModuleTranslator
 			  info=Spec.get_info natural_ty props,
 			  match=match})
 	  val base_class =  Option.map
-	    (T.TypeId.fromPath) (M.Typ.base_class props)
+	    (T.TypeId.fromPath) (S.Type.P.base_class props)
 
 	  val idecls = [T.IDeclEnum{name=mk_tag_tid name,
 				    enums=List.map #enumer cons}]
@@ -312,8 +312,8 @@ functor mkOOModuleTranslator
 	  val name = trans_tid name
 	  val name_opt = Spec.opt_tid name
 	  val name_seq = Spec.seq_tid name
-	  fun do_kind M.Sequence = (name_seq,Ty.App(Spec.seq_con,name))
-	    | do_kind M.Option = (name_opt,Ty.App(Spec.opt_con,name))
+	  fun do_kind S.Sequence = (name_seq,Ty.App(Spec.seq_con,name))
+	    | do_kind S.Option = (name_opt,Ty.App(Spec.opt_con,name))
 	in
 	  List.map do_kind kinds
 	end
@@ -330,7 +330,7 @@ functor mkOOModuleTranslator
 	    (ty_decl::ty_decls,decls@rest)
 	  val ty_cons = List.foldr (op @) [] type_cons 	    
 	  val (ty_decls,decls) = List.foldr merge (ty_cons,[]) defines
-	  val toMid = Ast.ModuleId.fromPath o Id.toPath o M.module_name
+	  val toMid = Ast.ModuleId.fromPath o Id.toPath o S.Module.name
 	  val name = toMid module
 	  val decls = BA.build_aux name
 	    {walker_code=false,copy_code=false} decls
@@ -350,7 +350,7 @@ functor mkOOModuleTranslator
 		     decls=T.add_methods (new_decls ty_decls) decls},mp)
 	  val out = List.map add_decls ms 
 	in
-	  List.filter (not o M.Mod.suppress o #2) out
+	  List.filter (not o S.Module.P.suppress o #2) out
 	end
     end
 

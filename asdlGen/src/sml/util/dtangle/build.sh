@@ -12,12 +12,12 @@ SMLofNJ.exportFn("dtangle",DTangle.main);
 EOF
 ##
 #:run dtangle on the source files:
-sml @SMLload=./dtangle -inc intro.nw \
-                       -ml dtangle.sml dtangle-lexer.sml \
-                       -sh build.sh \
-                       -ml sources.cm \
-                       -tex main.tex \
-                       -sh duntangle \
+sml @SMLload=./dtangle --inc intro.nw \
+                       -lml dtangle.sml dtangle-lexer.sml \
+                       -lsh build.sh \
+                       -lml sources.cm \
+                       -ltex main.tex \
+                       -lsh duntangle \
 > dtangle.nw
 ##
 #:run noweb and build a ps file:

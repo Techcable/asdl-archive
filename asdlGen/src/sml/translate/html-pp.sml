@@ -12,7 +12,7 @@
 signature HTML_PP =
     sig
 	structure Ast : FORMAT_DOC
-	include MODULE_PP where type code = Ast.module
+	include CODE_PP where type code = Ast.module
     end
 
 (* probably should use Reppy's HTML library in the future
@@ -83,7 +83,7 @@ structure HTMLPP : HTML_PP =
 				PP.s "<dd>",pp_format fmt]),
 		     sep=PP.ws} fl)
 
-	fun pp_module p (Module{name,decls={title,body},imports}) =
+	fun pp_code p (Module{name,decls={title,body},imports}) =
 	    let
 		val base = ModuleId.toString name
 	    in

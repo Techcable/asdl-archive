@@ -7,6 +7,8 @@ translate/sources.cm
 type-pickle/sources.cm
 pp-pickle/sources.cm
 meta-build/sources.cm
+dtangle/sources.cm
+convert/sources.cm
 
 smlnj-lib.cm
 
@@ -17,6 +19,10 @@ main/export.sml
 
 test/harness.sml
 build/build-c.sml
-build/install-all.sml
+build/build-sml.sml
+build/build-install.sml
+build/build-doc.sml
+build/build.sml
+
 
 

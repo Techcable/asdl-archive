@@ -23,6 +23,9 @@ functor CombineBuilds(structure R : RUNNABLE_BUILD
       pair (R.CONCAT o (List.map fst),E.CONCAT o (List.map snd)) x
     fun EXEC ((x,y),cs) =
       (R.EXEC(x,List.map fst cs),E.EXEC(y,List.map snd cs))
+    fun EXEC_WITH_INPUT ((x,y),cs,(z,w)) =
+      (R.EXEC_WITH_INPUT(x,List.map fst cs,z),
+       E.EXEC_WITH_INPUT(y,List.map snd cs,w))
     fun EXIT x = pair (R.EXIT o fst,E.EXIT o snd) x
     fun OR x = pair (R.OR o (List.map fst), E.OR o (List.map snd)) x
     fun AND x = pair (R.AND o (List.map fst), E.AND o (List.map snd)) x

@@ -16,7 +16,7 @@ structure HaskellPP : ALGEBRAIC_PP =
     struct 
 	structure Ast  = AlgebraicAst
 	structure PP = PPUtil
-	type code =  (Ast.module * Module.Mod.props)
+	type code =  (Ast.module * Semant.Module.P.props)
 
 	val cfg = Params.empty
 	val (cfg,base_imp) =
@@ -249,15 +249,15 @@ structure HaskellPP : ALGEBRAIC_PP =
 	(* val translate = fn : Params.params -> HaskellTypes.decl list -> (string list * PPUtil.pp) list *)
     
 	val import_prologue =
-	    PPUtil.wrap Module.Mod.interface_prologue 
+	    PPUtil.wrap Semant.Module.P.interface_prologue 
 	val import_epilogue =
-	    PPUtil.wrap Module.Mod.interface_epilogue
+	    PPUtil.wrap Semant.Module.P.interface_epilogue
 	val module_prologue =
-	    PPUtil.wrap Module.Mod.implementation_prologue 
+	    PPUtil.wrap Semant.Module.P.implementation_prologue 
 	val module_epilogue =
-	    PPUtil.wrap Module.Mod.implementation_epilogue
+	    PPUtil.wrap Semant.Module.P.implementation_epilogue
 
-	fun pp_module p (Module{name,decls,imports},props) =
+	fun pp_code p (Module{name,decls,imports},props) =
 	    let
 		val ast = decls
 		val mn = ModuleId.toString name

@@ -8,7 +8,7 @@
  *)
 
 
-functor mkDependGen(structure      M : MODULE) : TRANSLATE  =
+functor mkDependGen(structure S : SEMANT) : TRANSLATE  =
     struct
 
 	structure IdOrdKey =
@@ -18,9 +18,8 @@ functor mkDependGen(structure      M : MODULE) : TRANSLATE  =
 	    end
 	
 	structure Env = SplayMapFn(IdOrdKey)
-	structure M = M
-
-	type input = M.module_env
+	structure S = S
+	type input = S.menv_info
 	type output = unit
 
 	val (cfg,scc) =
@@ -47,25 +46,23 @@ functor mkDependGen(structure      M : MODULE) : TRANSLATE  =
 	    let
 		fun mkenv (m,env) =
 		    List.foldl (fn (x,env) => (Env.insert(env,x,m)))
-		    env (M.defined_types m) 
+		    env (S.Module.types m) 
 
 		val env = List.foldl mkenv
-		    Env.empty (M.module_env_modules menv) 
+		    Env.empty (S.MEnv.modules menv) 
 
 		fun follow (SOME id) =
 		    (case (Env.find(env,id)) of
 			NONE => []
 		      | (SOME m) =>
 			    let
-				val ids = M.type_uses (M.lookup_type m id)
-
+				val ids = S.Type.uses (S.Module.type_info m id)
 				val tinfos =
-				    List.map (M.lookup_type m) ids
-
+				    List.map (S.Module.type_info m) ids
 				val tinfos =
-				    List.filter (not o M.type_is_prim) tinfos
+				    List.filter (not o S.Type.is_prim) tinfos
 			    in
-				List.map (SOME o M.type_name) tinfos
+				List.map (SOME o S.Type.name) tinfos
 			    end)
 		  | follow NONE =
 		    List.map (SOME o #1) (Env.listItemsi env)

@@ -7,7 +7,7 @@
  *
  *)
 (**::
- Here a straight forward implementation.
+Here is a straight forward implementation of the [[STMT_EXP]] signature.
  **)
 structure StmtExp :> STMT_EXP =
   struct
@@ -39,26 +39,26 @@ has no return value so it can just ignore it.
       ([],[(#setId info)(id,e)])
       | flatten info _ (STMT s) = ([],[s])
 (**:[[structure StmtExp]] [[flatten]] function:
- The [[EXPR]] case is easy too. Just apply the return argument to the
- function carried by [[EXPR]].
+The [[EXPR]] case is easy too. Just apply the return argument to the
+function carried by [[EXPR]].
 **)   
       | flatten info ret (EXPR s) = ([],[s ret])
 (**:[[structure StmtExp]] [[flatten]] function:
- For an [[EVAL]] check if we what we are evaluating  a pure expression.
- If it is then use the pure expression as the value and flatten the
- result. Otherwise call the helper [[flatten_eval]] which generates a
- temporary variable to be use instead.
+For [[EVAL]] check if we what we are evaluating is a pure expression.
+If it is then use the pure expression as the value and flatten the
+result. Otherwise call the helper [[flatten_eval]] which generates a
+temporary variable to be use instead.
 **)       
       | flatten (info as {isPure,...}) ret (EVAL (arg as (RET e,ty,b))) = 
       if (isPure e) then  flatten info ret (b e)
       else flatten_eval info ret arg
       | flatten info ret (EVAL arg) = flatten_eval info ret arg
 (**:[[structure StmtExp]] [[flatten]] function:
- The case for [[BIND]] is straight forward. It tries to avoid
- generating extra temporaries by reusing variables when it
- can. Ideally it should also try to fix any name capture problems.
- It uses the [[stmtScope]] to wrap each initialization expression in
- it's own scope. 
+The case for [[BIND]] is straight forward. It tries to avoid
+generating extra temporaries by reusing variables when it
+can. Ideally it should also try to fix any name capture problems.
+It uses [[stmtScope]] to wrap each initialization expression in
+it's own scope. 
 **) 
     (* TODO play games to avoid name capture *)
       | flatten info res (BIND{vars,exps,body}) =
@@ -85,7 +85,7 @@ has no return value so it can just ignore it.
       | flatten  _ NONE (RET e) = ([],[])
 (**)
 (**:[[structure StmtExp]] [[flatten_eval]] internal function:
-[[flatten_eval]] is an internal introduces new temporaries.
+[[flatten_eval]] is an internal function that introduces new temporaries.
 **)
     and flatten_eval (info as {tmpId,getId,...}) ret (e,ty,b) =
       let

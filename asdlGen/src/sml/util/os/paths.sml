@@ -37,7 +37,6 @@ signature PATHS =
 	val combineSearchPath : search_path -> search_path -> search_path
 	val resolveFile : search_path -> file_path -> file_path option
 
-
     end
     
 structure Paths :> PATHS =

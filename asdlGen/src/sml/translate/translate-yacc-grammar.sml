@@ -8,13 +8,14 @@
  *)
 
 
-structure YaccGrammarTranslator : MODULE_TRANSLATOR =
+structure YaccGrammarTranslator : SEMANT_TRANSLATOR =
     struct
-	structure M = Module
+	structure S = Semant
+
 	structure Ast = YaccGrammar
 	structure T = Ast
 
-	type input_value    = M.module
+	type input_value    = S.module_info
 	type defined_value  = T.production
 	type type_con_value = T.production list
 	type con_value      = T.rule
@@ -46,8 +47,8 @@ structure YaccGrammarTranslator : MODULE_TRANSLATOR =
 	      val tname =
 		case (kind) of
 		NONE => tname
-	      | SOME M.Option => mangle_opt tname
-	      | SOME M.Sequence => mangle_seq tname
+	      | SOME S.Option => mangle_opt tname
+	      | SOME S.Sequence => mangle_seq tname
 	      | _ => raise Error.unimplemented
 	    in
 	      T.NonTerm tname
@@ -71,11 +72,11 @@ structure YaccGrammarTranslator : MODULE_TRANSLATOR =
 	    val seq_tmp = mangle_tmp seq_name
 	    val opt_name = mangle_opt ty_name
 	    val opt_tmp = mangle_tmp opt_name
-	    fun do_con (M.Sequence,xs) =
+	    fun do_con (S.Sequence,xs) =
 	      [(seq_tmp,[([T.NonTerm ty_name,T.NonTerm seq_tmp],NONE),
 			 ([],NONE)]),
 	       (seq_name,[([beg_seq,T.NonTerm seq_tmp,end_seq],NONE)])]@xs
-	      | do_con (M.Option,xs) =
+	      | do_con (S.Option,xs) =
 	      [(opt_tmp,[([T.NonTerm ty_name,T.NonTerm opt_tmp],NONE),
 			 ([],NONE)]),
 	       (opt_name,[([beg_opt,T.NonTerm opt_tmp,end_opt],NONE)])]

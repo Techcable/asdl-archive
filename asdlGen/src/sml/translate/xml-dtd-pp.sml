@@ -10,7 +10,7 @@
 signature XML_DTD_PP =
     sig
 	structure Ast : XML_DTD
-	include MODULE_PP where type code = Ast.module 
+	include CODE_PP where type code = Ast.module 
     end
 
 structure XMLDTDPP : XML_DTD_PP =
@@ -96,7 +96,7 @@ structure XMLDTDPP : XML_DTD_PP =
 	  and pp_elem_decls d =
 		    (PP.seq_term {fmt=pp_elem_decl,sep=PP.cat[PP.nl,PP.nl]} d)
 
-	fun pp_module _ (Module{name,decls,imports}) =
+	fun pp_code _ (Module{name,decls,imports}) =
 	  let
 	    fun file_name m =
 	      [OS.Path.joinBaseExt{base=(ModuleId.toString  m),

@@ -34,7 +34,7 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 	type attrib = {name:string,cvt:attrb_cvt}
 	structure Ty = Ty
 
-	val inits = [Module.ME.init_mono_types false]
+	val inits = [Semant.MEnv.P.init_mono_types false]
 	  
 	fun mk_name s  =
 	  (VarId.prefixBase (s^"_")) o VarId.fromPath o TypeId.toPath
@@ -43,7 +43,7 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 	val wr_name = mk_name "write"
 
 	fun pkl_kind me {xml,std} =
-	  case (Module.ME.pickler_kind me) of
+	  case (Semant.MEnv.P.pickler_kind me) of
 	    (SOME "xml") => xml
 	  | _ => std
 	  
@@ -206,7 +206,7 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 	       (fn e => RET(FnCall(VarId.fromString "ptr2share",[e]))))
 	fun id ty e = e
 	val (share_rep,p2s,s2p) =
-	  if (Module.ME.explicit_sharing m) then  (TyShare,(fn x => x),id)
+	  if (Semant.MEnv.P.explicit_sharing m) then  (TyShare,(fn x => x),id)
 	  else ((fn t => TyAnnotate("shared",t)),p2s,s2p)
 	  
 	fun ty_exp  (Ty.Prim {ty,...}) = ty
@@ -279,16 +279,16 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 	val opt_tid = TypeId.suffixBase "_option" 
       in
 	case k of
-	  Module.Sequence => {mktid=seq_tid,mkrep=seq_rep,con=seq_con}
-	| Module.Option =>  {mktid=opt_tid,mkrep=opt_rep,con=opt_con}
-	| Module.Shared =>  {mktid=share_tid,mkrep=share_rep,con=share_con}
+	  Semant.Sequence => {mktid=seq_tid,mkrep=seq_rep,con=seq_con}
+	| Semant.Option =>  {mktid=opt_tid,mkrep=opt_rep,con=opt_con}
+	| Semant.Shared =>  {mktid=share_tid,mkrep=share_rep,con=share_con}
       end
 
     fun get_prims me =
       let
-	val {con=seq_con,mktid=seq_tid,...} = get_reps me Module.Sequence
-	val {con=opt_con,mktid=opt_tid,...} = get_reps me Module.Option
-	val {con=share_con,mktid=share_tid,...} = get_reps me Module.Shared
+	val {con=seq_con,mktid=seq_tid,...} = get_reps me Semant.Sequence
+	val {con=opt_con,mktid=opt_tid,...} = get_reps me Semant.Option
+	val {con=share_con,mktid=share_tid,...} = get_reps me Semant.Shared
 
  	val prefix = pkl_kind me {xml="xml_",std="std_"}
  	fun read tid = RET (FnCall(mk_name (prefix^"read") tid,[Id stream_id]))
@@ -324,11 +324,11 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
       fun get_info ty p =
 	let
 	  val rd =
-	    case (Module.Typ.reader p) of
+	    case (Semant.Type.P.reader p) of
 	      (SOME x) => SOME (call_fn x [Id stream_id])
 	    | NONE => NONE
 	  val wr =
-	    case (Module.Typ.writer p) of
+	    case (Semant.Type.P.writer p) of
 	      (SOME x) => SOME
 		(fn e =>
 		 EVAL(e,ty,
@@ -341,21 +341,21 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
       fun get_wrappers ty p =
 	let
 	  val natural_ty =
-	    case (Module.Typ.natural_type p) of
+	    case (Semant.Type.P.natural_type p) of
 	      SOME t => TyId (TypeId.fromPath t)
 	    | NONE => ty
 
 	  val unwrap =
-	    case (Module.Typ.unwrapper p) of
+	    case (Semant.Type.P.unwrapper p) of
 	      SOME x =>	(fn e => EVAL(e,natural_ty,(fn v => call_fn x [v])))
 	    | NONE => (fn x => x)
 
 	  val wrap =
-	    case (Module.Typ.wrapper p) of
+	    case (Semant.Type.P.wrapper p) of
 	      SOME x => (fn e => EVAL(e,ty,(fn v => call_fn x [v])))
 	    | NONE => (fn x => x)
 	  val init =
-	    case (Module.Typ.user_init p) of
+	    case (Semant.Type.P.user_init p) of
 	      NONE => (fn x => x)
 	    | SOME x => (fn e => EVAL(e,ty,(fn v => call_fn x [v])))
 	in
@@ -378,7 +378,7 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
       val user_field_name = VarId.fromString "client_data"
 
       fun get_user_fields p =
-	case (Module.Typ.user_attribute p) of
+	case (Semant.Type.P.user_attribute p) of
 	  NONE => []
 	| SOME x =>
 	    [{name=user_field_name, ty=TyId (TypeId.fromPath x)}]

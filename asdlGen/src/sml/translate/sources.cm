@@ -16,7 +16,8 @@ attrib-getter.sml
 
 translate.sig
 translate.sml
-module-translate.sml
+semant-translator.sig
+semant-translate.sml
 file-translate.sml
 source-translate.sml
 
@@ -26,27 +27,24 @@ html-pp.sml
 translate-xml-dtd.sml
 xml-dtd-pp.sml
 
-
 idfix.sml
-
-
 
 translate-ansi-c.sml 
 algol-spec.sig
 algol-spec.sml
-algol-module-translator.sml
+algol-semant-translator.sml
 ansi-c-pp.sml
 
 oo-spec.sig
 oo-spec.sml
-oo-module-translator.sml
+oo-semant-translator.sml
 oo-build-aux.sml
 java-pp.sml
 c-plus-plus-pp.sml 
 
 algebraic-spec.sig
 algebraic-spec.sml
-algebraic-module-translator.sml
+algebraic-semant-translator.sml
 ml-pp.sml
 haskell-pp.sml
 
@@ -56,16 +54,6 @@ yacc-grammar-pp.sml
 stmt-exp.sig
 stmt-exp.sml
 
-
-(* obsolete
-translate-oo.sml
-translate-algebraic.sml
-translate-algol.sml
-pkl-gen.sig
-algol-pkl-gen.sml
-oo-pkl-gen.sml
-algebraic-pkl-gen.sml
-*)
 
 
 

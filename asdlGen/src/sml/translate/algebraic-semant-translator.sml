@@ -6,12 +6,12 @@
  *
  *)
 
-functor mkAlgebraicModuleTranslator
+functor mkAlgebraicSemantTranslator
   (structure IdFix  : ID_FIX
    structure Spec   : ALGEBRAIC_SPEC
-   val fix_fields   : bool): MODULE_TRANSLATOR  =
+   val fix_fields   : bool): SEMANT_TRANSLATOR  =
      struct
-      structure M = Module
+      structure S = Semant
       structure Ty = Spec.Ty
       structure Ast = Ty.Ast
       structure T = Ast
@@ -30,8 +30,8 @@ functor mkAlgebraicModuleTranslator
       type field_value    = {fd:T.field,ty_fd:Ty.field,ulabel:bool}
 	
       type type_con_value = Ty.ty_decl list
-      type module_value   = Ty.ty_decl list * (T.module * M.Mod.props)
-      type output         = (T.module * M.Mod.props) list
+      type module_value   = Ty.ty_decl list * (T.module * S.Module.P.props)
+      type output         = (T.module * S.Module.P.props) list
       val inits = Spec.inits
       
       fun trans_field p {finfo,kind,name,tname,tinfo,is_local,props} =
@@ -49,7 +49,7 @@ functor mkAlgebraicModuleTranslator
 	  val trans_fid = (fix_id o T.VarId.fromString o Identifier.toString)
 	  val name = trans_fid name
 	  val (fd,ulabel,label) =
-	    case (M.field_name finfo) of
+	    case (S.Field.name finfo) of
 	      NONE => ({name=name,ty=ty},true,NONE)
 	    | (SOME x) =>({name=name,ty=ty},false,SOME (trans_fid x))
 	in
@@ -92,7 +92,7 @@ functor mkAlgebraicModuleTranslator
       fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} =
 	let
 	  val trans_cid = fix_id o T.VarId.fromPath o Id.toPath
-	  val tag_v = M.con_tag cinfo
+	  val tag_v = S.Con.tag cinfo
 	  val name = trans_cid name
 	  val {ty,fields,match_exp,bvars,mk_cnstr} =
 	    trans_fields NONE (attrbs @ fields)
@@ -160,7 +160,7 @@ functor mkAlgebraicModuleTranslator
 	  val ty_cons = List.foldr (op @) [] type_cons 
 	  val (ty_decls,decls) =
 	    List.foldr merge (ty_cons,[]) defines
-	  val toMid = Ast.ModuleId.fromPath o Id.toPath o M.module_name
+	  val toMid = Ast.ModuleId.fromPath o Id.toPath o S.Module.name
 	in
 	  (ty_decls,(T.Module{name=toMid module,
 			     imports=List.map toMid imports,
@@ -179,7 +179,7 @@ functor mkAlgebraicModuleTranslator
 		     decls=(new_decls ty_decls)},mp)
 	  val out = all@(List.map mk_aux_mods ms)
 	in
-	  List.filter (not o M.Mod.suppress o #2) out
+	  List.filter (not o S.Module.P.suppress o #2) out
 	end
     end
 

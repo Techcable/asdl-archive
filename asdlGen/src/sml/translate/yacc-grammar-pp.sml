@@ -10,7 +10,7 @@
 signature YACC_GRAMMAR_PP =
   sig
     structure Ast : YACC_GRAMMAR
-      include MODULE_PP where type code = Ast.decls
+      include CODE_PP where type code = Ast.decls
   end
 
 structure YaccGrammarPP : YACC_GRAMMAR_PP =
@@ -50,7 +50,7 @@ structure YaccGrammarPP : YACC_GRAMMAR_PP =
 		      PP.s "%%",PP.nl]
 	    end
 	  
-	fun pp_module _ (decls) =
+	fun pp_code _ (decls) =
 	  let
 	    fun file_name () =
 	      [OS.Path.joinBaseExt{base="out",

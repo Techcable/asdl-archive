@@ -90,6 +90,19 @@ structure BuildRun :> RUNNABLE_BUILD =
 	   (dprint ("OK:"^cmd);OK ())
 	 else (dprint ("FAIL:"^cmd);FAIL)
        end)
+    fun EXEC_WITH_INPUT (x,xs,inp) =
+      (fn () =>
+       let
+	 val s = (getString inp)
+	 val ins = TextIO.openString  s
+	 val cmd = (join (List.map getString ((VAR x)::xs)))
+	 val run =  RunWith.run_with (SOME (RunWith.Tins ins),NONE) 
+       in
+	 dprint ("INP:"^s);
+	 if (run cmd = OS.Process.success) then
+	   (dprint ("OK:"^cmd) ;OK ())
+	 else (dprint ("FAIL:"^cmd);FAIL)
+       end)
     val  INVALID  = ((fn () => FAIL),{targets=[],depends=[]})
     fun VALIDATE {targets,depends} =
       let

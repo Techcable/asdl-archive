@@ -16,7 +16,7 @@ structure Main =
 	 structure G = mkSourceFileOutput(structure PP = HTMLPP))
 	   
       structure HTML =
-	mkMain(structure M = Module
+	mkMain(structure S = Semant
 	       structure Parser = AsdlParser
 	       structure Gen = HTMLGen
 	       val dflt_view = "Doc")
@@ -27,7 +27,7 @@ structure Main =
 	 structure G = mkSourceFileOutput(structure PP = XMLDTDPP))
 	   
       structure XMLDTD =
-	mkMain(structure M = Module
+	mkMain(structure S = Semant
 	       structure Parser = AsdlParser
 	       structure Gen = XMLDTDGen
 	       val dflt_view = "DTD")
@@ -38,7 +38,7 @@ structure Main =
 	 structure G = mkSourceFileOutput(structure PP = YaccGrammarPP))
 
       structure YaccGrammar =
-	mkMain(structure M = Module
+	mkMain(structure S = Semant
 	       structure Parser = AsdlParser
 	       structure Gen = YaccGrammarGen
 	       val dflt_view = "Yacc")
@@ -50,7 +50,7 @@ structure Main =
 			val monad_name = NONE)
 	
       structure MLTranslator =
-	mkAlgebraicModuleTranslator
+	mkAlgebraicSemantTranslator
 	(structure IdFix = IdFix.ML
 	 structure Spec = MLAlgebraicSpec
 	 val fix_fields = false)
@@ -60,7 +60,7 @@ structure Main =
 	(structure T = MLTranslator
 	 structure G = mkSourceFileOutput(structure PP = MLPP))
       structure ML =
-	mkMain(structure M = Module
+	mkMain(structure S = Semant
 	       structure Parser = AsdlParser
 	       structure Gen = MLGen 
 	       val dflt_view = "SML")
@@ -72,7 +72,7 @@ structure Main =
 			 val monad_name = SOME "IO")
 	 
 	structure HaskellTranslator =
-	  mkAlgebraicModuleTranslator
+	  mkAlgebraicSemantTranslator
 	  (structure IdFix = IdFix.Haskell
 	   structure Spec = HaskellAlgebraicSpec
 	   val fix_fields = true)
@@ -82,14 +82,14 @@ structure Main =
 	   (structure T = HaskellTranslator
 	    structure G = mkSourceFileOutput(structure PP = HaskellPP))
        structure Haskell =
-	 mkMain(structure M = Module
+	 mkMain(structure S = Semant
 		structure Parser = AsdlParser
 		structure Gen = HaskellGen
 		val dflt_view = "Haskell")
 	 
        structure AnsiCAlgolSpec = mkAlgolSpec(structure Ty = AlgolTy)
        structure AnsiCTranslator =
-	 mkAlgolModuleTranslator(structure IdFix = IdFix.AnsiC
+	 mkAlgolSemantTranslator(structure IdFix = IdFix.AnsiC
 				 structure Spec = AnsiCAlgolSpec)
 	 
        structure AnsiCGen =
@@ -97,7 +97,7 @@ structure Main =
 	 (structure T = AnsiCTranslator
 	    structure G = mkSourceFileOutput(structure PP = AnsiCPP))
        structure AnsiC =
-	 mkMain(structure M = Module
+	 mkMain(structure S = Semant
 		structure Parser = AsdlParser
 		structure Gen = AnsiCGen
 		val dflt_view = "C")
@@ -111,7 +111,7 @@ structure Main =
 		  val int_kind = true)
        structure JavaPklGen = StdPickler(structure Arg = JavaOOSpec)
        structure JavaTranslator =
-	 mkOOModuleTranslator(structure Spec = JavaOOSpec
+	 mkOOSemantTranslator(structure Spec = JavaOOSpec
 			      val aux_decls = JavaPklGen.trans)
        structure JavaGen =
 	   mkTranslateFromTranslator
@@ -120,7 +120,7 @@ structure Main =
 	      
 	      
        structure Java =
-	 mkMain(structure M = Module
+	 mkMain(structure S = Semant
 		structure Parser = AsdlParser
 		structure Gen = JavaGen
 		val dflt_view = "Java")
@@ -134,7 +134,7 @@ structure Main =
 
        structure CPlusPlusPklGen = StdPickler(structure Arg = CPlusPlusOOSpec)
        structure CPlusPlusTranslator =
-	 mkOOModuleTranslator(structure Spec = CPlusPlusOOSpec
+	 mkOOSemantTranslator(structure Spec = CPlusPlusOOSpec
 			      val aux_decls = CPlusPlusPklGen.trans)
 	 
        structure CPlusPlusGen =
@@ -143,21 +143,20 @@ structure Main =
 	    structure G = mkSourceFileOutput(structure PP = CPlusPlusPP))
 
        structure CPlusPlus =
-	 mkMain(structure M = Module
+	 mkMain(structure S = Semant
 		structure Parser = AsdlParser
 		structure Gen = CPlusPlusGen
 		val dflt_view = "Cxx")	   
 
        structure TypePickler =
-	 mkMain(structure M = Module
+	 mkMain(structure S = Semant
 		structure Parser = AsdlParser
 		structure Gen = GenPickleTranslator
 		val dflt_view = "Typ")	   
 
        structure Check =
-	 mkMain(structure M = Module
+	 mkMain(structure S = Semant
 		structure Parser = AsdlParser
-		structure Gen = 
-		  mkDependGen(structure M = M)
+		structure Gen =  mkDependGen(structure S = S)
 		val dflt_view = "Check")	   
     end

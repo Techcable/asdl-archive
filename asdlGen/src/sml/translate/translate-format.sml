@@ -8,12 +8,12 @@
  *)
 
 
-structure FormatTranslator : MODULE_TRANSLATOR =
+structure FormatTranslator : SEMANT_TRANSLATOR =
     struct
-	structure M = Module
+	structure S = Semant
 	structure Ast = FormatDoc
 	structure T = FormatDoc
-	type input_value    = M.module
+	type input_value    = S.module_info
 	type output_value   = T.format_doc
 	type defined_value  = T.ditem
 	type type_con_value = T.format
@@ -71,18 +71,18 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 		    else trans_long_id tname
 		val (ty,q) = case (kind) of
 		    NONE => (T.REF (tid,[toStr' tid]),[])
-		  | SOME M.Option => (T.REF(tid,[toStr' tid]),[T.STR "?"])
-		  | SOME M.Sequence => (T.REF(tid,[toStr' tid]),[T.STR "*"])
-		  | SOME M.Shared => (T.REF(tid,[toStr' tid]),[T.STR "!"])
+		  | SOME S.Option => (T.REF(tid,[toStr' tid]),[T.STR "?"])
+		  | SOME S.Sequence => (T.REF(tid,[toStr' tid]),[T.STR "*"])
+		  | SOME S.Shared => (T.REF(tid,[toStr' tid]),[T.STR "!"])
 	    in
-		case (M.field_name finfo) of
+		case (S.Field.name finfo) of
 		    NONE => T.RM(ty::q)
 		  | (SOME x) => T.RM ((ty::q)@[toStr x])
 	    end
 	val id2STR = T.STR o Id.toString 
 	fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} =
 	    let
-		val doc = M.Con.doc_string cprops
+		val doc = S.Con.P.doc_string cprops
 	    in
 		(T.RM ([T.BF [id2STR (trans_short_id name)],
 		      (fmt_fields fields),T.BR]),doc)
@@ -93,7 +93,7 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 		val tid = trans_short_id name
 		val cdoc = fmt_cons_doc cons
 		val doc =
-		    case (M.Typ.doc_string props) of
+		    case (S.Type.P.doc_string props) of
 			NONE => T.RM cdoc
 		      | SOME s => T.P ([T.STR s,T.BR]@cdoc)
 		val name =
@@ -113,21 +113,21 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 	
 	fun trans_type_con p {props,tinfo,name,kinds} =
 	  let
-	    fun do_kind M.Sequence = T.STR "sequence "
-	      | do_kind M.Option = T.STR "option "
-	      | do_kind M.Shared = T.STR "share "
+	    fun do_kind S.Sequence = T.STR "sequence "
+	      | do_kind S.Option = T.STR "option "
+	      | do_kind S.Shared = T.STR "share "
 	  in
 	    T.RM [T.EM[id2STR (trans_long_id name),
 		       T.RM (List.map do_kind kinds)]]
 	  end
 	fun trans_module p {module,defines,imports,type_cons,props} =
 	    let
-		val mname = Id.toString (M.module_name module)
+		val mname = Id.toString (S.Module.name module)
 		val doc =
-		    case (M.Mod.doc_string props) of
+		    case (S.Module.P.doc_string props) of
 		      NONE => []
 		    | SOME s =>  [T.STR s]
-		val toMid = Ast.ModuleId.fromPath o Id.toPath o M.module_name
+		val toMid = Ast.ModuleId.fromPath o Id.toPath o S.Module.name
 		val decls =
 		  {title="Description for Module "^mname,
 		   body=[T.SECT(1,[T.STR ("Description of Module "^mname)]),

@@ -8,13 +8,13 @@
  *)
 
 
-functor mkMain (structure      M : MODULE
+functor mkMain (structure      S : SEMANT
 		structure Parser : ASDL_PARSER
 		structure    Gen : TRANSLATE
-		    where type input = M.module_env
+		    where type input = S.menv_info
 		val dflt_view    : string) =
     struct
-	structure M = M
+	structure S = S
 	val cfg = Gen.cfg
 	val (cfg,view_name)  =  Params.declareString cfg 
 	    {name="view",flag=SOME #"V",default=dflt_view}
@@ -26,12 +26,12 @@ functor mkMain (structure      M : MODULE
 	      val (params,files) = Params.fromArgList cfg args
 	      val inits =
 		if (xml_pkl params) then
-		  [M.ME.init_pickler_kind (SOME "xml")]
+		  [S.MEnv.P.init_pickler_kind (SOME "xml")]
 		else []
 	      val decls = Parser.parse files
 	      val menv =
-		M.declare_modules {view=view_name params,inits=inits} decls
-	      val msgs = M.validate_env menv
+		S.MEnv.declare {view=view_name params,inits=inits} decls
+	      val msgs = S.MEnv.validate menv
 	    in
 	      if (List.null msgs) then
 		Gen.translate params menv

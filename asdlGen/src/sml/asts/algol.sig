@@ -64,7 +64,7 @@ signature ALGOL_AST =
 	  | DeclConst of (id * const * ty_exp)
 	  | DeclLocalConst of (id * const * ty_exp)
 	    (* specific to asdl *)
-	  | DeclTagTable of (string * int) list
+	  | DeclTagTable of (tag_info) list
 
 	withtype field        = {name:id,ty:ty_exp}
 	     and choice       = {name:id,fields:field list}
@@ -74,7 +74,7 @@ signature ALGOL_AST =
              and variant_init = {tag:id,name:id,fields:field_init list}
              and clause       = {tag:const,body:stmt}
              and block        = {vars:field list,body:stmt list}
-
+	     and tag_info     = (string * int)
 	 include LANG_AST where type decls = decl list
     end
 

@@ -6,11 +6,11 @@
  *
  *)
 
-functor mkAlgolModuleTranslator
+functor mkAlgolSemantTranslator
   (structure IdFix  : ID_FIX
-   structure Spec   : ALGOL_SPEC) :  MODULE_TRANSLATOR  =
+   structure Spec   : ALGOL_SPEC) : SEMANT_TRANSLATOR  =
      struct
-      structure M = Module
+      structure S = Semant
       structure Ty = Spec.Ty
       structure Ast = Ty.Ast
       structure T = Ast
@@ -34,8 +34,8 @@ functor mkAlgolModuleTranslator
 			     enumer:T.enumer,
 			     choice:T.choice}
       type type_con_value = {ty_decls:Ty.ty_decl list,decls:T.decl list}
-      type module_value   = Ty.ty_decl list * (T.module * M.Mod.props)
-      type output         = (T.module * M.Mod.props) list
+      type module_value   = Ty.ty_decl list * (T.module * S.Module.P.props)
+      type output         = (T.module * S.Module.P.props) list
 
       val inits = Spec.inits
 
@@ -56,15 +56,15 @@ functor mkAlgolModuleTranslator
 	    (fix_id o T.VarId.fromString o Identifier.toString)
 	  val name = trans_fid name
 	  val fd = {name=name,ty=ty}
-	  val label = Option.map trans_fid (M.field_name finfo) 
+	  val label = Option.map trans_fid (S.Field.name finfo) 
 	in
 	  {fd=fd,ty_fd={label=label,label'=name,tid=tid}}
 	end
 
       fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} = 
 	let
-	  val tname = trans_tid (M.type_src_name tinfo)
-	  val is_boxed = M.type_is_boxed tinfo
+	  val tname = trans_tid (S.Type.src_name tinfo)
+	  val is_boxed = S.Type.is_boxed tinfo
 	  val name = trans_id name
 
 	  val num_attrbs = List.length attrbs
@@ -97,11 +97,11 @@ functor mkAlgolModuleTranslator
 	  fun sub_field e ({fd={name=id,...},ty_fd,...}:field_value) =
 	    (ty_fd,RET (T.VarRecSub (e,name,id)))
 
-	  val tag = {c=name,v=(M.con_tag cinfo)}
+	  val tag = {c=name,v=(S.Con.tag cinfo)}
 	  val choice = {name=name,fields=List.map #fd fields}
 	  val con =
 	    {tag=tag,fields=List.map #ty_fd all, cnstr=mk_cnstr is_boxed}
-	  val enumer = {name=name,value=(M.Con.enum_value cprops)}
+	  val enumer = {name=name,value=(S.Con.P.enum_value cprops)}
 	  fun match c =
 	    (tag,(List.map (sub_attrb c) attrbs)@
 	     (List.map (sub_field c) fields))
@@ -169,7 +169,7 @@ functor mkAlgolModuleTranslator
 	| trans_defined p {tinfo,name,fields,cons,props} =
 	let
 	  val name = trans_tid name
-	  val is_boxed = M.type_is_boxed tinfo
+	  val is_boxed = S.Type.is_boxed tinfo
 	  val fds = List.map #fd (fields:field_value list)
 	  val enumers = List.map #enumer (cons:con_value list)
 	  val enum_name = T.TypeId.suffixBase "_enum" name
@@ -262,7 +262,7 @@ functor mkAlgolModuleTranslator
 	    (ty_decls@ty_rest,decls@rest)
 	  val type_cons = List.foldr (merge_ty) ([],[]) type_cons 	    
 	  val (ty_decls,decls) = List.foldr merge  type_cons defines
-	  val toMid = Ast.ModuleId.fromPath o Id.toPath o M.module_name
+	  val toMid = Ast.ModuleId.fromPath o Id.toPath o S.Module.name
 	in
 	  (ty_decls,(T.Module{name=toMid module,
 			     imports=List.map toMid imports,
@@ -284,7 +284,7 @@ functor mkAlgolModuleTranslator
 	    | add_tags (x::xs) = (append_decls tags x)::xs
 	  val out = List.map add_decls ms 
 	in
-	  add_tags (List.filter (not o M.Mod.suppress o #2) out)
+	  add_tags (List.filter (not o S.Module.P.suppress o #2) out)
 	end
     end
 

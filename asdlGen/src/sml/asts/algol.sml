@@ -64,7 +64,7 @@ structure AlgolAst :  ALGOL_AST =
 	  | DeclProc       of (id * field list * block)
 	  | DeclConst      of (id * const * ty_exp)
 	  | DeclLocalConst of (id * const * ty_exp)
-	  | DeclTagTable   of (string * int) list
+	  | DeclTagTable   of (tag_info) list
 	withtype field        = {name:id,ty:ty_exp}
 	     and choice       = {name:id,fields:field list}
              and enumer       = {name:id,value:int option}
@@ -73,6 +73,7 @@ structure AlgolAst :  ALGOL_AST =
              and variant_init = {tag:id,name:id,fields:field_init list}
              and clause       = {tag:const,body:stmt}
              and block        = {vars:field list,body:stmt list}
+	     and tag_info     = (string * int)
 
 	structure T = mkLangAst(type decls = decl list)
 	open T

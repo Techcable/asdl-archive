@@ -1,7 +1,18 @@
 structure UnixBuildParams =
   struct
     structure B = MetaBuild
-
+    val run_cm  =
+      B.mkVAR{name=SOME "SML_CM",
+	      doc=["SML with compilation manager"],
+	      init=B.STR "sml-cm"}
+    val run_heap  =
+      B.mkVAR{name=SOME "RUN_SML_HEAP",
+	      doc=["Run ML heap"],
+	      init=B.STR "sml"}
+    (* this is unreliable *)
+    val os = String.map Char.toLower (SMLofNJ.SysInfo.getOSName ())
+    val heap_suffix = (Compiler.architecture)^"-"^os
+    fun heap_arg x = "@SMLload="^x
     val comp  =
       B.mkVAR{name=SOME "CC",
 	      doc=["Unix C compiler"],
@@ -66,7 +77,8 @@ structure UnixBuildParams =
       in
 	"a="^cif(r,"r",cif(w,"w",cif(x,"x","")))
       end
-  end
 
+  end
+structure UnixSML = SMLBuild(structure Params = UnixBuildParams)
 structure UnixCC = CCBuild(structure Params = UnixBuildParams)
 structure UnixFileOps = FileOpsBuild(structure Params = UnixBuildParams)

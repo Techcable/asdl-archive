@@ -13,7 +13,7 @@ structure CPlusPlusPP : OO_PP =
     struct
 	structure PP = PPUtil
 	structure Ast = OOAst
-	type code = (Ast.module * Module.Mod.props)
+	type code = (Ast.module * Semant.Module.P.props)
 	type output = (string list * PPUtil.pp) list
 
 	val cfg = Params.empty 
@@ -496,15 +496,15 @@ structure CPlusPlusPP : OO_PP =
 
 
 	val header_prologue =
-	    PPUtil.wrap Module.Mod.interface_prologue 
+	    PPUtil.wrap Semant.Module.P.interface_prologue 
 	val header_epilogue =
-	    PPUtil.wrap Module.Mod.interface_epilogue
+	    PPUtil.wrap Semant.Module.P.interface_epilogue
 	val body_prologue =
-	    PPUtil.wrap Module.Mod.implementation_prologue 
+	    PPUtil.wrap Semant.Module.P.implementation_prologue 
 	val body_epilogue =
-	    PPUtil.wrap Module.Mod.implementation_epilogue
+	    PPUtil.wrap Semant.Module.P.implementation_epilogue
 
-	fun pp_module p (Module{name,imports,decls},props) =
+	fun pp_code p (Module{name,imports,decls},props) =
 	    let
 		val mn = ModuleId.toString name
 		val x = List.map ModuleId.toString imports

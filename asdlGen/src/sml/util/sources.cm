@@ -17,3 +17,6 @@ sourcemap.sml
 pp.sml
 ppqueue.sml
 getopt/sources.cm
+run-with.sig
+run-with.sml
+
