@@ -210,7 +210,9 @@ DECL_WRITE_GENERIC(signed,t) \
 DECL_READ_GENERIC(unsigned,t)  \
 DECL_WRITE_GENERIC(unsigned,t) \
 DECL_TO_GENERIC(unsigned,t) \
-DECL_FROM_GENERIC(unsigned,t) 
+DECL_FROM_GENERIC(unsigned,t) \
+DECL_TO_GENERIC(signed,t) \
+DECL_FROM_GENERIC(signed,t) 
 
 DECL_GENERICS(char)
 DECL_GENERICS(short)
