@@ -51,9 +51,6 @@ void*          read_generic_identifier(instream_ty s);
 
 void die();
 
-/*
- *  Warning: doesn't handle side effecting arguments.
- */
 typedef void *(*generic_reader_ty)(instream_ty s);
 typedef void (*generic_writer_ty)(void *x,outstream_ty s);
 
