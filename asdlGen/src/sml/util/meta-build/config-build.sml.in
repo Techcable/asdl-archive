@@ -34,7 +34,7 @@ structure ConfigBuildParams =
 	      doc=["Config Library Archiver"],
 	      init=B.STR "@MKLIB@"}
 
-    val comp_args = [B.STR "-c"]
+    val comp_args = [B.STR "-c "]
     val link_args = []
     val mklib_args = [B.STR "crs"]
 
@@ -47,8 +47,8 @@ structure ConfigBuildParams =
     fun defFlag (x,NONE) = B.STR ("-D"^x)
       | defFlag (x,SOME y) = B.STR ("-D"^x^"="^y)
 
-    fun linkOutFlag x = B.STR ("-o"^x)
-    fun compOutFlag x = B.STR ("-o"^x)
+    fun linkOutFlag x = B.STR ("-o "^x)
+    fun compOutFlag x = B.STR ("-o "^x)
     fun mklibOutFlag x = B.STR (x)
 
     val lib_suffix = SOME "a"
