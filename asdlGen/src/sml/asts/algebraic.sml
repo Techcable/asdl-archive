@@ -14,6 +14,8 @@ structure AlgebraicTypes :  ALGEBRAIC_TYPES =
 	  | TyFunction  of ty_exp list * ty_exp
 	  | TyOption    of ty_exp
 	  | TySequence  of ty_exp
+	  | TyCon       of ty_id * ty_exp list
+
 	and exp =
 	    Id      of (id)
 	  | Int     of (int)
@@ -38,6 +40,7 @@ structure AlgebraicTypes :  ALGEBRAIC_TYPES =
 	  | DeclSum of (ty_id * cnstr list)
 	  | DeclVar of (id * exp * ty_exp)
 	  | DeclFun of (id * field list * exp * ty_exp )
+	  | DeclLocal of decl
 
 	withtype cnstr = {name:id,ty_arg:ty_exp}
 	    and field  = {name:id,ty:ty_exp}
