@@ -1,10 +1,9 @@
 type instream = in_channel
 type outstream = out_channel
-type 'a share = DEFv of string * 'a | USEv of string
     
-let die () = raise (Failure "Pickler Error")
-let write_tag x s = die ()
-let read_tag s = die ()
+let die () = raise (Failure "Std Pickler Error")
+let write_tag x s = PklInt.write_int x s
+let read_tag s = PklInt.read_int s
 let write_list f xs s =
   begin
     write_tag (List.length xs) s;
@@ -41,18 +40,18 @@ let read_share rd ins =
 	end
       in
       if t < 0 then
-	DEFv (rd_key (-t),rd ins)
-      else if t > 0 then USEv (rd_key t)
+	Share.DEFv (rd_key (-t),rd ins)
+      else if t > 0 then Share.USEv (rd_key t)
       else die ()
 
 let write_share wr x outs =
   match x with
-    USEv n ->
+    Share.USEv n ->
       begin
 	write_tag (String.length n) outs;
 	output_string outs n
       end
-  | DEFv (n,v) ->
+  | Share.DEFv (n,v) ->
       begin
 	write_tag (-(String.length n)) outs;
 	output_string outs n;
