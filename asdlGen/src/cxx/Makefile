@@ -18,9 +18,9 @@ $(ASDL_OUTPUT): $(ASDL_INPUTS)
 
 install: libasdlxx.a 
 	../misc/ensuredir  ../../lib/`../misc/sysname`
-	cp libasdlxx.a ../../lib/`../misc/sysname`
+	cp -f libasdlxx.a ../../lib/`../misc/sysname`
 	../misc/ensuredir  ../../share/include
-	cp *.hxx ../../share/include
+	cp -f *.hxx ../../share/include
 
 libasdlxx.a: $(OBJS)
 	$(AR) $(ARFLAGS) $@ $(OBJS)
