@@ -77,19 +77,19 @@ structure SupportFiles: SUPPORT_FILES =
 	val cm_path = [] (* mk_path ["sml","base"]*)
 	val icon_ucode = [] (* mk_path ["icon"] *)
 	val haskell_path = (* (mk_path ["haskell"])@*)
-	  ["/usr/local/share/hugs/lib"]
+	  ["/usr/share/hugs/lib"]
 	val ocaml_path = [] (* (mk_path ["ocaml"]) *)
     end
 
 structure UnixExternalProgs : EXTERNAL_PROGRAMS =
     struct
 	val cc_prg  = "gcc"
-	val cxx_prg = "echo g++"
-	val javac_prg = "echo javac"
-	val haskell_prg = "echo hugs +q -c1000"
-	val icont_prg = "echo icont"
-	val sml_prg = "echo sh ../misc/sml-batch"
-	val ocaml_prg = "echo sh ../misc/ocaml-batch"
+	val cxx_prg = "g++"
+	val javac_prg = "javac"
+	val haskell_prg = "hugs +q -c1000"
+	val icont_prg = "icont"
+	val sml_prg = "sh ../misc/sml-batch"
+	val ocaml_prg = "sh ../misc/ocaml-batch"
 	fun prefix x s = x^s
 
 	fun run cmd = OS.Process.system ((*"echo " ^ *)cmd )
@@ -191,7 +191,7 @@ structure Test =
 		val dirs = Set.addList (Set.empty,List.map OS.Path.dir outs)
 		val class_path = (Set.listItems dirs)@S.java_classes
 	    in P.javac{class_path=class_path,inputs=outs,
-		       rest=["-nowrite"]}
+		       rest=[]}
 	    end
 	fun icon_comp i =
 	    let
@@ -329,6 +329,7 @@ structure Test =
 	  (test_all "toplevel"  [mk_path ["toplevel.asdl"]])
 
 	val tests =
+	    slp3_test@
 	    toplevel_test@
 	    big_int_test@
 	    slp_test@

@@ -94,16 +94,18 @@ functor mkPPAst(structure Ast :
 
     fun local_tid mid =
       let val q = ModuleId.getBase mid
-	fun pp id =
-	  if [q] = TypeId.getQualifier id then (base_tid id)
+	fun pp id = let
+	in if [q] = TypeId.getQualifier id then (base_tid id)
 	  else (tid id)
+	end
       in pp
       end
     fun local_vid mid =
       let val q = ModuleId.getBase mid
-	fun pp id =
-	  if [q] = VarId.getQualifier id then (base_vid id)
+	fun pp id = let
+	in if [q] = VarId.getQualifier id then (base_vid id)
 	  else (vid id)
+	end
       in pp
       end
     val num = PPUtil.d

@@ -8,6 +8,7 @@ structure DefaultDecls =
        exports=List.map Identifier.fromString
        ["int","string","identifier","big_int"]}}]
 
+
     fun mk_vd (e,p,v) = {entity=List.map Identifier.fromString e,prop=p,value=v}
     val std_views = [{file="<bultin>",decl=T.View
 		      {name=Identifier.fromString "Java",

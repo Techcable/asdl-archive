@@ -63,10 +63,10 @@ functor XMLPickler (structure Arg : XML_PICKLER_ARG
 	   content=(fn _ => cnstr (List.map rd_field fields))}
 
 	and rd_field {tid,...} =
-	  case Ty.lookup(env,tid) of
-	    SOME (Ty.App(f,ty)) => (Option.valOf o get_rd o #2 o f o get_ty) ty
+	  (case Ty.lookup(env,tid) of
+	     SOME (Ty.App(f,ty)) => (Option.valOf o get_rd o #2 o f o get_ty) ty
 	  | SOME (Ty.Prim{info,...}) => Option.valOf (get_rd info)
-	  |  _ => Arg.read tid
+	  |  _ => Arg.read tid)
 
 	fun wrap_wr ty_id e=
 	  Arg.xml_write_elem 

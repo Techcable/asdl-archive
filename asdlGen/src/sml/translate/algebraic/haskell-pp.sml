@@ -58,9 +58,7 @@ structure HaskellPP : ALGEBRAIC_PP =
     fun pp_code p (Module{name,imports,decls},minfo) =
       let
 	val props = Semant.Module.props minfo
-	val toMid = Ast.ModuleId.fromPath o Semant.Module.Id.toPath o
-	    Semant.Module.name
-	  val mname = toMid minfo
+	  val mname = name
 	  val pp_id = local_vid mname
 	  val pp_ty_id = local_tid mname
 	  

@@ -79,9 +79,10 @@ functor mkTypeDecl(structure TypeId : SOURCE_ID
       | addRdWr s {rd=NONE,wr=SOME wr} x = (addWr(s,wr) x)
       | addRdWr s {rd=SOME rd,wr=NONE} x = (addRd(s,rd) x)
 
-    fun mk_env x = List.foldl Env.insert' Env.empty x
+    fun add_env ((t,v),e) = Env.insert' ((t,v),e)
+    fun mk_env x = List.foldl add_env Env.empty x
     fun lookup (e,x) = Env.find(e,x)
-    fun add_env x = Env.insert' x
+
     val noInfo = []:ty_info
     fun merge (x,y) = x @ y
   end

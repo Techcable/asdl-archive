@@ -286,6 +286,7 @@ functions.
     structure StdPklGen =
       StdPickler(structure Arg = StdPklArg
 		 val tag = "std")
+
     structure AttribGetGen = AttribGetter(structure Arg = StdPklArg)
     structure Ty = Ty
     val inits = []

@@ -228,12 +228,11 @@ the final output. All of this code is fairly straight forward.
 	    (Spec.prims p prim_types) ms
 (* Call the Spec.aux_decls to generate pickler code as well as other useful
    functions *)
-	  val new_decls = (Spec.get_aux_decls p (Ty.mk_env ty_decls))
 	  val aux_mod_name = T.ModuleId.suffixBase Spec.aux_suffix
-
+	  val new_decls = (Spec.get_aux_decls p (Ty.mk_env ty_decls))
 	  val all = (List.map (fn (_,m) => m) ms)
 	  fun mk_aux_mods (ty_decls,(T.Module{name,imports,decls},mp)) =
-	    (T.Module{name=aux_mod_name name,
+	    (T.Module{name=aux_mod_name  name,
 		     imports=name::imports@(List.map aux_mod_name imports),
 		     decls=(new_decls ty_decls)},mp)
 

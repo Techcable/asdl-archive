@@ -189,7 +189,8 @@ functor mkAlgolSpec(structure Ty    : ALGOL_TYPE_DECL) : ALGOL_SPEC =
     structure StdPklGen = StdPickler(structure Arg = Arg
 				     val tag = "std")
     open Arg
-    fun mk_info x = Ty.addRdWr "std" x Ty.noInfo
+    fun mk_info x = Ty.addRdWr "xml" x (Ty.addRdWr "std" x Ty.noInfo)
+		     
     fun get_aux_decls me =
       pkl_kind me {xml=XMLPklGen.trans, std=StdPklGen.trans}
     fun get_tag_decls tags =
