@@ -17,6 +17,10 @@ structure Win32BuildParams =
       B.mkVAR{name=SOME "CC",
 	      doc=["Win32 C  compiler"],
 	      init=B.STR "cl"}
+    val comp_cxx =
+      B.mkVAR{name=SOME "CXX",
+	      doc=["Win32 C++  compiler"],
+	      init=B.STR "cl"}
 
     val link  =
       B.mkVAR{name=SOME "LD",

@@ -17,6 +17,10 @@ structure UnixBuildParams =
       B.mkVAR{name=SOME "CC",
 	      doc=["Unix C compiler"],
 	      init=B.STR "gcc"}
+    val comp_cxx  =
+      B.mkVAR{name=SOME "CXX",
+	      doc=["Unix C compiler"],
+	      init=B.STR "g++"}
 
     val link  =
       B.mkVAR{name=SOME "LD",

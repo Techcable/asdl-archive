@@ -19,6 +19,9 @@ signature CC_BUILD =
     val mk_link_env  : {lpath:Paths.dir_path list,
 		       static:bool} -> link_env
 
+    val comp_cxx_srcs : {cenv:comp_env,
+			 srcs:src_file list} -> obj_file list res
+
     val comp_srcs    : {cenv:comp_env,
 			srcs:src_file list} -> obj_file list res
 
@@ -40,6 +43,7 @@ signature CC_BUILD =
 signature CC_BUILD_PARAMS =
   sig
     structure B    : CORE_BUILD
+    val comp_cxx   : B.var
     val comp       : B.var
     val link       : B.var
     val mklib      : B.var
@@ -109,6 +113,25 @@ functor CCBuild(structure Params:CC_BUILD_PARAMS) : CC_BUILD =
 	  in
 	    (obj,
 	     mkRule([obj],[src],B.EXEC(Params.comp,flags@
+		   [Params.compOutFlag (Paths.fileToNative obj),
+		    B.STR (Paths.fileToNative src)])))
+	  end
+	val res = List.map comp srcs
+	val objs = List.map #1 res
+	val rules = List.map #2 res
+      in
+	(objs,rules)
+      end
+
+    fun comp_cxx_srcs {cenv,srcs} =
+      let
+	val flags = cenv@Params.comp_args
+	fun comp src =
+	  let
+	    val obj = Paths.setFileExt src Params.obj_suffix
+	  in
+	    (obj,
+	     mkRule([obj],[src],B.EXEC(Params.comp_cxx,flags@
 		   [Params.compOutFlag (Paths.fileToNative obj),
 		    B.STR (Paths.fileToNative src)])))
 	  end
