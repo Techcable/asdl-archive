@@ -1,65 +1,19 @@
 #include "asdl_base.hxx"
 #include <stdlib.h>
 #include <string.h>
-#define SET_NEG_BIT(x) (x | (0x40))
-#define CONTINUE_BIT_SET(x) (x & (0x80))
-#define NEG_BIT_SET(x) (x & (0x40))
 
-#ifdef USE_IO_STREAM
-#define WRITE_BYTE(x,s) (s.put((char)x))
-#define WRITE_BYTES(x,sz,s) (s.write(x,sz))
-#define READ_BYTE(x,s) (s.get(x))
-#define READ_BYTES(x,sz,s) (s.read(x,sz))
-#else
-#define WRITE_BYTE(x,s) (putc(x,s))
 #define WRITE_BYTES(x,sz,s) (fwrite(x,sizeof(char),sz,s))
-#define READ_BYTE(x,s) (x=getc(s))
 #define READ_BYTES(x,sz,s) (fread(x,sizeof(char),sz,s))
-#endif
 
-void write_tag(int x,outstream s) { write_int(x,s); }
-int read_tag(instream s) { return read_int(s); }
-void write_int(int x,outstream s) {
-  int set_neg_bit =  (x < 0);
-  int v;
-  if(set_neg_bit) { x = -x; }
-  
-  while( x > 63) {
-    v = ((x & 0x7F) | (0x80));
-    WRITE_BYTE(v,s);
+void write_tag(int x,outstream s) { write_uint32(x,s); }
+int read_tag(instream s) { return read_uint32(s); }
 
-    x >>= 7;
-  }
-  if(set_neg_bit) { x = SET_NEG_BIT(x); }
-  WRITE_BYTE(x,s);
-}
 
 void write_string(string x,outstream s) {
   int sz = strlen(x);
   
   write_int(sz,s); 
   WRITE_BYTES(x,sz,s);
-}
-
-int read_int(instream s) {
-  int acc = 0;
-  int shift = 0;
-  unsigned char ch;
-  int x;
-  
-  READ_BYTE(ch,s);
-  x = ch;
-  while(CONTINUE_BIT_SET(x)) {
-    acc |= ((x & 0x7F)<<shift);
-    shift+=7;
-    READ_BYTE(ch,s);
-    x=ch;
-  }
-  acc |= ((x & 0x3F) << shift);
-  if(NEG_BIT_SET(x)) {
-    acc = -acc;
-  }
-  return acc;
 }
 
 string read_string(instream s) {

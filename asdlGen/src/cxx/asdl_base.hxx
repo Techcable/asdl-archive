@@ -1,11 +1,6 @@
 #ifndef _ASDL_BASE_XX_
 #define _ASDL_BASE_XX_
 
-#ifdef USE_IO_STREAM
-#include <iostream.h>
-typedef ostream& outstream;
-typedef istream& instream;
-#else
 #include <stdio.h>
 typedef FILE* outstream;
 typedef FILE* instream;
@@ -16,6 +11,8 @@ typedef FILE* instream;
 extern "C" {
 #include "pkl-int.h"
 }
+#define read_int read_C_signed_int
+#define write_int write_C_signed_int
 
 typedef char* string;
 typedef char* identifier;
@@ -24,6 +21,8 @@ typedef string  string_option;
 typedef identifier identifier_option;
 
 typedef int* int_option;
+
+
 
 template <class T> 
 class List {
