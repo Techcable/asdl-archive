@@ -3,7 +3,7 @@ all: @top_srcdir@/src/c/cii/
 	cd @top_srcdir@/src/sml/; \
 	echo 'CM.make();Build.Config.all();' | @SML_CM@
 
-install: 
+install: all
 	cd @top_srcdir@/src/sml/; \
 	echo 'CM.make();Build.Config.install();' | @SML_CM@
 
