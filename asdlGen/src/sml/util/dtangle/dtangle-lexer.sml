@@ -161,8 +161,8 @@ structure DTangleLexer :> DTANGLE_LEXER =
     end
     (**)
 (**
-     Here are a few special stream scanners that ignore the normal
-     [[getc]] argument and use the [[TextIO.StreamIO]] primitives instead.
+ Here are a few special stream scanners that ignore the normal
+ [[getc]] argument and use the [[TextIO.StreamIO]] primitives instead.
  **)
     (*:special stream scanners:*)
     fun eof  _ (s,p) =
@@ -232,13 +232,12 @@ structure DTangleLexer :> DTANGLE_LEXER =
     (**)
     fun mk_doc_start doc_start =
       let val doc_arg =
-	P.option
-	(P.seq(P.char #":",
-	       P.seq(P.token (fn x => (not (x = #":"))),P.char #":")))
-	  fun get_opt (_,SOME (_,(x,_))) = SOME x
+	P.option (P.wrap (delim(P.char #":",any,P.char #":"),
+			  (fn (x,y,z) => (String.implode y))))
+	  fun get_opt (_,SOME x) = SOME x
 	    | get_opt (_,NONE ) = NONE
-	in
-	 P.seqWith get_opt (doc_start,doc_arg)
+      in
+	P.seqWith get_opt (doc_start,doc_arg)
       end
 
     fun mkLexer {spec,ins,pos} = let
@@ -265,7 +264,7 @@ structure DTangleLexer :> DTANGLE_LEXER =
 
       val node_begin_tok =
 	let
-	  fun mk_begin d ((p,_),n,_) ={pos=p,doc=d,name=n}
+	  fun mk_begin d ((p,_),n,_) = {pos=p,doc=d,name=n}
 	  fun get_begin NONE = P.wrap (code_tok,mk_begin [])
 	    | get_begin (SOME ((p,SOME n),d,_)) =
 	    P.result ({pos=p,doc=d,name=n})

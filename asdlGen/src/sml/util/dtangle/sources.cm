@@ -6,3 +6,4 @@ Group is
 smlnj-lib.cm
 dtangle-lexer.sml
 dtangle.sml
+../util/getopt/sources.cm
