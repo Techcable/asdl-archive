@@ -19,6 +19,7 @@ type_id  = (StdTypes.nat)
 type = Data(data_type)
      | Procedure(procedure_type)
      | Qualified(qualification* qualifications, type type)
+     | LabelType
      | Void 
 
 procedure_type = 
@@ -36,6 +37,8 @@ data_type =
    | PointerType(type_id reference_type)
    | ArrayType(type element_type, 
 	       expression lower_bound, expression upper_bound)
+   | MultiDimArrayType(type element_type, 
+	       expression* lower_bounds, expression* upper_bounds)
    | GroupType(string name, StdTypes.bool is_complete, group_field* fields)
    attributes(suif_int bit_size,int bit_alignment)
 
@@ -98,6 +101,9 @@ file_set_block =
 
 statement =
    EvalStatement(expression* expressions)
+ | CallStatement(variable_symbol destination,
+	         expression calle_address,
+	         expression* arguments)
  | StatementList(statement* statements)
  | IfStatement(expression condition, statement then_part, statement else_part)
  | WhileStatement(expression condition, statement body,
@@ -106,7 +112,6 @@ statement =
  | DoWhileStatement(expression condition, statement body,
                     code_label_symbol? break_label,
                     code_label_symbol? continue_label)
-
  | ForStatement(variable_symbol index, 
 	        expression lower_bound,
                 expression upper_bound, 
@@ -131,6 +136,13 @@ statement =
                            multi_way_branch_case* cases)
  | LabelLocationStatement (code_label_symbol defined_label)
  | StoreVariableStatement(variable_symbol destination, expression value)
+ | CForStatement(statement before,
+                 expression test,
+	         statement step,
+                 statement body,
+                 statement? pre_pad, 
+                 code_label_symbol? break_label,
+                 code_label_symbol? continue_label)
  | NopStatement
 
 multi_way_branch_case = (suif_int case_constant,
@@ -174,9 +186,11 @@ unop =
 expression =
    BinaryExpression(binop binop, expression source1, expression source2)
  | UnaryExpression(unop unop,expression source)
- | CopyExpression(expression source)
  | SelectExpression(expression selector, expression selection1,
 	            expression selection2)
+ | MultiDimArrayExpression(expression base_array_address,
+	                   expression* indices,
+	                   expression* bounds)
  | ArrayReferenceExpression(expression base_array_address, expression index)
  | FieldAccessExpression(expression base_group_address, field_symbol field) 
  | BitSizeOfExpression(type_id ref_type)            
@@ -195,7 +209,7 @@ expression =
  | LoadValueBlockExpression(value_block value_block)
  | CallExpression(expression callee_address,expression* arguments) 	       
  | LoadVariableExpression(variable_symbol variable)
- | SsaPhiExpression(variable_symbol* variables)
+ | CExpression(statement statement, expression expression)
  | Constant(constant value)
 attributes(type_id result_type)
 

@@ -21,12 +21,15 @@ public:
     REGVM(vm,TransType,this,QualifiedType);
     REGVM(vm,TransType,this,VoidType);
     REGVM(vm,TransType,this,BooleanType);
+    REGVM(vm,TransType,this,LabelType);
     REGVM(vm,TransType,this,IntegerType);
     REGVM(vm,TransType,this,FloatingPointType);
     REGVM(vm,TransType,this,PointerType);
     REGVM(vm,TransType,this,EnumeratedType);
     REGVM(vm,TransType,this,ArrayType);
     REGVM(vm,TransType,this,GroupType);
+    REGVM(vm,TransType,this,UnionType);
+    REGVM(vm,TransType,this,StructType);
     REGVM(vm,TransType,this,CProcedureType);
   }
   zsuif_type_id *get_type_id(void) {
@@ -132,6 +135,10 @@ public:
     }
   }
 /*****************************************/
+  MATCH(TransType,LabelType,x) {
+    typ = new zsuif_LabelType();
+  }
+/*****************************************/
   MATCH(TransType,FloatingPointType,x) {
     zsuif_suif_int* bit_size = trans->get_data_type_size(x);
     int bit_alignment = trans->get_data_type_alignment(x); 
@@ -208,6 +215,15 @@ public:
 			   is_complete,group_fields));
   }
 /*****************************************/
+  MATCH(TransType,StructType,x) {
+    handle_GroupType(x);
+  }
+/*****************************************/
+  MATCH(TransType,UnionType,x) {
+    handle_GroupType(x);
+  }
+
+/*****************************************/
   MATCH(TransType,CProcedureType,p) { 
     int bit_alignment = p->get_bit_alignment();
     StdTypes_bool* arguments_known = 
@@ -219,8 +235,8 @@ public:
     zsuif_type* result_type = res.get_type();
 
     zsuif_type_list* args = NULL;
-    Iter<Type*> iter = p->get_argument_iterator();
-    REV_MAP(Type*,iter,idx,tarray) {
+    Iter<QualifiedType*> iter = p->get_argument_iterator();
+    REV_MAP(QualifiedType*,iter,idx,tarray) {
       TransType arg(trans,tarray[idx]);
       args = new zsuif_type_list(arg.get_type(),args);
     }

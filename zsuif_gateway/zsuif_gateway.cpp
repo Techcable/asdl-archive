@@ -16,7 +16,6 @@ FILE *pkl_file = stdout;
 static bool debug_it = false;
 static void parse_arguments(int argc, char *argv[], char **input_filespec, char **output_filespec);
 static void usage(void);
-static void print_header(void);
 
 FILE*
 open_pkl_file(char *name)
@@ -40,6 +39,7 @@ main(int argc, char **argv)
     suif->init();
     init_basicnodes(suif);
     init_suifnodes(suif);
+    init_cfenodes(suif);
 
     parse_arguments(argc, argv, &input_filespec, &output_filespec);
 
@@ -60,7 +60,6 @@ main(int argc, char **argv)
 static void parse_arguments(int argc, char *argv[], 
 char **input_filespec, char **output_filespec)
 {
-    bool consumed = true;
     while (argc > 1)
     {
         const char *x = argv[1];

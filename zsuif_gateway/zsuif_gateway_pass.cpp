@@ -47,7 +47,6 @@ public:
     _output_file_name_argument = new OptionString( "output-file" );
     _command_line-> add( _output_file_name_argument );
     _command_line-> set_description("Outputs ZSUIF form of a SUIF tree." );
-    SuifEnv *s = get_suif_env();
   }
 
   virtual Module *clone() const { 

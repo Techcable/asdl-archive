@@ -3,6 +3,7 @@
 #include <suifkernel/suif_env.h>
 #include <suifkernel/visitor_map.h>
 #include <suifnodes/suif.h>
+#include <cfenodes/cfe.h>
 #include <common/suif_hash_map.h>
 #include <stdio.h>
 #include "zsuif.hxx"

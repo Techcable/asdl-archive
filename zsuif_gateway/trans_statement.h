@@ -14,6 +14,7 @@ class TransStatement {
     this->zstmt = NULL;
     this->vm = new VisitorMap(t->env);
     REGVM(vm,TransStatement,this,EvalStatement);
+    REGVM(vm,TransStatement,this,CallStatement);
     REGVM(vm,TransStatement,this,IfStatement);
     REGVM(vm,TransStatement,this,WhileStatement);
     REGVM(vm,TransStatement,this,DoWhileStatement);
@@ -32,6 +33,7 @@ class TransStatement {
     REGVM(vm,TransStatement,this,BranchStatement);
     REGVM(vm,TransStatement,this,MarkStatement);
     REGVM(vm,TransStatement,this,StoreVariableStatement);
+    REGVM(vm,TransStatement,this,CForStatement);
   }
 
   zsuif_statement* answer(void) {
@@ -47,6 +49,19 @@ class TransStatement {
     return zstmt;
   }
 
+  MATCH(TransStatement,CallStatement,stmt) {
+    zsuif_variable_symbol* destination = t->trans(stmt->get_destination());
+    zsuif_expression* callee_address = t->trans(stmt->get_callee_address());
+    zsuif_expression_list* arguments = NULL;
+    s_count_t num_arguments = stmt->get_argument_count();
+    /* cons things on backward so idx 0 is first */
+    while(num_arguments--) {
+      zsuif_expression* argument = t->trans(stmt->get_argument(num_arguments));
+      arguments = new zsuif_expression_list(argument,arguments);
+    }
+
+    zstmt = new zsuif_CallStatement(destination, callee_address, arguments);
+  }
   MATCH(TransStatement,StatementList,stmts) {
      zstmt = new zsuif_StatementList(t->trans(stmts));
   }
@@ -218,6 +233,21 @@ class TransStatement {
       t->trans(stmts->get_destination());
 
     zstmt = new zsuif_StoreVariableStatement(destination,value);
+  }
+  MATCH(TransStatement,CForStatement,stmts) {
+    zsuif_statement* before = t->trans(stmts->get_before());
+    zsuif_expression* test = t->trans(stmts->get_test());
+    zsuif_statement* step = t->trans(stmts->get_step());
+    zsuif_statement* body = t->trans(stmts->get_body());
+    zsuif_statement* pre_pad = t->trans(stmts->get_pre_pad());
+
+    zsuif_code_label_symbol* break_label = t->trans(stmts->get_break_label());
+    zsuif_code_label_symbol* continue_label =
+      t->trans(stmts->get_continue_label());
+
+    zstmt = new zsuif_CForStatement
+      (before, test, step, body, pre_pad,
+       break_label, continue_label);
   }
 };
 #endif

@@ -14,7 +14,6 @@ class TransExpression {
     this->e = e;
     REGVM(vm,TransExpression,this,BinaryExpression);
     REGVM(vm,TransExpression,this,UnaryExpression);
-    REGVM(vm,TransExpression,this,CopyExpression);
     REGVM(vm,TransExpression,this,SelectExpression);
     REGVM(vm,TransExpression,this,ArrayReferenceExpression);
     REGVM(vm,TransExpression,this,FieldAccessExpression);
@@ -32,7 +31,6 @@ class TransExpression {
     REGVM(vm,TransExpression,this,SymbolAddressExpression);
     REGVM(vm,TransExpression,this,LoadValueBlockExpression);
     REGVM(vm,TransExpression,this,CallExpression);
-    REGVM(vm,TransExpression,this,SsaPhiExpression);
     REGVM(vm,TransExpression,this,LoadVariableExpression);
     REGVM(vm,TransExpression,this,IntConstant);
     REGVM(vm,TransExpression,this,FloatConstant);
@@ -73,12 +71,6 @@ class TransExpression {
     zexpr = new zsuif_UnaryExpression(result_type, opcode, source);
   }
 
-  MATCH(TransExpression,CopyExpression,exp) {
-    zsuif_expression* source = t->trans(exp->get_source());
-    zsuif_type_id* result_type = t->trans(exp->get_result_type());
-
-    zexpr = new zsuif_CopyExpression(result_type, source);
-  }
 
   MATCH(TransExpression,SelectExpression,exp) {
     zsuif_expression* selector = t->trans(exp->get_selector());
@@ -88,6 +80,30 @@ class TransExpression {
 
     zexpr = new zsuif_SelectExpression
       (result_type, selector, selection1, selection2);
+  }
+
+  MATCH(TransExpression,MultiDimArrayExpression,exp) {
+    zsuif_expression* base_array_address =
+      t->trans(exp->get_base_array_address());
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
+
+    zsuif_expression_list* indices = NULL;
+    int num_indices = exp->get_index_count();
+    /* cons things on backward so idx 0 is first */
+    while(num_indices--) {
+      zsuif_expression* index = t->trans(exp->get_index(num_indices));
+      indices = new zsuif_expression_list(index,indices);
+    }
+    zsuif_expression_list* bounds = NULL;
+    int num_bounds = exp->get_bound_count();
+    /* cons things on backward so idx 0 is first */
+    while(num_bounds--) {
+      zsuif_expression* bound = t->trans(exp->get_bound(num_bounds));
+      bounds = new zsuif_expression_list(bound,bounds);
+    }
+
+    zexpr = new zsuif_MultiDimArrayExpression
+      (result_type, base_array_address, indices, bounds);
   }
 
   MATCH(TransExpression,ArrayReferenceExpression,exp) {
@@ -221,21 +237,6 @@ class TransExpression {
     zexpr = new zsuif_CallExpression(result_type, callee_address, arguments);
   }
 
-  MATCH(TransExpression,SsaPhiExpression,exp) {
-    zsuif_type_id* result_type = t->trans(exp->get_result_type());
-    zsuif_variable_symbol_list* variables = NULL;
-
-    /* cons things on backward so idx 0 is first */
-    s_count_t num_merged = exp->get_merged_variable_count();
-    while(num_merged--) {
-      zsuif_variable_symbol* variable =
-	t->trans(exp->get_merged_variable(num_merged));
-      variables =
-	new zsuif_variable_symbol_list(variable,variables);
-    }
-    zexpr = new zsuif_SsaPhiExpression(result_type, variables);
-  }
-
   MATCH(TransExpression,LoadVariableExpression,exp) {
     zsuif_variable_symbol* variable = t->trans(exp->get_source());
     zsuif_type_id* result_type = t->trans(exp->get_result_type());
@@ -243,6 +244,13 @@ class TransExpression {
     zexpr = new zsuif_LoadVariableExpression(result_type, variable);
   }
 
+  MATCH(TransExpression,CExpression,exp) {
+    zsuif_type_id* result_type = t->trans(exp->get_result_type());
+    zsuif_statement* statement = t->trans(exp->get_statement());
+    zsuif_expression* expression = t->trans(exp->get_expression());
+
+    zexpr = new zsuif_CExpression(result_type, statement, expression);
+  }
   MATCH(TransExpression,IntConstant,cnst) {
     zsuif_type_id* result_type = t->trans(cnst->get_result_type());
     zexpr = new zsuif_Constant(result_type,t->trans(cnst));

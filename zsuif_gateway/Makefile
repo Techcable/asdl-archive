@@ -6,7 +6,7 @@ OBJ_FILES = zsuif_gateway_pass.o zsuif_gateway.o trans_suif.o \
 	zsuif.o StdTypes.o zsuif_base.o
 
 LIBS += -lcommon  -liokernel -lsuifkernel -lbasicnodes \
-        -lsuifnodes  -lsuifpasses -L$(ASDL_HOME)/lib/asdlGen -lasdl -lcii
+        -lsuifnodes -lcfenodes -lsuifpasses -L$(ASDL_HOME)/lib/asdlGen -lasdl -lcii
 INCLDIRS += -I./ -I$(ASDL_HOME)/include/asdlGen 
 PROGRAM = zsuif_gateway
 ASDLGEN       = $(ASDL_HOME)/bin/asdlGen 
