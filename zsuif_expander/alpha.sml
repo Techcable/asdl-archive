@@ -10,7 +10,6 @@ struct
    structure F   = Format
    structure W   = Word
    structure B   = Base
-   structure L   = List
    structure I   = Int
    structure S   = String
    structure C   = Char
@@ -40,7 +39,7 @@ struct
       fun incStArg  () = stArgCount := !stArgCount + 1
    end
 
-   fun machineInit () = initStArg ()
+   fun initMachine () = initStArg ()
 
    (* Keep track the registers. *)
    local
@@ -52,7 +51,7 @@ struct
       fun incRegCount  ()  = regCount := !regCount + 1
    end
 
-   fun newReg      typ      = Reg (typ, getRegCount()) before incRegCount ()
+   fun newReg typ = Reg (typ, getRegCount()) before incRegCount ()
 
    fun newAddrReg () = newReg UInt64Bit
    fun newIntReg  () = newReg Int64Bit
@@ -124,9 +123,9 @@ struct
    fun getProcAlignment () = 2
 
    (* Emit the prolog for text and data sections *)
-   fun beginDataSection emt = emt "%s\n" [F.STR "-\t.data"]
-   fun beginTextSection emt = emt "%s\n" [F.STR "-\t.text"]
-   fun alignData (emt, n)   = emt "-\t.align\t%d\n" [F.INT n]
+   fun emitBeginDataSection emt = emt "%s\n" [F.STR "-\t.data"]
+   fun emitBeginTextSection emt = emt "%s\n" [F.STR "-\t.text"]
+   fun emitAlignData (emt, n)   = emt "-\t.align\t%d\n" [F.INT n]
 
    (* Emit constants. *)
    fun emitFloat (emt, str, lab, B.Fp32Bit) =
@@ -135,11 +134,11 @@ struct
       emt "-%s:\t.double\t%s\n" [B.LAB lab, F.STR str]
      | emitFloat _ = raise (Fail "Bad Float in emitFloat")
 
-   fun compileFloatConstant (emt, B.Fp32Bit, str) =
+   fun emitFloatConstant (emt, B.Fp32Bit, str) =
       emt "-\t.single %s\n" [F.STR str]
-     | compileFloatConstant (emt, B.Fp64Bit, str) =
+     | emitFloatConstant (emt, B.Fp64Bit, str) =
       emt "-\t.double %s\n" [F.STR str]
-     | compileFloatConstant _ = raise (Fail "Bad floating point constant")
+     | emitFloatConstant _ = raise (Fail "Bad floating point constant")
 
    (* ??? *)
    fun emitPlusInf     emt = emt "%s\n" [F.STR "-\t.word\t2147483647"]
@@ -204,21 +203,21 @@ struct
        app (fn r => emt "%s" [REG r]) kr;
        emt "\n" [])
 
-   fun killRegs (emt, []) = ()
-     | killRegs (emt, kr) =
+   fun emitKillRegs (emt, []) = ()
+     | emitKillRegs (emt, kr) =
       (emt "+" []; emitKilledRegs (emt, [], kr))
 
-   fun zeroOut (emt, reg) = emt "+%s=0\n" [REG reg]
-   fun addOne  (emt, reg) = emt "+%s=%s+1\n" [REG reg, REG reg]
+   fun emitZeroOut (emt, reg) = emt "+%s=0\n" [REG reg]
+   fun emitAddOne  (emt, reg) = emt "+%s=%s+1\n" [REG reg, REG reg]
 
-   fun compileInitConst (emt, name, true) =
+   fun emitInitConst (emt, name, true) =
       emt "-\t.word\t.%s\n" [F.STR name]
-     | compileInitConst (emt, name, false) =
+     | emitInitConst (emt, name, false) =
       emt "-\t.word\t%s\n" [F.STR name]
 
-   fun compileInitConstExp (emt, name, n, true) =
+   fun emitInitConstExp (emt, name, n, true) =
       emt "-\t.word\t.%s+%s\n" [F.STR name, F.STR (U.infToString n)]
-     | compileInitConstExp (emt, name, n, false) =
+     | emitInitConstExp (emt, name, n, false) =
       emt "-\t.word\t%s+%s\n" [F.STR name, F.STR (U.infToString n)]
 
    fun emitConstIntToReg (emt, n, r) =
@@ -229,13 +228,13 @@ struct
        emt "+%s=%s[%s]\t%s\n"
            [REG r1, F.STR (regToLetter (r1, true)), REG a, REG a])
 
-   fun compileVarReference (emt, reg, loc as Loc _) =
+   fun emitVarReference (emt, reg, loc as Loc _) =
       emt "+%s=%s+%s\n" [REG reg, REG fp, B.LOC loc]
-     | compileVarReference (emt, reg, glo as Glo _) =
+     | emitVarReference (emt, reg, glo as Glo _) =
       emt "+%s=%s\n" [REG reg, B.GLO glo]
-     | compileVarReference (emt, reg, lab as Lab _) =
+     | emitVarReference (emt, reg, lab as Lab _) =
       emt "+%s=%s\n" [REG reg, B.LAB lab]
-     | compileVarReference _ =
+     | emitVarReference _ =
       raise (Fail "Error in compile variable reference")
 
    fun emitMemWrite (emt, a, r, kr) =
@@ -322,7 +321,7 @@ struct
      | emitConditionalJump (emt, r1, oper, r2, kr, t) =
       raise (Fail "Invalid operand in emitConditionalJump.");
 
-   fun cUnaryOperator (emt, Z.Negate, reg, res, kr, _) =
+   fun emitUnaryOp (emt, Z.Negate, reg, res, kr, _) =
       let
 	 val rest  = REG res and regt = REG reg
       in                              (* We have special cased this function *)
@@ -330,23 +329,23 @@ struct
 	 emitKilledRegs (emt, [], kr);(* older sparc chips to negate *)
 	 emt "+%s=-%s\n" [rest, rest] (* a floating point variable *)
       end           (* unless source and destination are the same register *)
-     | cUnaryOperator (emt, Z.Invert, reg, res, kr, _) =
+     | emitUnaryOp (emt, Z.Invert, reg, res, kr, _) =
       raise B.Can'tDoItYet
-     | cUnaryOperator (emt, Z.Absolute_value, reg, res, kr, _) =
+     | emitUnaryOp (emt, Z.Absolute_value, reg, res, kr, _) =
       raise B.Can'tDoItYet
-     | cUnaryOperator (emt, Z.Bitwise_not, r1, rd, kr, _) =
+     | emitUnaryOp (emt, Z.Bitwise_not, r1, rd, kr, _) =
 	 (emt "+%s=~%s" [REG rd, REG r1];
           emitKilledRegs (emt, [], kr))
-     | cUnaryOperator (emt, Z.Logical_not, reg, res, kr, _) =
+     | emitUnaryOp (emt, Z.Logical_not, reg, res, kr, _) =
       let
 	 val lab = B.newLabel NONE
       in
-	 zeroOut (emt, res);
+	 emitZeroOut (emt, res);
 	 emitJumpIfNotZero (emt, reg, lab, kr);
-	 addOne (emt, res);
+	 emitAddOne (emt, res);
 	 emitLabel (emt, lab)
       end
-     | cUnaryOperator (emt, Z.Convert, r1, rd, kr, ctx as (nextLocal, pNum)) =
+     | emitUnaryOp (emt, Z.Convert, r1, rd, kr, ctx as (nextLocal, pNum)) =
       (case (r1, rd) of
 	  (Reg (Fp64Bit, _), Reg (Fp32Bit, _)) =>
 	     (emt "+%s=CV[%s]" [REG rd, REG r1]; emitKilledRegs (emt, [], kr))
@@ -358,7 +357,7 @@ struct
 		val rq  = newReg Int64Bit
 		val loc = nextLocal ()
 	     in
-		(cUnaryOperator (emt, Z.Convert, r1, rq, kr, ctx);
+		(emitUnaryOp (emt, Z.Convert, r1, rq, kr, ctx);
 		 emt "dxfer_%d\t%s\t2\t3\t8\t1\n" [F.INT pNum, B.LOC loc];
 		 emt "+Q[%s+%s]=%s\t%s\n"[REG sp, B.LOC loc, REG rq, REG rq];
 		 emt "t%s\n" [B.LOC loc];
@@ -371,7 +370,7 @@ struct
 		val rq  = newReg Int64Bit
 		val loc = nextLocal ()
 	     in
-		(cUnaryOperator (emt, Z.Convert, r1, rq, kr, ctx);
+		(emitUnaryOp (emt, Z.Convert, r1, rq, kr, ctx);
 		 emt "dxfer_%d\t%s\t2\t3\t8\t1\n" [F.INT pNum, B.LOC loc];
 		 emt "+Q[%s+%s]=%s\t%s\n"[REG sp, B.LOC loc, REG rq, REG rq];
 		 emt "t%s\n" [B.LOC loc];
@@ -385,7 +384,7 @@ struct
 		val rq  = newReg Int64Bit
 		val loc = nextLocal ()
 	     in
-		(cUnaryOperator (emt, Z.Convert, r1, rt, kr, ctx);
+		(emitUnaryOp (emt, Z.Convert, r1, rt, kr, ctx);
 		 emt "+%s=FQ[%s]\t%s\n" [REG rt2, REG rt, REG rt];
 		 emt "dxfer_%d\t%s\t2\t3\t8\t1\n" [F.INT pNum, B.LOC loc];
 		 emt "+T[%s+%s]=%s\t%s\n"[REG sp, B.LOC loc, REG rt2, REG rt2];
@@ -452,8 +451,8 @@ struct
 	| (Reg (_, _), Reg (_, _)) =>
 	     emitRegAssign (emt, rd, r1, false, kr)
 	| _ =>
-	     raise (Fail "Invalid operand in cUnaryOperator."))
-     | cUnaryOperator (emt, Z.Treat_as, reg, res, kr, _) =
+	     raise (Fail "Invalid operand in emitUnaryOp."))
+     | emitUnaryOp (emt, Z.Treat_as, reg, res, kr, _) =
        raise B.Can'tDoItYet
 
    fun emitRegMulConst (emt, r as Reg(ty, _), n, rd, kr) =
@@ -467,28 +466,28 @@ struct
      | emitRegMulConst _ =
       raise (Fail "Non-register passed to emitRegMulConst")
 
-   fun compileBuiltinOper (emt, rd, r1, oper, r2, kr) =
+   fun emitBinaryOp (emt, rd, r1, oper, r2, kr) =
       (emt "+%s=%s%s%s" [REG rd, REG r1, F.STR oper, REG r2];
        emitKilledRegs (emt, [], kr))
 
-   fun cMulDivRem (emt, regt, reg1, oper, reg2, _, kr) =
+   fun emitMulDivRem (emt, regt, reg1, oper, reg2, _, kr) =
       let
 	 val zop = case oper of
 	    Mul => Z.Multiply
 	  | Div => Z.Divide
 	  | Rem => Z.Remainder
       in
-	 compileBuiltinOper (emt, regt, reg1, getRtlOper(zop, Int32Bit),
+	 emitBinaryOp (emt, regt, reg1, getRtlOper(zop, Int32Bit),
 			     reg2, kr)
       end
 
-   fun cSwitchSt (emt, decReg, newReg, addrReg,
+   fun emitSwitchStmt (emt, decReg, newReg, addrReg,
 		  tabLab, cases, findAndSetLabel) =
       let
 	 val {case_constant = c, ...} = hd cases
 	 val n = case c of
 	    Z.Finite k => k
-	  | _ => raise (Fail "Bad Const in cSwitchSt")
+	  | _ => raise (Fail "Bad Const in emitSwitchStmt")
 	 val first = newIntReg ()
 	 fun doCase {case_constant = Z.Finite n,
 		     case_target = target} =
@@ -503,7 +502,7 @@ struct
 	 emitConstIntToReg (emt, n, first);
 	 emt "+%s=%s-%s\t%s\n" [REG newReg, REG newReg, REG first, REG first];
 	 emt "+%s=%s{3\n" [REG newReg, REG newReg];
-	 compileVarReference (emt, addrReg, tabLab);
+	 emitVarReference (emt, addrReg, tabLab);
 	 emt "+%s=%s+%s\t%s\n" [REG addrReg, REG addrReg,
 				REG newReg, REG newReg];
 	 emt "+%s=Q[%s]\t%s\n" [REG first, REG addrReg, REG addrReg];
@@ -512,7 +511,7 @@ struct
 	 app doCase cases
       end
 
-   fun createEmptyStruct (emt, loc, size) =
+   fun emitEmptyStruct (emt, loc, size) =
       let
 	 val sArg = F.INT (getStArg ()) before incStArg ()
       in
@@ -520,7 +519,7 @@ struct
       end
 
    (* TODO: needs to be fixed *)
-   fun copyBlock (emt, sReg, dReg, bit_size, killdest) =
+   fun emitBlockCopy (emt, sReg, dReg, bit_size, killdest) =
       let
 	 val siz   = (bit_size div 8 - 1) div 4
 	 val fsReg = REG sReg
@@ -561,7 +560,7 @@ struct
 				     if killdest then fdReg else F.STR ""]
       end
 
-   fun compileArgs (emt, regs) =
+   fun emitFunArgs (emt, regs) =
       let
 	 val cDepth = ref frameOffset
 	 val argCnt = ref 0
@@ -616,8 +615,8 @@ struct
    fun emitGetFunResult (emt, reg, resultReg) =
       emt "+GP=%s,%s\n" [REG q29, REG q26]
 
-   fun emitReturnStatement  emt = emt "+PC=RT\n" []
-   fun emitEndProcStatement emt = emt "*\n" []
+   fun emitReturnStmt  emt = emt "+PC=RT\n" []
+   fun emitEndProcStmt emt = emt "*\n" []
 
    fun emitC emt = ()
    fun emitU emt = emt
@@ -641,8 +640,8 @@ struct
 
    fun adjustStackReg _ = ()
 
-   fun compReturn (emt, NONE) = emitReturnStatement emt
-     | compReturn (emt, SOME (retReg, resReg, regtyp)) =
+   fun emitReturn (emt, NONE) = emitReturnStmt emt
+     | emitReturn (emt, SOME (retReg, resReg, regtyp)) =
       (emitRegAssign (emt, retReg, resReg, false, [resReg]);
        emt "u%s\n" [REG retReg];
        if not (isSaveEmited ()) then
@@ -650,5 +649,5 @@ struct
 	   setSaveEmited true)
        else
 	  ();
-       emitReturnStatement emt)
+       emitReturnStmt emt)
 end

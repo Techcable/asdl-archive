@@ -123,8 +123,8 @@ struct
     | getRegTypeId Fp64Bit                = "4"
     | getRegTypeId _ = raise (Fail "Invalid register type.")
 
-  fun zeroOut (emit, reg) = emit "+%s=0\n" [REG reg]
-  fun addOne  (emit, reg) =
+  fun emitZeroOut (emit, reg) = emit "+%s=0\n" [REG reg]
+  fun emitAddOne  (emit, reg) =
       let val r = REG reg in emit "+%s=%s+1\n" [r, r] end
 
   fun doKilledRegs (emt, [], []) = emt "\n" []
@@ -138,8 +138,8 @@ struct
           emt "\n" []
       end
 
-  fun killRegs (emt, []) = ()
-    | killRegs (emt, reglist) =
+  fun emitKillRegs (emt, []) = ()
+    | emitKillRegs (emt, reglist) =
       (emt "+" []; doKilledRegs (emt, [], reglist))
 
   fun getRtlOper (Z.Add, _)                         = "+"
@@ -212,7 +212,7 @@ struct
       let
           val zreg = newIntReg ()
       in
-          zeroOut (emt, zreg);
+          emitZeroOut (emt, zreg);
           compareRegs (emt, reg, zreg, oper, zreg :: kRegs)
       end
 
@@ -228,9 +228,9 @@ struct
 
   fun emitLabel (emit, lab) = ((emit "%s\n") o (fn x => [x]) o B.LAB) lab
 
-  fun beginDataSection emt = emt "%s\n" [F.STR "-\t.seg\t\"data\""]
-  fun beginTextSection emt = emt "%s\n" [F.STR "-\t.seg\t\"text\""]
-  fun alignData (emt, n) = emt "-\t.align\t%d\n" [F.INT n]
+  fun emitBeginDataSection emt = emt "%s\n" [F.STR "-\t.seg\t\"data\""]
+  fun emitBeginTextSection emt = emt "%s\n" [F.STR "-\t.seg\t\"text\""]
+  fun emitAlignData (emt, n) = emt "-\t.align\t%d\n" [F.INT n]
 
   fun getFloatAlignment Fp32Bit = 4
     | getFloatAlignment Fp64Bit = 8
@@ -270,20 +270,20 @@ struct
 
   fun emitGlobalDecl (emt, str) = emt "-\t.global\t%s\n" [F.STR str]
 
-  fun compileFloatConstant (emt, B.Fp32Bit, str) =
+  fun emitFloatConstant (emt, B.Fp32Bit, str) =
       emt "-\t.single 0r%s\n" [F.STR str]
-    | compileFloatConstant (emt, B.Fp64Bit, str) =
+    | emitFloatConstant (emt, B.Fp64Bit, str) =
       emt "-\t.double 0r%s\n" [F.STR str]
-    | compileFloatConstant _ = raise (Fail "Bad floating point constant")
+    | emitFloatConstant _ = raise (Fail "Bad floating point constant")
 
-  fun compileInitConst (emt, name, true) =
+  fun emitInitConst (emt, name, true) =
       emt "-\t.word\t.%s\n" [F.STR name]
-    | compileInitConst (emt, name, false) =
+    | emitInitConst (emt, name, false) =
       emt "-\t.word\t%s\n" [F.STR name]
 
-  fun compileInitConstExp (emt, name, n, true) =
+  fun emitInitConstExp (emt, name, n, true) =
       emt "-\t.word\t.%s+%s\n" [F.STR name, F.STR (U.infToString n)]
-    | compileInitConstExp (emt, name, n, false) =
+    | emitInitConstExp (emt, name, n, false) =
       emt "-\t.word\t%s+%s\n" [F.STR name, F.STR (U.infToString n)]
 
  (*
@@ -385,11 +385,11 @@ struct
           raise (Fail "Bad Float in emitConstFloatToReg")
   end
 
-  fun compileVarReference (emt, reg, loc as Loc (_, true)) =
+  fun emitVarReference (emt, reg, loc as Loc (_, true)) =
       emt "+%s=%s+%s\n" [REG reg, REG fp, B.LOC loc]
-    | compileVarReference (emt, reg, loc as Loc (_, false)) =
+    | emitVarReference (emt, reg, loc as Loc (_, false)) =
       emt "+%s=%s+%s\n" [REG reg, REG sp, B.LOC loc]
-    | compileVarReference (emt, reg, glo as Glo _) =
+    | emitVarReference (emt, reg, glo as Glo _) =
       let
           val sReg = REG reg
           val sGlo = B.GLO glo
@@ -397,7 +397,7 @@ struct
           emt "+%s=HI[%s]\n" [sReg, sGlo];
           emt "+%s=%s+LO[%s]\n" [sReg, sReg, sGlo]
       end
-    | compileVarReference (emt, reg, lab as Lab _) =
+    | emitVarReference (emt, reg, lab as Lab _) =
       let
           val sReg = REG reg
           val sLab = F.STR (B.labToString lab)
@@ -405,7 +405,7 @@ struct
           emt "+%s=HI[%s]\n" [sReg, sLab];
           emt "+%s=%s+LO[%s]\n" [sReg, sReg, sLab]
       end
-    | compileVarReference _ =
+    | emitVarReference _ =
       raise (Fail "Error in compile variable reference")
 
   fun emitUncondJump (emt, lab) = emt "+PC=%s\n" [B.LAB lab]
@@ -425,10 +425,10 @@ struct
 	val lab = B.newLabel NONE
 	val opStr = getRtlOper(oper, r)
      in
-	zeroOut (emt, rd);
+	emitZeroOut (emt, rd);
 	compareRegs (emt, r1, r2, opStr, kr);
 	jumpWhen opStr r1 (emt, lab);
-	addOne (emt, rd);
+	emitAddOne (emt, rd);
 	emitLabel (emt, lab)
      end
     | emitComparisonOp (emt, rd, r1, oper, r2, kr) =
@@ -465,7 +465,7 @@ struct
           emt "d.%d_%s\t%s\t2\t%s\t%d\n" [sArg, sName, sLoc, sKind, sSiz]
       end
 
-  fun createEmptyStruct (emt, loc, siz) =
+  fun emitEmptyStruct (emt, loc, siz) =
       let
           val sArg = F.INT (getStArg ()) before incStArg ()
           val sLoc = B.LOC loc
@@ -474,7 +474,7 @@ struct
           emt "d.%d_STARG\t%s\t2\t2\t%d\n" [sArg, sLoc, sSiz]
       end
 
-  fun copyBlock (emt, sReg, dReg, bit_size, killdest) =
+  fun emitBlockCopy (emt, sReg, dReg, bit_size, killdest) =
       let
           val siz   = (bit_size div 8 - 1) div 4
           val fsReg = REG sReg
@@ -556,7 +556,7 @@ struct
                   end
       end
 
-  fun compileBuiltinOper (emt, res, reg1, oper, reg2, kRegs) =
+  fun emitBinaryOp (emt, res, reg1, oper, reg2, kRegs) =
       let
           val sRes  = REG res
           val sReg1 = REG reg1
@@ -584,9 +584,9 @@ struct
       (emt (if restore then "+%s=RS[%s]" else "+%s=%s") [REG reg1, REG reg2];
        doKilledRegs (emt, [], kRegs))
 
-  fun emitReturnStatement emt = emt "+PC=RT\n" []
+  fun emitReturnStmt emt = emt "+PC=RT\n" []
 
-  fun emitEndProcStatement emt = emt "*\n" []
+  fun emitEndProcStmt emt = emt "*\n" []
 
   fun emitC emt = emt
       "Cd[0]d[2]d[4]d[6]d[8]d[10]d[12]d[14]d[16]d[18]\
@@ -602,7 +602,7 @@ struct
 
   fun adjustStackReg _ = ()
 
-  fun compileArgs (emt, regs) =
+  fun emitFunArgs (emt, regs) =
       let
           val cDepth = ref frameOffset
           val argCnt = ref 0
@@ -736,7 +736,7 @@ struct
           doKilledRegs (emt, [], killedRegs)
       end
 
-  fun cUnaryOperator (emt, Z.Negate, reg, res, kr, _) =
+  fun emitUnaryOp (emt, Z.Negate, reg, res, kr, _) =
       let
           val rest  = REG res and regt = REG reg
       in                             (* We have special cased this function *)
@@ -745,26 +745,26 @@ struct
           emt "+%s=-%s\n" [rest, rest]      (* a floating point variable *)
       end           (* unless source and destination are the same register *)
 
-    | cUnaryOperator (emt, Z.Invert, reg, res, kr, _) =
+    | emitUnaryOp (emt, Z.Invert, reg, res, kr, _) =
       raise B.Can'tDoItYet
 
-    | cUnaryOperator (emt, Z.Absolute_value, reg, res, kr, _) =
+    | emitUnaryOp (emt, Z.Absolute_value, reg, res, kr, _) =
       raise B.Can'tDoItYet
 
-    | cUnaryOperator (emt, Z.Bitwise_not, reg, res, kr, _) =
+    | emitUnaryOp (emt, Z.Bitwise_not, reg, res, kr, _) =
       builtinUoper (emt, res, "~", reg, kr)
 
-    | cUnaryOperator (emt, Z.Logical_not, reg, res, kr, _) =
+    | emitUnaryOp (emt, Z.Logical_not, reg, res, kr, _) =
       let
           val lab = B.newLabel NONE
       in
-          zeroOut (emt, res);
+          emitZeroOut (emt, res);
           emitJumpIfNotZero (emt, reg, lab, kr);
-          addOne (emt, res);
+          emitAddOne (emt, res);
           emitLabel (emt, lab)
       end
 
-    | cUnaryOperator (emt, Z.Convert, regfrom, regto, kr,
+    | emitUnaryOp (emt, Z.Convert, regfrom, regto, kr,
                       ctx as (nextLocal, pNum)) =
       let
           fun convAssign (to, from, oper1, oper2, kr) =
@@ -813,7 +813,7 @@ struct
 			       val newFReg  = newReg Fp32Bit
 			       val newFRegt = REG newFReg
 			    in
-			       cUnaryOperator(emt, Z.Convert, regfrom,
+			       emitUnaryOp(emt, Z.Convert, regfrom,
 					      newIReg, [regfrom], ctx);
 			       emt "+R[%s+%s]=%s\t%s\n"
 			       [REG sp, B.LOC loc, newIRegt, newIRegt];
@@ -841,7 +841,7 @@ struct
 			       emt "t%s\n" [B.LOC loc];
 			       emt "+%s=R[%s+%s]\n"
 			       [newIRegt, REG sp, B.LOC loc];
-			       cUnaryOperator(emt, Z.Convert, newIReg,
+			       emitUnaryOp(emt, Z.Convert, newIReg,
 					      regto, [newIReg], ctx)
 			    end
 		      end
@@ -871,10 +871,10 @@ struct
 		end
       end
                                        (* Needs more work *)
-    | cUnaryOperator (emt, Z.Treat_as, reg, res, kr, _) =
+    | emitUnaryOp (emt, Z.Treat_as, reg, res, kr, _) =
       raise B.Can'tDoItYet
 
-  fun cMulDivRem (emt, regt, reg1 as Reg ((Fp32Bit | Fp64Bit), _),
+  fun emitMulDivRem (emt, regt, reg1 as Reg ((Fp32Bit | Fp64Bit), _),
                   oper as (Mul | Div), reg2, _, kr) =
       let
           val sOper = case oper of
@@ -884,9 +884,9 @@ struct
       in
           builtinOper (emt, regt, reg1, sOper, reg2, kr)
       end
-    | cMulDivRem (emt, regt, reg1, oper, reg2, nextGlo, kr) =
+    | emitMulDivRem (emt, regt, reg1, oper, reg2, nextGlo, kr) =
       let
-          val (realRegs, _) = compileArgs (emt, [reg1, reg2])
+          val (realRegs, _) = emitFunArgs (emt, [reg1, reg2])
           val r9            = (hd o tl) realRegs
           val (grel, name)  = case oper of
                                   Mul => (multi, "mul")
@@ -910,12 +910,12 @@ struct
           emitRegAssign (emt, regt, r8, false, [r8])
       end
 
-  fun cSwitchSt (emt, decReg, newReg, addrReg,
+  fun emitSwitchStmt (emt, decReg, newReg, addrReg,
                  tabLab, cases, findAndSetLabel) =
       let
             val {case_constant = c, ...} = hd cases
             val n = case c of Z.Finite k => k
-                            | _ => raise (Fail "Bad Const in cSwitchSt")
+                            | _ => raise (Fail "Bad Const in emitSwitchStmt")
             val first = newIntReg ()
             fun doCase {case_constant = Z.Finite n,
                         case_target = target} =
@@ -930,7 +930,7 @@ struct
           emitConstIntToReg (emt, n, first);
           emt "+%s=%s-%s\t%s\n" [REG newReg, REG newReg, REG first, REG first];
           emt "+%s=%s{2\n" [REG newReg, REG newReg];
-          compileVarReference (emt, addrReg, tabLab);
+          emitVarReference (emt, addrReg, tabLab);
           emt "+%s=R[%s+%s]\t%s%s\n" [REG first, REG newReg, REG addrReg,
                                       REG newReg, REG addrReg];
           emt "+PC=%s\t%s\n" [REG first, REG first];
@@ -938,8 +938,8 @@ struct
           app doCase cases
       end
 
-  fun compReturn (emt, NONE) = emitReturnStatement emt
-    | compReturn (emt, SOME (retReg, resReg, regtyp)) =
+  fun emitReturn (emt, NONE) = emitReturnStmt emt
+    | emitReturn (emt, SOME (retReg, resReg, regtyp)) =
       let
           val restore = B.isInt regtyp
           fun emitSaveSt reg =
@@ -951,12 +951,12 @@ struct
           emitRegAssign (emt, retReg, resReg, restore, [resReg]);
           if restore then () else emt "u%s\n" [REG retReg];
           emitSaveSt retReg;
-          emitReturnStatement emt
+          emitReturnStmt emt
       end
 
   fun emitComment (emt, comment) = emt "#%s\n" [F.STR comment]
 
-  fun machineInit () =
+  fun initMachine () =
       (initStArg ();
        initMulDivOps ();
        initTmpLocArg ())

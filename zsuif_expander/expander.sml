@@ -249,10 +249,10 @@ struct
 	    val align   = M.getFloatAlignment r
 	    val addrReg = M.newAddrReg ()
 	 in
-	    M.beginDataSection emt;
-	    M.alignData (emt, align);
+	    M.emitBeginDataSection emt;
+	    M.emitAlignData (emt, align);
 	    M.emitFloat (emt, str, newl, r);
-	    M.beginTextSection emt;
+	    M.emitBeginTextSection emt;
 	    M.emitConstFloatToReg (emt, str, newl, reg, addrReg)
 	 end
 	| emitConstantReg _ = raise (Fail "Error in const to Reg")
@@ -299,7 +299,7 @@ struct
 	 let
 	    val reg = M.newAddrReg ()
 	 in
-	    M.compileVarReference (emt, reg, st);
+	    M.emitVarReference (emt, reg, st);
 	    case #value (findType type_id) of
 	       Z.Data (Z.GroupType _) =>
 		  M.emitMemRead (emt, reg, reg, [])
@@ -310,7 +310,7 @@ struct
 	 let
 	    val reg = M.newAddrReg ()
 	 in
-	    M.compileVarReference (emt, reg, st);
+	    M.emitVarReference (emt, reg, st);
 	    reg
 	 end
 
@@ -333,7 +333,7 @@ struct
 	    let
 	       val (regTyp, _) = B.getRegType (Z.Data ty)
 	    in
-	       M.compileFloatConstant (emt, regTyp, str)
+	       M.emitFloatConstant (emt, regTyp, str)
 	    end
 
 	   | compileConst (Z.FloatConstant str, _) =
@@ -363,7 +363,7 @@ struct
 	    let
 	       val (name, fromLabel) = getSymName (#1 (findSymbolRef sym))
 	    in
-	       M.compileInitConst (emt, name, fromLabel)
+	       M.emitInitConst (emt, name, fromLabel)
 	    end
 	   | compileVB (SOME (Z.ExpressionValueBlock
 			      {expression = Z.BinaryExpression
@@ -375,7 +375,7 @@ struct
 	    let
 	       val (name, fromLabel) = getSymName (#1 (findSymbolRef sym))
 	    in
-	       M.compileInitConstExp (emt, name, n, fromLabel)
+	       M.emitInitConstExp (emt, name, n, fromLabel)
 	    end
 	   | compileVB (SOME (Z.ExpressionValueBlock _), _) =
 	    raise (Fail "Bad initialization in value block")
@@ -427,8 +427,8 @@ struct
 	       val (name, fromLabel) = getSymName symRef
 	       val fname = [F.STR name]
 	    in
-	       M.beginDataSection emt;
-	       M.alignData (emt, algn);
+	       M.emitBeginDataSection emt;
+	       M.emitAlignData (emt, algn);
 	       M.emitVariableDecl (emt, name, static, fromLabel)
 	    end
 
@@ -463,7 +463,7 @@ struct
 			Z.Finite s => IntInf.toInt(s) div 8
 		      | _ => raise (Fail "Array size undefined")
 	       in
-		  M.beginDataSection emt;
+		  M.emitBeginDataSection emt;
 		  M.emitGroupVarDecl (emt, name, siz, M.getGroupAlignment(),
 				      fromLabel)
 	       end
@@ -503,7 +503,7 @@ struct
 		     Z.Finite s => IntInf.toInt(s) div 8
 		   | _ => raise (Fail "Array size undefined")
 	       in
-		  M.beginDataSection emt;
+		  M.emitBeginDataSection emt;
 		  M.emitGroupVarDecl (emt, name, siz, 8, fromLabel)
 	       end
 	   | compileGlobal (_, _, _, _, _) =
@@ -611,7 +611,7 @@ struct
             val (r, _)  = compileExpr source
             val rd      = M.newReg (type2RegType type_id)
 	 in
-            M.cUnaryOperator(emt, unop, r, rd, [r], (newArg, currentProc()));
+            M.emitUnaryOp(emt, unop, r, rd, [r], (newArg, currentProc()));
             (rd, Atomic)
 	 end
 
@@ -642,7 +642,7 @@ struct
             val siz      = (B.getTypeSize (#value reftyp)) handle e => raise e
             val addrReg  = M.newAddrReg ()
 	 in
-            M.cUnaryOperator (emt, Z.Convert, tmpIReg, idxReg, [tmpIReg],
+            M.emitUnaryOp (emt, Z.Convert, tmpIReg, idxReg, [tmpIReg],
                               (newArg, currentProc ()));
             if siz = 1 then ()
             else M.emitRegMulConst (emt, idxReg, Inf.fromInt siz, idxReg, []);
@@ -779,9 +779,9 @@ struct
 	    val siz = bit_size div 8
 	    val loc = newLocal()
 	 in
-	    M.createEmptyStruct (emt, loc, siz);
-	    M.compileVarReference (emt, destReg, loc);
-	    M.copyBlock (emt, sReg, destReg, bit_size, killdest)
+	    M.emitEmptyStruct (emt, loc, siz);
+	    M.emitVarReference (emt, destReg, loc);
+	    M.emitBlockCopy (emt, sReg, destReg, bit_size, killdest)
 	 end
 
       and compileCallExpr {callee_address = calleeAddress,
@@ -807,13 +807,13 @@ struct
             fun h () =
 	       let
 		  val (argRegs, depth) =
-		     M.compileArgs (emt, map compArgs arguments)
+		     M.emitFunArgs (emt, map compArgs arguments)
 		  val (fnAddrReg, _)   = compileExpr calleeAddress
 		  val argNumber        = length argRegs
 	       in
 		  M.emitFunCallFrameSize (emt, fnAddrReg, depth, argNumber);
 		  M.emitC emt;
-		  M.killRegs (emt, argRegs);
+		  M.emitKillRegs (emt, argRegs);
 		  M.adjustStackReg (emt, depth);
 		  M.emitU emt;
 		  M.emitS emt
@@ -839,17 +839,17 @@ struct
 	 let
 	    val oper = M.getRtlOper (zoper, r)
 	 in
-	    M.compileBuiltinOper (emt, rd, r1, oper, r2, kr)
+	    M.emitBinaryOp (emt, rd, r1, oper, r2, kr)
 	 end
 
 	| compileBinOp (Z.Multiply, r1, r2, rd, kr) =
-	 M.cMulDivRem (emt, rd, r1, M.Mul, r2, newGlobal, kr)
+	 M.emitMulDivRem (emt, rd, r1, M.Mul, r2, newGlobal, kr)
 
 	| compileBinOp (Z.Divide, r1, r2, rd, kr) =
-	 M.cMulDivRem (emt, rd, r1, M.Div, r2, newGlobal, kr)
+	 M.emitMulDivRem (emt, rd, r1, M.Div, r2, newGlobal, kr)
 
 	| compileBinOp (Z.Remainder, r1, r2, rd, kr) =
-	 M.cMulDivRem (emt, rd, r1, M.Rem, r2, newGlobal, kr)
+	 M.emitMulDivRem (emt, rd, r1, M.Rem, r2, newGlobal, kr)
 
 	| compileBinOp (Z.Rotate, r1, r2, rd, kr) =
 	 raise B.Can'tDoItYet
@@ -865,10 +865,10 @@ struct
 	    let
 	       val lab = newLabel NONE
 	    in
-	       M.zeroOut (emt, rd);
+	       M.emitZeroOut (emt, rd);
 	       M.emitJumpIfZero (emt, r1, lab, [r1]);
 	       M.emitJumpIfZero (emt, r2, lab, [r2]);
-	       M.addOne (emt, rd);
+	       M.emitAddOne (emt, rd);
 	       M.emitLabel (emt, lab)
 	    end
 
@@ -876,11 +876,11 @@ struct
 	    let
 	       val lab = newLabel NONE
 	    in
-	       M.zeroOut (emt, rd);
-	       M.addOne (emt, rd);
+	       M.emitZeroOut (emt, rd);
+	       M.emitAddOne (emt, rd);
 	       M.emitJumpIfNotZero (emt, r1, lab, [r1]);
 	       M.emitJumpIfNotZero (emt, r2, lab, [r2]);
-	       M.zeroOut (emt, rd);
+	       M.emitZeroOut (emt, rd);
 	       M.emitLabel (emt, lab)
 	    end
 
@@ -1005,7 +1005,7 @@ struct
 	 in
             nameObjects variables;
             compileVariables variables;
-            M.beginTextSection emt;
+            M.emitBeginTextSection emt;
             compileStatement body
 	 end
 
@@ -1035,12 +1035,12 @@ struct
             val (a, _)    = compileExpr destAddr
 	 in
             case kind of
-	       Group siz => M.copyBlock (emt, r, a, siz, true)
-	     | Array siz => M.copyBlock (emt, r, a, siz, true)
+	       Group siz => M.emitBlockCopy (emt, r, a, siz, true)
+	     | Array siz => M.emitBlockCopy (emt, r, a, siz, true)
 	     | Atomic    => M.emitMemWrite (emt, a, r, [a, r])
 	 end
 
-      and compileReturnStmt {return_value = NONE} = M.compReturn (emt, NONE)
+      and compileReturnStmt {return_value = NONE} = M.emitReturn (emt, NONE)
 	| compileReturnStmt {return_value = SOME(retArg)} =
 	 let
             val (resReg, kind) = compileExpr retArg
@@ -1048,7 +1048,7 @@ struct
 	  | _ => raise (Fail "Bad register")
             val retReg = M.getReturnReg regtyp
 	 in
-            M.compReturn (emt, SOME (retReg, resReg, regtyp))
+            M.emitReturn (emt, SOME (retReg, resReg, regtyp))
 	 end
 
       and compileJumpStmt {target} =
@@ -1069,11 +1069,11 @@ struct
             val newReg      = M.newIntReg ()
             val addrReg     = M.newAddrReg ()
             val _           =
-	       M.cUnaryOperator (emt, Z.Convert, decReg, newReg, [decReg],
+	       M.emitUnaryOp (emt, Z.Convert, decReg, newReg, [decReg],
 				 (newArg, currentProc ()))
             val tabLab  = newLabel NONE
 	 in
-            M.cSwitchSt (emt, decReg, newReg, addrReg, tabLab,
+            M.emitSwitchStmt (emt, decReg, newReg, addrReg, tabLab,
                          cases, getSymLabel)
 	 end
 
@@ -1087,8 +1087,8 @@ struct
             val (r, dataKind) = compileExpr v
 	 in
             case dataKind of
-	       Group size => M.copyBlock (emt, r, a, size, true)
-	     | Array size => M.copyBlock (emt, r, a, size, true)
+	       Group size => M.emitBlockCopy (emt, r, a, size, true)
+	     | Array size => M.emitBlockCopy (emt, r, a, size, true)
 	     | Atomic     =>
 		  let
 		     val kr = case a of Reg _ => [a, r] | _ => [r]
@@ -1222,8 +1222,8 @@ struct
 	 fun emitProcPrelude (name, static) =
 	    (print ("  Compiling procedure " ^ name ^ "\n");
 	     M.emitComment (emt, "Compilation of function " ^ name);
-	     M.beginTextSection emt;
-             M.alignData (emt, M.getProcAlignment ());
+	     M.emitBeginTextSection emt;
+             M.emitAlignData (emt, M.getProcAlignment ());
 	     M.emitProcedureDecl (emt, name, static))
 
 	 fun compileProcParameters params =
@@ -1260,8 +1260,8 @@ struct
 	     emitProcPrelude (name, static);
 	     compileProcParameters params;
 	     compileStatement body;
-	     M.emitReturnStatement emt;
-	     M.emitEndProcStatement emt)
+	     M.emitReturnStmt emt;
+	     M.emitEndProcStmt emt)
 
 	   | compileProcedure (_, _, NONE, _) =
 	    raise (Fail "Missing procedure body in function compileProcedure")
@@ -1308,7 +1308,7 @@ struct
 		  compileProcedures procedures
 	       end
 	 in
-            M.machineInit ();
+            M.initMachine ();
             B.baseInit ();
 	    M.emitRegisterTypeMap emt;
             doVariables  definedVars;

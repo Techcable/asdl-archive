@@ -9,8 +9,7 @@ sig
   type emtTyp = string -> Format.fmt_item list -> unit
 
   (* Initialize the machine-dependent part for a new compilation. *)
-  (* TODO: should change to initMachine??? *)
-  val machineInit            : unit -> unit
+  val initMachine            : unit -> unit
 
   (* Register related functions. *)
   val getRegCount            : unit -> int
@@ -30,10 +29,9 @@ sig
   val getProcAlignment       : unit -> int
 
   (* Emit the prolog for text and data sections. *)
-  (* TODO: should change to emitBegin... ??? *)
-  val beginDataSection       : emtTyp -> unit
-  val beginTextSection       : emtTyp -> unit
-  val alignData              : emtTyp * int -> unit
+  val emitBeginDataSection   : emtTyp -> unit
+  val emitBeginTextSection   : emtTyp -> unit
+  val emitAlignData          : emtTyp * int -> unit
 
   (* Emit constants. *)
   val emitFloat              : emtTyp * string * B.operand * B.regtype -> unit
@@ -41,7 +39,7 @@ sig
   val emitNegInf             : emtTyp -> unit
   val emitUnsignedInf        : emtTyp -> unit
   val emitConstants          : emtTyp * Inf.int list * int -> unit
-  val compileFloatConstant   : emtTyp * B.regtype * string -> unit
+  val emitFloatConstant      : emtTyp * B.regtype * string -> unit
 
   (* Emit Declarations *)
   val emitVariableDecl       : emtTyp * string * bool * bool -> unit
@@ -58,24 +56,23 @@ sig
   val initProcedure          : unit -> unit
 
   (* Emit Statements *)
-  (* TODO: should change to emit... ??? *)
   val emitComment            : emtTyp * string -> unit
 
   val emitLabel              : emtTyp * B.operand -> unit
 
-  val killRegs               : emtTyp * B.operand list -> unit
+  val emitKillRegs           : emtTyp * B.operand list -> unit
 
-  val zeroOut                : emtTyp * B.operand -> unit
-  val addOne                 : emtTyp * B.operand -> unit
+  val emitZeroOut            : emtTyp * B.operand -> unit
+  val emitAddOne             : emtTyp * B.operand -> unit
 
-  val compileInitConst       : emtTyp * string * bool -> unit
-  val compileInitConstExp    : emtTyp * string * Inf.int * bool -> unit
+  val emitInitConst          : emtTyp * string * bool -> unit
+  val emitInitConstExp       : emtTyp * string * Inf.int * bool -> unit
 
   val emitConstIntToReg      : emtTyp * Inf.int * B.operand -> unit
   val emitConstFloatToReg    : emtTyp * string * B.operand * B.operand *
                                B.operand -> unit
 
-  val compileVarReference    : emtTyp * B.operand * B.operand -> unit
+  val emitVarReference       : emtTyp * B.operand * B.operand -> unit
 
   val emitMemWrite           : emtTyp * B.operand * B.operand *
                                B.operand list -> unit
@@ -102,38 +99,38 @@ sig
   val emitRegMulConst        : emtTyp * B.operand * Inf.int * B.operand *
                                B.operand list -> unit
 
-  val cUnaryOperator         : emtTyp * Z.unop * B.operand * B.operand *
+  val emitUnaryOp            : emtTyp * Z.unop * B.operand * B.operand *
                                B.operand list *
                                ((unit -> B.operand) * int) -> unit
-  val compileBuiltinOper     : emtTyp * B.operand * B.operand * string *
+  val emitBinaryOp           : emtTyp * B.operand * B.operand * string *
                                B.operand * B.operand list -> unit
-  val cMulDivRem             : emtTyp * B.operand * B.operand * OptOperators *
+  val emitMulDivRem          : emtTyp * B.operand * B.operand * OptOperators *
                                B.operand * (unit -> B.operand) *
                                B.operand list -> unit
 
-  val cSwitchSt              : emtTyp * B.operand * B.operand * B.operand *
+  val emitSwitchStmt         : emtTyp * B.operand * B.operand * B.operand *
                                B.operand * Z.multi_way_branch_case list *
                                (Z.variable_symbol -> B.operand) -> unit
 
-  val createEmptyStruct      : emtTyp * B.operand * int -> unit
+  val emitEmptyStruct        : emtTyp * B.operand * int -> unit
 
-  val copyBlock              : emtTyp * B.operand * B.operand *
+  val emitBlockCopy          : emtTyp * B.operand * B.operand *
                                int * bool -> unit
 
-  val compileArgs            : emtTyp * B.operand list
+  val emitFunArgs            : emtTyp * B.operand list
                                -> (B.operand list * int)
   val emitFunCallFrameSize   : emtTyp * B.operand * int * int -> unit
   val emitGetFunResult       : emtTyp * B.operand * B.operand -> unit
 
-  val emitReturnStatement    : emtTyp -> unit
-  val emitEndProcStatement   : emtTyp -> unit
+  val emitReturnStmt         : emtTyp -> unit
+  val emitEndProcStmt        : emtTyp -> unit
 
   val emitC                  : emtTyp -> unit
   val emitU                  : emtTyp -> unit
   val emitS                  : emtTyp -> unit
   val adjustStackReg         : emtTyp * int -> unit
 
-  val compReturn             : emtTyp *
+  val emitReturn             : emtTyp *
                                (B.operand * B.operand * B.regtype) option ->
                                unit
 end
