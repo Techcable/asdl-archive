@@ -1,23 +1,10 @@
 Group is
-smlnj-lib.cm
-../base/asdl-base.cm
-module-id.sig
-module-id.sml
-misc.sml
-counter.sml
-parameters.sml
-properties.sml
-pp-util.sml
-paths.sml
-wpp.sml
+dtangle/sources.cm
 getopt/sources.cm
-run-with.sig
-run-with.sml
-(* below stolen from sml-nj compiler *)
-scc.sml
-(*pp.sml*) (* replaced by wpp *)
-(*ppqueue.sml*)
-(*sourcemap.nw*)
-sourcemap.sig
-sourcemap.sml
+meta-build/sources.cm
+misc/sources.cm
+os/sources.cm
+pp/sources.cm
+sourcemap/sources.cm
+
 
