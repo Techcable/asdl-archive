@@ -146,11 +146,10 @@ struct
       fun compileVarDef (name, loc, typ, is_local) =
 	 let
 	    val (regTyp, _) = B.getRegType typ
-	    val size        = B.getTypeSize typ
 	 in
 	    if is_local then
 	       M.emitLocVariableDef (emt, currentProc (), name, loc, regTyp,
-				     size)
+				     B.getTypeSize typ)
 	    else
 	       M.emitGloVariableDef (emt, name, loc, regTyp)
 	 end
@@ -267,8 +266,11 @@ struct
 		{key, address_taken = _, def = {name = vsym, type' = ty, ...},
 		 is_local = is_local}, refname = r as (ref NONE)} =>
 	       let
-		  val name = (ID.toString (#name vsym)) ^ "_" ^
-		     (I.toString (#uid var))
+                   (* if variable is global, leave its name alone, else
+                    append  whatever was being appended  before I edited it *)
+                  val name = (ID.toString (#name vsym)) ^
+                             (if is_local then ("_" ^ (I.toString (#uid var)))
+			      else "")
 		  val loc  = if is_local then newLocal() else newGlobal ()
 	       in
 		  compileVarDef (name, loc, (#value o findType) ty, is_local);
@@ -650,8 +652,7 @@ struct
 	    let
 	       val (baseReg, _) = compileExpr baseArrayAddress
 	    in
-	       compileBinOp(Z.Add, baseReg, idxReg,
-			    addrReg, [baseReg, idxReg])
+	       compileBinOp(Z.Add, baseReg, idxReg, addrReg, [baseReg, idxReg])
 	    end;
 	    (addrReg, getKind typ)
 	 end
@@ -920,157 +921,157 @@ struct
 	      | Z.BranchStatement stmt => compileBranchStmt stmt
 	      | Z.MultiWayBranchStatement stmt =>
 		   compileMultiWayBranchStmt stmt
-	      | Z.LabelLocationStatement stmt => compileLabelLocationStmt stmt
-	      | Z.StoreVariableStatement stmt => compileStoreVariableStmt stmt
-	      | Z.NopStatement =>
-		   compileNopStmt ()) before M.setRegCount currentReg
-	 end
+              | Z.LabelLocationStatement stmt => compileLabelLocationStmt stmt
+              | Z.StoreVariableStatement stmt => compileStoreVariableStmt stmt
+              | Z.NopStatement =>
+                   compileNopStmt ()) before M.setRegCount currentReg
+         end
 
       and compileEvalStmt {expressions} =
-	 app (ignore o compileExpr) expressions
+         app (ignore o compileExpr) expressions
 
       and compileStmtList {statements} =
-	 app compileStatement statements
+         app compileStatement statements
 
       and compileIfThenElseStmt {condition, then_part, else_part} =
-	 let
-	    val lab1 = newLabel NONE
+         let
+            val lab1 = newLabel NONE
             val lab2 = newLabel NONE
-	 in
+         in
             compileBooleanExpr emt condition {tlab=NONE, flab=SOME lab1};
             compileStatement then_part;
             M.emitUncondJump (emt, lab2);
             M.emitLabel (emt, lab1);
             compileStatement else_part;
             M.emitLabel (emt, lab2)
-	 end
+         end
 
       and compileWhileStmt {condition = condition, body = body,
-			    break_label = breakLabOpt,
-			    continue_label = contLabOpt} =
-	 let
+                            break_label = breakLabOpt,
+                            continue_label = contLabOpt} =
+         let
             val breakLab =
-	       if isSome breakLabOpt then getSymLabel (valOf breakLabOpt)
-	       else newLabel NONE
+               if isSome breakLabOpt then getSymLabel (valOf breakLabOpt)
+               else newLabel NONE
             val contLab =
-	       if isSome contLabOpt then getSymLabel (valOf contLabOpt)
-	       else newLabel NONE
-	 in
+               if isSome contLabOpt then getSymLabel (valOf contLabOpt)
+               else newLabel NONE
+         in
             M.emitLabel (emt, contLab);
             compileBooleanExpr emt condition {tlab=NONE, flab=SOME breakLab};
             compileStatement body;
             M.emitUncondJump (emt, contLab);
             M.emitLabel (emt, breakLab)
-	 end
+         end
 
       and compileDoWhileStmt {condition = condition,
-			      body = body,
-			      break_label = breakLabOpt,
-			      continue_label = contLabOpt} =
-	 let
+                              body = body,
+                              break_label = breakLabOpt,
+                              continue_label = contLabOpt} =
+         let
             val beginLab    = newLabel NONE
             val continueLab = if isSome contLabOpt
-				 then getSymLabel (valOf contLabOpt)
+                                 then getSymLabel (valOf contLabOpt)
                               else newLabel NONE
             val breakLab    = if isSome breakLabOpt
-				 then getSymLabel (valOf breakLabOpt)
+                                 then getSymLabel (valOf breakLabOpt)
                               else newLabel NONE
-	 in
+         in
             M.emitLabel (emt, beginLab);
             compileStatement body;
             M.emitLabel (emt, continueLab);
             compileBooleanExpr emt condition {tlab=SOME beginLab, flab=NONE};
             M.emitLabel (emt, breakLab)
-	 end
+         end
 
       and compileForStmt {index = indexVar,
-			  lower_bound = lowerBound,
-			  upper_bound = upperBound,
-			  step = step,
-			  init_comparison_opcode = initCompOpcode,
-			  body = fbody,
-			  pre_pad = prePadOpt,
-			  break_label = breakLabOpt,
-			  continue_label = contLabOpt} =
-	 raise B.Can'tDoItYet (* The new front end doesn't generate this *)
+                          lower_bound = lowerBound,
+                          upper_bound = upperBound,
+                          step = step,
+                          init_comparison_opcode = initCompOpcode,
+                          body = fbody,
+                          pre_pad = prePadOpt,
+                          break_label = breakLabOpt,
+                          continue_label = contLabOpt} =
+         raise B.Can'tDoItYet (* The new front end doesn't generate this *)
 
       and compileScopeStmt {body, definition_block =
-			    {defined_variables = vars, ...}} =
-	 let
+                            {defined_variables = vars, ...}} =
+         let
             val variables = map findSymbolRef vars
-	 in
+         in
             nameObjects variables;
             compileVariables variables;
             M.emitBeginTextSection emt;
             compileStatement body
-	 end
+         end
 
       and compileCForStmt {beforee, test, step, body, pre_pad,
-			   break_label, continue_label} =
-	 raise B.Can'tDoItYet
+                           break_label, continue_label} =
+         raise B.Can'tDoItYet
 
       and compileCallStmt {calle_address, arguments, destination} =
-	 raise B.Can'tDoItYet
+         raise B.Can'tDoItYet
 
       and compileMarkStmt {file, line} =
-	 emt "# source file \"%s\", line %d\n" [F.STR file, F.INT line]
+         emt "# source file \"%s\", line %d\n" [F.STR file, F.INT line]
 
       and compileVaStartStmt {ap_address, parmn} =
-	 raise B.Can'tDoItYet
+         raise B.Can'tDoItYet
 
       and compileVaStartOldStmt {ap_address} =
-	 raise B.Can'tDoItYet
+         raise B.Can'tDoItYet
 
       and compileVaEndStmt {ap_address} =
-	 raise B.Can'tDoItYet
+         raise B.Can'tDoItYet
 
       and compileStoreStmt {data_operand = dataOper,
-			    destination_address = destAddr} =
-	 let
+                            destination_address = destAddr} =
+         let
             val (r, kind) = compileExpr dataOper
             val (a, _)    = compileExpr destAddr
-	 in
+         in
             case kind of
-	       Group siz => M.emitBlockCopy (emt, r, a, siz, true)
-	     | Array siz => M.emitBlockCopy (emt, r, a, siz, true)
-	     | Atomic    => M.emitMemWrite (emt, a, r, [a, r])
-	 end
+               Group siz => M.emitBlockCopy (emt, r, a, siz, true)
+             | Array siz => M.emitBlockCopy (emt, r, a, siz, true)
+             | Atomic    => M.emitMemWrite (emt, a, r, [a, r])
+         end
 
       and compileReturnStmt {return_value = NONE} = M.emitReturn (emt, NONE)
-	| compileReturnStmt {return_value = SOME(retArg)} =
-	 let
+        | compileReturnStmt {return_value = SOME(retArg)} =
+         let
             val (resReg, kind) = compileExpr retArg
             val regtyp = case resReg of Reg (r, _) => r
-	  | _ => raise (Fail "Bad register")
+          | _ => raise (Fail "Bad register")
             val retReg = M.getReturnReg regtyp
-	 in
+         in
             M.emitReturn (emt, SOME (retReg, resReg, regtyp))
-	 end
+         end
 
       and compileJumpStmt {target} =
-	 M.emitUncondJump (emt, getSymLabel target)
+         M.emitUncondJump (emt, getSymLabel target)
 
       and compileJumpIndirectStmt {itarget} =
-	 raise B.Can'tDoItYet
+         raise B.Can'tDoItYet
 
       and compileBranchStmt {decision_operand = decision, target} =
-	 compileBooleanExpr emt decision {tlab=SOME (getSymLabel target),
-					  flab=NONE}
+         compileBooleanExpr emt decision {tlab=SOME (getSymLabel target),
+                                          flab=NONE}
 
       and compileMultiWayBranchStmt {decision_operand = decisionOper,
-					  default_target = defaultLab,
-					  cases = cases} =
-	 let
+                                     default_target = defaultLab,
+                                     cases = cases} =
+         let
             val (decReg, _) = compileExpr decisionOper
             val newReg      = M.newIntReg ()
             val addrReg     = M.newAddrReg ()
             val _           =
-	       M.emitUnaryOp (emt, Z.Convert, decReg, newReg, [decReg],
-				 (newArg, currentProc ()))
+               M.emitUnaryOp (emt, Z.Convert, decReg, newReg, [decReg],
+                              (newArg, currentProc ()))
             val tabLab  = newLabel NONE
-	 in
+         in
             M.emitSwitchStmt (emt, decReg, newReg, addrReg, tabLab,
-                         cases, getSymLabel)
+                              cases, getSymLabel)
 	 end
 
       and compileLabelLocationStmt {defined_label} =
@@ -1233,6 +1234,7 @@ struct
 		     val typ          = #value (findType type_id)
 		     val (regType, _) = B.getRegType typ
 		     val size         = B.getTypeSize typ
+		     val size         = if size < 4 then 4 else size
 		     val loc          = newArg();
 		  in
 		     M.emitProcParameterDef (emt, currentProc (),
