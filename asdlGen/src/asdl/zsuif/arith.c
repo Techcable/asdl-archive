@@ -1,3 +1,3 @@
-int main(int argc, char** argv) {
-     return 1+2*argc;
+int f(int x) {
+     return 1+2*x;
 }
