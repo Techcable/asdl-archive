@@ -58,8 +58,7 @@ structure GenPickleTranslator:TRANSLATE =
 			val dir =
 			    if dir = "" then OS.Path.currentArc
 			    else dir
-			val params = Params.fromList cfg
-			    [("output_file",file),("output_directory",dir)] 
+			val params = Params.fromList cfg  [] 
 		    in
 			Params.mergeParams(p,params)
 		    end
