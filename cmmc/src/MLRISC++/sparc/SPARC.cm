@@ -1,0 +1,49 @@
+(* SPARC-MLRISC.cm
+ *
+ * COPYRIGHT (c) 1999 Bell Labs, Lucent Technologies.
+ *
+ * SPARC specific modules for MLRISC code generation framework.
+ *)
+
+Library 
+
+	signature SPARCCELLS
+	signature SPARCINSTR
+	signature SPARCSHUFFLE
+	signature SPARC_PSEUDO_INSTR
+	structure SparcCells
+	functor Sparc
+	functor SparcAsmEmitter
+	functor SparcDelaySlots
+	functor SparcFreqProps
+	functor SparcInstr
+	functor SparcJumps
+	functor SparcMCEmitter
+	functor SparcProps
+	functor SparcRewrite
+	functor SparcShuffle
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	../MLRISC.cm
+	../control/Control.cm
+	../library/Lib.cm
+	smlnj-lib.cm
+
+	(* Sparc specific backend *)
+	instructions/sparcCells.sml
+	instructions/sparcInstr.sml
+	instructions/sparcShuffle.sig
+	instructions/sparcShuffle.sml
+	instructions/sparcProps.sml
+	instructions/sparcFreqProps.sml
+	emit/sparcAsm.sml
+	emit/sparcMC.sml
+	backpatch/sparcJumps.sml
+	mltree/sparcPseudoInstr.sig
+	mltree/sparc.sml 
+	ra/sparcRewrite.sml
+	(* ../sparc/ra/sparcRegAlloc.sml *)
+	backpatch/sparcDelaySlotProps.sml

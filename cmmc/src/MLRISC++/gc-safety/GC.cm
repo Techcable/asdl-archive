@@ -1,0 +1,40 @@
+(*
+ * This library implements GC safety. 
+ *)
+
+Library 
+	signature GC_CALLBACK
+	signature GC_LIVENESS
+	signature GC_TYPEMAP
+	signature GC_TYPE_SYSTEM
+	structure DummyGCType
+	functor GCGen
+	functor GCInvariants
+	functor GCLiveness
+	functor GCTypeMap
+	functor GCTypeSystem
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	smlnj-lib.cm
+	
+	../control/Control.cm
+	../library/Lib.cm
+	../graphs/Graphs.cm
+	../MLRISC.cm
+	../IR/IR.cm
+	../mltree/RTL.cm
+
+	(* GC safety stuff *)
+	gc-gen.sig
+	gc-gen.sml
+	gc-liveness.sig
+	gc-liveness.sml
+	gc-typemap.sig
+	gc-typemap.sml
+	gc-dummy-type.sml
+	gc-type-system.sig
+	gc-type-system.sml
+	gc-invariants.sml

@@ -1,0 +1,46 @@
+Library 
+structure Error
+structure Identifier
+structure StdPkl
+structure StdPrims
+structure StdPrimsUtil
+structure StdTypes
+structure StdTypesUtil
+
+signature ERROR
+signature IDENTIFIER
+signature STD_PKL
+signature STD_PRIMS
+signature STD_PRIMS_UTIL
+
+signature STD_TYPES
+signature STD_TYPES_UTIL
+
+is
+
+basis.cm
+smlnj-lib.cm
+
+error.sig
+error.sml
+
+identifier.sig
+identifier.sml
+
+pkl.sig
+pkl-int.sml
+
+std-pkl.sig
+std-pkl.sml
+
+std-prims.sig
+std-prims.sml
+
+std-prims-util.sig
+std-prims-util.sml
+
+std-types.sml
+(*
+pkl-real.sml
+share.sml
+*)

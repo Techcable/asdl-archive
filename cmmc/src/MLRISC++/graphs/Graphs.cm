@@ -1,0 +1,160 @@
+(*
+ * This is a generic graph library. 
+ *)
+
+Library
+	signature ABELIAN_GROUP
+	signature ABELIAN_GROUP_WITH_INF
+	signature ACYCLIC_SUBGRAPH_VIEW
+	signature ALL_PAIRS_SHORTEST_PATHS
+	signature BIPARTITE_GRAPH
+	signature BIPARTITE_MATCHING
+	signature CLOSED_SEMI_RING
+	signature GRAPH
+	signature GRAPH_BICONNECTED_COMPONENTS
+	signature GRAPH_BREATH_FIRST_SEARCH
+	signature GRAPH_COMBINATIONS
+	signature GRAPH_DEPTH_FIRST_SEARCH
+	signature GRAPH_IMPLEMENTATION
+	signature GRAPH_IS_CYCLIC
+	signature GRAPH_MINOR_VIEW
+	signature GRAPH_SIMPLE_CYCLES
+	signature GRAPH_SNAPSHOT
+	signature GRAPH_STRONGLY_CONNECTED_COMPONENTS
+	signature GRAPH_TOPOLOGICAL_SORT
+	signature GRAPH_WRAPPERS
+	signature ISOMORPHIC_GRAPH_VIEW
+	signature MAX_FLOW
+	signature MIN_COST_SPANNING_TREE
+	signature MIN_CUT
+	signature NODE_PARTITION
+	signature NODE_PRIORITY_QUEUE
+	signature NO_ENTRY_VIEW
+	signature NO_EXIT_VIEW
+	signature PRINT_GRAPH
+	signature READONLY_GRAPH_VIEW
+	signature RENAMED_GRAPH_VIEW
+	signature REVERSED_GRAPH_VIEW
+	signature SINGLETON_GRAPH_VIEW
+	signature SINGLE_ENTRY_MULTIPLE_EXIT_VIEW
+	signature SINGLE_SOURCE_SHORTEST_PATHS
+	signature START_STOP_VIEW
+	signature SUBGRAPH_P_VIEW
+	signature SUBGRAPH_VIEW
+	signature TRACE_SUBGRAPH_VIEW
+	signature TRANSITIVE_CLOSURE
+	signature UNDIRECTED_GRAPH_VIEW
+	signature UNION_GRAPH_VIEW
+	signature UPDATE_GRAPH_INFO
+	structure AcyclicSubgraphView
+	structure BipartiteMatching
+	structure DirectedGraph
+	structure Graph
+	structure GraphBCC
+	structure GraphBFS
+	structure GraphCombinations
+	structure GraphCycles
+	structure GraphDFS
+	structure GraphIsCyclic
+	structure GraphMinorView
+	structure GraphSCC
+	structure GraphTopsort
+	structure GraphWrappers
+	structure IsomorphicGraphView
+	structure Kruskal
+	structure NoEntryView
+	structure NoExitView
+	structure NodePartition
+	structure PrintGraph
+	structure ReadOnlyGraphView
+	structure RenamedGraphView
+	structure ReversedGraphView
+	structure SingleEntryMultipleExit
+	structure SingletonGraphView
+	structure StartStopView
+	structure SubgraphView
+	structure Subgraph_P_View
+	structure TraceView
+	structure TransitiveClosure
+	structure UndirectedGraphView
+	structure UnionGraphView
+	structure UpdateGraphInfo
+	functor BellmanFord
+	functor Dijkstra
+	functor DirectedGraph
+	functor FloydWarshall
+	functor GraphSnapShot
+	functor Johnson
+	functor MaxFlow
+	functor MinCut
+	functor NodePriorityQueue
+	functor UndirectedGraph
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	smlnj-lib.cm
+	../control/Control.cm
+	../library/Lib.cm
+
+	acyclic-graph.sml
+	bellman-ford.sml
+	bigraph.sig
+	closed-semi-ring.sig
+	digraph.sml
+	dijkstra.sml
+	floyd-warshall.sml
+	johnson.sml
+	graph-bfs.sig
+	graph-bfs.sml
+	graph-bcc.sig
+	graph-bcc.sml
+	graph-comb.sig
+	graph-comb.sml
+	graph-cycles.sig
+	graph-cycles.sml
+	graph-dfs.sig
+	graph-dfs.sml
+	graph-is-cyclic.sig
+	graph-is-cyclic.sml
+	graph-minor.sml
+	graph-scc.sig
+	graph-scc.sml
+	graph-topsort.sig
+	graph-topsort.sml
+	graph.sig
+	graph.sml
+	graphimpl.sig
+	group.sig
+	isograph.sml
+	kruskal.sml
+	matching.sig
+	matching.sml
+	max-flow.sig
+	max-flow.sml
+	min-cut.sig
+	min-cut.sml
+	no-exit.sml
+	node-partition.sml
+	node-priqueue.sig
+	node-priqueue.sml
+	printgraph.sml
+	readonly.sml
+	renamegraph.sml
+	revgraph.sml
+	seme.sml
+	shortest-paths.sig
+	singleton.sml
+	snap-shot.sml
+	spanning-tree.sig
+	start-stop.sml
+	subgraph-p.sml
+	subgraph.sml
+	trace-graph.sml
+	trans-closure.sml
+	ugraph.sml
+	uniongraph.sml
+	wrappers.sml
+	udgraph.sml
+	update-graph-info.sml

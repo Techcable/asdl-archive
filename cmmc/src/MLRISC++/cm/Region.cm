@@ -1,0 +1,26 @@
+(*
+ * This library contains the basic interface to the regions stuff 
+ *)
+
+Library 
+	signature POINTS_TO_INFO
+	signature REGION_INFO
+	signature REGION_PROPERTIES
+	structure PointsToInfo
+	structure RegionInfo
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	smlnj-lib.cm
+	
+	MLRISC.cm
+	Control.cm
+	Lib.cm
+
+	../instructions/regionInfo.sml
+	../instructions/regionProps.sig
+
+	../aliasing/pointsToInfo.sig
+	../aliasing/pointsToInfo.sml

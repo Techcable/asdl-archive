@@ -1,0 +1,12 @@
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	smlnj-lib.cm
+	
+	MLRISC.cm
+	GC.cm
+	SPARC.cm
+	
+	(* Sparc specific backend *)

@@ -1,0 +1,22 @@
+(*
+ * This library contains the superscalar scheduling stuff.
+ *)
+
+Library 
+	functor AlphaSchedProps
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	smlnj-lib.cm
+	
+	Control.cm
+	Lib.cm
+	MLRISC.cm
+	ALPHA.cm
+	Sched.cm
+	Region.cm
+	
+	(* Alpha scheduler *) 
+	../alpha/scheduling/alphaSchedProps.sml

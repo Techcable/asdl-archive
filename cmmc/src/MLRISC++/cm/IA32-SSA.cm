@@ -1,0 +1,17 @@
+Library 
+	functor X86SSAProps
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	Control.cm
+	MLRISC.cm
+	RTL.cm
+	SSA.cm
+	Region.cm
+	IA32.cm
+	IA32-RTL.cm
+	
+	(* X86 specific backend *)
+	../x86/SSA/x86SSAProps.sml

@@ -1,0 +1,34 @@
+Library
+	signature LAZY_CODE_MOTION
+	signature RA_FRAME_INFO
+	signature RA_SPILL_GCM
+	structure LazyCodeMotion
+	functor ClusterFrameInfo
+	functor ImprovedChaitinSpillHeur
+	functor ImprovedChowHennessySpillHeur
+	functor InterProceduralMemoryRA
+	functor RASpillGCM
+	functor RASpillWithRenaming
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	smlnj-lib.cm
+	MLRISC.cm
+	Control.cm
+	Lib.cm
+	ir.cm
+
+	../ra/ra-spill-gcm.sig
+	../ra/ra-spill-gcm.sml
+	../ra/lcm.sig
+	../ra/lcm.sml
+	../ra/frame-info.sig
+	../ra/cluster-frame-info.sml
+	../ra/interproc-mem-ra.sml
+
+	../ra/chaitin-spillheur2.sml
+	../ra/chow-hennessy-spillheur2.sml
+
+	../ra/ra-spill-with-renaming.sml

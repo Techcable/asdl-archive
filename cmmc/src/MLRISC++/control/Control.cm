@@ -1,0 +1,15 @@
+Library 
+	signature MLRISC_CONTROL
+	signature MLRISC_ERROR_MSG
+	signature MLRISC_TIMING
+	structure MLRiscControl
+	structure MLRiscErrorMsg
+	structure MLRiscTiming
+is
+#if defined(NEW_CM)
+	basis.cm
+#endif
+
+        mlriscErrormsg.sml
+        mlrisc-control.sml
+        mlrisc-timing.sml

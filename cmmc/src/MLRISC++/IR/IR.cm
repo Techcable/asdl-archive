@@ -1,0 +1,68 @@
+(*
+ * This library implements various compiler data structures and graphs.
+ *)
+
+Library
+	signature COMPUTE_FREQUENCIES
+	signature COMPUTE_FREQUENCIES2
+	signature CONTROL_DEPENDENCE_GRAPH
+	signature CONTROL_FLOW_GRAPH_RESTRUCTURE
+	signature DERIVED_GRAPH
+	signature DJ_DATAFLOW
+	signature DJ_GRAPH
+	signature DOMINANCE_FRONTIERS
+	signature DOMINATOR_TREE
+	signature IDEFS
+	signature LOOP_STRUCTURE
+	signature REDUCIBILITY
+	signature STATIC_SINGLE_ASSIGNMENT_FORM
+	structure IDefs
+	functor ComputeFrequencies
+	functor ComputeFrequencies2
+	functor ControlDependenceGraph
+	functor ControlFlowGraphRestructure
+	functor DJDataflow
+	functor DJGraph
+	functor DerivedGraph
+	functor DominanceFrontiers
+	functor DominatorTree
+	functor LoopStructure
+	functor Reducibility
+	functor StaticSingleAssignmentForm
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	smlnj-lib.cm
+	../control/Control.cm
+	../library/Lib.cm
+	../graphs/Graphs.cm
+
+	cdg.sig
+	cdg.sml
+	cfg-restructure.sig
+	cfg-restructure.sml
+	compute-freq.sig
+	compute-freq.sml
+	compute-freq2.sig
+	compute-freq2.sml
+	derived-graph.sig
+	derived-graph.sml
+	dj-dataflow.sig
+	dj-dataflow.sml
+	djgraph.sig
+	djgraph.sml
+	dominance-frontier.sig
+	dominance-frontier.sml
+	dominator.sig
+	dominator.sml
+	idefs2.sig
+	idefs2.sml
+	loop-structure.sig
+	loop-structure.sml
+	reducibility.sig
+	reducibility.sml
+	ssa.sig
+	ssa.sml
+

@@ -1,0 +1,25 @@
+(*
+ * This library implemenents the MLRISC SSA optimizer.
+ *)
+
+Library 
+	functor MLRiscOptimizer
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	
+	../MLRISC.cm
+	../control/Control.cm
+	../library/Lib.cm
+	../graphs/Graphs.cm
+	../visualization/Visual.cm
+	../ir/ir.cm
+	../IR/IR.cm
+	../mltree/RTL.cm
+	../SSA/SSA.cm
+	../scheduling/Sched.cm
+	../gc-safety/GC.cm
+	
+	mlrisc-optimizer.sml

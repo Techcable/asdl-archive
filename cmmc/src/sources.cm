@@ -1,0 +1,100 @@
+(*
+ * sources.cm
+ *
+ *)
+
+Library
+	signature CMM_MAIN
+	structure CmmMain
+is
+
+        basis.cm 
+        
+        smlnj-lib.cm
+        ml-yacc-lib.cm
+
+        MLRISC++/cm/MLRISC.cm
+        MLRISC++/cm/IR.cm
+        
+        (* For Annotations *)
+        MLRISC++/cm/Lib.cm
+        
+        MLRISC++/cm/Control.cm
+        
+	MLRISC++/cm/Peephole.cm
+
+	(* for ImprovedChaitinSpillHeur *)
+	(*MLRISC++/cm/RA.cm*)
+	MLRISC++/ra/chaitin-spillheur2.sml
+
+	MLRISC++/cm/ALPHA.cm
+	MLRISC++/cm/ALPHA-Peephole.cm
+	MLRISC++/cm/SPARC.cm
+	MLRISC++/cm/SPARC-Peephole.cm
+	MLRISC++/cm/IA32.cm
+	MLRISC++/cm/IA32-Peephole.cm
+
+        (* for printing the mltree stms *)
+        MLRISC++/cm/MLTREE.cm
+
+        main/export.sml
+
+        frontend/cmmSyntax.cm
+        frontend/pal.lex
+        frontend/pal.grm
+        frontend/parse.sml
+        
+        palcompile/cmmExprs.sml
+        palcompile/cmmTypes.sml
+        palcompile/frame.sml
+        palcompile/cmmConstant.sml
+        palcompile/cmmRegs.sig
+        palcompile/archConv.sig
+        palcompile/archDetails.sig
+        palcompile/pseudoOps.sml
+        palcompile/asmIO.sig
+        
+        backend/regAlloc.sml
+	backend/chaitin-spillheur2-reig.sml
+        backend/cmmAnnotations.sml
+        backend/cmmMLTreeExt.sml
+        backend/mlriscGen.sml
+        backend/loadstore.sml
+        backend/ops.sml
+        backend/const.sml
+        backend/cmmRegions.sml
+        backend/symboltable.sml
+        backend/misc.sml
+        
+        alpha32/alphaCG.sml
+        alpha32/alphaCmmRegs.sml
+        alpha32/alpha32Arch.sml
+        alpha32/alphaArchDetails.sml
+        alpha32/alpha32MLTree.sml
+        alpha32/alpha32PseudoInstrs.sml
+        alpha32/alphaAsmIO.sml
+        
+        sparc/sparcCG.sml
+        sparc/sparcCmmRegs.sml
+        sparc/sparcArchDetails.sml
+        sparc/sparcArch.sml
+        sparc/sparcMLTree.sml
+        sparc/sparcPseudoInstrs.sml
+        sparc/sparcAsmIO.sml
+        
+        x86/x86CG.sml
+        x86/x86CmmRegs.sml
+        x86/x86ArchDetails.sml
+        x86/x86Arch.sml
+        x86/x86MLTree.sml
+        x86/x86MemRegs.sml
+        x86/x86AsmIO.sml
+        
+        (* ASDL pickles *)
+        (*asdl/cmmASDL.cm*)
+
+        util/cmmError.sml
+        util/sourcemap/sourcemap.sig
+        util/sourcemap/sourcemap.sml
+        util/symbol.sml
+

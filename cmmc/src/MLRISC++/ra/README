@@ -1,0 +1,31 @@
+The old register allocator is in the file: 
+
+    ra.sml 
+
+The new register allocator is in the files: 
+
+    ra-core.sig ra-core.sml ra-graph.sig ra-graph.sml
+    ra-iteratedCoalescing.sml
+
+    This is basically the old register allocator rearranged a bit,
+    with various localized data structure changes.
+
+The newest register allocator is in the files: 
+
+    ra-priqueue.sig
+    ra-flowgraph.sig
+    new-ra-core.sig
+    new-ra-core.sml
+    new-ra-graph.sig
+    new-ra-graph.sml
+    new-ra-spill.sig
+    new-ra-spill.sml
+    cluster-ra.sml
+    cfg-ra.sml
+    ssa-ra.sml
+    new-ra-params.sig
+    new-ra.sig
+    new-ra.sml
+
+    This is a completely new implementation of the iterated coalescing
+    algorithm.  With various algorithmic improvement.

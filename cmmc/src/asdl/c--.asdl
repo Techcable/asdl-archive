@@ -1,0 +1,96 @@
+module CmmASDL {
+
+program = (string, prg)
+prg = (global*, topLevel*)
+
+topLevel = Imports  (string*)
+    	 | Exports  (string*)
+    	 | Data     (pseudoOp*)
+    	 | Function (conv 	    conv, 
+		     string 	    name, 
+		     pseudoOp_list? data, 
+		     local* 	    args, 
+		     local*         locals,
+		     stackDatum*    stack,
+		     stmts 	    stmts)
+
+global = (type, string, globalKind)
+
+globalKind = Register(int)
+	   | Define
+	   | Import
+
+pseudoOp_list = (pseudoOp*)
+
+conv = CmmKnown	
+     | CmmEscaping		
+     | C
+
+local = (type, string)
+
+stmt = Empty
+     | RegWrite		(string, expr)
+     | MemWrite		(type, expr, align?, expr)
+     | If		(expr, rel, expr, stmts, stmts?)
+     | Switch		(expr, range?, swt*)
+     | Label		(string)	
+     | Goto		(string)
+     | ComputedGoto	(expr, string*)
+     | Jump		(conv, expr, expr*)
+     | Call		(conv, string*, expr, expr*)
+     | Return		(conv, expr*)
+
+stmts = (stmt_srcpos*)
+stmt_srcpos = (stmt, srcpos)
+srcpos = (int, int)
+
+range = (int, int)
+
+
+expr = ConstWord  (string)
+     | ConstFloat (string)
+     | ConstSys	  (string)
+     | Addr	  (string)
+     | Reg	  (string)
+     | StackL	  (string)
+     | MemRead	  (type, expr, align?)
+     | Unary	  (string, expr)
+     | Binary	  (expr, string, expr)
+
+
+pseudoOp = DataLabel  (string)
+      	 | DataWord   (typesize, int, constExpr*)
+		   -- Word size, repeat, Constants 
+      	 | DataFloat  (typesize, int, string*)
+		   -- Float size, repeat, floatNums
+      	 | DataAlign  (align)	-- # of Bytes 
+      	 | DataString (string)
+	 | DataComm   (string, constExpr, int?)  -- size, align
+	 | DataLcomm  (string, constExpr, int?)  -- size, align
+
+
+stackDatum = StackLabel	(string)
+	   | StackSpace	(typesize, int) -- size, repeat 
+	   | StackAlign	(align)	  	-- # of Bytes 
+
+swt = Swt	 (int*, stmts)
+    | SwtDefault (stmts)
+
+rel = EQ (string)
+    | NE (string)
+    | LT (string)
+    | LE (string)
+    | GT (string)
+    | GE (string)
+
+
+constExpr = ConstExpr (expr)
+
+type = TypeWord  (typesize)
+     | TypeFloat (typesize)
+
+typesize = Sz8 | Sz16 | Sz32 | Sz64	
+
+align = (int)
+
+}

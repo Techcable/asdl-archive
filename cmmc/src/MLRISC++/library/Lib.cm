@@ -1,0 +1,93 @@
+(*
+ * This is the MLRISC library
+ *)
+Library 
+	signature ANNOTATIONS
+	signature BITSET
+	signature CATNETABLE_LIST
+	signature FREQ
+	signature INTMAP
+	signature LINE_BREAK
+	signature PRIORITY_QUEUE
+	signature STRING_OUTSTREAM
+	structure Annotations
+	structure BitSet
+	structure CatnetableList
+	structure DynArray
+	structure Freq
+	structure HashArray
+	structure Intmap
+	structure LineBreak
+	structure PriorityHeap
+	structure PriorityQueue
+	structure SortedList
+	structure StringOutStream
+	structure Word64
+is
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	smlnj-lib.cm
+	../control/Control.cm
+
+	annotations.sig
+	annotations.sml
+	bitset.sig
+	bitset.sml
+(*
+	cache.sml
+ *)
+	catlist.sml
+	dynamic-array.sml
+(*
+	dynamic-bitset.sml
+	fixed-point.sig
+	fixed-point.sml
+ *)
+	freq.sig
+	freq.sml
+	hash-array.sml
+(*
+	hash-table.sig
+	hash-table.sml
+	hashMap.sig
+	hashMap.sml
+	hashBag.sig
+	hashBag.sml
+	hashMultimap.sig
+	hashMultimap.sml
+	hashSet.sig
+	hashSet.sml
+	int-set.sml
+ *)
+	intmap.sig
+	intmap.sml
+	heap.sml
+	line-break.sml
+	priQueue.sig
+	priQueue.sml
+(*
+	probability.sml
+	randlist.sml
+	regset.sig
+	regset.sml
+	sorting2.sml
+ *)
+	sortedlist.sml
+	stringOutStream.sig
+	stringOutStream.sml
+(*
+	susp.sml
+	transaction-glue.sml
+	transaction-log.sig
+	transaction-log.sml
+	transaction.sig
+	transaction.sml
+	tree-map.sml
+	undoable-array.sml
+	undoable-ref.sml
+	union-find.sml
+	uref.sml
+ *)
+	word64.sml
+

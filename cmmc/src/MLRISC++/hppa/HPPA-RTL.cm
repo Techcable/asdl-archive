@@ -1,0 +1,17 @@
+Library 
+	functor HppaRTL
+	functor HppaRTLProps
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	../control/Control.cm
+	../MLRISC.cm
+	../mltree/RTL.cm
+	../instructions/Region.cm
+	HPPA.cm
+	
+	(* Hppa specific backend *)
+	mltree/hppaRTL.sml 
+	mltree/hppaRTLProps.sml 

@@ -1,0 +1,516 @@
+(* cmm.grm 
+ *
+ * Fermin Reig 1999
+ *
+  *)
+
+structure Sym = Symbol
+structure S   = AbsSyn
+
+fun atoi s = Int32.toInt (valOf (Int32.fromString s))
+
+(* fun markexpr (e as S.MarkExpr _, _, _) = e
+    | markexpr (e,a,b) = S.MarkExpr(e,(a,b))
+*)
+
+fun markexpr (e, _, _) = e 
+
+fun callingConv("\"C\"", _) = S.C
+  | callingConv(c, errPos) = 
+    (errPos ("Unsupported foreign calling convention " ^ c); S.C)
+
+(* TODO: make sure it's a power of two *)
+fun powerOfTwo(i, errPos) = i
+
+  (* Name spaces.
+     A name can refer to:
+	1. a local variable    (pseudo register, function scope)
+     	2. a local stack label (stack address, function scope)
+     	3. a global register   (machine register/address, file scope) 
+     	4. a label    	       (address, file scope) 
+  *)
+
+  (* tables to hold names with scope = whole compilation unit:
+	global registers, imported/escaping *)	
+
+  (* global registers; scope = whole compilation unit *)
+  val globalRegs = Sym.new() : S.Global Sym.table
+
+  (* Names that aren't local to the compilation unit (imported or escaping) *)
+  val escaping = Sym.new() : S.Name Sym.table
+
+  (* function pseudo registers and stack labels; scope = function *)
+  val localRegs   = Sym.new() : S.Type Sym.table
+  val stackLabels = Sym.new() : S.Name Sym.table
+
+  fun newSym(tbl, key, value, errFn, errMsg) = 
+      Sym.enter(tbl, fn (_, x) => (errFn (errMsg ^ key); x)) (key, value)
+		
+  fun newGlobal(gl as (_, name, S.MachineReg _), errPos) = 
+      newSym(globalRegs, name, gl, errPos, 
+	     "Duplicate definition of global register ")
+    | newGlobal (gl, _) = gl 
+
+  fun newLocal(name, ty, errPos) =
+      newSym(localRegs, name,ty,errPos,"Duplicate definition of local variable ")
+
+  fun newStackL(l, errPos) = 
+      newSym(stackLabels, l, l,errPos,"Duplicate label in stack declaration ")
+
+  (* local names shadow global names *)
+  (* mlriscGen needs to treat global memory registers specially *)
+  fun nametoExpr name =
+      if (Sym.exist localRegs name) orelse
+	 (Sym.exist globalRegs name)         then S.Reg    name 
+	else if (Sym.exist stackLabels name) then S.StackL name
+	else 				          S.Addr   name
+
+
+  (* names that escape *)
+
+  (* If in a S.MemWrite stmt we store a S.Addr, or 
+     if in a S.RegWrite we store a S.Addr and the register escapes, or
+     if we pass a S.Addr as a parameter to a S.Call/S.Jump, or
+     if we return a S.Addr,
+	then that name escapes *)
+
+  fun nonLocal name = ignore(Sym.enter (escaping, fn (_,n) => n) (name,name))
+
+  fun checkNonLocal (S.Addr name)        = nonLocal name
+    | checkNonLocal (S.Unary(_, expr)) 	 = checkNonLocal expr
+    | checkNonLocal (S.Binary(e1,_, e2)) = (checkNonLocal e1;checkNonLocal e2)
+    | checkNonLocal _ 		     	 = ()
+
+
+  fun patchConv(S.Function{conv as S.CmmEscaping, name, formals, locals,stmts}) = 
+      if (Sym.exist escaping name) then 
+	 S.Function{conv=conv, name=name, formals=formals, locals=locals, 
+		    stmts = map (patchStmt S.CmmEscaping) stmts}
+      else
+	S.Function{conv=S.CmmKnown, name=name, formals=formals, 
+		   locals=locals, stmts= map (patchStmt S.CmmKnown) stmts}
+    | patchConv (S.Function{conv as S.C, name, formals, locals, stmts}) =
+	S.Function{conv=conv, name=name, formals=formals, 
+		    locals=locals, stmts = map (patchStmt S.C) stmts}
+	
+    | patchConv toplevel = toplevel
+
+  (* possibly modify the convention of calls/jumps/returns from 
+     CmmEscaping to CmmKnown *)
+
+  and patchStmt _ (call as (S.Call(S.CmmEscaping, res,to as S.Addr name,args), p)) =
+      if (Sym.exist escaping name) then
+	 call
+      else (S.Call(S.CmmKnown, res, to, args), p)
+    | patchStmt _ (jump as (S.Jump(S.CmmEscaping, to as S.Addr name, args),p)) =
+      if (Sym.exist escaping name) then 
+	 jump 
+      else (S.Jump(S.CmmKnown, to, args),p)
+    | patchStmt S.CmmKnown (S.Return(S.CmmEscaping, res),p) = 
+	(S.Return(S.CmmKnown, res), p)
+    | patchStmt conv (S.If(cond, thenStmts, NONE),p) = 
+	(S.If(cond, map (patchStmt conv) thenStmts, NONE), p)
+    | patchStmt conv (S.If(cond, thenStmts, SOME elseStmts),p) = 
+	(S.If(cond, map (patchStmt conv) thenStmts, 
+		  SOME (map (patchStmt conv) elseStmts)),p)
+    | patchStmt conv (S.Switch(e, ro, swts), p) =
+	(S.Switch(e, ro, map (doSwt conv) swts), p)
+    | patchStmt _ s = s	
+
+and doSwt conv (S.Swt(is, stmts))   = S.Swt(is, map (patchStmt conv) stmts)
+  | doSwt conv (S.SwtDefault stmts) = S.SwtDefault(map (patchStmt conv) stmts)
+
+%%
+
+%term	  
+	  EOF
+	| SEMICOLON | COLON | COMMA | DOT | DOTDOT
+
+	| LPAREN | RPAREN | LBRACE | RBRACE | LBRACKET | RBRACKET
+
+	| EQUALS 
+
+	| IMPORT | EXPORT 
+	| DATA	 | UNICODE
+	| COMM   | LCOMM
+
+	| STACK
+	| GLOBAL 
+
+	| JUMP | GOTO
+	| RETURN 
+
+	| FOREIGN
+
+	| IF | ELSE | SWITCH | DEFAULT
+
+	| TYPEWORD  of AbsSyn.typesize
+	| TYPEFLOAT of AbsSyn.typesize
+	| ALIGN     
+
+	| PRIMOP of string
+
+	| ADD  of string | SUB of string
+	| MUL  of string | DIV of string
+	| REM  of string
+
+	| SHIFT of string
+	| ANDB | ORB  | XORB | NOTB
+
+	| EQ of string | NE of string 
+	| LT of string | LE of string 
+	| GT of string | GE of string
+
+	| SYS of string
+
+	| LIT_INT 	of AbsSyn.literalInt
+	| LIT_FLOAT  	of AbsSyn.literalFloat
+	| LIT_STRING 	of string
+	| NAME 		of AbsSyn.Name
+
+
+%nonterm  program 	of S.Program
+	| toplevel	of S.TopLevel
+	| toplevels	of S.TopLevel list
+	| global 	of S.Global
+	| globals 	of S.Global list
+	| oregister	of S.GlobalKind
+	| ptype 	of S.Type
+	| names1 	of S.Name list
+	| names2 	of S.Name list
+	| nums1		of int list
+	| litFloats1 	of S.literalFloat list
+	| constExpr 	of S.ConstExpr
+	| winitus1 	of S.ConstExpr list
+	| winit 	of S.ConstExpr list
+	| finit 	of S.literalFloat list
+	| litStr	of string
+	| repeat 	of int
+	| comm		of S.Name * S.ConstExpr * S.Align option
+	| data 		of S.PseudoOp list
+	| dataL 	of S.PseudoOp
+	| pseudoOp 	of S.PseudoOp
+	| pseudoOps 	of S.PseudoOp list
+	| loc		of S.Local
+	| locals	of S.Local list
+	| procedure	of S.TopLevel
+	| foreign	of S.Conv
+	| conv 		of S.Conv
+	| formal	of S.Formal
+	| formals 	of S.Formal list
+	| stack_data 	of S.StackDatum list
+	| stack_datum 	of S.StackDatum
+	| stackL 	of S.StackDatum
+	| stmt 		of S.Stmt * S.srcpos
+	| callStmt 	of S.Stmt * S.srcpos
+	| block 	of S.Stmts
+	| stmts 	of S.Stmts
+	| oelse 	of S.Stmts option
+	| expr 		of S.Expr
+	| paren_expr 	of S.Expr
+	| esc_expr	of S.Expr
+	| esc_exprs 	of S.Expr list
+	| actuals 	of S.Actual list
+	| condition 	of S.CondExpr
+	| memAccess	of S.MemAccess
+	| rel 		of S.Rel
+	| orange 	of S.Range option
+	| swts 		of S.Swt list
+	| label		of S.Name
+	| litInt	of int
+	| align		of S.Align (* in bytes *)
+	| oalign 	of S.Align option
+
+%verbose
+%pos int
+%arg (error) : (pos * pos) -> string -> unit
+%start program
+%eop EOF
+%noshift EOF
+
+%left ORB XORB
+%left ANDB 
+%left SHIFT
+%left ADD SUB
+%left MUL DIV REM
+%left NOTB
+
+%name Cmm
+
+%keyword ALIGN COMM DATA DEFAULT ELSE EXPORT FOREIGN GLOBAL GOTO IF IMPORT 
+	 JUMP LCOMM RETURN STACK SWITCH 
+
+%%
+
+program : toplevels				(map patchConv toplevels
+						 before
+						 (Sym.empty globalRegs;
+						  Sym.empty escaping))
+		
+toplevels: 					([])
+	| toplevel toplevels			(toplevel :: toplevels)
+
+toplevel: IMPORT names1 SEMICOLON		(app nonLocal names1;
+						 (S.Imports names1))
+	| EXPORT names1 SEMICOLON		(app nonLocal names1;
+						 (S.Exports names1))
+	| GLOBAL LBRACE globals RBRACE		(S.Global globals)
+	| data					(S.Data data)
+	| procedure				(procedure)
+
+globals : 					([])
+	| global globals			(global :: globals)
+
+global	: ptype NAME oregister SEMICOLON
+		(let val gl = (ptype, NAME, oregister) in
+		 newGlobal(gl, error (NAMEleft, NAMEright))
+		 end)
+
+oregister:					(S.GlobalAddr)
+	| litInt				(S.MachineReg litInt)
+
+
+ptype	: TYPEWORD				(S.TypeWord  TYPEWORD)
+	| TYPEFLOAT				(S.TypeFloat TYPEFLOAT)
+
+names1	: NAME					([NAME])
+	| NAME COMMA				([NAME])
+	| NAME COMMA names1			(NAME :: names1)
+
+names2	: NAME COMMA names1			(NAME :: names1)
+
+nums1	: litInt				([litInt])
+	| litInt COMMA				([litInt])
+	| litInt COMMA nums1			((litInt) :: nums1)
+
+litFloats1 : LIT_FLOAT				([LIT_FLOAT])
+	| LIT_FLOAT COMMA			([LIT_FLOAT])
+	| LIT_FLOAT COMMA litFloats1		(LIT_FLOAT :: litFloats1)
+
+
+constExpr: expr					(S.ConstExpr expr)
+
+winitus1: constExpr				([constExpr])
+	| constExpr COMMA			([constExpr])
+	| constExpr COMMA winitus1		(constExpr :: winitus1)
+
+winit	: 					([])
+	| LBRACE winitus1 RBRACE		(winitus1)
+
+finit	: 					([])
+	| LBRACE litFloats1 RBRACE		(litFloats1)
+
+repeat	: 					(1)
+	| LBRACKET litInt RBRACKET		(litInt)
+
+data	: DATA LBRACE pseudoOps RBRACE		(pseudoOps)
+
+pseudoOps : 	 				([])
+	| pseudoOp pseudoOps			(pseudoOp :: pseudoOps)
+
+
+pseudoOp: dataL					(dataL)
+	| dataL SEMICOLON			(dataL)
+	| EXPORT names1 SEMICOLON		(app nonLocal names1;
+						 (S.DataExports names1))
+	| TYPEWORD litStr SEMICOLON		(S.DataString litStr)
+	| TYPEWORD repeat winit SEMICOLON	(S.DataWord (TYPEWORD, repeat, winit))
+	| TYPEFLOAT repeat finit SEMICOLON	(S.DataFloat(TYPEFLOAT, repeat, finit))
+	| align SEMICOLON			(S.DataAlign align)
+	| COMM  comm SEMICOLON			(S.DataComm  comm)
+	| LCOMM comm SEMICOLON			(S.DataLcomm comm)
+
+dataL	: label					(S.DataLabel label)
+
+(* TODO: UNICODE *)
+litStr: LBRACKET RBRACKET LIT_STRING		(LIT_STRING)
+	| LBRACKET RBRACKET UNICODE LPAREN LIT_STRING RPAREN (LIT_STRING)
+
+comm: 	  NAME COMMA constExpr 			((NAME, constExpr, NONE))
+	| NAME COMMA constExpr COMMA align	((NAME, constExpr,SOME align))
+
+(* for stack directives. No initialisation of values *)
+
+stackL 	: label					(S.StackLabel(newStackL(label, error (labelleft, labelright))))
+
+stack_datum: 
+	  stackL				(stackL)
+	| stackL SEMICOLON			(stackL)
+	(* TODO: check > 0 *)
+	| TYPEWORD  repeat SEMICOLON		(S.StackSpace(TYPEWORD,  repeat))
+	| TYPEFLOAT repeat SEMICOLON		(S.StackSpace(TYPEFLOAT, repeat))
+	| align SEMICOLON			(S.StackAlign align)
+
+
+stack_data
+	: 	 				([])
+	| stack_datum stack_data		(stack_datum :: stack_data)
+
+  
+	(* An empty convention could be a known procedure, but consevatively 
+	   we have to assume it's escaping. We cannot know if a name 
+	   escapes until we parse the complete file. *)
+
+foreign : FOREIGN LIT_STRING			(callingConv(LIT_STRING, error(LIT_STRINGleft, LIT_STRINGright)))
+
+conv	:					(S.CmmEscaping)
+	| foreign				(foreign)
+
+formal	: ptype NAME				
+		(newLocal(NAME, ptype, error (NAMEleft, NAMEright)), NAME)
+
+formals	: 					([])
+	| formal				([formal])
+        | formal COMMA formals			(formal :: formals)
+
+procedure : conv NAME LPAREN formals RPAREN LBRACE locals stmts RBRACE
+		((S.Function
+		    { conv    = conv
+		    , name    = NAME
+		    , formals = formals
+		    , locals  = locals
+    	    	    , stmts   = stmts})
+		 before
+		 (Sym.empty localRegs;
+		  Sym.empty stackLabels))
+
+						  
+loc	: STACK LBRACE stack_data RBRACE 	(S.InFrame stack_data)
+
+(* locals has to be left recursive to avoid a shift/reduce conflict
+   Not anymore.
+locals	: 					([])
+	| locals loc				(locals @ [loc])
+*)
+
+locals	: 					([])
+	| loc locals				(loc :: locals)
+
+block	: LBRACE stmts RBRACE			(stmts)
+
+stmts	: 					([])
+	| SEMICOLON stmts			(stmts)
+	| stmt stmts				(stmt :: stmts)
+
+stmt	:  ptype names1 SEMICOLON		
+	(S.LocalsDecl(map (fn n => (newLocal(n, ptype, error (names1left, names1right)), n)) names1), (ptypeleft, SEMICOLONright))
+
+	| label					(S.Label label, (labelleft, labelright))
+	| GOTO NAME SEMICOLON			(S.Goto NAME, (GOTOleft, SEMICOLONright))
+	| GOTO expr LPAREN names1 RPAREN SEMICOLON
+						(S.ComputedGoto(expr, names1), (GOTOleft, SEMICOLONright))
+
+	(* name can be: local, global reg *)
+	| NAME EQUALS esc_expr SEMICOLON	(S.RegWrite(NAME, esc_expr), (NAMEleft, SEMICOLONright))
+
+	| memAccess EQUALS esc_expr SEMICOLON
+						(S.MemWrite(memAccess, esc_expr), (memAccessleft, SEMICOLONright))
+
+	| SWITCH orange expr LBRACE swts RBRACE		(S.Switch(expr, orange, swts), (SWITCHleft, RBRACEright))
+	| IF condition block oelse		(S.If(condition, block, oelse), (IFleft, oelseright))
+
+	| JUMP expr actuals
+						(S.Jump(S.CmmEscaping, expr, actuals), (JUMPleft, actualsright))
+	| conv RETURN actuals
+						(S.Return(conv, actuals), (convleft, actualsright))
+
+	| callStmt				(callStmt)
+
+callStmt: NAME EQUALS expr actuals
+		(S.Call(S.CmmEscaping, [NAME], expr, actuals), 
+			(NAMEleft, actualsright))
+	| NAME EQUALS foreign expr actuals
+		(S.Call(foreign, [NAME], expr, actuals), 
+			(NAMEleft, actualsright))
+
+	| names2 EQUALS expr actuals
+		(S.Call(S.CmmEscaping, names2, expr, actuals), 
+			(names2left, actualsright))
+	| names2 EQUALS foreign expr actuals
+		(S.Call(foreign, names2, expr, actuals), 
+			(names2left, actualsright))
+
+	| expr actuals
+		(S.Call(S.CmmEscaping, [], expr, actuals), 
+			(exprleft, actualsright))
+	| foreign expr actuals
+		(S.Call(foreign, [], expr, actuals), 
+			(exprleft, actualsright))
+
+actuals: LPAREN esc_exprs RPAREN SEMICOLON	(esc_exprs)
+
+oelse   : 					(NONE)
+	| ELSE block				(SOME block)
+
+
+ (* expression that can escape: assigned to a reg, stored in mem, passed as
+    an arg. This is syntactic escape analysis, and therefore conservative, 
+    but safe, I think *)
+esc_expr: expr					(checkNonLocal expr; expr)
+
+esc_exprs: 					([])
+	| esc_expr				([esc_expr])
+	| esc_expr COMMA esc_exprs		(esc_expr :: esc_exprs)
+
+paren_expr:   LPAREN   expr RPAREN		(expr)
+	
+expr	: NAME			(markexpr(nametoExpr NAME, NAMEleft,NAMEright))
+	| paren_expr		(paren_expr)
+
+	| LIT_INT				(markexpr(S.LitInt LIT_INT, LIT_INTleft, LIT_INTright))
+
+	| LIT_FLOAT				(markexpr(S.LitFloat LIT_FLOAT, LIT_FLOATleft, LIT_FLOATright))
+
+	| SUB LIT_INT %prec NOTB		(markexpr(S.LitInt ("-"^LIT_INT), SUBleft,  LIT_INTright))
+
+	| SUB LIT_FLOAT %prec NOTB		(markexpr(S.LitFloat("-"^LIT_FLOAT), SUBleft, LIT_FLOATright))
+
+	| memAccess			 	(markexpr(S.MemRead memAccess, memAccessleft, memAccessright))
+
+	| PRIMOP paren_expr			(markexpr(S.Unary(PRIMOP, paren_expr), PRIMOPleft, paren_exprright))
+
+	(* type casts. TODO: these should have a name of their own and be 
+	   unary ops or something *)
+	| ptype paren_expr			(markexpr(S.Unary(S.typeToString ptype , paren_expr), ptypeleft, paren_exprright)) 	
+
+	| expr	ADD	expr			(markexpr(S.Binary(expr1, "add" ^ ADD, expr2), expr1left, expr2right))
+	| expr	SUB	expr			(markexpr(S.Binary(expr1, "sub" ^ SUB, expr2), expr1left, expr2right))
+	| expr	MUL	expr			(markexpr(S.Binary(expr1, "mul" ^ MUL, expr2), expr1left, expr2right))
+	| expr	DIV	expr			(markexpr(S.Binary(expr1, "div" ^ DIV, expr2), expr1left, expr2right))
+
+	| expr	REM	expr			(markexpr(S.Binary(expr1, "rem" ^ REM, expr2), expr1left, expr2right))
+	| expr	ANDB	expr			(markexpr(S.Binary(expr1, "andb" , expr2), expr1left, expr2right))
+	| expr	ORB	expr			(markexpr(S.Binary(expr1, "orb"  , expr2), expr1left, expr2right))
+	| expr	XORB	expr			(markexpr(S.Binary(expr1, "xorb" , expr2), expr1left, expr2right))
+	| expr	SHIFT	expr			(markexpr(S.Binary(expr1, SHIFT , expr2), expr1left, expr2right))
+	| NOTB	expr				(markexpr(S.Unary("notb", expr), NOTBleft, exprright))
+	| SYS					(markexpr(S.ConstSys SYS, SYSleft, SYSright))
+
+
+litInt: LIT_INT					(atoi LIT_INT)
+
+label	: NAME COLON				(NAME)
+
+align	: ALIGN	litInt				(powerOfTwo(litInt, error(ALIGNleft, litIntright)))
+
+oalign	:					(NONE)
+	| LBRACE align RBRACE			(SOME align)
+
+condition: LPAREN expr rel expr RPAREN		(expr1, rel, expr2)
+
+memAccess: ptype oalign LBRACKET expr RBRACKET	(expr, ptype, oalign)
+
+rel	: EQ					(S.EQ EQ)
+	| NE					(S.NE NE)
+	| LT					(S.LT LT)
+	| LE					(S.LE LE)
+	| GT					(S.GT GT)
+	| GE					(S.GE GE)
+
+orange	:					(NONE)
+	| LBRACKET litInt DOTDOT litInt RBRACKET	
+			(SOME (litInt1, litInt2))
+
+swts	: 					([])
+	| nums1   COLON block swts		(S.Swt(nums1, block) :: swts)
+	| DEFAULT COLON block swts		(S.SwtDefault block :: swts)

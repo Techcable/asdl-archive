@@ -1,0 +1,13 @@
+Library 
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	smlnj-lib.cm
+	
+	MLRISC.cm
+	GC.cm
+	ALPHA.cm
+	
+	(* Alpha specific backend *)

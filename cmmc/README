@@ -1,0 +1,187 @@
+
+                    cmmc, the C-- compiler, version 0.5c
+                                      
+What is cmmc?
+
+   cmmc is a compiler for [1]C--.
+   
+New in version 0.5c
+
+   0.5c is a bug fix version. It corrects a bug in the x86 back end that
+   caused incorrect code for function call/return to be generated. As in
+   in 0.5b, the ASDL back end does not work in this version, and I've
+   disabled it temporarily.
+   The C-- language specification is being changed, and 0.5c accepts some
+   of the new syntax. Look for the new grammar spec in [2]the new C--
+   pages in Harvard.
+     * bug fixes:
+          + x86 call/return sequence with C-- calling convention
+     * As a side effect of the fix, we also get better code for function
+       return in some cases
+       
+Targets
+
+   Version 0.5c generates assembly language for the following
+   architectures:
+     * alpha
+     * sparc
+     * x86 (unix syntax)
+       
+Known bugs in version 0.5c
+
+     * In some cases, incorrect code can be generated for literal
+       integers larger than 32 bits.
+     * The sparc v8 support 64 bit values using register pairs. This is
+       not currently supported by the code generator. In essence, cmmc
+       for the sparc is a 32 bit compiler.
+     * Some errors are not reported with source line information.
+       
+To-do list
+
+       Gradually adapt to the new C-- syntax.
+     
+       Next version will make better use of registers in procedure
+     calls.
+     
+Running cmmc
+
+   Run cmmc as follows:
+   
+   cmmc [options ...] filename.c--
+   
+     -o FILE    --output=FILE   output FILE
+     -O         --opt           optimize code
+       -R OPTION  --viewer=OPTION visualization program
+     -t ARCH    --target=ARCH   target architecture (required)
+     -v         --version       show version
+     -V OPTION  --view=OPTION   visualization option
+   
+   Supported targets: alpha, sparc, x86, asdl
+   Visualization options: cfg  - view control flow graph
+                  dom  - view dominator tree
+                  pdom - view post dominator tree
+                  doms - view dominator tree and post dominator tree
+                         together. The post dominator is upside down
+                  cdg  - view control dependence graph
+                  loop - view loop nesting tree
+   Visualization program:
+                  daVinci|vcg
+   
+   The graph viewing options require a graph viewing program to be
+   installed. [3]daVinci and [4]vcg are supported
+   
+   The environment variable SML_110_27 must be set to point to the build
+   directory of SML/NJ v.110_27 or higher. If you are using the binary
+   distribution, set it to that directory instead.
+   
+The C-- program
+
+   This is a sample C-- file.
+   
+     /* provide a main procedure with C calling convention */
+     export main;
+     
+     foreign "C" main() {
+     
+       ...
+       foreign "C" return(0);
+     }
+     
+     ... other C-- functions
+     
+Assembling, linking and running the C-- program
+
+   cmmc generates assembly output. You need to assemble these files,
+   generating object files, and link them with any C files and libraries
+   that you use (if any). The easiest way is to use a C compiler. First,
+   generate assembler files using the C-- compiler:
+   
+   cmmc -talpha f1.c--
+   cmmc -talpha f2.c--
+   ...
+   
+   Next, use the C compiler to generate objects and link them. I have
+   successfully tried the following compilers and flags:
+     * alpha osf:    cc  f1.s f2.s ... / gcc -Wa,-cpp f1.s f2.s ...
+     * alpha linux:   gcc f1.s f2.s ...
+     * sparc solaris:   cc/gcc f1.s f2.s ...
+     * x86 linux:    gcc f1.s f2.s ...
+       
+       
+Cross compiling
+
+   cmmc version 0.5c is a cross compiler. You can run it in an x86 box
+   and generate sparc assembler, for example.
+   
+Compiling cmmc from sources
+
+   To compile from sources you will need SML/NJ v.110.27 or higher, which
+   can be found at
+   [5]ftp://ftp.research.bell-labs.com/dist/smlnj/working/110.27/. If you
+   use SML/NJ 110.0.6 as your SML compiler, it probably works too, but I
+   haven't tried it.
+   
+   Once you have built SML/NJ, set the environment variable SML_110_27 to
+   point to the SML/NJ directory,  un-tar the cmmc distribution, cd to
+   cmmc-0.5c/src and run build.sh. This will create a heap image in
+   cmmc-0.5c/bin/.heap/. The file cmmc-0.5c/bin/cmmc loads the heap image
+   into memory and runs the compiler.
+   
+Binary distribution
+
+   cmmc v05.c is a source-only distribution.
+   
+Known bugs in version 0.5c
+
+     * In some cases, incorrect code can be generated for literal
+       integers larger than 32 bits.
+     * The sparc v8 support 64 bit values using register pairs. This is
+       not currently supported by the code generator. In essence, cmmc
+       for the sparc is a 32 bit compiler.
+     * Some errors are not reported with source line information.
+       
+To-do list
+
+       Gradually adapt to the new C-- syntax.
+     
+       Next version will make better use of registers in procedure
+     calls.
+     
+Syntax for C-- global registers in cmmc
+
+   global {
+     word32  g1 9;  /* integer register 9 --machine dependent */
+     float64 g2;    /* g2 will end up in memory */
+   }
+   
+   
+C-- information on the WWW
+
+   [6]http://www.research.microsoft.com/Users/simonpj/c--.html
+   [7]http://www.dcs.gla.ac.uk/~reig/c--
+   
+C-- mailing list
+
+   There's a mailing list for C--, c-minus-minus@dcs.gla.ac.uk. It's a
+   broadcast list, so any member can send to it. You can join by sending
+   a message to majordomo@dcs.gla.ac.uk with "subscribe c-minus-minus" in
+   the body of the message. You can unsubscribe similarly.
+   
+Acknowledgments
+
+   [8]Lal George and [9]Allen Leung have provided invaluable help with
+   MLRISC.
+   Thomas Nordin wrote the first prototype C-- compiler. I used his code
+   as my starting point. Some of it is still in cmmc.
+
+References
+
+   1. file://localhost/users/grad/reig/phd/soft/c--/README.html#WWW_C--
+   2. http://cminusminus.eecs.harvard.edu/index.html
+   3. http://www.informatik.uni-bremen.de/~daVinci
+   4. http://www.cs.uni-sb.de/RW/users/sander/html/gsvcg1.html
+   5. ftp://ftp.research.bell-labs.com/dist/smlnj/working/110.25/
+   6. http://www.research.microsoft.com/Users/simonpj/c--.html
+   7. http://www.dcs.gla.ac.uk/~reig/c--
+   8. http://cm.bell-labs.com/cm/cs/who/george/
+   9. http://www.cs.nyu.edu/leunga/www/

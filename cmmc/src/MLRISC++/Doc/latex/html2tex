@@ -1,0 +1,68 @@
+#!/usr/local/bin/perl -i 
+
+$PARAM='[^<>]*';
+
+$mode="html";
+@mode_stack=($mode);
+
+sub enter
+{  my($m) = @_;
+   #print STDERR "$m";
+   push @mode_stack, $m;
+   $mode = $m;
+}
+
+sub leave
+{  pop @mode_stack;
+}
+
+sub sml
+{  my($text) = @_;
+   $text =~ s/^\s*//;
+   $text =~ s/\s*$//;
+   return "\\sml{$text}";
+}
+
+while (<>)
+{  
+   s|<h1>\s*<font color=.*>(.*)</font>\s*</h1>|\\section{\1}|;
+   s|<h2>\s*<font color=.*>(.*)</font>\s*</h2>|\\subsection{\1}|;
+   s|<h3>\s*<font color=.*>(.*)</font>\s*</h3>|\\subsubsection{\1}|;
+   s|<h1>(.*)</h1>|\\section{\1}|;
+   s|<h2>(.*)</h2>|\\subsection{\1}|;
+   s|<h3>(.*)</h3>|\\subsubsection{\1}|;
+
+   s|<ul>|\\begin{itemize}|;
+   s|</ul>|\\end{itemize}|;
+   s|<li>|\\item|;
+
+   s|<small>|\\begin{small}|;
+   s|</small>|\\end{small}|;
+
+   s|<center>|\\begin{center}|;
+   s|</center>|\\end{center}|;
+
+   s|<p>||;
+
+   if (s|<pre>|\\begin{SML}|) {enter("sml");}
+   if (s|</pre>|\\end{SML}|)  {leave("sml");}
+   s|<b>||g if $mode eq "sml";
+   s|</b>||g if $mode eq "sml";
+
+   s|<tt>($PARAM)</tt>|&sml($1)|ge;
+   s|<em>(.)</em>|\$\1\$|g;
+   s|<em>($PARAM)</em>|\\emph{\1}|g;
+
+   s|<a href="($PARAM)">($PARAM)</a>|\\href{\1}{\2}|g;
+   s|<a href="($PARAM)"\s*target=code\s*>($PARAM)</a>|\\codehref{\1}{\2}|g;
+   s|<a href="($PARAM)"\s*target=other>($PARAM)</a>|\\externhref{\1}{\2}|g;
+
+   s^<table.*>^\\begin{tabular}{|l|l|} \\hline^;
+   s|</table>|\\hline\\end{tabular}|;
+   s|</td>\s*</tr>|\\\\|;
+   s|</td>\s*<td>|\&|g;
+   s|<tr>\s*<td>||;
+
+
+   print;
+}

@@ -1,0 +1,13 @@
+Library
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	smlnj-lib.cm
+	
+	../MLRISC.cm
+	../gc-safety/GC.cm
+	SPARC.cm
+	
+	(* Sparc specific backend *)

@@ -1,0 +1,52 @@
+(* HPPA-MLRISC.cm
+ *
+ * COPYRIGHT (c) 1999 Bell Labs, Lucent Technologies.
+ *
+ * HPPA specific modules for MLRISC code generation framework.
+ *)
+
+Library 
+
+	signature HPPACELLS
+	signature HPPAINSTR
+	signature HPPASHUFFLE
+	signature HPPA_MILLICODE
+	signature LABEL_COMP
+	structure HppaCells
+	functor Hppa
+	functor HppaAsmEmitter
+	functor HppaDelaySlots
+	functor HppaFreqProps
+	functor HppaInstr
+	functor HppaJumps
+	functor HppaMCEmitter
+	functor HppaProps
+	functor HppaRewrite
+	functor HppaShuffle
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	../MLRISC.cm
+	../control/Control.cm
+	../library/Lib.cm
+	smlnj-lib.cm
+
+	(* HPPA specific backend *)
+	instructions/hppaCells.sml
+	instructions/hppaInstr.sml
+	instructions/hppaShuffle.sig
+	instructions/hppaShuffle.sml
+	instructions/hppaProps.sml
+	instructions/hppaFreqProps.sml
+	emit/hppaAsm.sml
+	emit/hppaMC.sml
+	backpatch/hppaDelaySlotProps.sml
+	backpatch/hppaJumps.sml
+	mltree/hppaMillicode.sig
+	mltree/hppaLabelComp.sig
+	mltree/hppa.sml
+	ra/hppaRewrite.sml
+	(* ra/hppaRegAlloc.sml *)
+	

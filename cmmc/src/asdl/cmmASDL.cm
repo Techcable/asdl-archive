@@ -1,0 +1,17 @@
+(*
+ * This library contains the code to generate C-- pickles
+ *)
+
+Library
+	signature CmmASDL_SIG
+	structure CmmASDL 
+	structure AsdlCG
+is
+	basis.cm
+
+	base/asdl-base.cm
+	
+	../frontend/cmmSyntax.cm
+	cmmASDL.sig
+	cmmASDL.sml
+	asdlCG.sml

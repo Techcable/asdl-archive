@@ -1,0 +1,13 @@
+Library 
+	functor SparcPeephole
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	../MLRISC.cm
+	../instructions/Peephole.cm
+	SPARC.cm
+
+	(* sparc *)
+	instructions/sparcPeephole.sml

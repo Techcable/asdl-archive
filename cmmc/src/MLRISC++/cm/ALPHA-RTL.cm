@@ -1,0 +1,17 @@
+Library 
+	functor AlphaRTL
+	functor AlphaRTLProps
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	Control.cm
+	MLRISC.cm
+	RTL.cm
+	Region.cm
+	ALPHA.cm
+	
+	(* Alpha specific backend *)
+	../alpha/mltree/alphaRTL.sml 
+	../alpha/mltree/alphaRTLProps.sml 

@@ -1,0 +1,22 @@
+(*
+ * This library contains the superscalar scheduling stuff.
+ *)
+
+Library 
+	functor HppaSchedProps
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	smlnj-lib.cm
+	
+	Control.cm
+	Lib.cm
+	MLRISC.cm
+	HPPA.cm
+	Sched.cm
+	Region.cm
+	
+	(* Hppa scheduler *) 
+	../hppa/scheduling/hppaSchedProps.sml

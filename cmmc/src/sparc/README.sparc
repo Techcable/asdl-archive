@@ -1,0 +1,30 @@
+ From page 195 (Appendix D) of the V8 manual:
+ 
+ When a non-leaf procedure is active, its stack frame appears as:
+ 
+               |                                    | Previous stack frame
+  %fp (old %sp)-------------------------------------|
+  %fp - offset | space (if needed) for automatic    |
+               | arays, aggregates, and addressable |
+               | scalar automatics                  |
+               --------------------------------------
+               | space dynamically allocated via    |
+               | alloca(), if any                   |
+  alloca() --> --------------------------------------
+   %sp + offset| space (if needed) for compiler     |
+               | temporaries and saved floating-pt  |
+               | registers                          |
+               --------------------------------------
+   %sp + offset| Outgoing params past the sixth,    | 
+               | if any                             |
+               --------------------------------------
+   %sp + offset| 6 words into which callee may      |
+               | store register arguments           |
+               --------------------------------------
+   %sp + offset| one-word hidden parameter          | 
+               | (address at which callee should    |
+               | store aggregate return value)      |
+               --------------------------------------
+   %sp + offset| 16 words in which to save register | 
+               | window (in and local registers)    |
+   %sp --->    --------------------------------------

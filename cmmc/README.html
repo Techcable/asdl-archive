@@ -1,0 +1,235 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; I; Linux 2.2.11 i686) [Netscape]">
+</head>
+<body text="#000000" bgcolor="#FFFFFF" link="#0000EE" vlink="#551A8B" alink="#FF0000">
+
+<center>
+<h1>
+cmmc, the C-- compiler, version 0.5c</h1></center>
+
+<h2>
+What is cmmc?</h2>
+cmmc is a compiler for <a href="#WWW_C--">C--</a>.
+<h2>
+New in version 0.5c</h2>
+0.5c is a bug fix version. It corrects a bug in the x86 back end that caused
+incorrect code for function call/return to be generated. As in in 0.5b,
+the ASDL back end does not work in this version, and I've disabled it temporarily.
+<br>The C-- language specification is being changed, and 0.5c accepts some
+of the new syntax. Look for the new grammar spec in <a href="http://cminusminus.eecs.harvard.edu/index.html">the
+new C-- pages in Harvard.</a>
+<ul>
+<li>
+bug fixes:</li>
+
+<ul>
+<li>
+x86 call/return sequence with C-- calling convention</li>
+</ul>
+
+<li>
+As a side effect of the fix, we also get better code for function return
+in some cases</li>
+</ul>
+
+<h2>
+Targets</h2>
+Version 0.5c generates assembly language for the following architectures:
+<ul>
+<li>
+alpha</li>
+
+<li>
+sparc</li>
+
+<li>
+x86 (unix syntax)</li>
+</ul>
+
+<h2>
+Known bugs in version 0.5c</h2>
+
+<ul>
+<li>
+In some cases, incorrect code can be generated for literal integers larger
+than 32 bits.</li>
+
+<li>
+The sparc v8 support 64 bit values using register pairs. This is not currently
+supported by the code generator. In essence, cmmc for the sparc is a 32
+bit compiler.</li>
+
+<li>
+Some errors are not reported with source line information.</li>
+</ul>
+
+<h2>
+To-do list</h2>
+
+<blockquote>
+<li>
+Gradually adapt to the new C-- syntax.</li>
+
+<li>
+Next version will make better use of registers in procedure calls.</li>
+</blockquote>
+
+<h2>
+<a NAME="Running cmmc"></a>Running cmmc</h2>
+Run cmmc as follows:
+<p><tt>cmmc [options ...] filename.c--</tt>
+<p><tt>&nbsp; -o FILE&nbsp;&nbsp;&nbsp; --output=FILE&nbsp;&nbsp; output
+FILE</tt>
+<br><tt>&nbsp; -O&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --opt&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+optimize code</tt>
+<br>&nbsp;&nbsp;&nbsp; <tt>-R OPTION&nbsp; --viewer=OPTION visualization
+program</tt>
+<br><tt>&nbsp; -t ARCH&nbsp;&nbsp;&nbsp; --target=ARCH&nbsp;&nbsp; target
+architecture (required)</tt>
+<br><tt>&nbsp; -v&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; --version&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+show version</tt>
+<br><tt>&nbsp; -V OPTION&nbsp; --view=OPTION&nbsp;&nbsp; visualization
+option</tt>
+<p>Supported targets:<tt> alpha, sparc, x86, asdl</tt>
+<br>Visualization options:<tt> cfg&nbsp; - view control flow graph</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+dom&nbsp; - view dominator tree</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+pdom - view post dominator tree</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+doms - view dominator tree and post dominator tree</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+together. The post dominator is upside down</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+cdg&nbsp; - view control dependence graph</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+loop - view loop nesting tree</tt>
+<br>Visualization program:
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+daVinci|vcg</tt>
+<p>The graph viewing options require a graph viewing program to be installed.
+<a href="http://www.informatik.uni-bremen.de/~daVinci">daVinci
+</a>and
+<a href="http://www.cs.uni-sb.de/RW/users/sander/html/gsvcg1.html">vcg
+</a>are
+supported
+<p>The environment variable SML_110_27 must be set to point to the build
+directory of SML/NJ v.110_27 or higher. If you are using the binary distribution,
+set it to that directory instead.
+<h2>
+The C-- program</h2>
+This is a sample C-- file.
+<blockquote>
+<blockquote><tt>/* provide a main procedure with C calling convention */</tt>
+<br><tt>export main;</tt>
+<p><tt>foreign "C" main() {</tt>
+<p><tt>&nbsp; ...</tt>
+<br><tt>&nbsp; foreign "C" return(0);</tt>
+<br><tt>}</tt>
+<p><tt>... other C-- functions</tt></blockquote>
+</blockquote>
+
+<h2>
+Assembling, linking and running the C-- program</h2>
+cmmc generates assembly output. You need to assemble these files, generating
+object files, and link them with any C files and libraries that you use
+(if any). The easiest way is to use a C compiler. First, generate assembler
+files using the C-- compiler:
+<p><tt>cmmc -talpha f1.c--</tt>
+<br><tt>cmmc -talpha f2.c--</tt>
+<br><tt>...</tt>
+<p>Next, use the C compiler to generate objects and link them. I have successfully
+tried the following compilers and flags:
+<ul>
+<li>
+<b>alpha osf:</b><tt>&nbsp;&nbsp;&nbsp; cc&nbsp; f1.s f2.s ... / gcc -Wa,-cpp
+f1.s f2.s ...</tt></li>
+
+<li>
+<b>alpha linux:<tt>&nbsp;&nbsp; </tt></b><tt>gcc f1.s f2.s ...</tt></li>
+
+<li>
+<b>sparc solaris:</b>&nbsp;&nbsp; <tt>cc/gcc f1.s f2.s ...</tt></li>
+
+<li>
+<b>x86 linux:</b><tt>&nbsp;&nbsp;&nbsp; gcc f1.s f2.s ...</tt></li>
+
+<br>&nbsp;</ul>
+
+<h2>
+Cross compiling</h2>
+cmmc version 0.5c is a cross compiler. You can run it in an x86 box and
+generate sparc assembler, for example.
+<h2>
+Compiling cmmc from sources</h2>
+To compile from sources you will need SML/NJ v.110.27 or higher, which
+can be found at <a href="ftp://ftp.research.bell-labs.com/dist/smlnj/working/110.25/">ftp://ftp.research.bell-labs.com/dist/smlnj/working/110.27/.</a>
+If you use SML/NJ 110.0.6 as your SML compiler, it probably works too,
+but I haven't tried it.
+<p>Once you have built SML/NJ, set the environment variable SML_110_27
+to point to the SML/NJ directory,&nbsp; un-tar the cmmc distribution, cd
+to cmmc-0.5c/src and run <b>build.sh</b>. This will create a heap image
+in cmmc-0.5c/bin/.heap/. The file <b>cmmc-0.5c/bin/cmmc</b> loads the heap
+image into memory and runs the compiler.
+<h2>
+Binary distribution</h2>
+cmmc v05.c is a source-only distribution.
+<h2>
+Known bugs in version 0.5c</h2>
+
+<ul>
+<li>
+In some cases, incorrect code can be generated for literal integers larger
+than 32 bits.</li>
+
+<li>
+The sparc v8 support 64 bit values using register pairs. This is not currently
+supported by the code generator. In essence, cmmc for the sparc is a 32
+bit compiler.</li>
+
+<li>
+Some errors are not reported with source line information.</li>
+</ul>
+
+<h2>
+To-do list</h2>
+
+<blockquote>
+<li>
+Gradually adapt to the new C-- syntax.</li>
+
+<li>
+Next version will make better use of registers in procedure calls.</li>
+</blockquote>
+
+<h2>
+Syntax for C-- global registers in cmmc</h2>
+<tt>global {</tt>
+<br><tt>&nbsp; word32&nbsp; g1 9;&nbsp; /* integer register 9 --machine
+dependent */</tt>
+<br><tt>&nbsp; float64 g2;&nbsp;&nbsp;&nbsp; /* g2 will end up in memory
+*/</tt>
+<br><tt>}</tt>
+<br>&nbsp;
+<h2>
+<a NAME="WWW_C--"></a>C-- information on the WWW</h2>
+<a href="http://www.research.microsoft.com/Users/simonpj/c--.html">http://www.research.microsoft.com/Users/simonpj/c--.html</a>
+<br><a href="http://www.dcs.gla.ac.uk/~reig/c--">http://www.dcs.gla.ac.uk/~reig/c--</a>
+<h2>
+C-- mailing list</h2>
+There's a mailing list for C--, <tt>c-minus-minus@dcs.gla.ac.uk</tt>. It's
+a broadcast list, so any member can send to it. You can join by sending
+a message to <tt>majordomo@dcs.gla.ac.uk</tt> with "<tt>subscribe c-minus-minus</tt>"
+in the body of the message. You can unsubscribe similarly.
+<h2>
+Acknowledgments</h2>
+<a href="http://cm.bell-labs.com/cm/cs/who/george/">Lal George</a> and
+<a href="http://www.cs.nyu.edu/leunga/www/">Allen
+Leung</a> have provided invaluable help with MLRISC.
+<br>Thomas Nordin wrote the first prototype C-- compiler. I used his code
+as my starting point. Some of it is still in cmmc.
+</body>
+</html>

@@ -1,0 +1,50 @@
+(* PPC-MLRISC.cm
+ *
+ * COPYRIGHT (c) 1999 Bell Labs, Lucent Technologies.
+ *
+ * PowerPC specific modules for MLRISC code generation framework.
+ *)
+
+Library
+
+
+	signature PPCCELLS
+	signature PPCINSTR
+	signature PPCSHUFFLE
+	signature PPC_PSEUDO_INSTR
+	structure PPCCells
+	functor PPC
+	functor PPCAsmEmitter
+	functor PPCDelaySlots
+	functor PPCFreqProps
+	functor PPCInstr
+	functor PPCJumps
+	functor PPCMCEmitter
+	functor PPCProps
+	functor PPCRewrite
+	functor PPCShuffle
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	../MLRISC.cm
+	../control/Control.cm
+	../library/Lib.cm
+	smlnj-lib.cm
+
+	(* PowerPC specific backend *)
+	instructions/ppcCells.sml
+	instructions/ppcInstr.sml
+	instructions/ppcShuffle.sig
+	instructions/ppcShuffle.sml
+	instructions/ppcProps.sml
+	instructions/ppcFreqProps.sml
+	emit/ppcAsm.sml
+	emit/ppcMC.sml
+	backpatch/ppcDelaySlots.sml
+	backpatch/ppcJumps.sml
+	mltree/ppcPseudoInstr.sig
+	mltree/ppc.sml 
+	ra/ppcRewrite.sml
+	(* ra/ppcRegAlloc.sml *)

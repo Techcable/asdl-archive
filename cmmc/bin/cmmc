@@ -1,0 +1,29 @@
+#!/bin/sh
+
+RUNTIME_DIR="${SML_110_27:? not defined. Set SML_110_27 to point to the build directory of SML/NJ 110.27 or higher.}/bin/.run/"
+
+PRG_DIR=`dirname $0`
+HEAP_DIR="$PRG_DIR/.heap/"
+PRG_NAME=`basename $0`
+
+ARCH_N_OPSYS=`$PRG_DIR/.arch-n-opsys`
+if [ "$?" != "0" ]; then
+  echo "$CMD: unable to determine architecture/operating system"
+  exit 1
+fi
+
+eval $ARCH_N_OPSYS
+
+RUN="$RUNTIME_DIR/run.$ARCH-$OPSYS"
+HEAP="@SMLload=$HEAP_DIR/$PRG_NAME.$ARCH-$OPSYS"
+
+if [ ! -x "$RUN" ]; then
+  echo "$CMD: cannot find runtime system $RUN"
+  exit 1
+fi
+
+exec $RUN @SMLcmdname=$0 $HEAP $@
+
+
+
+

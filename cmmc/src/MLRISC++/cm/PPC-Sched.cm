@@ -1,0 +1,22 @@
+(*
+ * This library contains the superscalar scheduling stuff.
+ *)
+
+Library 
+	functor PPCSchedProps
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	smlnj-lib.cm
+	
+	Control.cm
+	MLRISC-Lib.cm
+	MLRISC.cm
+	PPC.cm
+	Sched.cm
+	Region.cm
+	
+	(* PowerPC scheduler *) 
+	../ppc/scheduling/ppcSchedProps.sml

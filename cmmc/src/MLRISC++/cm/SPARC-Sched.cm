@@ -1,0 +1,22 @@
+(*
+ * This library contains the superscalar scheduling stuff.
+ *)
+
+Library 
+	functor SparcSchedProps
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	smlnj-lib.cm
+	
+	Control.cm
+	Lib.cm
+	MLRISC.cm
+	SPARC.cm
+	Sched.cm
+	Region.cm
+	
+	(* Sparc scheduler *) 
+	../sparc/scheduling/sparcSchedProps.sml

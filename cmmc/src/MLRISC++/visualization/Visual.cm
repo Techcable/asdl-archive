@@ -1,0 +1,30 @@
+(*
+ * This library implements visualization of graphs
+ *)
+
+Library
+	signature GRAPH_DISPLAY
+	signature GRAPH_VIEWER
+	structure AllDisplays
+	structure Dot
+	structure GraphLayout
+	structure VCG
+	structure daVinci
+	functor GraphViewer
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	../control/Control.cm
+	../library/Lib.cm
+	../graphs/Graphs.cm
+
+	allDisplays.sml
+	daVinci.sml
+	dot.sml
+	graphDisplay.sig
+	graphLayout.sml
+	graphViewer.sig
+	graphViewer.sml
+	vcg.sml

@@ -1,0 +1,17 @@
+Library 
+	functor X86RTL
+	functor X86RTLProps
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	Control.cm
+	MLRISC.cm
+	RTL.cm
+	Region.cm
+	IA32.cm
+	
+	(* x86 specific backend *)
+	../x86/mltree/x86RTL.sml 
+	../x86/mltree/x86RTLProps.sml 

@@ -1,0 +1,2040 @@
+%!PS-Adobe-3.0
+%%BoundingBox: 24 24 571 818
+%%Title: a2ps output
+%%For: Fermin Reig,FR,,, OCT00, 
+%%Creator: a2ps version 4.8.4
+%%CreationDate: Sat Mar  4 17:13:20 2000
+%%DocumentData: Clean7Bit
+%%Orientation: Landscape
+%%Pages: 10
+%%PageOrder: Ascend
+%%DocumentMedia: A4 595 842 0 () ()
+%%DocumentNeededResources: font Symbol
+%%+ font Courier
+%%+ font Courier-Oblique
+%%+ font Courier-Bold
+%%+ font Courier-BoldOblique
+%%+ font Times-Roman
+%%DocumentProcessColors: Black 
+%%DocumentSuppliedResources: procset a2ps-black+white-Prolog 2.0 1
+%%EndComments
+/a2psdict 200 dict def
+a2psdict begin
+%%BeginProlog
+%%BeginResource: procset a2ps-black+white-Prolog 2.0 1
+%%Copyright (c) 1988, 89, 90, 91, 92, 93 Miguel Santana
+%%Copyright (c) 1995, 96, 97 Akim Demaille, Miguel Santana
+% Check PostScript language level.
+/languagelevel where {
+  pop /gs_languagelevel languagelevel def
+} {
+  /gs_languagelevel 1 def
+} ifelse
+
+% Page prefeed
+/page_prefeed {         % bool -> -
+  statusdict /prefeed known {
+    statusdict exch /prefeed exch put
+  } {
+    pop
+  } ifelse
+} bind def
+
+/deffont {
+  findfont exch scalefont def
+} bind def
+
+/reencoded_font {
+  findfont exch scalefont reencode 2 copy definefont pop def
+} bind def
+
+% Function c-show (str => -)
+% centers text only according to x axis.
+/c-show { 
+  dup stringwidth pop
+  2 div neg 0 rmoveto
+  show
+} bind def
+
+% Function l-show (str => -)
+% prints texts so that it ends at currentpoint
+/l-show {
+  dup stringwidth pop neg 
+  0 
+  rmoveto show
+} bind def
+
+% center-fit show (str w => -)
+% show centered, and scale currentfont so that the width is less than w
+/cfshow {
+  exch dup stringwidth pop
+  % If the title is too big, try to make it smaller
+  3 2 roll 2 copy
+  gt
+  { % if, i.e. too big
+    exch div
+    currentfont exch scalefont setfont
+  } { % ifelse
+    pop pop 
+  }
+  ifelse
+  c-show			% center title
+} bind def
+
+
+% reencode the font
+% <encoding-vector> <fontdict> -> <newfontdict>
+/reencode { %def
+  dup length 5 add dict begin
+    { %forall
+      1 index /FID ne 
+      { def }{ pop pop } ifelse
+    } forall
+    /Encoding exch def
+
+    % Use the font's bounding box to determine the ascent, descent,
+    % and overall height; don't forget that these values have to be
+    % transformed using the font's matrix.
+    FontBBox
+    FontMatrix transform /Ascent exch def pop
+    FontMatrix transform /Descent exch def pop
+    /FontHeight Ascent Descent sub def
+
+    % Define these in case they're not in the FontInfo (also, here
+    % they're easier to get to.
+    /UnderlinePosition 1 def
+    /UnderlineThickness 1 def
+    
+    % Get the underline position and thickness if they're defined.
+    currentdict /FontInfo known {
+      FontInfo
+      
+      dup /UnderlinePosition known {
+	dup /UnderlinePosition get
+	0 exch FontMatrix transform exch pop
+	/UnderlinePosition exch def
+      } if
+      
+      dup /UnderlineThickness known {
+	/UnderlineThickness get
+	0 exch FontMatrix transform exch pop
+	/UnderlineThickness exch def
+      } if
+      
+    } if
+    currentdict 
+  end 
+} bind def
+
+% Function title: prints page header.
+% <ct> <rt> <lt> are passed as argument
+/title { 
+  % 1. Draw the background
+  x v get y v get moveto
+  gsave
+    0 th 2 div neg rmoveto 
+    th setlinewidth
+    0.95 setgray
+    pw 0 rlineto stroke
+  grestore
+  % 2. Border it
+  gsave
+    0.7 setlinewidth
+    pw 0 rlineto
+    0 th neg rlineto
+    pw neg 0 rlineto
+    closepath stroke
+  grestore
+  % stk: ct rt lt
+  x v get y v get th sub 1 add moveto
+  df setfont
+  % 3. The left title
+  gsave
+    dup stringwidth pop dfs add exch % leave space took on stack
+    dfs hm rmoveto
+    show			% left title
+  grestore
+  exch
+  % stk: ct ltw rt
+  % 4. the right title
+  gsave
+    dup stringwidth pop dfs add exch % leave space took on stack
+    dup
+    pw exch stringwidth pop dfs add sub
+    hm
+    rmoveto
+    show			% right title
+  grestore
+  % stk: ct ltw rtw
+  % 5. the center title
+  gsave
+    pw 3 1 roll
+    % stk: ct pw ltw rtw
+    3 copy 
+    % Move to the center of the left room
+    sub add 2 div hm rmoveto
+    % What is the available space in here?
+    add sub dfs sub dfs sub
+    % stk: ct space_left
+    fnf setfont
+    cfshow
+  grestore
+} bind def
+
+% Function border: prints virtual page border
+/border { %def
+  gsave				% print four sides
+    0 setgray
+    x v get y v get moveto
+    0.7 setlinewidth		% of the square
+    pw 0 rlineto
+    0 ph neg rlineto
+    pw neg 0 rlineto
+    closepath stroke
+  grestore
+} bind def
+
+% Function water: prints a water mark in background
+/water { %def
+  gsave
+    scx scy moveto rotate
+    wf setfont
+    .97 setgray
+    dup stringwidth pop 2 div neg -50 rmoveto
+    show
+  grestore
+} bind def
+
+% Function rhead: prints the right header
+/rhead {  %def
+  lx ly moveto
+  df setfont
+  l-show
+} bind def
+
+% Function footer (cf rf lf -> -)
+/footer {
+  df setfont
+  dx dy moveto
+  show
+
+  snx sny moveto
+  l-show
+  
+  fnx fny moveto
+  c-show
+} bind def
+
+% Function print line number (<string> # -)
+/# {
+  gsave
+    sx cw mul neg 2 div 0 rmoveto
+    f# setfont
+    c-show
+  grestore
+} bind def
+
+% -------- Some routines to enlight plain b/w printings ---------
+
+% Underline
+% width --
+/dounderline {
+  currentpoint
+  gsave
+    moveto
+    0 currentfont /Descent get rmoveto
+    0 rlineto
+    stroke
+  grestore
+} bind def
+
+% Underline a string
+% string --
+/dounderlinestring {
+  stringwidth pop
+  dounderline
+} bind def
+
+/UL {
+  /ul exch store
+} bind def
+
+% Draw a box of WIDTH wrt current font
+% width --
+/dobox {
+  currentpoint
+  gsave
+    newpath
+    moveto
+    0 currentfont /Descent get rmoveto
+    dup 0 rlineto
+    0 currentfont /FontHeight get rlineto
+    neg 0 rlineto
+    closepath
+    stroke
+  grestore
+} bind def
+
+/BX {
+  /bx exch store
+} bind def
+
+% Box a string
+% string --
+/doboxstring {
+  stringwidth pop
+  dobox
+} bind def
+
+%
+% ------------- Color routines ---------------
+%
+/FG /setrgbcolor load def
+
+% Draw the background
+% width --
+/dobackground {
+  currentpoint
+  gsave
+    newpath
+    moveto
+    0 currentfont /Descent get rmoveto
+    dup 0 rlineto
+    0 currentfont /FontHeight get rlineto
+    neg 0 rlineto
+    closepath
+    bgcolor aload pop setrgbcolor
+    fill
+  grestore
+} bind def
+
+% Draw bg for a string
+% string --
+/dobackgroundstring {
+  stringwidth pop
+  dobackground
+} bind def
+
+
+/BG {
+  dup /bg exch store
+  { mark 4 1 roll ] /bgcolor exch store } if
+} bind def
+
+
+/Show {
+  bg { dup dobackgroundstring } if
+  ul { dup dounderlinestring } if
+  bx { dup doboxstring } if
+  show
+} bind def
+
+% Function T(ab), jumps to the n-th tabulation in the current line
+/T {
+  cw mul x0 add
+  bg { dup currentpoint pop sub dobackground } if
+  ul { dup currentpoint pop sub dounderline } if
+  bx { dup currentpoint pop sub dobox } if
+  y0 moveto
+} bind def
+
+% Function n: move to the next line
+/n {
+  /y0 y0 bfs sub store
+  x0 y0 moveto
+} bind def
+
+% Function N: show and move to the next line
+/N {
+  Show
+  /y0 y0 bfs sub store
+  x0 y0 moveto
+} bind def
+
+/S {
+  Show
+} bind def
+
+% Function T(ab), jumps to the n-th tabulation in the current line
+/T { 
+  cw mul x0 add y0 moveto
+} bind def
+
+% Function n: move to the next line
+/n { %def
+  /y0 y0 bfs sub store
+  x0 y0 moveto
+} bind def
+
+% Function N: show and move to the next line
+/N {
+  Show
+  /y0 y0 bfs sub store
+  x0 y0 moveto
+}  bind def
+
+/S {
+  Show
+} bind def
+
+/p {
+  false UL
+  false BX
+   fc setfont
+  Show
+} bind def
+
+/sy {
+  false UL
+  false BX
+   fs setfont
+  Show
+} bind def
+
+/k {
+  false UL
+  false BX
+   fci setfont
+  Show
+} bind def
+
+/K {
+  false UL
+  false BX
+   fcb setfont
+  Show
+} bind def
+
+/c {
+  false UL
+  false BX
+   fci setfont
+  Show
+} bind def
+
+/C {
+  false UL
+  false BX
+   fce setfont
+  Show 
+} bind def
+
+/l {
+  false UL
+  false BX
+   fci setfont
+  Show
+} bind def
+
+/L {
+  false UL
+  false BX
+   fce setfont
+  Show 
+} bind def
+
+/str{
+  false UL
+  false BX
+   ft setfont
+  Show
+} bind def
+
+%%EndResource
+% ISOLatin1Encoding is already defined in the interpreter
+%%IncludeResource: font Courier
+%%IncludeResource: font Courier-Oblique
+%%IncludeResource: font Courier-Bold
+%%IncludeResource: font Courier-BoldOblique
+%%IncludeResource: font Times-Roman
+%%EndProlog
+%%BeginSetup
+% Initialize page description variables.
+/sh 595 def
+/sw 842 def
+/llx 24 def
+/urx 818 def
+/ury 571 def
+/lly 24 def
+/#copies 1 def
+/th 15.000000 def
+/fnfs 11 def
+/dfs 8.800000 def
+/bfs 8.005733 def
+/cw 4.803440 def
+
+/bgcolor [ 0 0 0 ] def
+/bg false def
+/ul false def
+/bx false def
+% The font for line numbering
+/f# /Helvetica findfont bfs .6 mul scalefont def
+% Dictionary for ISOLatin1Encoding support
+/Latin1dict 15 dict begin
+  /fc  ISOLatin1Encoding bfs /Courier reencoded_font
+  /fcb ISOLatin1Encoding bfs /Courier-Bold reencoded_font
+  /fci ISOLatin1Encoding bfs /Courier-Oblique reencoded_font
+  /fce ISOLatin1Encoding bfs /Courier-BoldOblique reencoded_font
+  /ft  ISOLatin1Encoding bfs /Times-Roman reencoded_font
+  /df ISOLatin1Encoding dfs /Helvetica reencoded_font
+  /fnf ISOLatin1Encoding fnfs /Helvetica-Bold reencoded_font
+  /wf ISOLatin1Encoding 100 /Times-Bold reencoded_font
+currentdict end def
+/fs bfs /Symbol		deffont
+/hm fnfs 0.25 mul def
+/pw
+   cw 81.400000 mul
+def
+/ph
+   501.959430 th add
+def
+/pmw urx llx sub pw 2 mul sub 1 div def
+/pmh 0 def
+/v 0 def
+/x [
+  0
+  dup pmw add pw add
+] def
+/y [
+  pmh ph add 0 mul ph add
+  dup
+] def
+/scx sw 2 div def
+/scy sh 2 div def
+/snx urx def
+/sny lly 2 add def
+/dx llx def
+/dy sny def
+/fnx scx def
+/fny dy def
+/lx snx def
+/ly ury dfs sub def
+/sx 0 def
+/tab 8 def
+/x0 0 def
+/y0 0 def
+%%EndSetup
+
+%%Page: (1) 1
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+sh 0 translate
+90 rotate
+% Encoding is ISO8859-1
+Latin1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 3.362408 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(\(* X86.sml -- pattern matching version of x86 instruction set generation. ) p n
+( *) N
+( * COPYRIGHT \(c\) 1998 Bell Laboratories.) N
+( * ) N
+( * This is a revised version that takes into account of) N
+( * the extended x86 instruction set, and has better handling of) N
+( * non-standard types.  I've factored out the integer/floating point ) N
+( * comparison code, added optimizations for conditional moves. ) N
+( * The latter generates SETcc and CMOVcc \(Pentium Pro only\) instructions. ) N
+( * To avoid problems, I have tried to incorporate as much of ) N
+( * Lal's original magic incantations as possible.) N
+( *) N
+( * Some changes:) N
+( *) N
+( *  1.  REMU/REMS/REMT are now supported ) N
+( *  2.  COND is supported by generating SETcc and/or CMOVcc; this) N
+( *      may require at least a Pentium II to work.) N
+( *  3.  Division by a constant has been optimized.   Division by) N
+( *      a power of 2 generates SHRL or SARL.) N
+( *  4.  Better addressing mode selection has been implemented.  This should) N
+( *      improve array indexing on SML/NJ.) N
+( *  5.  Generate testl/testb instead of andl whenever appropriate.  This) N
+( *      is recommended by the Intel Optimization Guide and seems to improve) N
+( *      boxity tests on SML/NJ.) N
+( * -- Allen) N
+( *\)) N
+(local) N
+(   val rewriteMemReg = true \(* should we rewrite memRegs *\)) N
+(in) N
+() N
+(functor X86) N
+(  \(structure X86Instr : X86INSTR) N
+(   structure X86MLTree : MLTREE) N
+(   structure ExtensionComp : MLTREE_EXTENSION_COMP) N
+(     where I = X86Instr and T = X86MLTree) N
+(     sharing X86MLTree.Region = X86Instr.Region) N
+(     sharing X86MLTree.LabelExp = X86Instr.LabelExp) N
+(    datatype arch = Pentium | PentiumPro | PentiumII | PentiumIII) N
+(    val arch : arch ref) N
+(    val tempMem : X86Instr.operand \(* temporary for CVTI2F *\)) N
+(  \) : sig include MLTREECOMP ) N
+(          val rewriteMemReg : bool) N
+(      end = ) N
+(struct) N
+(  structure T = X86MLTree) N
+(  structure S = T.Stream) N
+(  structure I = X86Instr) N
+(  structure C = I.C) N
+(  structure Shuffle = Shuffle\(I\)) N
+(  structure W32 = Word32) N
+(  structure LE = I.LabelExp) N
+(  structure A = MLRiscAnnotations) N
+() N
+(  type instrStream = \(I.instruction,C.regmap,C.cellset\) T.stream) N
+(  type mltreeStream = \(T.stm,C.regmap,T.mlrisc list\) T.stream) N
+() N
+(  datatype kind = REAL | INTEGER) N
+( ) N
+(  structure Gen = MLTreeGen) N
+(     \(structure T = T) N
+(      val intTy = 32) N
+(      val naturalWidths = [32]) N
+(x86.sml) (Page 1/20) (Mar 04, 00 16:17) title
+border
+/v 1 store
+/x0 x v get 3.362408 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(      datatype rep = SE | ZE | NEITHER) p n
+(      val rep = NEITHER) N
+(     \)) N
+() N
+(  fun error msg = MLRiscErrorMsg.error\("X86",msg\)) N
+() N
+(  \(* Should we perform automatic MemReg translation?  ) N
+(   * If this is on, we can avoid doing RewritePseudo phase entirely.) N
+(   *\)) N
+(  val rewriteMemReg = rewriteMemReg) N
+(  fun isMemReg r = rewriteMemReg andalso r >= 8 andalso r < 32) N
+() N
+(  val ST0 = C.ST 0) N
+(  val ST7 = C.ST 7) N
+() N
+(  \(* ) N
+(   * The code generator ) N
+(   *\)) N
+(  fun selectInstructions ) N
+(       \(instrStream as) N
+(        S.STREAM{emit,defineLabel,entryLabel,pseudoOp,annotation,) N
+(                 beginCluster,endCluster,exitBlock,alias,phi,comment,...}\) =) N
+(  let exception EA) N
+() N
+(      \(* label where a trap is generated -- one per cluster *\)) N
+(      val trapLabel = ref \(NONE: \(I.instruction * Label.label\) option\)) N
+() N
+(      \(* effective address of an integer register *\)) N
+(      fun IntReg r = if isMemReg r then MemReg r else I.Direct r) N
+(      and MemReg r = ) N
+(          \(\(* memRegsUsed := Word.orb\(!memRegsUsed, ) N
+(                            Word.<<\(0w1, Word.fromInt r-0w8\)\); *\)) N
+(           I.MemReg r) N
+(          \) ) N
+() N
+(      \(* Add an overflow trap *\)) N
+(      fun trap\(\) =) N
+(      let val jmp = ) N
+(            case !trapLabel of ) N
+(              NONE => let val label = Label.newLabel "trap") N
+(                          val jmp   = I.JCC{cond=I.O, ) N
+(                                            opnd=I.ImmedLabel\(LE.LABEL label\)}) N
+(                      in  trapLabel := SOME\(jmp, label\); jmp end) N
+(            | SOME\(jmp, _\) => jmp) N
+(      in  emit jmp end) N
+() N
+(      val newReg  = C.newReg) N
+(      val newFreg = C.newFreg) N
+() N
+(      \(* mark an expression with a list of annotations *\) ) N
+(      fun mark'\(i,[]\) = i ) N
+(        | mark'\(i,a::an\) = mark'\(I.ANNOTATION{i=i,a=a},an\) ) N
+() N
+(      \(* annotate an expression and emit it *\)) N
+(      fun mark\(i,an\) = emit\(mark'\(i,an\)\)) N
+() N
+(      \(* emit parallel copies for integers ) N
+(       * Translates parallel copies that involve memregs into ) N
+(       * individual copies.) N
+(       *\)) N
+(      fun copy\([], [], an\) = \(\)) N
+(        | copy\(dst, src, an\) = ) N
+(x86.sml) (Page 2/20) (Mar 04, 00 16:17) title
+border
+% End of virtual page
+grestore
+(Printed by Fermin Reig) rhead
+(x86.sml) (1/10) (Saturday March 04, 00) footer
+end % of Latin1dict
+pagesave restore
+showpage
+%%Page: (2) 2
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+sh 0 translate
+90 rotate
+% Encoding is ISO8859-1
+Latin1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 3.362408 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(          let fun mvInstr{dst as I.MemReg rd, src as I.MemReg rs} = ) p n
+(                  if rd = rs then [] else) N
+(                  let val tmpR = I.Direct\(newReg\(\)\)) N
+(                  in  [I.MOVE{mvOp=I.MOVL, src=src, dst=tmpR},) N
+(                       I.MOVE{mvOp=I.MOVL, src=tmpR, dst=dst}]) N
+(                  end) N
+(                | mvInstr{dst=I.Direct rd, src=I.Direct rs} = ) N
+(                    if rd = rs then [] ) N
+(                    else [I.COPY{dst=[rd], src=[rs], tmp=NONE}]) N
+(                | mvInstr{dst, src} = [I.MOVE{mvOp=I.MOVL, src=src, dst=dst}]) N
+(          in) N
+(             app emit \(Shuffle.shuffle{mvInstr=mvInstr, ea=IntReg}) N
+(               {regmap=fn r => r, tmp=SOME\(I.Direct\(newReg\(\)\)\),) N
+(                dst=dst, src=src}\)) N
+(          end) N
+( ) N
+(      \(* conversions *\)) N
+(      val itow = Word.fromInt) N
+(      val wtoi = Word.toInt) N
+(      fun toInt32 i = Int32.fromLarge\(Int.toLarge i\)) N
+(      val w32toi32 = Word32.toLargeIntX ) N
+(      val i32tow32 = Word32.fromLargeInt) N
+() N
+(      \(* One day, this is going to bite us when precision\(LargeInt\)>32 *\)) N
+(      fun wToInt32 w = Int32.fromLarge\(Word32.toLargeIntX w\)) N
+() N
+(      \(* some useful registers *\)) N
+(      val eax = I.Direct\(C.eax\)) N
+(      val ecx = I.Direct\(C.ecx\)) N
+(      val edx = I.Direct\(C.edx\)) N
+() N
+(      fun immedLabel lab = I.ImmedLabel\(LE.LABEL lab\)) N
+( ) N
+(      \(* Is the expression zero? *\)) N
+(      fun isZero\(T.LI 0\) = true) N
+(        | isZero\(T.LI32 0w0\) = true) N
+(        | isZero\(T.MARK\(e,a\)\) = isZero e) N
+(        | isZero _ = false) N
+(       \(* Does the expression set the zero bit? ) N
+(        * WARNING: we assume these things are not optimized out!) N
+(        *\)) N
+(      fun setZeroBit\(T.ANDB _\)     = true) N
+(        | setZeroBit\(T.ORB _\)      = true) N
+(        | setZeroBit\(T.XORB _\)     = true) N
+(        | setZeroBit\(T.SRA _\)      = true) N
+(        | setZeroBit\(T.SRL _\)      = true) N
+(        | setZeroBit\(T.SLL _\)      = true) N
+(        | setZeroBit\(T.MARK\(e, _\)\) = setZeroBit e) N
+(        | setZeroBit _             = false) N
+() N
+(      \(* emit parallel copies for floating point *\)) N
+(      fun fcopy\(fty, [], [], _\) = \(\)) N
+(        | fcopy\(fty, dst as [_], src as [_], an\) = ) N
+(            mark\(I.FCOPY{dst=dst,src=src,tmp=NONE}, an\)) N
+(        | fcopy\(fty, dst, src, an\) = ) N
+(            mark\(I.FCOPY{dst=dst,src=src,tmp=SOME\(I.FDirect\(newFreg\(\)\)\)}, an\)) N
+() N
+(      \(* Translates MLTREE condition code to x86 condition code *\)) N
+(      fun cond T.LT = I.LT | cond T.LTU = I.B) N
+(        | cond T.LE = I.LE | cond T.LEU = I.BE) N
+(        | cond T.EQ = I.EQ | cond T.NE  = I.NE) N
+(        | cond T.GE = I.GE | cond T.GEU = I.AE) N
+(x86.sml) (Page 3/20) (Mar 04, 00 16:17) title
+border
+/v 1 store
+/x0 x v get 3.362408 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(        | cond T.GT = I.GT | cond T.GTU = I.A) p n
+() N
+(      \(* Move and annotate *\) ) N
+(      fun move'\(src as I.Direct s, dst as I.Direct d, an\) =) N
+(          if s=d then \(\)) N
+(          else mark\(I.COPY{dst=[d], src=[s], tmp=NONE}, an\)) N
+(        | move'\(src, dst, an\) = mark\(I.MOVE{mvOp=I.MOVL, src=src, dst=dst}, an\)) N
+() N
+(      \(* Move only! *\)  ) N
+(      fun move\(src, dst\) = move'\(src, dst, []\)) N
+() N
+(      fun zero dst = emit\(I.BINARY{binOp=I.XORL, src=dst, dst=dst}\)) N
+() N
+(      val readonly = I.Region.readonly) N
+() N
+(      \(* ) N
+(       * Compute an effective address.  This is a new version) N
+(       *\)) N
+(      fun address\(ea, mem\) = ) N
+(      let \(* tricky way to negate without overflow! *\)) N
+(          fun neg32 w = Word32.notb w + 0w1) N
+() N
+(          \(* Keep building a bigger and bigger effective address expressions ) N
+(           * The input is a list of trees) N
+(           * b -- base) N
+(           * i -- index) N
+(           * s -- scale) N
+(           * d -- immed displacement) N
+(           *\)) N
+(          fun doEA\([], b, i, s, d\) = makeAddressingMode\(b, i, s, d\)) N
+(            | doEA\(t::trees, b, i, s, d\) =) N
+(              \(case t of ) N
+(                 T.LI n   => doEAImmed\(trees, n, b, i, s, d\)) N
+(               | T.LI32 n => doEAImmedw\(trees, n, b, i, s, d\)) N
+(               | T.CONST c => doEALabel\(trees, LE.CONST c, b, i, s, d\)) N
+(               | T.LABEL le => doEALabel\(trees, le, b, i, s, d\)) N
+(               | T.ADD\(32, t1, t2 as T.REG\(_,r\)\) => ) N
+(                    if isMemReg r then doEA\(t2::t1::trees, b, i, s, d\)) N
+(                    else doEA\(t1::t2::trees, b, i, s, d\)) N
+(               | T.ADD\(32, t1, t2\) => doEA\(t1::t2::trees, b, i, s, d\)) N
+(               | T.SUB\(32, t1, T.LI n\) => ) N
+(                    \(* can't overflow here *\)) N
+(                    doEA\(t1::T.LI32\(neg32\(Word32.fromInt n\)\)::trees, b, i, s, d\)) N
+(               | T.SUB\(32, t1, T.LI32 n\) => ) N
+(                    doEA\(t1::T.LI32\(neg32 n\)::trees, b, i, s, d\)) N
+(               | T.SLL\(32, t1, T.LI 0\) => displace\(trees, t1, b, i, s, d\)) N
+(               | T.SLL\(32, t1, T.LI 1\) => indexed\(trees, t1, t, 1, b, i, s, d\)) N
+(               | T.SLL\(32, t1, T.LI 2\) => indexed\(trees, t1, t, 2, b, i, s, d\)) N
+(               | T.SLL\(32, t1, T.LI 3\) => indexed\(trees, t1, t, 3, b, i, s, d\)) N
+(               | T.SLL\(32, t1, T.LI32 0w0\) => displace\(trees, t1, b, i, s, d\)) N
+(               | T.SLL\(32, t1, T.LI32 0w1\) => indexed\(trees,t1,t,1,b,i,s,d\)) N
+(               | T.SLL\(32, t1, T.LI32 0w2\) => indexed\(trees,t1,t,2,b,i,s,d\)) N
+(               | T.SLL\(32, t1, T.LI32 0w3\) => indexed\(trees,t1,t,3,b,i,s,d\)) N
+(               | t => displace\(trees, t, b, i, s, d\)) N
+(              \) ) N
+() N
+(          \(* Add an immed constant *\)) N
+(          and doEAImmed\(trees, 0, b, i, s, d\) = doEA\(trees, b, i, s, d\)) N
+(            | doEAImmed\(trees, n, b, i, s, I.Immed m\) = ) N
+(                 doEA\(trees, b, i, s, \(* no overflow! *\)) N
+(                       I.Immed\(w32toi32\(Word32.fromInt n + i32tow32 m\)\)\)) N
+(            | doEAImmed\(trees, n, b, i, s, I.ImmedLabel le\) = ) N
+(x86.sml) (Page 4/20) (Mar 04, 00 16:17) title
+border
+% End of virtual page
+grestore
+(Printed by Fermin Reig) rhead
+(x86.sml) (2/10) (Saturday March 04, 00) footer
+end % of Latin1dict
+pagesave restore
+showpage
+%%Page: (3) 3
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+sh 0 translate
+90 rotate
+% Encoding is ISO8859-1
+Latin1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 3.362408 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(                 doEA\(trees, b, i, s, I.ImmedLabel\(LE.PLUS\(le,LE.INT n\)\)\)) p n
+(            | doEAImmed\(trees, n, b, i, s, _\) = error "doEAImmed") N
+() N
+(          \(* Add an immed32 constant *\)) N
+(          and doEAImmedw\(trees, 0w0, b, i, s, d\) = doEA\(trees, b, i, s, d\)) N
+(            | doEAImmedw\(trees, n, b, i, s, I.Immed m\) = ) N
+(                 \(* no overflow! *\)) N
+(                 doEA\(trees, b, i, s, I.Immed\(w32toi32\(i32tow32 m + n\)\)\)) N
+(            | doEAImmedw\(trees, n, b, i, s, I.ImmedLabel le\) = ) N
+(                 doEA\(trees, b, i, s, ) N
+(                      I.ImmedLabel\(LE.PLUS\(le,LE.INT\(Word32.toIntX n\)\)\)) N
+(                      handle Overflow => error "doEAImmedw: constant too large"\)) N
+(            | doEAImmedw\(trees, n, b, i, s, _\) = error "doEAImmedw") N
+() N
+(          \(* Add a label expression *\)) N
+(          and doEALabel\(trees, le, b, i, s, I.Immed 0\) = ) N
+(                 doEA\(trees, b, i, s, I.ImmedLabel le\)) N
+(            | doEALabel\(trees, le, b, i, s, I.Immed m\) = ) N
+(                 doEA\(trees, b, i, s, ) N
+(                      I.ImmedLabel\(LE.PLUS\(le,LE.INT\(Int32.toInt m\)\)\)) N
+(                      handle Overflow => error "doEALabel: constant too large"\)) N
+(            | doEALabel\(trees, le, b, i, s, I.ImmedLabel le'\) = ) N
+(                 doEA\(trees, b, i, s, I.ImmedLabel\(LE.PLUS\(le,le'\)\)\)) N
+(            | doEALabel\(trees, le, b, i, s, _\) = error "doEALabel") N
+() N
+(          and makeAddressingMode\(NONE, NONE, _, disp\) = disp) N
+(            | makeAddressingMode\(SOME base, NONE, _, disp\) = ) N
+(                I.Displace{base=base, disp=disp, mem=mem}) N
+(            | makeAddressingMode\(base, SOME index, scale, disp\) = ) N
+(                I.Indexed{base=base, index=index, scale=scale, ) N
+(                          disp=disp, mem=mem}) N
+() N
+(          \(* generate code for tree and ensure that it is not in %esp *\)) N
+(          and exprNotEsp tree =) N
+(              let val r = expr tree) N
+(              in  if r = C.esp then ) N
+(                     let val tmp = newReg\(\)) N
+(                     in  move\(I.Direct r, I.Direct tmp\); tmp end) N
+(                  else r) N
+(              end) N
+() N
+(          \(* Add a base register *\)) N
+(          and displace\(trees, t, NONE, i, s, d\) =  \(* no base yet *\)) N
+(               doEA\(trees, SOME\(expr t\), i, s, d\)) N
+(            | displace\(trees, t, b as SOME base, NONE, _, d\) = \(* no index *\)) N
+(              \(* make t the index, but make sure that it is not %esp! *\)) N
+(              let val i = expr t) N
+(              in  if i = C.esp then) N
+(                    \(* swap base and index *\)) N
+(                    if base <> C.esp then) N
+(                       doEA\(trees, SOME i, b, 0, d\)) N
+(                    else  \(* base and index = %esp! *\)) N
+(                       let val index = newReg\(\)) N
+(                       in  move\(I.Direct i, I.Direct index\);) N
+(                           doEA\(trees, b, SOME index, 0, d\)) N
+(                       end) N
+(                  else) N
+(                    doEA\(trees, b, SOME i, 0, d\)) N
+(              end) N
+(            | displace\(trees, t, SOME base, i, s, d\) = \(* base and index *\) ) N
+(              let val b = expr\(T.ADD\(32,T.REG\(32,base\),t\)\)) N
+(              in  doEA\(trees, SOME b, i, s, d\) end) N
+(x86.sml) (Page 5/20) (Mar 04, 00 16:17) title
+border
+/v 1 store
+/x0 x v get 3.362408 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+() p n
+(          \(* Add an indexed register *\)) N
+(          and indexed\(trees, t, t0, scale, b, NONE, _, d\) = \(* no index yet *\)) N
+(               doEA\(trees, b, SOME\(exprNotEsp t\), scale, d\)) N
+(            | indexed\(trees, _, t0, _, NONE, i, s, d\) = \(* no base *\)) N
+(               doEA\(trees, SOME\(expr t0\), i, s, d\)) N
+(            | indexed\(trees, _, t0, _, SOME base, i, s, d\) = \(*base and index*\)) N
+(               let val b = expr\(T.ADD\(32, t0, T.REG\(32, base\)\)\)) N
+(               in  doEA\(trees, SOME b, i, s, d\) end) N
+(                  ) N
+(      in  case doEA\([ea], NONE, NONE, 0, I.Immed 0\) of ) N
+(            I.Immed _ => raise EA) N
+(          | I.ImmedLabel le => I.LabelEA le) N
+(          | ea => ea) N
+(      end \(* address *\)) N
+() N
+(          \(* reduce an expression into an operand *\)) N
+(      and operand\(T.LI i\) = I.Immed\(toInt32 i\)) N
+(        | operand\(T.LI32 w\) = I.Immed\(wToInt32 w\)) N
+(        | operand\(T.CONST c\) = I.ImmedLabel\(LE.CONST c\)) N
+(        | operand\(T.LABEL lab\) = I.ImmedLabel lab) N
+(        | operand\(T.REG\(_,r\)\) = IntReg r) N
+(        | operand\(T.LOAD\(32,ea,mem\)\) = address\(ea, mem\)) N
+(        | operand\(t\) = I.Direct\(expr t\)) N
+() N
+(      and moveToReg\(opnd\) =) N
+(          let val dst = I.Direct\(newReg\(\)\)) N
+(          in  move\(opnd, dst\); dst) N
+(          end) N
+() N
+(      and reduceOpnd\(I.Direct r\) = r) N
+(        | reduceOpnd opnd =) N
+(          let val dst = newReg\(\)) N
+(          in  move\(opnd, I.Direct dst\); dst) N
+(          end) N
+() N
+(      \(* ensure that the operand is either an immed or register *\)) N
+(      and immedOrReg\(opnd as I.Displace _\) = moveToReg opnd) N
+(        | immedOrReg\(opnd as I.Indexed _\)  = moveToReg opnd) N
+(        | immedOrReg\(opnd as I.MemReg _\)   = moveToReg opnd) N
+(        | immedOrReg\(opnd as I.LabelEA _\)  = moveToReg opnd) N
+(        | immedOrReg opnd  = opnd) N
+() N
+(      and isImmediate\(I.Immed _\) = true) N
+(        | isImmediate\(I.ImmedLabel _\) = true) N
+(        | isImmediate _ = false) N
+() N
+(      and regOrMem opnd = if isImmediate opnd then moveToReg opnd else opnd) N
+( ) N
+(      and isMemOpnd opnd = ) N
+(          \(case opnd of ) N
+(            I.Displace _ => true) N
+(          | I.Indexed _  => true ) N
+(          | I.MemReg _   => true ) N
+(          | I.LabelEA _  => true ) N
+(          | I.FDirect f  => true) N
+(          | _            => false) N
+(          \)) N
+(      ) N
+(         \(* ) N
+(          * Compute an integer expression and put the result in ) N
+(          * the destination register rd.  ) N
+(x86.sml) (Page 6/20) (Mar 04, 00 16:17) title
+border
+% End of virtual page
+grestore
+(Printed by Fermin Reig) rhead
+(x86.sml) (3/10) (Saturday March 04, 00) footer
+end % of Latin1dict
+pagesave restore
+showpage
+%%Page: (4) 4
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+sh 0 translate
+90 rotate
+% Encoding is ISO8859-1
+Latin1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 3.362408 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(          *\)) p n
+(      and doExpr\(exp, rd : I.C.cell, an\) = ) N
+(          let val rdOpnd = IntReg rd) N
+() N
+(              fun equalRd\(I.Direct r\) = r = rd) N
+(                | equalRd\(I.MemReg r\) = r = rd) N
+(                | equalRd _ = false) N
+() N
+(                 \(* Emit a binary operator.  If the destination is) N
+(                  * a memReg, do something smarter.) N
+(                  *\)) N
+(              fun genBinary\(binOp, opnd1, opnd2\) =) N
+(                  if isMemReg rd andalso) N
+(                     \(isMemOpnd opnd1 orelse isMemOpnd opnd2\) orelse) N
+(                     equalRd\(opnd2\)) N
+(                  then) N
+(                  let val tmpR = newReg\(\)) N
+(                      val tmp  = I.Direct tmpR) N
+(                  in  move\(opnd1, tmp\);) N
+(                      mark\(I.BINARY{binOp=binOp, src=opnd2, dst=tmp}, an\);) N
+(                      move\(tmp, rdOpnd\)) N
+(                  end ) N
+(                  else) N
+(                     \(move\(opnd1, rdOpnd\);) N
+(                      mark\(I.BINARY{binOp=binOp, src=opnd2, dst=rdOpnd}, an\)) N
+(                     \)) N
+() N
+(                 \(* Generate a binary operator; it may commute *\)) N
+(              fun binaryComm\(binOp, e1, e2\) = ) N
+(              let val \(opnd1, opnd2\) = ) N
+(                      case \(operand e1, operand e2\) of) N
+(                        \(x as I.Immed _, y\)      => \(y, x\)) N
+(                      | \(x as I.ImmedLabel _, y\) => \(y, x\)) N
+(                      | \(x, y as I.Direct _\)     => \(y, x\)) N
+(                      | \(x, y\)                   => \(x, y\)) N
+(              in  genBinary\(binOp, opnd1, opnd2\)) N
+(              end) N
+(        ) N
+(                 \(* Generate a binary operator; non-commutative *\)) N
+(              fun binary\(binOp, e1, e2\) =) N
+(                  genBinary\(binOp, operand e1, operand e2\)) N
+(        ) N
+(                 \(* Generate a unary operator *\)) N
+(              fun unary\(unOp, e\) = ) N
+(              let val opnd = operand e) N
+(              in  if isMemReg rd andalso isMemOpnd opnd then) N
+(                     let val tmp = I.Direct\(newReg\(\)\)) N
+(                     in  move\(opnd, tmp\); move\(tmp, rdOpnd\)) N
+(                     end ) N
+(                  else move\(opnd, rdOpnd\);) N
+(                  mark\(I.UNARY{unOp=unOp, opnd=rdOpnd}, an\)) N
+(              end) N
+(        ) N
+(                 \(* Generate shifts; the shift ) N
+(                  * amount must be a constant or in %ecx *\)) N
+(              fun shift\(opcode, e1, e2\) =) N
+(              let val \(opnd1, opnd2\) = \(operand e1, operand e2\)) N
+(              in  case opnd2 of ) N
+(                    I.Immed _ => genBinary\(opcode, opnd1, opnd2\)) N
+(                  | _ => ) N
+(                    if equalRd\(opnd2\) then ) N
+(                    let val tmpR = newReg\(\)) N
+(x86.sml) (Page 7/20) (Mar 04, 00 16:17) title
+border
+/v 1 store
+/x0 x v get 3.362408 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(                        val tmp  = I.Direct tmpR) p n
+(                    in  move\(opnd1, tmp\);) N
+(                        move\(opnd2, ecx\);) N
+(                        mark\(I.BINARY{binOp=opcode, src=ecx, dst=tmp},an\);) N
+(                        move\(tmp, rdOpnd\)) N
+(                    end) N
+(                    else) N
+(                        \(move\(opnd1, rdOpnd\);) N
+(                         move\(opnd2, ecx\);) N
+(                         mark\(I.BINARY{binOp=opcode, src=ecx, dst=rdOpnd},an\)) N
+(                        \)) N
+(              end) N
+(        ) N
+(                  \(* Division or remainder: divisor must be in %edx:%eax pair *\)) N
+(              fun divrem\(signed, overflow, e1, e2, resultReg\) =) N
+(              let val \(opnd1, opnd2\) = \(operand e1, operand e2\)) N
+(                  val _ = move\(opnd1, eax\)) N
+(                  val oper = if signed then \(emit\(I.CDQ\); I.IDIV\)) N
+(                             else \(zero edx; I.UDIV\)) N
+(              in  mark\(I.MULTDIV{multDivOp=oper, src=regOrMem opnd2},an\);) N
+(                  move\(resultReg, rdOpnd\);) N
+(                  if overflow then trap\(\) else \(\)) N
+(              end) N
+(       ) N
+(                  \(* Optimize the special case for division *\) ) N
+(              fun divide\(signed, overflow, e1, e2 as T.LI n\) = ) N
+(              let fun isPowerOf2 w = Word.andb\(\(w - 0w1\), w\) = 0w0 ) N
+(                  fun log2 n =  \(* n must be > 0!!! *\)) N
+(                      let fun loop\(0w1,pow\) = pow) N
+(                            | loop\(w,pow\) = loop\(Word.>>\(w, 0w1\),pow+1\)) N
+(                      in loop\(n,0\) end) N
+(                  val w = Word.fromInt n) N
+(              in  if n > 1 andalso isPowerOf2 w then ) N
+(                     let val pow = T.LI\(log2 w\)) N
+(                     in  if signed then ) N
+(                         \(* signed; simulate round towards zero *\)) N
+(                         let val label = Label.newLabel "") N
+(                             val reg1  = expr e1) N
+(                             val opnd1 = I.Direct reg1) N
+(                         in  if setZeroBit e1 then \(\)) N
+(                             else emit\(I.CMPL{lsrc=opnd1, rsrc=I.Immed 0}\);) N
+(                             emit\(I.JCC{cond=I.GE, opnd=immedLabel label}\);) N
+(                             emit\(if n = 2 then) N
+(                                     I.UNARY{unOp=I.INCL, opnd=opnd1}) N
+(                                  else) N
+(                                     I.BINARY{binOp=I.ADDL, ) N
+(                                              src=I.Immed\(toInt32 n - 1\),) N
+(                                              dst=opnd1}\);) N
+(                             defineLabel label;) N
+(                             shift\(I.SARL, T.REG\(32, reg1\), pow\)) N
+(                         end) N
+(                         else \(* unsigned *\)) N
+(                            shift\(I.SHRL, e1, pow\)) N
+(                     end) N
+(                  else) N
+(                       \(* note the only way we can overflow is if) N
+(                        * n = 0 or n = -1) N
+(                        *\)) N
+(                     divrem\(signed, overflow andalso \(n = ~1 orelse n = 0\), ) N
+(                            e1, e2, eax\)) N
+(              end) N
+(                | divide\(signed, overflow, e1, e2\) = ) N
+(x86.sml) (Page 8/20) (Mar 04, 00 16:17) title
+border
+% End of virtual page
+grestore
+(Printed by Fermin Reig) rhead
+(x86.sml) (4/10) (Saturday March 04, 00) footer
+end % of Latin1dict
+pagesave restore
+showpage
+%%Page: (5) 5
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+sh 0 translate
+90 rotate
+% Encoding is ISO8859-1
+Latin1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 3.362408 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(                    divrem\(signed, overflow, e1, e2, eax\)) p n
+() N
+(              fun rem\(signed, overflow, e1, e2\) = ) N
+(                    divrem\(signed, overflow, e1, e2, edx\)) N
+(        ) N
+(                  \(* unsigned integer multiplication *\)) N
+(              fun uMultiply\(e1, e2\) = ) N
+(                  \(* note e2 can never be \(I.Direct edx\) *\)) N
+(                  \(move\(operand e1, eax\);) N
+(                   mark\(I.MULTDIV{multDivOp=I.UMUL, ) N
+(                                  src=regOrMem\(operand e2\)},an\);) N
+(                   move\(eax, rdOpnd\)) N
+(                  \)) N
+(        ) N
+(                  \(* signed integer multiplication: ) N
+(                   * The only forms that are allowed that also sets the ) N
+(                   * OF and CF flags are:) N
+(                   *) N
+(                   *      imul r32, r32/m32, imm8) N
+(                   *      imul r32, imm8) N
+(                   *      imul r32, imm32) N
+(                   *\)) N
+(              fun multiply\(e1, e2\) = ) N
+(              let fun doit\(i1 as I.Immed _, i2 as I.Immed _, dstR, dst\) =) N
+(                      \(move\(i1, dst\);) N
+(                       mark\(I.MUL3{dst=dstR, src1=i2, src2=NONE},an\)\)) N
+(                    | doit\(rm, i2 as I.Immed _, dstR, dst\) = ) N
+(                        doit\(i2, rm, dstR, dst\)) N
+(                    | doit\(imm as I.Immed\(i\), rm, dstR, dst\) =) N
+(                       mark\(I.MUL3{dst=dstR, src1=rm, src2=SOME i},an\)) N
+(                    | doit\(r1 as I.Direct _, r2 as I.Direct _, dstR, dst\) =) N
+(                      \(move\(r1, dst\);) N
+(                       mark\(I.MUL3{dst=dstR, src1=r2, src2=NONE},an\)\)) N
+(                    | doit\(r1 as I.Direct _, rm, dstR, dst\) =) N
+(                      \(move\(r1, dst\);) N
+(                       mark\(I.MUL3{dst=dstR, src1=rm, src2=NONE},an\)\)) N
+(                    | doit\(rm, r as I.Direct _, dstR, dst\) = ) N
+(                       doit\(r, rm, dstR, dst\)) N
+(                    | doit\(rm1, rm2, dstR, dst\) =) N
+(                       if equalRd rm2 then) N
+(                       let val tmpR = newReg\(\)) N
+(                           val tmp  = I.Direct tmpR) N
+(                       in move\(rm1, tmp\);) N
+(                          mark\(I.MUL3{dst=tmpR, src1=rm2, src2=NONE},an\);) N
+(                          move\(tmp, dst\)) N
+(                       end) N
+(                       else) N
+(                         \(move\(rm1, dst\);) N
+(                          mark\(I.MUL3{dst=dstR, src1=rm2, src2=NONE},an\)) N
+(                         \)) N
+(                  val \(opnd1, opnd2\) = \(operand e1, operand e2\)) N
+(              in  if isMemReg rd then \(* destination must be a real reg *\)) N
+(                  let val tmpR = newReg\(\)) N
+(                      val tmp  = I.Direct tmpR) N
+(                  in  doit\(opnd1, opnd2, tmpR, tmp\); ) N
+(                      move\(tmp, rdOpnd\)) N
+(                  end) N
+(                  else) N
+(                      doit\(opnd1, opnd2, rd, rdOpnd\) ) N
+(              end) N
+() N
+(                 \(* Makes sure the destination must be a register *\)) N
+(x86.sml) (Page 9/20) (Mar 04, 00 16:17) title
+border
+/v 1 store
+/x0 x v get 3.362408 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(              fun dstMustBeReg f = ) p n
+(                  if isMemReg rd then) N
+(                  let val tmpR = newReg\(\)) N
+(                      val tmp  = I.Direct\(tmpR\)) N
+(                  in  f\(tmpR, tmp\); move\(tmp, rdOpnd\) end) N
+(                  else f\(rd, rdOpnd\)) N
+() N
+(                 \(* Emit a load instruction; makes sure that the destination) N
+(                  * is a register ) N
+(                  *\)) N
+(              fun genLoad\(mvOp, ea, mem\) = ) N
+(                  dstMustBeReg\(fn \(_, dst\) =>) N
+(                     mark\(I.MOVE{mvOp=mvOp, src=address\(ea, mem\), dst=dst},an\)\)) N
+(    ) N
+(                 \(* Generate a zero extended loads *\)) N
+(              fun load8\(ea, mem\) = genLoad\(I.MOVZBL, ea, mem\)) N
+(              fun load16\(ea, mem\) = genLoad\(I.MOVZWL, ea, mem\)) N
+(              fun load8s\(ea, mem\) = genLoad\(I.MOVSBL, ea, mem\)) N
+(              fun load16s\(ea, mem\) = genLoad\(I.MOVSWL, ea, mem\)) N
+(              fun load32\(ea, mem\) = genLoad\(I.MOVL, ea, mem\)) N
+(        ) N
+(                 \(* Generate a sign extended loads *\)) N
+(        ) N
+(                 \(* Generate setcc instruction:) N
+(                  *  semantics:  MV\(rd, COND\(_, T.CMP\(ty, cc, t1, t2\), yes, no\)\)) N
+(                  *\)) N
+(              fun setcc\(ty, cc, t1, t2, yes, no\) = ) N
+(              let val tmpR = newReg\(\)) N
+(                  val tmp = I.Direct tmpR) N
+(                  \(* We create a temporary here just in ) N
+(                   * case t1 or t2 contains a use of rd.) N
+(                   *\)) N
+(              in  \(* Clear the destination first.) N
+(                   * This this because stupid SETcc ) N
+(                   * only writes to the low order) N
+(                   * byte.  That's Intel architecture, folks.) N
+(                   *\)) N
+(                  zero tmp;) N
+(                  case \(yes, no\) of) N
+(                    \(1, 0\) => \(* normal case *\)) N
+(                    let val cc = cmp\(true, ty, cc, t1, t2, []\) ) N
+(                    in  mark\(I.SET{cond=cond cc, opnd=tmp}, an\) end ) N
+(                  | \(0, 1\) => \(* flip *\)) N
+(                    let val cc = cmp\(true, ty, ) N
+(                                     T.Basis.negateCond cc, t1, t2, []\) ) N
+(                    in  mark\(I.SET{cond=cond cc, opnd=tmp}, an\) end ) N
+(                  | \(C1, C2\)  => ) N
+(                    \(* general case; ) N
+(                     * from the Intel optimization guide p3-5 *\)) N
+(                    let val C1 = toInt32 C1) N
+(                        val C2 = toInt32 C2) N
+(                        val cc = cmp\(true, ty, cc, t1, t2, []\) ) N
+(                    in  emit\(I.SET{cond=cond cc, opnd=tmp}\); ) N
+(                        case Int32.abs\(C1-C2\)-1 of) N
+(                          D as \(1 | 2 | 4 | 8\) =>) N
+(                          let val addr = I.Indexed{base=SOME tmpR,) N
+(                                                   index=tmpR,) N
+(                                                   scale=Int32.toInt D,) N
+(                                                   disp=I.Immed\(C1-C2\),) N
+(                                                   mem=readonly}) N
+(                          in  mark\(I.LEA{r32=tmpR, addr=addr}, an\) end) N
+(                        | _ =>) N
+(x86.sml) (Page 10/20) (Mar 04, 00 16:17) title
+border
+% End of virtual page
+grestore
+(Printed by Fermin Reig) rhead
+(x86.sml) (5/10) (Saturday March 04, 00) footer
+end % of Latin1dict
+pagesave restore
+showpage
+%%Page: (6) 6
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+sh 0 translate
+90 rotate
+% Encoding is ISO8859-1
+Latin1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 3.362408 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(                         \(emit\(I.UNARY{unOp=I.DECL, opnd=tmp}\);) p n
+(                          emit\(I.BINARY{binOp=I.ANDL,) N
+(                                        src=I.Immed\(C2-C1\), dst=tmp}\);) N
+(                          mark\(I.BINARY{binOp=I.ADDL,) N
+(                                        src=I.Immed\(Int32.min\(C1,C2\)\), ) N
+(                                        dst=tmp}, an\)) N
+(                         \)) N
+(                    end; ) N
+(                  move\(tmp, rdOpnd\)) N
+(              end \(* setcc *\)) N
+(    ) N
+(                  \(* Generate cmovcc instruction.) N
+(                   * on Pentium Pro and Pentium II only) N
+(                   *\)) N
+(              fun cmovcc\(ty, cc, t1, t2, yes, no\) = ) N
+(              let fun genCmov\(dstR, _\) = ) N
+(                  let val _ = doExpr\(no, dstR, []\) \(* false branch *\)) N
+(                      val cc = cmp\(true, ty, cc, t1, t2, []\)  \(* compare *\)) N
+(                  in  mark\(I.CMOV{cond=cond cc, src=operand yes, dst=dstR}, an\) ) N
+(                  end) N
+(              in  dstMustBeReg genCmov) N
+(              end) N
+(        ) N
+(              fun unknownExp exp = doExpr\(Gen.compileRexp exp, rd, an\) ) N
+() N
+(                  \(* Generate addition *\)) N
+(              fun addition\(e1, e2\) =) N
+(                \(dstMustBeReg\(fn \(dstR, _\) => ) N
+(                    mark\(I.LEA{r32=dstR, addr=address\(exp, readonly\)}, an\)\)) N
+(                handle EA => binaryComm\(I.ADDL, e1, e2\)\)) N
+() N
+(                  \(* Add n to rd *\)) N
+(              fun addN n =) N
+(                mark\(I.BINARY{binOp=I.ADDL, src=I.Immed\(toInt32 n\), ) N
+(                              dst=rdOpnd}, an\)) N
+() N
+(          in  case exp of) N
+(               T.REG\(_,rs\) => ) N
+(                   if isMemReg rs andalso isMemReg rd then ) N
+(                      let val tmp = I.Direct\(newReg\(\)\)) N
+(                      in  move'\(MemReg rs, tmp, an\);) N
+(                          move'\(tmp, rdOpnd, []\)) N
+(                      end) N
+(                   else move'\(IntReg rs, rdOpnd, an\)) N
+(             | \(T.LI 0 | T.LI32 0w0\) =>  ) N
+(                 \(* As per Fermin's request, special optimization for rd := 0. ) N
+(                  * Currently we don't bother with the size.) N
+(                  *\)) N
+(                 if isMemReg rd then move'\(I.Immed 0, rdOpnd, an\)) N
+(                 else mark\(I.BINARY{binOp=I.XORL, src=rdOpnd, dst=rdOpnd}, an\)) N
+(             | T.LI n      => move'\(I.Immed\(toInt32 n\), rdOpnd, an\)) N
+(             | T.LI32 w    => move'\(I.Immed\(wToInt32 w\), rdOpnd, an\)) N
+(             | T.CONST c   => move'\(I.ImmedLabel\(LE.CONST c\), rdOpnd, an\)) N
+(             | T.LABEL lab => move'\(I.ImmedLabel lab, rdOpnd, an\)) N
+() N
+(               \(* 32-bit addition *\)) N
+(             | T.ADD\(32, e, \(T.LI 1|T.LI32 0w1\)\) => unary\(I.INCL, e\)) N
+(             | T.ADD\(32, \(T.LI 1|T.LI32 0w1\), e\) => unary\(I.INCL, e\)) N
+(             | T.ADD\(32, e, T.LI ~1\) => unary\(I.DECL, e\)) N
+(             | T.ADD\(32, T.LI ~1, e\) => unary\(I.DECL, e\)) N
+(             | T.ADD\(32, e1 as T.REG\(_, rs\), e2 as T.LI n\) =>) N
+(                  if rs = rd then addN n else addition\(e1, e2\)) N
+(x86.sml) (Page 11/20) (Mar 04, 00 16:17) title
+border
+/v 1 store
+/x0 x v get 3.362408 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(             | T.ADD\(32, e1 as T.LI n, e2 as T.REG\(_, rs\)\) =>) p n
+(                  if rs = rd then addN n else addition\(e1, e2\)) N
+(             | T.ADD\(32, e1, e2\) => addition\(e1, e2\)) N
+() N
+(               \(* 32-bit subtraction *\)) N
+(             | T.SUB\(32, e, \(T.LI 1 | T.LI32 0w1\)\) => unary\(I.DECL, e\)) N
+(             | T.SUB\(32, e, T.LI ~1\) => unary\(I.INCL, e\)) N
+(             | T.SUB\(32, \(T.LI 0 | T.LI32 0w0\), e\) => unary\(I.NEGL, e\)) N
+() N
+(             \(* Never mind:) N
+(               | T.SUB\(32, e1, e2 as T.LI n\) => ) N
+(                 \(mark\(I.LEA{r32=rd, addr=address\(T.ADD\(32, e1, T.LI\(~n\)\),) N
+(                                                  I.Region.readonly\)}, an\)) N
+(                  handle \(Overflow|EA\) => binary\(I.SUBL, e1, e2\)\)) N
+(             *\)      ) N
+(             | T.SUB\(32, e1, e2\) => binary\(I.SUBL, e1, e2\)) N
+() N
+(             | T.MULU\(32, x, y\) => uMultiply\(x, y\)) N
+(             | T.DIVU\(32, x, y\) => divide\(false, false, x, y\)) N
+(             | T.REMU\(32, x, y\) => rem\(false, false, x, y\)) N
+() N
+(             | T.MULS\(32, x, y\) => multiply\(x, y\)) N
+(             | T.DIVS\(32, x, y\) => divide\(true, false, x, y\)) N
+(             | T.REMS\(32, x, y\) => rem\(true, false, x, y\)) N
+() N
+(             | T.ADDT\(32, x, y\) => \(binaryComm\(I.ADDL, x, y\); trap\(\)\)) N
+(             | T.SUBT\(32, x, y\) => \(binary\(I.SUBL, x, y\); trap\(\)\)) N
+(             | T.MULT\(32, x, y\) => \(multiply\(x, y\); trap\(\)\)) N
+(             | T.DIVT\(32, x, y\) => divide\(true, true, x, y\)) N
+(             | T.REMT\(32, x, y\) => rem\(true, true, x, y\)) N
+() N
+(             | T.ANDB\(32, x, y\) => binaryComm\(I.ANDL, x, y\)) N
+(             | T.ORB\(32, x, y\)  => binaryComm\(I.ORL, x, y\)) N
+(             | T.XORB\(32, x, y\) => binaryComm\(I.XORL, x, y\)) N
+(             | T.NOTB\(32, x\)    => unary\(I.NOTL, x\)) N
+() N
+(             | T.SRA\(32, x, y\)  => shift\(I.SARL, x, y\)) N
+(             | T.SRL\(32, x, y\)  => shift\(I.SHRL, x, y\)) N
+(             | T.SLL\(32, x, y\)  => shift\(I.SHLL, x, y\)) N
+() N
+(             | T.LOAD\(8, ea, mem\) => load8\(ea, mem\)) N
+(             | T.LOAD\(16, ea, mem\) => load16\(ea, mem\)) N
+(             | T.LOAD\(32, ea, mem\) => load32\(ea, mem\)) N
+(             | T.CVTI2I\(_,T.SIGN_EXTEND,_,T.LOAD\(8,ea,mem\)\) => load8s\(ea, mem\)) N
+(             | T.CVTI2I\(_,T.SIGN_EXTEND,_,T.LOAD\(16,ea,mem\)\) => load16s\(ea, mem\)) N
+() N
+(             | T.COND\(32, T.CMP\(ty, cc, t1, t2\), T.LI yes, T.LI no\) => ) N
+(                 setcc\(ty, cc, t1, t2, yes, no\)) N
+(             | T.COND\(32, T.CMP\(ty, cc, t1, t2\), yes, no\) => ) N
+(                \(case !arch of \(* PentiumPro and higher has CMOVcc *\)) N
+(                   Pentium => unknownExp exp) N
+(                 | _ => cmovcc\(ty, cc, t1, t2, yes, no\)) N
+(                \)) N
+(             | T.LET\(s,e\) => \(doStmt s; doExpr\(e, rd, an\)\)) N
+(             | T.MARK\(e, A.MARKREG f\) => \(f rd; doExpr\(e, rd, an\)\)) N
+(             | T.MARK\(e, a\) => doExpr\(e, rd, a::an\)) N
+(             | T.PRED\(e,c\) => doExpr\(e, rd, A.CTRLUSE c::an\)) N
+(             | T.REXT e => ) N
+(                 ExtensionComp.compileRext \(reducer\(\)\) {e=e, rd=rd, an=an} ) N
+(               \(* simplify and try again *\)) N
+(             | exp => unknownExp exp) N
+(          end \(* doExpr *\)) N
+(x86.sml) (Page 12/20) (Mar 04, 00 16:17) title
+border
+% End of virtual page
+grestore
+(Printed by Fermin Reig) rhead
+(x86.sml) (6/10) (Saturday March 04, 00) footer
+end % of Latin1dict
+pagesave restore
+showpage
+%%Page: (7) 7
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+sh 0 translate
+90 rotate
+% Encoding is ISO8859-1
+Latin1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 3.362408 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+() p n
+(          \(* generate an expression and return its result register ) N
+(           * If rewritePseudo is on, the result is guaranteed to be in a ) N
+(           * non memReg register) N
+(           *\)) N
+(      and expr\(exp as T.REG\(_, rd\)\) = ) N
+(          if isMemReg rd then genExpr exp else rd) N
+(        | expr exp = genExpr exp) N
+() N
+(      and genExpr exp = ) N
+(          let val rd = newReg\(\) in doExpr\(exp, rd, []\); rd end) N
+() N
+(         \(* Compare an expression with zero.) N
+(          * On the x86, TEST is superior to AND for doing the same thing,) N
+(          * since it doesn't need to write out the result in a register.) N
+(          *\)) N
+(     and cmpWithZero\(cc as \(T.EQ | T.NE\), e as T.ANDB\(ty, a, b\)\)  = ) N
+(            \(case ty of) N
+(               8 =>  test\(I.TESTB, a, b\)) N
+(             | 16 => test\(I.TESTW, a, b\)) N
+(             | 32 => test\(I.TESTL, a, b\)) N
+(             | _  => \(expr e; \(\)\)) N
+(             ; cc\)) N
+(        | cmpWithZero\(cc, e\) = \(expr e; cc\)) N
+() N
+(          \(* Emit a test.) N
+(           *   The available modes are) N
+(           *      r/m, r) N
+(           *      r/m, imm) N
+(           * On selecting the right instruction: TESTL/TESTW/TESTB.   ) N
+(           * When anding an operand with a constant) N
+(           * that fits within 8 \(or 16\) bits, it is possible to use TESTB,) N
+(           * \(or TESTW\) instead of TESTL.   Because x86 is little endian, ) N
+(           * this works for memory operands too.  However, with TESTB, it is) N
+(           * not possible to use registers other than ) N
+(           * AL, CL, BL, DL, and AH, CH, BH, DH.  So, the best way is to) N
+(           * perform register allocation first, and if the operand registers) N
+(           * are one of EAX, ECX, EBX, or EDX, replace the TESTL instruction ) N
+(           * by TESTB.) N
+(           *\)) N
+(      and test\(testopcode, a, b\) = ) N
+(          let val \(_, opnd1, opnd2\) = commuteComparison\(T.EQ, true, a, b\)) N
+(              \(* translate r, r/m => r/m, r *\)) N
+(              val \(opnd1, opnd2\) = ) N
+(                   if isMemOpnd opnd2 then \(opnd2, opnd1\) else \(opnd1, opnd2\)) N
+(          in  emit\(testopcode{lsrc=opnd1, rsrc=opnd2}\)) N
+(          end) N
+() N
+(         \(* generate a condition code expression ) N
+(           * The zero is for setting the condition code!  ) N
+(           * I have no idea why this is used.) N
+(           *\)) N
+(      and doCCexpr\(T.CMP\(ty, cc, t1, t2\), 0, an\) = ) N
+(          \(cmp\(false, ty, cc, t1, t2, an\); \(\)\)) N
+(        | doCCexpr\(T.CCMARK\(e,A.MARKREG f\),rd,an\) = \(f rd; doCCexpr\(e,rd,an\)\)) N
+(        | doCCexpr\(T.CCMARK\(e,a\), rd, an\) = doCCexpr\(e,rd,a::an\)) N
+(        | doCCexpr\(T.CCEXT e, cd, an\) = ) N
+(           ExtensionComp.compileCCext \(reducer\(\)\) {e=e, ccd=cd, an=an} ) N
+(        | doCCexpr _ = error "doCCexpr") N
+() N
+(     and ccExpr e = error "ccExpr") N
+() N
+(x86.sml) (Page 13/20) (Mar 04, 00 16:17) title
+border
+/v 1 store
+/x0 x v get 3.362408 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(          \(* generate a comparison and sets the condition code;) p n
+(           * return the actual cc used.  If the flag swapable is true,) N
+(           * we can also reorder the operands. ) N
+(           *\)) N
+(      and cmp\(swapable, ty, cc, t1, t2, an\) = ) N
+(          \(case cc of) N
+(             \(T.EQ | T.NE\) => ) N
+(              \(* Sometimes the comparison is not necessary because) N
+(               * the bits are already set! ) N
+(               *\)) N
+(              if isZero t1 andalso setZeroBit t2 then cmpWithZero\(cc, t2\)) N
+(              else if isZero t2 andalso setZeroBit t1 then cmpWithZero\(cc, t1\)) N
+(                   \(* == and <> can be reordered *\)) N
+(              else genCmp\(ty, true, cc, t1, t2, an\) ) N
+(           |  _ => genCmp\(ty, swapable, cc, t1, t2, an\)) N
+(          \)) N
+() N
+(          \(* Give a and b which are the operands to a comparison \(or test\)) N
+(           * Return the appropriate condition code and operands.) N
+(           *   The available modes are:) N
+(           *        r/m, imm) N
+(           *        r/m, r) N
+(           *        r,   r/m) N
+(           *\)) N
+(      and commuteComparison\(cc, swapable, a, b\) = ) N
+(          let val \(opnd1, opnd2\) = \(operand a, operand b\)) N
+(          in  \(* Try to fold in the operands whenever possible *\)) N
+(              case \(isImmediate opnd1, isImmediate opnd2\) of) N
+(                \(true, true\) => \(cc, moveToReg opnd1, opnd2\)) N
+(              | \(true, false\) => ) N
+(                   if swapable then \(T.Basis.swapCond cc, opnd2, opnd1\)) N
+(                   else \(cc, moveToReg opnd1, opnd2\)) N
+(              | \(false, true\) => \(cc, opnd1, opnd2\)) N
+(              | \(false, false\) => ) N
+(                 \(case \(opnd1, opnd2\) of) N
+(                    \(_, I.Direct _\) => \(cc, opnd1, opnd2\)) N
+(                  | \(I.Direct _, _\) => \(cc, opnd1, opnd2\)) N
+(                  | \(_, _\)          => \(cc, moveToReg opnd1, opnd2\)) N
+(                 \)) N
+(          end ) N
+( ) N
+(          \(* generate a real comparison; return the real cc used *\)) N
+(      and genCmp\(ty, swapable, cc, a, b, an\) = ) N
+(          let val \(cc, opnd1, opnd2\) = commuteComparison\(cc, swapable, a, b\)) N
+(          in  mark\(I.CMPL{lsrc=opnd1, rsrc=opnd2}, an\); cc ) N
+(          end) N
+() N
+(          \(* generate code for jumps *\)) N
+(      and jmp\(T.LABEL\(lexp as LE.LABEL lab\), labs, an\) = ) N
+(             mark\(I.JMP\(I.ImmedLabel lexp, [lab]\), an\)) N
+(        | jmp\(T.LABEL lexp, labs, an\) = mark\(I.JMP\(I.ImmedLabel lexp, labs\), an\)) N
+(        | jmp\(ea, labs, an\)           = mark\(I.JMP\(operand ea, labs\), an\)) N
+() N
+(       \(* convert mlrisc to cellset:) N
+(        *\)) N
+(       and cellset mlrisc =) N
+(           let val addCCReg = C.addCell C.CC) N
+(               fun g\([],acc\) = acc) N
+(                 | g\(T.GPR\(T.REG\(_,r\)\)::regs,acc\)  = g\(regs,C.addReg\(r,acc\)\)) N
+(                 | g\(T.FPR\(T.FREG\(_,f\)\)::regs,acc\) = g\(regs,C.addFreg\(f,acc\)\)) N
+(                 | g\(T.CCR\(T.CC\(_,cc\)\)::regs,acc\)  = g\(regs,addCCReg\(cc,acc\)\)) N
+(                 | g\(T.CCR\(T.FCC\(_,cc\)\)::regs,acc\)  = g\(regs,addCCReg\(cc,acc\)\)) N
+(x86.sml) (Page 14/20) (Mar 04, 00 16:17) title
+border
+% End of virtual page
+grestore
+(Printed by Fermin Reig) rhead
+(x86.sml) (7/10) (Saturday March 04, 00) footer
+end % of Latin1dict
+pagesave restore
+showpage
+%%Page: (8) 8
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+sh 0 translate
+90 rotate
+% Encoding is ISO8859-1
+Latin1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 3.362408 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(                 | g\(_::regs, acc\) = g\(regs, acc\)) p n
+(           in  g\(mlrisc, C.empty\) end) N
+() N
+(          \(* generate code for calls *\)) N
+(      and call\(ea, flow, def, use, mem, an\) = ) N
+(          mark\(I.CALL\(operand ea,cellset\(def\),cellset\(use\),mem\),an\)) N
+() N
+(          \(* generate code for integer stores *\)) N
+(      and store8\(ea, d, mem, an\) = ) N
+(          let val src = \(* movb has to use %eax as source. Stupid x86! *\)) N
+(                 case immedOrReg\(operand d\) of) N
+(                     src as I.Direct r =>) N
+(                       if r = C.eax then src else \(move\(src, eax\); eax\)) N
+(                   | src => src) N
+(          in  mark\(I.MOVE{mvOp=I.MOVB, src=src, dst=address\(ea,mem\)},an\)) N
+(          end) N
+(      and store16\(ea, d, mem, an\) = error "store16") N
+(      and store32\(ea, d, mem, an\) = ) N
+(            move'\(immedOrReg\(operand d\), address\(ea, mem\), an\)) N
+() N
+(          \(* generate code for branching *\)) N
+(      and branch\(T.CMP\(ty, cc, t1, t2\), lab, an\) =) N
+(           \(* allow reordering of operands *\)) N
+(           let val cc = cmp\(true, ty, cc, t1, t2, []\) ) N
+(           in  mark\(I.JCC{cond=cond cc, opnd=immedLabel lab}, an\) end) N
+(        | branch\(T.FCMP\(fty, fcc, t1, t2\), lab, an\) = ) N
+(           fbranch\(fty, fcc, t1, t2, lab, an\)) N
+(        | branch\(ccexp, lab, an\) =) N
+(           \(doCCexpr\(ccexp, 0, []\);) N
+(            mark\(I.JCC{cond=cond\(Gen.condOf ccexp\), opnd=immedLabel lab}, an\)) N
+(           \)) N
+() N
+(          \(* generate code for floating point compare and branch *\)) N
+(      and fbranch\(fty, fcc, t1, t2, lab, an\) = ) N
+(          let fun compare\(\) =) N
+(              let fun ignoreOrder \(T.FREG _\) = true) N
+(                    | ignoreOrder \(T.FLOAD _\) = true) N
+(                    | ignoreOrder \(T.FMARK\(e,_\)\) = ignoreOrder e) N
+(                    | ignoreOrder _ = false) N
+(              in  if ignoreOrder t1 orelse ignoreOrder t2 then ) N
+(                       \(reduceFexp\(fty, t2, []\); reduceFexp\(fty, t1, []\)\)) N
+(                  else \(reduceFexp\(fty, t1, []\); reduceFexp\(fty, t2, []\); ) N
+(                        emit\(I.FXCH{opnd=C.ST\(1\)}\)\);) N
+(                  emit\(I.FUCOMPP\)) N
+(              end) N
+(              fun andil i = emit\(I.BINARY{binOp=I.ANDL,src=I.Immed\(i\),dst=eax}\)) N
+(              fun xoril i = emit\(I.BINARY{binOp=I.XORL,src=I.Immed\(i\),dst=eax}\)) N
+(              fun cmpil i = emit\(I.CMPL{rsrc=I.Immed\(i\), lsrc=eax}\)) N
+(              fun j\(cc, lab\) = mark\(I.JCC{cond=cc, opnd=immedLabel lab},an\)) N
+(              fun sahf\(\) = emit\(I.SAHF\)) N
+(              fun branch\(\) =) N
+(                  case fcc) N
+(                  of T.==   => \(andil 0x4400; xoril 0x4000; j\(I.EQ, lab\)\)) N
+(                   | T.?<>  => \(andil 0x4400; xoril 0x4000; j\(I.NE, lab\)\)) N
+(                   | T.?    => \(sahf\(\); j\(I.P,lab\)\)) N
+(                   | T.<=>  => \(sahf\(\); j\(I.NP,lab\)\)) N
+(                   | T.>    => \(andil 0x4500;  j\(I.EQ,lab\)\)) N
+(                   | T.?<=  => \(andil 0x4500;  j\(I.NE,lab\)\)) N
+(                   | T.>=   => \(andil 0x500; j\(I.EQ,lab\)\)) N
+(                   | T.?<   => \(andil 0x500; j\(I.NE,lab\)\)) N
+(                   | T.<    => \(andil 0x4500; cmpil 0x100; j\(I.EQ,lab\)\)) N
+(                   | T.?>=  => \(andil 0x4500; cmpil 0x100; j\(I.NE,lab\)\)) N
+(x86.sml) (Page 15/20) (Mar 04, 00 16:17) title
+border
+/v 1 store
+/x0 x v get 3.362408 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(                   | T.<=   => \(andil 0x4100; cmpil 0x100; j\(I.EQ,lab\);) p n
+(                                cmpil 0x4000; j\(I.EQ,lab\)\)) N
+(                   | T.?>   => \(sahf\(\); j\(I.P,lab\); andil 0x4100; j\(I.EQ,lab\)\)) N
+(                   | T.<>   => \(andil 0x4400; j\(I.EQ,lab\)\)) N
+(                   | T.?=   => \(andil 0x4400; j\(I.NE,lab\)\)) N
+(                   | _      => error "fbranch") N
+(                 \(*esac*\)) N
+(          in  compare\(\); emit I.FNSTSW; branch\(\)) N
+(          end) N
+() N
+(      and fld\(32, opnd\) = I.FLDS opnd) N
+(        | fld\(64, opnd\) = I.FLDL opnd) N
+(        | fld\(80, opnd\) = I.FLDT opnd) N
+(        | fld _         = error "fld") N
+() N
+(      and fild\(16, opnd\) = I.FILD opnd) N
+(        | fild\(32, opnd\) = I.FILDL opnd) N
+(        | fild\(64, opnd\) = I.FILDLL opnd) N
+(        | fild _         = error "fild") N
+() N
+(      and fxld\(INTEGER, ty, opnd\) = fild\(ty, opnd\)) N
+(        | fxld\(REAL, fty, opnd\) = fld\(fty, opnd\)) N
+() N
+(      and fstp\(32, opnd\) = I.FSTPS opnd) N
+(        | fstp\(64, opnd\) = I.FSTPL opnd) N
+(        | fstp\(80, opnd\) = I.FSTPT opnd) N
+(        | fstp _         = error "fstp") N
+() N
+(          \(* generate code for floating point stores *\)) N
+(      and fstore\(fty, ea, d, mem, an\) = ) N
+(          \(case d of) N
+(             T.FREG\(fty, fs\) => emit\(fld\(fty, I.FDirect fs\)\)) N
+(           | _ => reduceFexp\(fty, d, []\);) N
+(           mark\(fstp\(fty, address\(ea, mem\)\), an\)) N
+(          \)) N
+() N
+(      and fexpr e = error "fexpr") N
+(          ) N
+(          \(* generate floating point expression and put the result in fd *\)) N
+(      and doFexpr\(fty, T.FREG\(_, fs\), fd, an\) = ) N
+(            \(if fs = fd then \(\) ) N
+(             else mark\(I.FCOPY{dst=[fd], src=[fs], tmp=NONE}, an\)) N
+(            \)) N
+(        | doFexpr\(fty, T.FLOAD\(fty', ea, mem\), fd, an\) = ) N
+(            let val ea = address\(ea, mem\)) N
+(            in  mark\(fld\(fty', ea\), an\); ) N
+(                emit\(fstp\(fty, I.FDirect fd\)\)) N
+(            end) N
+(        | doFexpr\(fty, e, fd, an\) =) N
+(            \(reduceFexp\(fty, e, []\);) N
+(             mark\(fstp\(fty, I.FDirect fd\), an\)) N
+(            \)) N
+() N
+(          \(* ) N
+(           * Generate floating point expression using Sethi-Ullman's scheme:) N
+(           * This function evaluates a floating point expression, ) N
+(           * and put result in %ST\(0\).) N
+(           *\)) N
+(      and reduceFexp\(fty, fexp, an\)  = ) N
+(          let val ST = I.ST\(C.ST 0\)) N
+(              val ST1 = I.ST\(C.ST 1\)) N
+() N
+(x86.sml) (Page 16/20) (Mar 04, 00 16:17) title
+border
+% End of virtual page
+grestore
+(Printed by Fermin Reig) rhead
+(x86.sml) (8/10) (Saturday March 04, 00) footer
+end % of Latin1dict
+pagesave restore
+showpage
+%%Page: (9) 9
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+sh 0 translate
+90 rotate
+% Encoding is ISO8859-1
+Latin1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 3.362408 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(              datatype su_tree = ) p n
+(                LEAF of int * T.fexp * ans) N
+(              | BINARY of int * T.fty * fbinop * su_tree * su_tree * ans) N
+(              | UNARY of int * T.fty * I.funOp * su_tree * ans) N
+(              and fbinop = FADD | FSUB | FMUL | FDIV) N
+(                         | FIADD | FISUB | FIMUL | FIDIV) N
+(              withtype ans = Annotations.annotations) N
+( ) N
+(              fun label\(LEAF\(n, _, _\)\) = n) N
+(                | label\(BINARY\(n, _, _, _, _, _\)\) = n) N
+(                | label\(UNARY\(n, _, _, _, _\)\) = n) N
+() N
+(              fun annotate\(LEAF\(n, x, an\), a\)  = LEAF\(n,x,a::an\)) N
+(                | annotate\(BINARY\(n,t,b,x,y,an\), a\) = BINARY\(n,t,b,x,y,a::an\)) N
+(                | annotate\(UNARY\(n,t,u,x,an\), a\) = UNARY\(n,t,u,x,a::an\)) N
+() N
+(              \(* Generate expression tree with sethi-ullman numbers *\)) N
+(              fun su\(e as T.FREG _\)       = LEAF\(1, e, []\)) N
+(                | su\(e as T.FLOAD _\)      = LEAF\(1, e, []\)) N
+(                | su\(e as T.CVTI2F _\)     = LEAF\(1, e, []\)) N
+(                | su\(T.CVTF2F\(_, _, t\)\)   = su t) N
+(                | su\(T.FMARK\(t, a\)\)       = annotate\(su t, a\)) N
+(                | su\(T.FABS\(fty, t\)\)      = suUnary\(fty, I.FABS, t\)) N
+(                | su\(T.FNEG\(fty, t\)\)      = suUnary\(fty, I.FCHS, t\)) N
+(                | su\(T.FSQRT\(fty, t\)\)     = suUnary\(fty, I.FSQRT, t\)) N
+(                | su\(T.FADD\(fty, t1, t2\)\) = suComBinary\(fty,FADD,FIADD,t1,t2\)) N
+(                | su\(T.FMUL\(fty, t1, t2\)\) = suComBinary\(fty,FMUL,FIMUL,t1,t2\)) N
+(                | su\(T.FSUB\(fty, t1, t2\)\) = suBinary\(fty,FSUB,FISUB,t1,t2\)) N
+(                | su\(T.FDIV\(fty, t1, t2\)\) = suBinary\(fty,FDIV,FIDIV,t1,t2\)) N
+(                | su _ = error "su") N
+(         ) N
+(              \(* Try to fold the the memory operand or integer conversion *\) ) N
+(              and suFold\(e as T.FREG _\) = \(LEAF\(0, e, []\), false\)) N
+(                | suFold\(e as T.FLOAD _\) = \(LEAF\(0, e, []\), false\)) N
+(                | suFold\(e as T.CVTI2F\(_,\(16 | 32\),_\)\) = \(LEAF\(0, e, []\), true\)) N
+(                | suFold\(T.CVTF2F\(_, _, t\)\) = suFold t) N
+(                | suFold\(T.FMARK\(t, a\)\) = ) N
+(                  let val \(t, integer\) = suFold t ) N
+(                  in  \(annotate\(t, a\), integer\) end) N
+(                | suFold e = \(su e, false\)) N
+() N
+(              \(* Can the tree be folded into the src operand? *\)) N
+(              and foldable\(T.FREG _\) = true) N
+(                | foldable\(T.FLOAD _\) = true) N
+(                | foldable\(T.CVTI2F\(_, \(16 | 32\), _\)\) = true) N
+(                | foldable\(T.CVTF2F\(_, _, t\)\) = foldable t) N
+(                | foldable\(T.FMARK\(t, _\)\) = foldable t) N
+(                | foldable _ = false) N
+() N
+(              \(* Form unary tree *\)) N
+(              and suUnary\(fty, funary, t\) = ) N
+(                  let val t = su t) N
+(                  in  UNARY\(label t, fty, funary, t, []\)) N
+(                  end) N
+() N
+(              \(* Form binary tree *\)) N
+(              and suBinary\(fty, binop, ibinop, t1, t2\) =) N
+(                  let val t1 = su t1) N
+(                      val \(t2, integer\) = suFold t2) N
+(                      val n1 = label t1) N
+(                      val n2 = label t2) N
+(                      val n  = if n1=n2 then n1+1 else Int.max\(n1,n2\)) N
+(x86.sml) (Page 17/20) (Mar 04, 00 16:17) title
+border
+/v 1 store
+/x0 x v get 3.362408 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(                      val myOp = if integer then ibinop else binop) p n
+(                  in  BINARY\(n, fty, myOp, t1, t2, []\) ) N
+(                  end) N
+() N
+(              \(* Try to fold in the operand if possible. ) N
+(               * This only applies to commutative operations.) N
+(               *\)) N
+(              and suComBinary\(fty, binop, ibinop, t1, t2\) =) N
+(                  let val \(t1, t2\) = if foldable t2 then \(t1, t2\) else \(t2, t1\)) N
+(                  in  suBinary\(fty, binop, ibinop, t1, t2\) end) N
+() N
+(              and sameTree\(LEAF\(_, T.FREG\(t1,f1\), []\), ) N
+(                           LEAF\(_, T.FREG\(t2,f2\), []\)\) = t1=t2 andalso f1=f2) N
+(                | sameTree _ = false) N
+() N
+(              \(* Traverse tree and generate code *\)) N
+(              fun gencode\(LEAF\(_, t, an\)\) = mark\(fxld\(leafEA t\), an\)) N
+(                | gencode\(BINARY\(_, _, binop, x, t2 as LEAF\(0, y, a1\), a2\)\) = ) N
+(                  let val _          = gencode x) N
+(                      val \(_, fty, src\) = leafEA y) N
+(                      fun gen\(code\) = mark\(code, a1 @ a2\)) N
+(                      fun binary\(oper32, oper64\) =) N
+(                          if sameTree\(x, t2\) then ) N
+(                             gen\(I.FBINARY{binOp=oper64, src=ST, dst=ST}\)) N
+(                          else) N
+(                             let val oper = ) N
+(                                   if isMemOpnd src then) N
+(                                      case fty of) N
+(                                        32 => oper32) N
+(                                      | 64 => oper64) N
+(                                      | _  => error "gencode: BINARY") N
+(                                   else oper64) N
+(                             in gen\(I.FBINARY{binOp=oper, src=src, dst=ST}\) end) N
+(                      fun ibinary\(oper16, oper32\) =) N
+(                          let val oper = case fty of) N
+(                                           16 => oper16 ) N
+(                                         | 32 => oper32 ) N
+(                                         | _  => error "gencode: IBINARY") N
+(                          in  gen\(I.FIBINARY{binOp=oper, src=src}\) end) N
+(                  in  case binop of) N
+(                        FADD => binary\(I.FADDS, I.FADDL\) ) N
+(                      | FSUB => binary\(I.FDIVS, I.FSUBL\) ) N
+(                      | FMUL => binary\(I.FMULS, I.FMULL\) ) N
+(                      | FDIV => binary\(I.FDIVS, I.FDIVL\) ) N
+(                      | FIADD => ibinary\(I.FIADDS, I.FIADDL\) ) N
+(                      | FISUB => ibinary\(I.FIDIVS, I.FISUBL\) ) N
+(                      | FIMUL => ibinary\(I.FIMULS, I.FIMULL\) ) N
+(                      | FIDIV => ibinary\(I.FIDIVS, I.FIDIVL\) ) N
+(                  end  ) N
+(                | gencode\(BINARY\(_, fty, binop, t1, t2, an\)\) = ) N
+(                  let fun doit\(t1, t2, oper, operP, operRP\) = ) N
+(                      let \(* oper[P] =>  ST\(1\) := ST oper ST\(1\); [pop] ) N
+(                           * operR[P] => ST\(1\) := ST\(1\) oper ST; [pop]) N
+(                           *\)) N
+(                           val n1 = label t1) N
+(                           val n2 = label t2) N
+(                      in if n1 < n2 andalso n1 <= 7 then ) N
+(                           \(gencode t2;) N
+(                            gencode t1;) N
+(                            mark\(I.FBINARY{binOp=operP, src=ST, dst=ST1}, an\)\)) N
+(                         else if n2 <= n1 andalso n2 <= 7 then) N
+(                           \(gencode t1;) N
+(x86.sml) (Page 18/20) (Mar 04, 00 16:17) title
+border
+% End of virtual page
+grestore
+(Printed by Fermin Reig) rhead
+(x86.sml) (9/10) (Saturday March 04, 00) footer
+end % of Latin1dict
+pagesave restore
+showpage
+%%Page: (10) 10
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+sh 0 translate
+90 rotate
+% Encoding is ISO8859-1
+Latin1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 3.362408 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(                            gencode t2;) p n
+(                            mark\(I.FBINARY{binOp=operRP, src=ST, dst=ST1}, an\)\)) N
+(                         else ) N
+(                         let \(* both labels > 7 *\)) N
+(                             val fs = I.FDirect\(newFreg\(\)\)) N
+(                         in  gencode t2;) N
+(                             emit\(fstp\(fty, fs\)\);) N
+(                             gencode t1;) N
+(                             mark\(I.FBINARY{binOp=oper, src=fs, dst=ST}, an\)) N
+(                         end) N
+(                     end) N
+(                  in case binop of ) N
+(                       FADD => doit\(t1,t2,I.FADDL,I.FADDP,I.FADDP\)) N
+(                     | FMUL => doit\(t1,t2,I.FMULL,I.FMULP,I.FMULP\)) N
+(                     | FSUB => doit\(t1,t2,I.FSUBL,I.FSUBP,I.FSUBRP\)) N
+(                     | FDIV => doit\(t1,t2,I.FDIVL,I.FDIVP,I.FDIVRP\)) N
+(                     | _ => error "gencode.BINARY") N
+(                  end) N
+(                | gencode\(UNARY\(_, _, unaryOp, su, an\)\) = ) N
+(                   \(gencode\(su\); mark\(I.FUNARY\(unaryOp\),an\)\)) N
+() N
+(              \(* Generate code for a leaf.) N
+(               * Returns the type and an effective address) N
+(               *\) ) N
+(              and leafEA\(T.FREG\(fty, f\)\) = \(REAL, fty, I.FDirect f\)) N
+(                | leafEA\(T.FLOAD\(fty, ea, mem\)\) = \(REAL, fty, address\(ea, mem\)\)) N
+(                | leafEA\(T.CVTI2F\(_, 32, t\)\) = int2real\(32, I.MOVL, t\)) N
+(                | leafEA\(T.CVTI2F\(_, 16, t\)\) = int2real\(16, I.MOVSWL, t\)) N
+(                | leafEA\(T.CVTI2F\(_, 8, t\)\)  = int2real\(8, I.MOVSBL, t\)) N
+(                | leafEA _ = error "leafEA") N
+() N
+(              \(* Move integer t of size ty into a memory location *\)) N
+(              and int2real\(ty, mov, t\) = ) N
+(                  let val opnd = operand t) N
+(                  in  if isMemOpnd opnd andalso \(ty = 16 orelse ty = 32\)) N
+(                      then \(INTEGER, ty, opnd\)) N
+(                      else \(emit\(I.MOVE{mvOp=mov, src=opnd, dst=tempMem}\);) N
+(                            \(INTEGER, 32, tempMem\)\)) N
+(                  end) N
+(          in  gencode\(su fexp\)) N
+(          end \(*reduceFexp*\)) N
+( ) N
+(          \(* generate code for a statement *\)) N
+(      and stmt\(T.MV\(_, rd, e\), an\) = doExpr\(e, rd, an\)) N
+(        | stmt\(T.FMV\(fty, fd, e\), an\) = doFexpr\(fty, e, fd, an\) ) N
+(        | stmt\(T.CCMV\(ccd, e\), an\) = doCCexpr\(e, ccd, an\) ) N
+(        | stmt\(T.COPY\(_, dst, src\), an\) = copy\(dst, src, an\)) N
+(        | stmt\(T.FCOPY\(fty, dst, src\), an\) = fcopy\(fty, dst, src, an\)) N
+(        | stmt\(T.JMP\(ctrl, e, labs\), an\) = jmp\(e, labs, an\)) N
+(        | stmt\(T.CALL\(e, flow, def, use, cdef, cuse, mem\), an\) = ) N
+(             call\(e,flow,def,use,mem,an\)) N
+(        | stmt\(T.RET _, an\) = mark\(I.RET NONE, an\)) N
+(        | stmt\(T.STORE\(8, ea, d, mem\), an\) = store8\(ea, d, mem, an\)) N
+(        | stmt\(T.STORE\(16, ea, d, mem\), an\) = store16\(ea, d, mem, an\)) N
+(        | stmt\(T.STORE\(32, ea, d, mem\), an\) = store32\(ea, d, mem, an\)) N
+(        | stmt\(T.FSTORE\(fty, ea, d, mem\), an\) = fstore\(fty, ea, d, mem, an\)) N
+(        | stmt\(T.BCC\(ctrl, cc, lab\), an\) = branch\(cc, lab, an\)) N
+(        | stmt\(T.DEFINE l, _\) = defineLabel l) N
+(        | stmt\(T.ANNOTATION\(s, a\), an\) = stmt\(s, a::an\)) N
+(        | stmt\(T.EXT s, an\) =) N
+(             ExtensionComp.compileSext \(reducer\(\)\) {stm=s, an=an} ) N
+(        | stmt\(s, _\) = doStmts\(Gen.compileStm s\)) N
+(x86.sml) (Page 19/20) (Mar 04, 00 16:17) title
+border
+/v 1 store
+/x0 x v get 3.362408 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+() p n
+(      and doStmt s = stmt\(s, []\)) N
+(      and doStmts ss = app doStmt ss) N
+() N
+(      and beginCluster' _ =) N
+(         \(\(* Must be cleared by the client.) N
+(           * if rewriteMemReg then memRegsUsed := 0w0 else \(\); ) N
+(           *\)) N
+(          trapLabel := NONE; beginCluster 0\)) N
+(      and endCluster' a =) N
+(         \(case !trapLabel) N
+(          of NONE => \(\)) N
+(           | SOME\(_, lab\) => \(defineLabel lab; emit\(I.INTO\)\)) N
+(          \(*esac*\);) N
+(          endCluster\(a\)) N
+(         \)) N
+() N
+(      and reducer\(\) = ) N
+(          T.REDUCER{reduceRexp    = expr,) N
+(                    reduceFexp    = fexpr,) N
+(                    reduceCCexp   = ccExpr,) N
+(                    reduceStm     = stmt,) N
+(                    operand       = operand,) N
+(                    reduceOperand = reduceOpnd,) N
+(                    addressOf     = fn e => address\(e, I.Region.memory\), \(*XXX*\)) N
+(                    emit          = mark,) N
+(                    instrStream   = instrStream, ) N
+(                    mltreeStream  = self\(\) ) N
+(                   }) N
+() N
+(      and self\(\) =) N
+(          S.STREAM) N
+(          {  beginCluster= beginCluster',) N
+(             endCluster  = endCluster',) N
+(             emit        = doStmt,) N
+(             pseudoOp    = pseudoOp,) N
+(             defineLabel = defineLabel,) N
+(             entryLabel  = entryLabel,) N
+(             comment     = comment,) N
+(             annotation  = annotation,) N
+(             exitBlock   = fn mlrisc => exitBlock\(cellset mlrisc\),) N
+(             alias       = alias,) N
+(             phi         = phi) N
+(          }) N
+() N
+(  in  self\(\)) N
+(  end ) N
+() N
+(end \(* functor *\)) N
+() N
+(end \(* local *\)) N
+(x86.sml) (Page 20/20) (Mar 04, 00 16:17) title
+border
+% End of virtual page
+grestore
+(Printed by Fermin Reig) rhead
+(x86.sml) (10/10) (Saturday March 04, 00) footer
+end % of Latin1dict
+pagesave restore
+showpage
+
+%%Trailer
+end
+%%EOF

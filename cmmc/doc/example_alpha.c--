@@ -1,0 +1,121 @@
+/*
+ example_alpha.c--
+*/
+
+
+
+import printf;
+export main;
+
+data { fstr: bits8[] "%i\n";
+	     bits8{0};
+       cr:bits8[] "\n";
+	  bits8{0};}
+
+fact(bits64 n)
+{ 
+   bits64 p;
+
+   if (n == 1) {
+      return (1);
+  } else {
+       p = fact(n - 1);
+      return (p * n);
+  };
+}
+
+fact_tail(bits64 n)
+{
+  jump fact_tail_help(n, 1);
+}
+ 
+fact_tail_help(bits64 n, bits64 p)
+{
+  /* Computes by tail recursion */
+ 
+  if (n==1) {
+      return (p);
+  } else {
+      jump fact_tail_help(n - 1, p*n);
+  };
+}
+
+foreign "C" main()
+{
+	bits64 s, p;
+
+
+	p = fact(5);
+	show(p);
+
+	p = fact_tail(5);
+	show(p);
+
+	s,p = sum_prod1(8);
+	show(p); show(s);
+
+	s,p = sum_prod2(8);
+	show(p); show(s);
+
+	s,p = sum_prod3(8);
+	show(p); show(s);
+
+	foreign "C" return(0);
+}
+
+
+show(bits64 n)
+{
+	foreign "C" printf(fstr, n);
+	return(0);
+}
+
+
+
+sum_prod1(bits64 n)
+{ 
+  /* Computes by ordinary Recursion */
+  bits64 s, p;
+
+  if (n==1) {
+      return (1, 1);
+  } else {
+      s, p = sum_prod1(n - 1);
+      return (s + n, p * n);
+  };
+}
+
+
+sum_prod3(bits64 n)
+{
+  /* Computes by looping. */
+  bits64 s, p;
+
+  s = 1;
+  p = 1;
+  loop:
+    if (n==1) {
+        return (s, p);
+    } else {
+        s = s + n;
+        p = p * n;
+        n = n - 1;
+        goto loop;
+    };
+}
+
+
+sum_prod2(bits64 n)
+{
+  jump sum_prod2_help(n, 1, 1);
+}
+sum_prod2_help(bits64 n, bits64 s, bits64 p)
+{
+  /* Computes by tail recursion */
+  if (n==1) {
+      return (s, p);
+  } else {
+      jump sum_prod2_help(n - 1, s+n, p*n);
+  };
+}
+

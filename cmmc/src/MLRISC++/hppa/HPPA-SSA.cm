@@ -1,0 +1,17 @@
+Library 
+	functor HppaSSAProps
+is
+
+#if defined(NEW_CM)
+	basis.cm
+#endif
+	../control/Control.cm
+	../MLRISC.cm
+	../mltree/RTL.cm
+	../SSA/SSA.cm
+	../instructions/Region.cm
+	HPPA.cm
+	HPPA-RTL.cm
+	
+	(* Hppa specific backend *)
+	SSA/hppaSSAProps.sml
