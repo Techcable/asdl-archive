@@ -13,7 +13,7 @@ clean: cii-clean
 
 cii-all:
 	cd @top_srcdir@/src/cii/; \
-        $(MAKE) THREADS= EXAMPLES=  BUILDDIR=./ $(CIIARGS) all
+        $(MAKE) THREADS= EXAMPLES= EXTRAS= BUILDDIR=./ $(CIIARGS) all
 
 cii-install: cii-all install
 	test -d @prefix@/include/cii/ || mkdir  @prefix@/include/cii/
@@ -23,7 +23,7 @@ cii-install: cii-all install
 
 cii-clean:
 	cd @top_srcdir@/src/cii/; \
-        $(MAKE) THREADS= EXAMPLES= BUILDDIR=./ $(CIIARGS) clean
+        $(MAKE) THREADS= EXAMPLES= EXTRAS= BUILDDIR=./ $(CIIARGS) clean
 
 # includes for local build this is a hack.
 @top_srcdir@/src/c/cii/: 
