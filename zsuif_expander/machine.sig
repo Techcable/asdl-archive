@@ -99,7 +99,7 @@ sig
   val emitC                  : emtTyp -> unit
   val emitU                  : emtTyp -> unit
   val emitS                  : emtTyp -> unit
-  val adjustStackReg         : int -> unit
+  val adjustStackReg         : emtTyp * int -> unit
 
   val getRtlOper             : Z.binop * B.regtype -> string
   val cMulDivRem             : emtTyp * B.operand * B.operand * OptOperators *

@@ -830,13 +830,13 @@ struct
 	       let
 		  val (argRegs, depth) =
 		     M.compileArgs (emt, map compArgs arguments)
-		  val (fnAddrReg, _)    = compileExpr calleeAddress
-		  val argNumber         = length argRegs
+		  val (fnAddrReg, _)   = compileExpr calleeAddress
+		  val argNumber        = length argRegs
 	       in
 		  M.emitFunCallFrameSize (emt, fnAddrReg, depth, argNumber);
 		  M.emitC emt;
 		  M.killRegs (emt, argRegs);
-		  M.adjustStackReg depth;
+		  M.adjustStackReg (emt, depth);
 		  M.emitU emt;
 		  M.emitS emt
 	       end
@@ -1063,7 +1063,7 @@ struct
 	 raise B.Can'tDoItYet
 
       and compileMarkStmt {file, line} =
-	 emt "# \"%s\", %d\n" [F.STR file, F.INT line]
+	 emt "# source file \"%s\", line %d\n" [F.STR file, F.INT line]
 
       and compileVaStartStmt {ap_address, parmn} =
 	 raise B.Can'tDoItYet
