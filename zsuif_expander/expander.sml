@@ -381,14 +381,11 @@ struct
 	    end
 	   | compileVB (SOME (Z.ExpressionValueBlock
 			      {expression = Z.UnaryExpression
-			       {source = Z.SymbolAddressExpression
-				{addressed_symbol = sym, ...},
-				...}, ...}), _) =
-	    let
-	       val (name, fromLabel) = getSymName (#1 (findSymbolRef sym))
-	    in
-	       M.emitInitConst (emt, name, fromLabel)
-	    end
+			       {unop = Z.Convert,
+				source = s, ...},
+			       data_type = result_type}), t) =
+	    compileVB (SOME (Z.ExpressionValueBlock
+			     {data_type = result_type, expression = s}), t)
 	   | compileVB (SOME (Z.ExpressionValueBlock _), _) =
 	    raise (Fail "Bad initialization in value block")
 
