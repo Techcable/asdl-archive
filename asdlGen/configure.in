@@ -3,7 +3,6 @@ AC_INIT(src/c/asdl_base.c)
 AC_CONFIG_AUX_DIR(src/misc)
 AM_INIT_AUTOMAKE(asdl, 1.0)
 AC_PROG_MAKE_SET
-
 dnl package options
 
 AC_ARG_WITH(cii, 
