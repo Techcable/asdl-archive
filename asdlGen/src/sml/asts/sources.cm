@@ -5,6 +5,7 @@ types.sig
 types.sml
 oo.sig
 oo.sml
+misc.sml
 algol.sig
 algol.sml
 algebraic.sig
