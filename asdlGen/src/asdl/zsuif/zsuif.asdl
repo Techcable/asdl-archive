@@ -17,7 +17,8 @@ source_op =
            SrcVar(variable_symbol var)
          | SrcReg(register_symbol reg, type_id type)
          | SrcDst(instruction instr, StdTypes.nat op_num)
-          
+         | SrcZero
+    
 destination_op = 
            DstTmp -- unnamed destination 
          | DstVar(variable_symbol var)
@@ -97,11 +98,12 @@ procedure_body = (parameter_symbol* params, statement body)
 
 variable_definition = (variable_symbol name,
                        type type,
-                       int_or_source_op bit_alignment,
+	               -- source_op in original	spec don't know why 
+                       int_or_source_op bit_alignment, 
                        value_block value_block)
 
 value_block = 
-    Constant_value_block(constant constnat)
+    Constant_value_block(constant constant)
   | Expression_value_block(source_op expression)
   | Multi_value_block(multi_value_block_init* inits)
   | Repeat_value_block(suif_int count, value_block block) 
@@ -149,7 +151,7 @@ statement =
       source_op lower_bound,
       source_op upper_bound, 
       source_op step,
-      identifier init_comparison_opcode, 
+      binop init_comparison_opcode, 
       statement body,
       statement? pre_pad, 
       statement? post_pad,
@@ -183,9 +185,12 @@ statement =
  | Jump_indirect_statement 
      (source_op itarget)
 
- | Branch_statement        
-     (identifier opcode, 
-      source_op decision_operand,
+ | Branch_true_statement        
+     (source_op decision_operand,
+      code_label_symbol target)
+
+ | Branch_false_statement        
+     (source_op decision_operand,
       code_label_symbol target)
 
  | Multi_way_branch_statement 

@@ -3,3 +3,5 @@ zsuif.sig
 zsuif.sml
 ../../sml/base/asdl-base.cm
 hello-zsuif.sml
+smlnj-lib.cm
+map.sml
