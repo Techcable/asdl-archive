@@ -7,7 +7,7 @@ public  class Prims {
   private static int set_neg(int x) { return (x | 0x40); }
   private static int set_neg(long x) { return (int)(x | 0x40); }
 
-  private static int mask_neg(int x) { return (x | 0x3f); }
+  private static int mask_neg(int x) { return (x & 0x3f); }
 
   private static int set_continue(int x) { return (x | 0x80); }
   private static int set_continue(long x) { return (int)(x | 0x80); }
@@ -26,6 +26,18 @@ public  class Prims {
       System.exit(-1);
   }
   
+  /* boolean */
+  public static void write_java_boolean(boolean x,OutputStream s) {
+    if(x) {
+      write_java_int(1,s);
+    } else {
+      write_java_int(0,s);
+    }
+  }
+
+  public static boolean read_java_boolean(InputStream s) {
+       return (read_java_int(s) != 0);   
+  }
   /* byte */
   public static void write_java_byte(byte x,OutputStream s) {
     write_java_int(x,s);
@@ -328,7 +340,8 @@ public  class Prims {
   }
 
   
-  public static void write_String_list(String_list x, OutputStream s) {
+  public static void write_String_list(String_list x, 
+						 OutputStream s) {
     int t1;
     String_list t2;
     t1 = 0;
