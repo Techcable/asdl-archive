@@ -14,17 +14,17 @@ functor AttribGetter(structure Arg : ATTRIB_GETTER_ARG) : AUX_DECLS =
       let
 	fun get_ty tid =
 	  (case Ty.lookup(env,tid) of
-	    SOME (Ty.Prim{ty,...}) => ty
-	  | SOME (Ty.Prod{ty,...}) => ty 
-	  | SOME (Ty.Sum{ty,...}) => ty 
+	    SOME (Ty.Prim{ty,...}) => SOME ty
+	  | SOME (Ty.Prod{ty,...}) => SOME ty 
+	  | SOME (Ty.Sum{ty,...}) => SOME ty 
 	  | SOME (Ty.App(con,tid_arg)) =>
 	      let
 		val ty_arg = Option.valOf (Ty.lookup(env,tid_arg))
 	      in
-		#1 (con (tid_arg,ty_arg))
+		SOME (#1 (con (tid_arg,ty_arg)))
 	      end
 	  | SOME (Ty.Alias(tid)) => get_ty tid
-	  | NONE => raise Error.internal)
+	  | NONE => NONE)
 
 	fun mk_getter ((ty_id,Ty.Sum {ty,num_attrbs,match,cnstrs,...}),xs) =
 	  let

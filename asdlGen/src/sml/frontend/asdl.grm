@@ -19,10 +19,6 @@ val mktyid =
 	  Char.isLower
 	  (String.translate (Char.toString o Char.toLower))
 	  "Type must begin with a lowercase letter ")
-
-type view_entry = (T.identifier list * string * string)
-type view = (T.identifier * view_entry list)
-    
 %%
 %header (functor AsdlLrValsFun(structure Token : TOKEN
    			       structure T     : ASDL))
@@ -52,47 +48,48 @@ type view = (T.identifier * view_entry list)
 	| EOF	
 
 %nonterm  
-	  asdl_type of T.asdl_type
-	| asdl_type_list of T.asdl_type list 
+	  type_decl of T.type_decl
+	| type_decl_list of T.type_decl list 
+
 	| constructor of T.constructor
 	| constructor_list of T.constructor list 
+	| type_qualifier of T.type_qualifier
 	| field of T.field
         | field_list' of T.field list
 	| field_list of T.field list 
-	| id_list of T.identifier list
+	| path of T.path
 	| import_list of T.identifier list
         | id_opt of T.identifier option
         | id of T.identifier
         | con_id of T.identifier
         | ty_id of T.identifier
-	| module of T.asdl_module	
-	| module_list of T.asdl_module	list
-        | start of (T.asdl_module list * view list)
-        | view_list of view list
-	| view of view
+        | decl of T.decl	
+	| decl_list of T.decl list
+        | start of T.decl list
+	| view_decl_list of T.view_decl list
         | view_entity of T.identifier list
-        | view_attrib of string
+        | view_prop of string
         | view_entity_list of T.identifier list list
         | view_av_list of (string * string) list
         | view_ev_list of (T.identifier list * string)  list
-        | view_entries of view_entry list
 	  
 %name Asdl
 %noshift EOF
 %verbose
 %%
 (* the parser returns the value associated with the expression *)
-start: module_list  view_list ((module_list,view_list))
+start: decl_list (decl_list)
 
-module_list: module module_list (module::module_list)
-           | (nil)
+decl_list: decl decl_list (decl::decl_list)
+         | (nil)
 
-module    : MODULE id LBRACE asdl_type_list RBRACE
-               ({name=id,imports=[],defs=asdl_type_list}) 
-	     | MODULE id LPAREN import_list RPAREN LBRACE
-	        asdl_type_list RBRACE
-		({name=id,
-		  imports=import_list,defs=asdl_type_list}) 
+decl     : MODULE id LBRACE type_decl_list RBRACE
+              (T.Module{name=id,imports=[],decls=type_decl_list}) 
+         | MODULE id LPAREN import_list RPAREN LBRACE type_decl_list RBRACE
+              (T.Module{name=id,imports=import_list,decls=type_decl_list}) 
+         | VIEW id LBRACE view_decl_list RBRACE
+	      (T.View{name=id,decls=view_decl_list})
+
 
 import_list : IMPORTS id import_list (id::import_list)
              | ([])
@@ -114,29 +111,33 @@ id        : ID         (Identifier.fromString ID)
 id_opt    : id (SOME id)
           | (NONE)
 
-id_list   : id    ([id])
-          | id DOT id_list (id::id_list)
+path      : id    ({qualifier=[],base=id})
+          | id DOT path ({qualifier=id::(#qualifier path),base=(#base path)})
 
-asdl_type : ty_id EQ constructor constructor_list 
+type_decl : ty_id EQ constructor constructor_list 
                ATTRIBUTES LPAREN field_list' RPAREN
-             (T.SumType (ty_id,field_list',constructor,constructor_list))
+	       (T.SumType {name=ty_id,attribs=field_list',
+			   c=constructor,cs=constructor_list})
            | ty_id EQ constructor constructor_list
-             (T.SumType (ty_id,[],constructor,constructor_list))
-           | ty_id EQ LPAREN field_list'  RPAREN
-	     (T.ProductType(ty_id,hd field_list', tl field_list'))
+	       (T.SumType {name=ty_id,attribs=[],
+			   c=constructor,cs=constructor_list})
+           | ty_id EQ LPAREN field_list' RPAREN
+	     (T.ProductType{name=ty_id,f=hd field_list',fs= tl field_list'})
 
-asdl_type_list: asdl_type asdl_type_list (asdl_type::asdl_type_list)
+type_decl_list: type_decl type_decl_list (type_decl::type_decl_list)
               | (nil)
  
-constructor       : con_id field_list (T.Con (con_id,field_list))
+constructor       : con_id field_list ({name=con_id,fs=field_list})
 constructor_list  : PIPE constructor constructor_list
                          (constructor::constructor_list)
                   | (nil)
 
-field     :  id_list     id_opt (T.Id(id_list,id_opt))
-          |  id_list OPT id_opt (T.Option(id_list,id_opt))
-          |  id_list SEQ id_opt (T.Sequence(id_list,id_opt))
-          |  id_list SHARED id_opt (T.Shared(id_list,id_opt))
+type_qualifier : OPT (T.Option)
+              | SEQ (T.Sequence) 
+              | SHARED (T.Shared)
+field     :  path id_opt ({typ=path,label_opt=id_opt,qualifier_opt=NONE})
+          |  path type_qualifier id_opt 
+               ({typ=path,label_opt=id_opt,qualifier_opt=SOME type_qualifier})
 
 field_list: LPAREN field_list' RPAREN (field_list')
            | (nil)
@@ -149,11 +150,11 @@ field_list': field FIELDSEP field_list' (field::field_list')
 
 
 
-view     : VIEW id LBRACE view_entries RBRACE ((id,view_entries))
-view_entity : id DOT id_list (id::id_list)
-            | MODULE id      ([id])
 
-view_attrib : LANGLE EQ ID (ID)
+view_entity : id DOT id ([id1,id2])
+            | MODULE id ([id])
+
+view_prop : LANGLE EQ ID (ID)
 
 view_entity_list : view_entity view_entity_list (view_entity::view_entity_list)
                  | (nil)
@@ -166,33 +167,36 @@ view_ev_list : view_entity QUOTE view_ev_list
 		 ((view_entity,QUOTE)::view_ev_list)
              | (nil)
 
-view_entries: view_entity view_attrib QUOTE view_entries
-                          ((view_entity,view_attrib,QUOTE)::view_entries)
+view_decl_list: view_entity view_prop QUOTE view_decl_list
+              ({entity=view_entity,prop=view_prop,value=QUOTE}::view_decl_list)
 
-	    | LBRACE view_entity_list RBRACE view_attrib QUOTE view_entries
-	      (List.foldr (fn (x,xs) => (x,view_attrib,QUOTE)::xs)
-	       view_entries view_entity_list)
+	    | LBRACE view_entity_list RBRACE view_prop QUOTE view_decl_list
+	      (List.foldr (fn (x,xs) =>
+			   {entity=x,prop=view_prop,value=QUOTE}::xs)
+	       view_decl_list view_entity_list)
 
-	    | view_attrib LBRACE view_ev_list RBRACE view_entries
-	      (List.foldr (fn ((e,v),xs) => (e,view_attrib,v)::xs)
-	       view_entries view_ev_list)
+	    | view_prop LBRACE view_ev_list RBRACE view_decl_list
+	      (List.foldr (fn ((e,v),xs) =>
+			   {entity=e,prop=view_prop,value=v}::xs)
+	       view_decl_list view_ev_list)
 
-	    | view_entity LANGLE EQ LBRACE view_av_list RBRACE view_entries
-	      (List.foldr (fn ((a,v),xs) => (view_entity,a,v)::xs)
-	       view_entries view_av_list)
+	    | view_entity LANGLE EQ LBRACE view_av_list RBRACE view_decl_list
+	      (List.foldr (fn ((a,v),xs) =>
+			    {entity=view_entity,prop=a,value=v}::xs)
+	       view_decl_list view_av_list)
 
              | LBRACE view_entity_list RBRACE LANGLE EQ
-	       LBRACE view_av_list RBRACE view_entries
+	       LBRACE view_av_list RBRACE view_decl_list
 	       (let fun mk_ve_list (ve,rest) =
-		    List.foldr (fn ((a,v),xs) => (ve,a,v)::xs)
+		  List.foldr (fn ((a,v),xs) =>
+			      {entity=ve,prop=a,value=v}::xs)
 	            rest view_av_list
 		in
-		    List.foldr mk_ve_list view_entries view_entity_list 
+		    List.foldr mk_ve_list view_decl_list view_entity_list 
 		end)
 
 	    | (nil)
 
 	      
-view_list: view view_list (view::view_list)
-         | (nil)
+
 

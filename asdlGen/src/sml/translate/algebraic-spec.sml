@@ -20,6 +20,7 @@ structure AlgebraicTy : ALGEBRAIC_TYPE_DECL =
   end
 
 functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
+			val get_attribs : bool
 			val streams_ty : {outs:string,ins:string} option
 			val monad_name : string option) =
   struct
@@ -27,7 +28,7 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
       struct 
 	open Ty.Ast
 	type decl = Ty.Ast.decl
-	type get_ty = (Ty.ty_id -> Ty.ty_exp)
+	type get_ty = (Ty.ty_id -> Ty.ty_exp option)
 	structure Ty = Ty
 	val inits = []
 	val streams_ty = Option.getOpt
@@ -79,7 +80,11 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 	  DeclFun(mk_name "attrbs" name,[{name=arg_id,ty=arg}],
 		  body (Id arg_id),ret)
 	fun mk_fields get_ty xs  =
-	  List.map (fn {label,label',tid} =>  {name=label',ty=get_ty tid}) xs
+	  List.map (fn {label,label',tid} =>
+		    {name=label',
+		     ty=(case (get_ty tid) of
+			   SOME ty => ty
+			 | NONE => TyId tid)}) xs
 	fun mk_record_exp get_ty xs =
 	  let
 	    val (fds,exps) = ListPair.unzip xs
@@ -91,22 +96,27 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
     open Arg
     structure StdPklGen = StdPickler(structure Arg = Arg)
     structure AttribGetGen = AttribGetter(structure Arg = Arg)
+
     fun get_aux_decls me env tids =
       let
 	val pkls = StdPklGen.trans env tids
-	val attrbs = AttribGetGen.trans env tids
+	val attrbs =
+	  if get_attribs then
+	    AttribGetGen.trans env tids
+	  else []
       in
 	attrbs@pkls
       end
+
     val seq_rep = TyList
     val opt_rep = TyOption
-      
+    val share_id = TypeId.fromPath{qualifier=[],base="share"}
+    fun share_rep te = TyCon (share_id,[te])
+
     fun ty_exp  (Ty.Prim {ty,...}) = ty
       | ty_exp  (Ty.Prod {ty,...}) = ty
       | ty_exp  (Ty.Sum {ty,...}) = ty
       | ty_exp  (_) = raise Error.unimplemented
-      
-
 
     val seq_con =
       let
@@ -124,7 +134,7 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
       in
 	ty_con
       end
-
+    
     val opt_con =
       let
 	val rd_option_name = VarId.fromString "read_option"
@@ -132,71 +142,96 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 	fun ty_con (tid,t) =
 	  let
 	    val ty = opt_rep (ty_exp t)
-	    val rd = Call(Id rd_option_name,[Id (rd_name tid),Id stream_id])
-	    fun wr e =
-	      Call(Id wr_option_name,[Id (wr_name tid),e,Id stream_id])
+		val rd =
+		  Call(Id rd_option_name,[Id (rd_name tid),Id stream_id])
+		fun wr e =
+		  Call(Id wr_option_name,[Id (wr_name tid),e,Id stream_id])
 	  in
 	    (ty,{wr=SOME wr,rd=SOME rd})
 	  end
       in
 	ty_con
       end
-
-      val seq_tid =  TypeId.suffixBase "_list" 
-      val opt_tid =  TypeId.suffixBase "_option" 
-	
-      fun addPrim (s,ps) =
-	let
-	  val tid = TypeId.fromString s
-	  val info = {rd=SOME(read tid),
-		      wr=SOME(write tid)}
-	in
-	  (tid,Ty.Prim {ty=TyId tid,info=info,name=s})::
-	  (seq_tid tid,Ty.App(seq_con,tid))::
-	  (opt_tid tid,Ty.App(opt_con,tid))::ps
-	end
+    
+    val share_con =
+      let
+	val rd_share_name = VarId.fromString "read_share"
+	val wr_share_name = VarId.fromString "write_share"
+	fun ty_con (tid,t) =
+	  let
+	    val ty = share_rep (ty_exp t)
+	    val rd = Call(Id rd_share_name,[Id (rd_name tid),Id stream_id])
+	    fun wr e =
+	      Call(Id wr_share_name,[Id (wr_name tid),e,Id stream_id])
+	  in
+	    (ty,{wr=SOME wr,rd=SOME rd})
+	  end
+      in
+	ty_con
+      end
+    val seq_tid =  TypeId.suffixBase "_list" 
+    val opt_tid =  TypeId.suffixBase "_option" 
+    val share_tid =  TypeId.suffixBase "_share" 
       
-      val prims = addPrim ("int",[])
-      val prims = addPrim ("string",prims)
-      val prims = addPrim ("identifier",prims)
+    fun addPrim (s,ps) =
+      let
+	val tid = TypeId.fromString(s)
+	val info = {rd=SOME(read tid),
+		    wr=SOME(write tid)}
+      in
+	(tid,Ty.Prim {ty=TyId tid,info=info,name=s})::
+	(seq_tid tid,Ty.App(seq_con,tid))::
+	(opt_tid tid,Ty.App(opt_con,tid))::ps
+      end
+    
+    val prims = addPrim ("int",[])
+    val prims = addPrim ("string",prims)
+    val prims = addPrim ("identifier",prims)
+      
+    fun get_reps me Module.Sequence =
+      {mktid=seq_tid,mkrep=seq_rep,con=seq_con}
+      | get_reps me Module.Option =
+      {mktid=opt_tid,mkrep=opt_rep,con=opt_con}
+      | get_reps me Module.Shared = 
+      {mktid=share_tid,mkrep=share_rep,con=share_con}
 
-      fun get_info p =
-	let
-	  val rd =
-	    case (Module.Typ.reader p) of
-	      (SOME x) => SOME (Call(Id(VarId.fromPath x),[Id stream_id]))
-	    | NONE => NONE
-	  val wr =
-	    case (Module.Typ.writer p) of
-	      (SOME x) =>
-		SOME (fn e => Call(Id(VarId.fromPath x),[e,Id stream_id]))
-	    | NONE => NONE
-	in
-	  {wr=wr,rd=rd}
-	end
-
-      structure M = Module
-      fun get_wrappers ty p =
-	let
-	  val ty =
-	    case (M.Typ.natural_type p,M.Typ.natural_type_con p) of
-	      (SOME t,_) =>  TyId (TypeId.fromPath t)
-	    | (NONE,SOME t) => (TyCon (TypeId.fromPath t,[ty]))
-	    | _ => ty
-	  val unwrap =
-	    case (M.Typ.unwrapper p) of
-	      (SOME x) =>
-		(fn e =>
-		 Call(Id(VarId.fromPath x),[e]))
-	    | NONE => (fn x => x)
-	  val wrap =
-	    case (M.Typ.wrapper p) of
-	      (SOME y) =>
-		(fn x => Call(Id(VarId.fromPath y),[x]))
-	    | NONE => (fn x => x)
-	in
-	  {natural_ty=ty,unwrap=unwrap,wrap=wrap}
-	end
+    fun get_info p =
+      let
+	val rd =
+	  case (Module.Typ.reader p) of
+	    (SOME x) => SOME (Call(Id(VarId.fromPath x),[Id stream_id]))
+	  | NONE => NONE
+	val wr =
+	  case (Module.Typ.writer p) of
+	    (SOME x) =>
+	      SOME (fn e => Call(Id(VarId.fromPath x),[e,Id stream_id]))
+	  | NONE => NONE
+      in
+	{wr=wr,rd=rd}
+      end
+    
+    structure M = Module
+    fun get_wrappers ty p =
+      let
+	val ty =
+	  case (M.Typ.natural_type p,M.Typ.natural_type_con p) of
+	    (SOME t,_) =>  TyId (TypeId.fromPath t)
+	  | (NONE,SOME t) => (TyCon (TypeId.fromPath t,[ty]))
+	  | _ => ty
+	val unwrap =
+	  case (M.Typ.unwrapper p) of
+	    (SOME x) =>
+	      (fn e =>
+	       Call(Id(VarId.fromPath x),[e]))
+	  | NONE => (fn x => x)
+	val wrap =
+	  case (M.Typ.wrapper p) of
+	    (SOME y) =>
+	      (fn x => Call(Id(VarId.fromPath y),[x]))
+	  | NONE => (fn x => x)
+      in
+	{natural_ty=ty,unwrap=unwrap,wrap=wrap}
+      end
   end
 
 

@@ -48,6 +48,7 @@ structure AlgebraicAst :  ALGEBRAIC_AST =
 	  | DeclVar of (id * exp * ty_exp)
 	  | DeclFun of (id * field list * exp * ty_exp )
 	  | DeclLocal of decl
+	  | DeclExtern of (id * ty_exp)
 
 	withtype cnstr = {name:id,ty_arg:ty_exp}
 	    and field  = {name:id,ty:ty_exp}

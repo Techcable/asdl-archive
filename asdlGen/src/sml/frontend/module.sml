@@ -13,14 +13,15 @@
 structure Module :> MODULE =
     struct
 	structure Id = ModuleId
-	datatype field_kind = Id | Sequence | Option | Shared
-	    
+	structure T = Asdl
+
 	structure Con = ConProps	    
 	structure Typ = TypProps	    
 	structure Mod = ModProps	    
 	structure ME = ModEnvProps
+	datatype field_kind = datatype T.type_qualifier	    
         type field_info =
-	    {kind:field_kind,
+	    {kind:field_kind option,
   	 src_name:Identifier.identifier,
 	     tref:Id.mid,
 	    name:Identifier.identifier option}     
@@ -42,31 +43,37 @@ structure Module :> MODULE =
 	  is_prim:bool,
 	    props:TypProps.props}
 
+	structure QSet =
+	  ListSetFn(struct 
+	    type ord_key = field_kind
+	    fun compare (T.Option,T.Sequence) = GREATER
+	      | compare (T.Option,T.Shared) = GREATER
+	      | compare (T.Sequence,T.Shared) = GREATER
+	      | compare (x,y) = if x = y then EQUAL
+				else LESS
+	  end)
 
-	type module_info =
-	    {defs:S.set,uses:S.set,seqs:S.set,opts:S.set}
+	datatype info = T of type_info | C of con_info 
 
-       datatype info =
-	   T of type_info | C of con_info 
-
-       datatype import = Import of module
+	datatype import = Import of module
 	               | ImportAs of string * module
 	               | ImportAll of module
-
+	  
        and module =
-	   M of {name:Id.mid,
-		 penv:type_info Env.map,
-		  env:info Env.map,
-		 props:ModProps.props,
-	      imports:import Env.map}
+	 M of {name:Id.mid,
+	       defs:S.set,
+	       penv:type_info Env.map,
+	        env:info Env.map,
+	      props:ModProps.props,
+	    imports:import Env.map}
 
        and module_env =
-	   ME of {minfo:module_info Env.map,
-		   menv:module Env.map,
-		   penv:type_info Env.map,
-		   errs:string list,
-		  props:ME.props,
-		  count:int}
+	   ME of {menv:module Env.map,
+		  penv:type_info Env.map,
+		  uenv:QSet.set Env.map,
+		  errs:string list,
+		 props:ME.props,
+		 count:int}
 
         val prim_identifier = Id.fromString "identifier"
         val prim_string     = Id.fromString "string"
@@ -76,29 +83,27 @@ structure Module :> MODULE =
 			 (prim_string,true),
 			 (prim_identifier,true)]
 	    fun prim_env inits =
-		ME{menv=Env.empty,penv=Env.empty,minfo=Env.empty,count=0,
-		   props=ME.new inits,
+	      ME{menv=Env.empty,penv=Env.empty,uenv=Env.empty,
+		 count=0,props=ME.new inits,
 		   errs=[]}
 		
-	    fun declare_prim ((name,b),ME{menv,penv,minfo,count,errs,props}) =
+	    fun declare_prim ((name,b),ME{uenv,menv,penv,count,errs,props}) =
 		let
-		    val count = count + 1
-		    val tinfo =
-			{tag=count,name=name,
-			 uses=S.empty,fields=[],cons=[],
-			 props=TypProps.new [],
-			 is_prim=true,is_boxed=b}
+		  val count = count + 1
+		  val tinfo =
+		    {tag=count,name=name,
+		     uses=S.empty,fields=[],cons=[],
+		     props=TypProps.new [],
+		     is_prim=true,is_boxed=b}
 		in
-		    ME{menv=menv,minfo=minfo,
-		       errs=errs,
-		       props=props,
-		       penv=Env.insert(penv, name,tinfo),count=count}
+		  ME{menv=menv,errs=errs,props=props,uenv=uenv,
+		     penv=Env.insert(penv, name,tinfo),count=count}
 		end
 	in
 	  val prim_env =
 	    (fn i => List.foldl declare_prim (prim_env i) prims)
 	end
-
+      
        fun module_env_modules (ME{menv,...}) = Env.listItems menv
        fun module_env_prims (ME{penv,...}) = Env.listItems penv
        fun module_env_props (ME{props,...}) = props
@@ -114,40 +119,11 @@ structure Module :> MODULE =
 		 | get_i _ = raise Error.unimplemented
 	       val imports =
 		   (List.map get_i) o Env.listItems o #imports o get_m
-
 	   in
 	       (imports m)
 	   end
 
-       fun qualify_id _ nil = raise Error.internal
-	 | qualify_id default x =
-	   let
-	       val len = List.length x
-	       val (qualifier,base) =
-		   (List.take (x,len-1),List.drop (x,len - 1))
-	   in
-	       case (qualifier,List.hd base) of
-		   ([],base) =>
-		       Id.fromPath {base=Identifier.toString base,
-				    qualifier=[default]}
-		 | (q,base)  => 
-		       Id.fromPath {base=Identifier.toString base,
-				    qualifier=List.map Identifier.toString q}
-	   end
-
-       (* should be generated as part of the Asdl spec *)
-       fun field_value (Asdl.Id(_,_)) = Id
-	 | field_value (Asdl.Option(_,_)) = Option
-	 | field_value (Asdl.Sequence(_,_)) = Sequence
-	 | field_value (Asdl.Shared(_,_)) = Shared
-
-       fun field_attribs x =
-	 let val {identifier_list1,identifier_opt1} = Asdl.attrbs_field x
-	 in (identifier_list1,identifier_opt1)
-	 end
-
        val get_mod_name = (Id.fromString o List.hd o Id.getQualifier)  
-	   
        fun find_info (M{name,penv,env,imports,...},mid) =
 	   let
 	       fun try_local (SOME x) = (SOME x)
@@ -164,17 +140,16 @@ structure Module :> MODULE =
 	       try_local (Env.find(env,mid))
 	   end
 
-	   
        fun find_type m mid =
 	   case find_info(m,mid) of
 	       NONE => NONE
 	     | (SOME (T t)) => (SOME t)
 	     | _ => NONE
 		   
-       fun declare_module (ME{menv,minfo,penv,count,errs,props})
-	 {file,decl,view} =
+       fun declare_module view ({file,decl=T.Module def},
+				ME{menv,penv,uenv,count,errs,props}) =
 	   let
-	       val {name,imports,defs} = decl
+	       val {name,imports,decls} = def
 	       val toMid = Id.fromString o Identifier.toString
 	       val name_id = toMid name
 	       val mname = Identifier.toString name
@@ -184,121 +159,119 @@ structure Module :> MODULE =
 		   (fn (x,env) => Env.insert(env,toMid x,mk_import x))
 		   Env.empty imports
 
-	       fun fix_id [x] =
-		   let
-		       val pid = Id.fromString (Identifier.toString x)
-		   in
-		       case (Env.find(penv,pid)) of
-			     NONE => qualify_id mname [x]
-			   | (SOME b) => pid
+	       fun fix_typ {qualifier=[],base} =
+		 let
+		   val base = Identifier.toString base
+		   val qualifier = [mname]
+		   val pid = Id.fromString base
+		 in
+		   case (Env.find(penv,pid)) of
+		     NONE => Id.fromPath {base=base,qualifier=qualifier}
+		   | (SOME b) => pid
 		   end
-		 | fix_id x = qualify_id mname x
+		 | fix_typ {qualifier,base} = 
+		   Id.fromPath {base=Identifier.toString base,
+				qualifier=List.map Identifier.toString
+				qualifier}
 		   
 	       fun types_used x =
 		   let
-		       fun get_fields (Asdl.SumType(_,fs,c,cs)) =
-			   List.foldl (fn (Asdl.Con (_,fl),xs) => fl@xs)
-			   fs (c::cs)
-			 | get_fields (Asdl.ProductType(_,f,fs)) =  f::fs
-			   
-		       val fields = get_fields x
-		       fun add_set t (x,xs) =
-			   if (t = field_value x) then
-			       let
-				   val (ids,_) = field_attribs x
-				   val mid = fix_id ids
-			       in
-				   S.add(xs,mid)
-			       end
-			   else xs
-			       
-		       val plain = List.foldl (add_set Id)       S.empty fields
-		       val opts  = List.foldl (add_set Option)   S.empty fields
-		       val seqs  = List.foldl (add_set Sequence) S.empty fields
+		     fun get_fields (T.SumType{attribs=fs,c,cs,...}) =
+		       List.foldl (fn ({fs,...},xs) => fs@xs) fs (c::cs)
+		     | get_fields (T.ProductType{f,fs,...}) =  f::fs
+		     val fields = get_fields x
+		     fun add_set ({typ,qualifier_opt,...}:T.field,env) =
+		       let
+			 val typ = fix_typ typ
+			 val qset = (case (Env.find(env,typ)) of
+				      NONE => QSet.empty
+				    | SOME qs => qs)
+			 val qset = (case qualifier_opt of
+				       NONE => qset
+				     | SOME q => QSet.add(qset,q))
+		       in
+			 Env.insert(env,typ,qset)
+		       end
 		   in
-		       (plain,seqs,opts)
+		     List.foldl add_set Env.empty fields
 		   end
 
 	       (* build field infos *)
 	       fun mk_field_info fl =
 		   let
-		       val str_eq = (op =): string * string -> bool;
-		       fun do_field (x,(cnt,fi)) =
+		     val str_eq = (op =): string * string -> bool;
+		     fun do_field ({typ,qualifier_opt,label_opt,...}:T.field,
+				   (cnt,fi)) =
+		       let
+			 val tref = fix_typ typ
+			 fun hungarianize (NONE,s) = s
+			   | hungarianize (SOME T.Option,s) = s^"_opt"
+			   | hungarianize (SOME T.Sequence,s) = s^"_list"
+			   | hungarianize (SOME T.Shared,s) = s^"_shared"
+			   
+			 fun new_cnt (cnt,x) =
 			   let
-			       val kind = field_value x
-			       val attrbs = field_attribs x
-			       val name = #2 attrbs
-			       val tref = fix_id (#1 attrbs)
-				   
-			       fun hungarianize (Id,s) = s
-				 | hungarianize (Option,s) = s^"_opt"
-				 | hungarianize (Sequence,s) = s^"_list"
-				 | hungarianize (Shared,s) = s^"_shared"
-				   
-			       fun new_cnt (cnt,x) =
-				   let
-				       val s =
-					   hungarianize(kind,
-							Identifier.toString x)
-				       val (cnt,i) = Counter.add(cnt,s)
-				   in
-				       (cnt,Identifier.fromString
-					(s^(Int.toString i)))
-				   end
-			       
-			       val (cnt,src_name) =
-				   case name of
-				       (SOME i) => (cnt,i)
-				     | NONE =>
-					   new_cnt(cnt,List.last (#1 attrbs))
-					   
+			     val s = hungarianize(qualifier_opt,
+						  Identifier.toString x)
+			     val (cnt,i) = Counter.add(cnt,s)
 			   in
-			       (cnt,{kind=kind,src_name=src_name,
-				     name=name,tref=tref}::fi)
+			     (cnt,Identifier.fromString
+			      (s^(Int.toString i)))
 			   end
-		       val (_,fls) = List.foldl do_field
-			   (Counter.mkcounter (str_eq),[]) fl
+			 
+			 val (cnt,src_name) =
+			   case label_opt of
+			     SOME i => (cnt,i)
+			   | NONE => new_cnt(cnt,#base typ)
+		       in
+			 (cnt,{kind=qualifier_opt,src_name=src_name,
+			       name=label_opt,tref=tref}::fi)
+		       end
+		     val (_,fls) = List.foldl do_field
+		       (Counter.mkcounter (str_eq),[]) fl
 		   in
-		       List.rev fls
+		     List.rev fls
 		   end
-
+		 
 	       (* build constructor info *)
 	       fun mk_con_info tref cons =
 		   let
-		       fun do_con (Asdl.Con(id,fl),(tag,box,cs)) =
-			   let
-			       val tag = tag + 1
-			       val name = qualify_id mname [id]
-			       val box = box orelse
-				   not (List.null fl)
-			       val inits = ConProps.parse (view name)
-			       val props =
-				   ConProps.new inits
-			   in
-			       (tag,box,{tag=tag,name=name,
-					 fields=mk_field_info fl,
-					 props=props,
-					 tref=tref}::cs)
-			   end
-		       val (_,box,cons) = List.foldl do_con (0,false,[]) cons
+		     fun do_con ({name,fs},(tag,box,cs)) =
+		       let
+			 val tag = tag + 1
+			 val name =
+			   Id.fromPath{qualifier=[mname],
+				       base=Identifier.toString name}
+			 val box = box orelse not (List.null fs)
+			 val inits = ConProps.parse (view name)
+			 val props = ConProps.new inits
+		       in
+			 (tag,box,{tag=tag,name=name,
+				   fields=mk_field_info fs,
+				   props=props,
+				   tref=tref}::cs)
+		       end
+		     val (_,box,cons) = List.foldl do_con (0,false,[]) cons
 		   in
-		       (box,List.rev cons)
+		     (box,List.rev cons)
 		   end
-	       
-	       fun declare_type (t,{seqs,opts,uses,defs,count,env,errs}) =
+		 
+	       fun declare_type (t,{uenv,defs,count,env,errs}) =
 		   let
 		       val count = count + 1
 		       val (tid,fields,cons) =
-			   (case t of
-				(Asdl.SumType(id,fs,c,cs)) => (id,fs,c::cs)
-			      | (Asdl.ProductType(id,f,fs)) => (id,f::fs,[]))
+			 (case t of
+			    T.SumType{name,attribs,c,cs} =>
+			      (name,attribs,c::cs)
+			  | T.ProductType{name,f,fs} => (name,f::fs,[]))
 				
-		       val tname = qualify_id mname [tid]
-			   
+		       val tname =
+			 Id.fromPath{base=Identifier.toString tid,
+				     qualifier=[mname]}
 		       val fields = mk_field_info fields
 		       val (box_cons,cons) = mk_con_info tname cons
 		       val is_boxed = box_cons orelse (not (List.null fields))
-		       val (plain',seqs',opts') = types_used t
+		       val ty_uses = types_used t
 		       val inits = TypProps.parse (view tname)
 		       val props = TypProps.new (inits)
 		       val tinfo = T {tag=count,
@@ -309,11 +282,10 @@ structure Module :> MODULE =
 				      props=props,
 				      is_boxed=is_boxed,
 				      uses=
-				      S.union(plain',S.union(seqs',opts'))}
+				      Env.foldli (fn (k,_,s) => S.add(s,k))
+				      S.empty ty_uses}
 
-		       val seqs = S.union (seqs,seqs')
-		       val opts = S.union (opts,opts')
-		       val uses = S.union (plain',S.union(opts,seqs))
+		       val uenv = Env.unionWith QSet.union (ty_uses,uenv)
 		       val defs = S.add(defs,tname)
 
  		       fun add_def (k,v,(env,errs)) =
@@ -326,110 +298,29 @@ structure Module :> MODULE =
 				     Id.toString k])::errs)
 		       val rest = add_def (tname,tinfo,(env,errs))
 		       val (env,errs) =
-			   List.foldl
-			   (fn (x,rest) => add_def (#name x,C x,rest))
-			   rest cons
+			 List.foldl
+			 (fn (x,rest) => add_def (#name x,C x,rest)) rest cons
 		   in
-		       {seqs=seqs,opts=opts,uses=uses,defs=defs,env=env,
-			errs=errs,
-			count=count}
+		       {uenv=uenv,defs=defs,env=env,errs=errs,count=count}
 		   end
 
-	       val {seqs,opts,uses,defs,count,env,errs} =
-		   List.foldl declare_type  {seqs=S.empty,
-					     opts=S.empty,
-					     uses=S.empty,
-					     defs=S.empty,
-					     count=count,
-					     errs=errs,
-					     env=Env.empty} defs
-	       fun externs x = S.difference(x,defs)
-	       fun locals x = S.intersection(x,defs)
-	       val extern_seqs = externs seqs
-	       val extern_opts = externs opts
-	       val seqs = locals seqs
-	       val opts = locals opts
-	       val uses = uses
-
-	       (* ugly find a better rep *)
-	       fun update_seqs {seqs,opts,uses,defs} x =
-		   {seqs=S.add(seqs,x),opts=opts,uses=uses,defs=defs}
-		   
-	       fun update_opts {seqs,opts,uses,defs} x =
-		   {seqs=seqs,opts=S.add(opts,x),uses=uses,defs=defs}
-
-	       fun update_info f (x,minfo) =
-		   if (List.null (Id.getQualifier x)) then minfo
-		   else  let
-			     val key = get_mod_name x
-			 in
-			     case (Env.find(minfo,key)) of
-				 NONE => raise Error.internal
-			       | (SOME mi) => Env.insert(minfo,key,f mi x)
-			 end
-	       val minfo = Env.insert(minfo,name_id,
-				      {defs=defs,uses=uses,
-				       seqs=seqs,opts=opts})
-	       val minfo =
-		   S.foldl (update_info update_seqs) minfo (extern_seqs)
-
-	       val minfo =
-		   S.foldl (update_info update_opts) minfo (extern_opts)
+	       val {uenv,defs,count,env,errs} =
+		 List.foldl declare_type  {uenv=uenv,
+					   defs=S.empty,
+					   count=count,
+					   errs=errs,
+					   env=Env.empty} decls
 	       val inits = ModProps.parse (view name_id)
 	       val mprops = ModProps.new ((ModProps.mk_file file)::(inits))
 	       val m =
-		   M{name=name_id,props=mprops,
-		     penv=penv,env=env,imports=imports}
+		 M{name=name_id,props=mprops,
+		   defs=defs,penv=penv,env=env,imports=imports}
 	       val menv = Env.insert(menv,name_id,m)
-
 	   in
-	     ME{minfo=minfo,penv=penv,menv=menv,count=count,errs=errs,
-		props=props}
+	     ME{uenv=uenv,penv=penv,menv=menv,
+		count=count,errs=errs,props=props}
 	   end
-
-       fun get_minfo f (ME{minfo,...}) (M{name,...}) =
-	   case (Env.find(minfo,name)) of
-	       NONE => raise Error.internal
-	     | (SOME m) =>  (f m)
-		   
-       fun sequence_types me m =
-	   let
-	       val set =
-		   if (Mod.is_library (module_props m)) then
-		       (get_minfo #defs me m)
-		   else
-		       (get_minfo #seqs me m)
-	   in
-	       S.listItems set
-	   end
-
-       fun option_types me m =
-	   let 
-	       val set =
-		   if (Mod.is_library (module_props m)) then
-		       (get_minfo #defs me m)
-		   else
-		       (get_minfo #opts me m)
-	   in
-	       S.listItems set
-	   end
-       
-       fun is_seq_type   me m x =
-	   let
-	       val props = module_props m
-	   in
-	       (Mod.is_library props)
-	       orelse S.member((get_minfo #seqs me) m,x)
-	   end
-
-       fun is_opt_type   me m x =
-	   let
-	       val props = module_props m
-	   in	       
-	       (Mod.is_library props) orelse
-	       S.member((get_minfo #opts me) m ,x)
-	   end
-
+	 | declare_module v (_,me) = me
        fun lookup_type m mid =
 	   case (find_type m mid) of
 	       NONE =>
@@ -469,12 +360,10 @@ structure Module :> MODULE =
 	   src_name (type_name x,Typ.source_name (type_props x))
 
        fun type_is_local m t =
-	   let
-	       val env =  (#env o get_m) m
-	   in
-	       case (Env.find(env,type_name t)) of
-		   NONE => false
-		 | _ => true
+	   let val env =  (#env o get_m) m
+	   in  case (Env.find(env,type_name t)) of
+	     NONE => false
+	   | _ => true
 	   end
 
        fun get_c (x:con_info) =  x
@@ -491,8 +380,6 @@ structure Module :> MODULE =
        val field_name = #name o get_f
        val field_src_name = #src_name o get_f
        fun field_type m = ((lookup_type m) o #tref o get_f)
-
-
 
        structure Node =
 	   struct
@@ -518,7 +405,6 @@ structure Module :> MODULE =
 		       (SOME ti) => Ty (id,ti)
 		     | NONE => UnDef (id)
 
-
 	       fun luses (roots,ti) =
 		   S.listItems
 		   (S.intersection(roots,#uses(get_t ti)))
@@ -535,69 +421,168 @@ structure Module :> MODULE =
 		 | follow'  roots m (Ty (_,ti)) =
 		   List.mapPartial (is_product o (mkNode m)) (luses (roots,ti))
 		 | follow'  roots m (UnDef _) = []
-
-
 	   end
+       local
        structure Scc =  SCCUtilFun(structure Node = Node)
-
-       fun tsort_defs me m =
-	   let
-	       val defs = get_minfo #defs me m
-	       val scc =
-		    Scc.topOrder{root=Node.Root,
-				 follow=Node.follow defs m}
-		fun get_id (Node.Ty(x,_),xs) = x::xs
+       fun tsort_defs (m as M{defs,...} ) =
+	 let
+	   val scc =
+	     Scc.topOrder{root=Node.Root,
+			      follow=Node.follow defs m}
+	   fun get_id (Node.Ty(x,_),xs) = x::xs
 		  | get_id  (_,xs) = xs
-
-		fun get_ids(Scc.SIMPLE x,xs) =
-		    List.foldl get_id xs [x]
-		  | get_ids (Scc.RECURSIVE x,xs) =
-		    List.foldl get_id xs x
-	   in
-	       List.foldl get_ids [] scc
-	   end
-
- (* redefine defined_types to return types in topological order  *)
-       val defined_types = tsort_defs
-	   
-       fun validate me (m,errs) =
-	   let
-	       val defs = get_minfo #defs me m
-	       val uses = get_minfo #uses me m
-	       val scc =
-		   Scc.topOrder{root=Node.Root,
-				follow=Node.follow' defs m}
-	       fun error x = ("Error: product type "^(Id.toString x)^
-			      " recursively defined")
-
-	       fun check_node Node.Root  = NONE
-		 | check_node (Node.UnDef x) =
-		   SOME ("Error: "^(Id.toString x)^" undefined")
-		 | check_node (Node.Ty (id,info)) =
-		   if (List.null (type_cons info)) then
-		       SOME (error id)
-		   else NONE
-
- 	       fun check (Scc.SIMPLE (Node.UnDef x),acc) =
-		   ("Error: "^(Id.toString x)^" undefined")::acc
+	     
+	   fun get_ids(Scc.SIMPLE x,xs) =
+	     List.foldl get_id xs [x]
+	     | get_ids (Scc.RECURSIVE x,xs) =
+	     List.foldl get_id xs x
+	 in
+	   List.foldl get_ids [] scc
+	 end
+       fun validate me (m as (M{defs,...}),errs) =
+	 let
+	   val scc = Scc.topOrder{root=Node.Root,follow=Node.follow' defs m}
+	   fun error x = ("Error: product type "^(Id.toString x)^
+			  " recursively defined")
+	   fun check_node Node.Root  = NONE
+	     | check_node (Node.UnDef x) =
+	     SOME ("Error: "^(Id.toString x)^" undefined")
+	     | check_node (Node.Ty (id,info)) =
+	     if (List.null (type_cons info)) then
+	       SOME (error id)
+	     else NONE
+	       
+	   fun check (Scc.SIMPLE (Node.UnDef x),acc) =
+	     ("Error: "^(Id.toString x)^" undefined")::acc
 		 | check (Scc.SIMPLE _,acc) = acc
-		 | check (Scc.RECURSIVE n,acc) = 
-		   (List.mapPartial check_node n)@acc
-		   
-	       fun check_extern (x,xs) =
-		   case (find_type m x) of
-		       NONE => ("Error: "^(Id.toString x)^" undefined")::xs
-		     | SOME _ =>  xs
-
-	       val errs = S.foldr check_extern errs
-		   (S.difference(uses,defs))
+	     | check (Scc.RECURSIVE n,acc) = 
+	     (List.mapPartial check_node n)@acc
+	     
+	   fun check_extern (x,xs) =
+	     case (find_type m x) of
+	       NONE => ("Error: "^(Id.toString x)^" undefined")::xs
+	     | SOME _ =>  xs
+	 (*
+          val errs = S.foldr check_extern errs
+	  (S.difference(uses,defs))
+	  *)
+	 in
+	   List.foldr check errs scc
+	 end
+       in
+	 val defined_types = tsort_defs
+	 fun qualified_types (ME{uenv,...}) (M{defs,...}) =
+	   let
+	     fun find (i,xs) =
+	       case (Env.find(uenv,i)) of
+		 NONE => xs
+	       | SOME q =>
+		   if QSet.isEmpty q then xs
+		   else (i,QSet.listItems q)::xs
 	   in
-	       List.foldr check errs scc
-	    end
-	
-	
-       fun validate_env (me as ME{menv,errs,...}) =
-	    Env.foldl (validate me) errs menv
+	     S.foldl find [] defs
+	   end
+	 fun type_qualifiers (ME{uenv,...}) (M{defs,...}) =
+	   let
+	     fun mk_list i (t,xs) = (i,t)::xs
+	     fun find (i,xs) =
+	       case (Env.find(uenv,i)) of
+		 NONE => raise Error.internal 
+	       | SOME q => QSet.foldl (mk_list i) xs q
+	   in
+	     S.foldl find [] defs
+	   end
+	 fun validate_env (me as ME{menv,errs,...}) =
+	   Env.foldl (validate me) errs menv
+       end
+       local
+	 structure IEnv =
+	   SplayMapFn(struct
+	     type ord_key = Identifier.identifier
+	     val compare = Identifier.compare
+	   end)
+	 structure Scc =
+	   SCCUtilFun(structure Node =
+			struct
+			  type ord_key = Identifier.identifier option
+			  fun compare (SOME x,SOME y) = Identifier.compare(x,y)
+			    | compare (NONE,NONE) = EQUAL
+			    | compare (NONE,_) = LESS
+			    | compare (_,NONE) = GREATER
+			end)
+	 fun mk_view_env ({file,decl=T.View{name,decls}},venv) =
+	   let
+	     val id = Id.fromString (Identifier.toString name)
+	     fun mk_view (entries,env) =
+	       let
+		 fun toId x =
+		   let val len = List.length x
+		     val (qualifier,base) =
+		       (List.take (x,len-1),List.drop (x,len - 1))
+		   in case (qualifier,List.hd base) of
+		     (q,base) => Id.fromPath
+		       {base=Identifier.toString base,
+			qualifier=List.map Identifier.toString q}
+		   end
+		 fun insert ({entity,prop,value},e) =
+		   let val entity = toId entity
+		     val v = case (Env.find(e,entity)) of
+		       NONE => [(prop,value)]
+		     | SOME rest => ((prop,value)::rest)
+		   in Env.insert(e,entity,v)
+		   end
+	       in List.foldl insert env entries
+	       end
+	     val env = (case (Env.find(venv,id)) of
+			  NONE => Env.empty | SOME e => e)
+	     val env = mk_view (decls,env)
+	   in
+	     Env.insert(venv,id,env)
+	   end
+	   | mk_view_env (_,venv) = venv
+	 (* reorder declarations *)
+	 fun build_scc inps =
+	   let
+	     fun is_view (T.View _) = true 
+	       | is_view _ = false
+	     fun mk_env (x as {file,decl} ,env) =
+	       if (is_view decl) then env
+	       else IEnv.insert(env,#name(T.attrbs_decl decl),x)
+	     val env = List.foldl mk_env IEnv.empty inps
+	       
+	     fun mkNode id =
+	       case (IEnv.find(env,id)) of
+		 (SOME {file,decl=T.Module{imports,...}}) =>
+		   List.map SOME imports
+	       | (SOME {file,decl=T.ForeignModule _}) => []
+	       | _ => raise
+		   (Error.error ["Can't find module: ",Identifier.toString id])
+	     fun follow (SOME id) = mkNode id
+	       | follow NONE = List.map (SOME o #1) (IEnv.listItemsi env)
+	     val torder = Scc.topOrder {root=NONE,follow=follow}
+	     fun check (Scc.SIMPLE (SOME n),acc) =
+	       (Option.valOf(IEnv.find (env,n)))::acc
+	      | check (Scc.SIMPLE NONE,acc) = acc
+	       | check (Scc.RECURSIVE n,acc) =
+	       raise Error.error ["Circular module dependency"]
+	     val view_env = List.foldl mk_view_env Env.empty inps
+	     fun get_view id =
+	      case Env.find(view_env,id) of
+		SOME e => (fn id => Option.getOpt(Env.find(e,id),[]))
+	      | NONE => (fn _ => [])
+	   in
+	     (List.foldl check [] torder,get_view)
+	   end
+       in
+	 fun declare_modules {view,inits} ds =
+	   let
+	     val (ds,gv) = build_scc ds
+	     val penv = prim_env inits
+	     val v = gv (Id.fromString view)
+	   in
+	     List.foldl (declare_module v) penv ds
+	   end
+       end
     end
 
 

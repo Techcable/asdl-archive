@@ -19,7 +19,7 @@ structure UnixBuildParams : CC_BUILD_PARAMS =
 
     val comp_args = [B.STR "-c"]
     val link_args = []
-    val mklib_args = [B.STR "curs"]
+    val mklib_args = [B.STR "crs"]
 
     fun debugFlag true  = B.STR "-g"
       | debugFlag false = B.STR ""

@@ -24,7 +24,7 @@ structure GenPickleTranslator:TRANSLATE =
 
 	fun make_keys menv (m,(type_map,cnstr_map)) =
 	    let
-		val defs = (M.defined_types menv m)
+		val defs = (M.defined_types m)
 		val get_cons = M.type_cons o (M.lookup_type m)
 		fun insert_ci (x,xs) =
 		    List.foldl insert_item xs
@@ -113,9 +113,10 @@ structure GenPickleTranslator:TRANSLATE =
 		    let
 			val kind =
 			    case (M.field_kind fi) of
-				M.Id => T.Id
-			      | M.Sequence => T.Sequence
-			      | M.Option => T.Option
+				NONE => T.Id
+			      | SOME M.Sequence => T.Sequence
+			      | SOME M.Option => T.Option
+			      | _ => raise Error.unimplemented
 			val type_map_key = field_type_key m fi
 			val label = M.field_src_name fi
 		    in
@@ -175,7 +176,7 @@ structure GenPickleTranslator:TRANSLATE =
 		
 		fun make_maps menv (m,(types,cnstrs)) =
 		    let
-			val defs = (M.defined_types menv m)
+			val defs = (M.defined_types m)
 			fun do_type (id,(tis,cis)) =
 			    let
 				val ti = (M.lookup_type m) id

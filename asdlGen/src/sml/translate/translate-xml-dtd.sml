@@ -16,12 +16,11 @@ structure XMLDTDTranslator : MODULE_TRANSLATOR =
 
 	type input_value    = M.module
 	type defined_value  = T.element_decl  * T.element_decl list
-	type option_value   = T.element_decl 
-	type sequence_value = T.element_decl
 	type con_value      = (T.children * T.element_decl)
 	type field_value    = T.children
 	type module_value   = T.module * T.children list
 	type output         = T.module list
+	type type_con_value = T.element_decl list
 	val set_dir = true
 	val ignore_supress = true
 	val fix_fields = false
@@ -51,9 +50,10 @@ structure XMLDTDTranslator : MODULE_TRANSLATOR =
 	      val tname = trans_tid tname
 	      val tname =
 		case (kind) of
-		M.Id => tname
-	      | M.Option => mangle_opt tname
-	      | M.Sequence => mangle_seq tname
+		NONE => tname
+	      | SOME M.Option => mangle_opt tname
+	      | SOME M.Sequence => mangle_seq tname
+	      | _ => raise Error.unimplemented
 	    in
 	      T.Child tname
 	    end
@@ -89,35 +89,34 @@ structure XMLDTDTranslator : MODULE_TRANSLATOR =
 	      val name = trans_tid name
 	      val att_defs = (common_attrbs p)
 	    in
-	      ({element=name,
-	       content=T.Children
+	      ({element=name,content=T.Children
 	       (T.Choice (hd con_children,tl con_children)),
 	       att_defs=att_defs},con_tags)
 	    end
-	
-	fun trans_sequence p {props,tinfo,name,also_opt} =
+
+	fun trans_type_con p {name,tinfo,props,kinds} =
 	  let
 	    val name = trans_tid name
-	    val seq_name = mangle_seq name
-	    val content = T.Children (T.ZeroOrMore (T.Child name))
-	    val att_defs = sz_attrib::(common_attrbs p)
-	  in
-	    {element=seq_name,content=content,att_defs=att_defs}
-	  end
-	fun trans_option p {props,tinfo,name,also_seq} =
-	  let
-	    val name = trans_tid name
+	    val child = T.Child name
 	    val opt_name = mangle_opt name
-	    val content = T.Children (T.ZeroOrOne (T.Child name))
+	    val seq_name = mangle_seq name
 	    val att_defs = sz_attrib::(common_attrbs p)
+	    fun do_kind M.Sequence =
+	      {element=seq_name,
+	       content=T.Children (T.ZeroOrMore child),
+	       att_defs=att_defs}
+	      | do_kind M.Option =
+	      {element=opt_name,content=T.Children (T.ZeroOrOne child),
+	       att_defs=att_defs}
 	  in
-	    {element=opt_name,content=content,att_defs=att_defs}
+	    List.map do_kind kinds
 	  end
 
-	fun trans_module p {module,imports,defines,options,sequences,props} =
-	  let
+	fun trans_module p {module,imports,defines,type_cons,props} =
+	  let 
+	    val ty_cons = List.foldr (op @) [] type_cons 	    
 	    val tags = List.foldr (fn ((_,xs),acc) => xs@acc)
-	      (sequences@options) (defines:defined_value list) 
+	      ty_cons (defines:defined_value list) 
 	    val roots = List.map #1 defines
 
 	    fun mk_spec ({element,...}:T.element_decl) = T.Child element

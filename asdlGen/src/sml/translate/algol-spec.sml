@@ -194,7 +194,7 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 	[DeclTagTable(List.map topair tags)]
       end
     
-    fun get_reps m =
+    fun get_reps m k =
       let
 	val seq_rep = TySequence
 	val opt_rep = TyOption
@@ -261,13 +261,17 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 	val seq_tid = TypeId.suffixBase "_list" 
 	val opt_tid = TypeId.suffixBase "_option" 
       in
-	{seq_rep=seq_rep,opt_rep=opt_rep,seq_tid=seq_tid,opt_tid=opt_tid,
-	 opt_con=opt_con,seq_con=seq_con}
+	case k of
+	  Module.Sequence => {mktid=seq_tid,mkrep=seq_rep,con=seq_con}
+	| Module.Option =>  {mktid=opt_tid,mkrep=opt_rep,con=opt_con}
+	| _ => raise Error.unimplemented
       end
 
     fun get_prims me =
       let
-	val {seq_con,opt_con,seq_tid,opt_tid,...} = get_reps me
+	val {con=seq_con,mktid=seq_tid,...} = get_reps me Module.Sequence
+	val {con=opt_con,mktid=opt_tid,...} = get_reps me Module.Option
+
  	val prefix = pkl_kind me {xml="xml_",std="std_"}
  	fun read tid = RET (FnCall(mk_name (prefix^"read") tid,[Id stream_id]))
  	fun write tid e =   

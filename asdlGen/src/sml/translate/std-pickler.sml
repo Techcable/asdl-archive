@@ -18,7 +18,7 @@ functor StdPickler (structure Arg : STD_PICKLER_ARG) : AUX_DECLS =
 	  (case Ty.lookup(env,tid) of
 	    SOME ty => (tid,ty)
 	  | NONE => raise Error.internal)
-	     
+
 	fun defaultOrElse (i:Ty.ty_info) f x =
 	  Option.getOpt ((f i),x)
 

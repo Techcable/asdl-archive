@@ -38,6 +38,7 @@ signature ASDL_BASE =
 	val read_option : (instream -> 'a) -> instream -> 'a option
 
 	val die: unit -> 'a
+
     end
 signature BASE = ASDL_BASE where type Integer.int = Int.int
 signature BIG_BASE = ASDL_BASE where type Integer.int = IntInf.int

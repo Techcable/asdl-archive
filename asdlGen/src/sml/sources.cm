@@ -16,7 +16,7 @@ main/link.sml
 main/export.sml
 
 test/harness.sml
-
+build/build-c.sml
 
 
 

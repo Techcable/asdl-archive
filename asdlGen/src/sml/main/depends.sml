@@ -47,7 +47,7 @@ functor mkDependGen(structure      M : MODULE) : TRANSLATE  =
 	    let
 		fun mkenv (m,env) =
 		    List.foldl (fn (x,env) => (Env.insert(env,x,m)))
-		    env (M.defined_types menv m) 
+		    env (M.defined_types m) 
 
 		val env = List.foldl mkenv
 		    Env.empty (M.module_env_modules menv) 

@@ -19,7 +19,7 @@ structure BuildRun :> RUNNABLE_BUILD =
       fun getid () = (nextid := (!nextid) +1; !nextid)
     end
     fun mkVAR {name,doc,init} = (getid(),{r=ref init,name=name,doc=doc})
-      
+    fun dprint x = (print (x^"\n"))
     fun setVAR ((_,{r,...}):var) v = (r := (fn () => (OK v)))
     fun VAR ((_,{r,...}):var) = (fn () => (!r)())
     fun getString f =
@@ -84,10 +84,12 @@ structure BuildRun :> RUNNABLE_BUILD =
     fun EXEC(x,xs) =
       (fn () =>
        let
-	 val cmd = "echo "^(join (List.map getString ((VAR x)::xs)))
+	 val cmd = (join (List.map getString ((VAR x)::xs)))
        in
-	 if ((OS.Process.system cmd) = OS.Process.success) then OK ()
-	 else FAIL
+	 dprint cmd;
+	 if ((OS.Process.system cmd) = OS.Process.success) then
+    (dprint "OK";OK ())
+	 else (dprint "FAIL";FAIL)
        end)
     val  INVALID  = ((fn () => FAIL),{targets=[],depends=[]})
     fun VALIDATE {targets,depends} =
@@ -176,7 +178,8 @@ structure BuildRun :> RUNNABLE_BUILD =
 	AND cmds
       end
     end
-    fun run x = ((x ();true) handle _ => false)
+    fun run x = ((x ();true) handle e =>
+		 (dprint (exnMessage e); false))
 
   end
 

@@ -13,35 +13,52 @@ signature Asdl_SIG =
     sig
     include BASE
     
-    datatype field = Id of (identifier list * identifier option)
-                   | Option of (identifier list * identifier option)
-                   | Sequence of (identifier list * identifier option)
-                   | Shared of (identifier list * identifier option)
-    and constructor = Con of (identifier * field list)
-    and asdl_type = SumType of (identifier * field list * constructor *
-                                constructor list)
-                  | ProductType of (identifier * field * field list)
-    withtype asdl_module = {name:identifier,
-                            imports:identifier list,
-                            defs:asdl_type list}
+    datatype type_qualifier = Option | Sequence | Shared
+    and type_decl = SumType of {name:identifier,
+                                attribs:field list,
+                                c:constructor,
+                                cs:constructor list}
+                  | ProductType of {name:identifier,
+                                    f:field,
+                                    fs:field list}
+    and decl = Module of {name:identifier,
+                          imports:identifier list,
+                          decls:type_decl list}
+             | ForeignModule of {name:identifier, exports:identifier list}
+             | View of {name:identifier, decls:view_decl list}
+    withtype path = {qualifier:identifier list, base:identifier}
+    and field = {typ:path,
+                 label_opt:identifier option,
+                 qualifier_opt:type_qualifier option}
+    and constructor = {name:identifier, fs:field list}
+    and view_decl = {entity:identifier list, prop:string, value:string}
     
-    val attrbs_field : field -> {identifier_list1:identifier list,
-                                 identifier_opt1:identifier option}
-    val attrbs_asdl_type : asdl_type -> {identifier1:identifier}
+    val attrbs_type_decl : type_decl -> {name:identifier}
+    val attrbs_decl : decl -> {name:identifier}
+    val read_path : instream -> path
+    val read_type_qualifier : instream -> type_qualifier
     val read_field : instream -> field
     val read_constructor : instream -> constructor
-    val read_asdl_type : instream -> asdl_type
-    val read_asdl_module : instream -> asdl_module
-    val read_asdl_type_list : instream -> asdl_type list
+    val read_type_decl : instream -> type_decl
+    val read_view_decl : instream -> view_decl
+    val read_decl : instream -> decl
     val read_field_list : instream -> field list
     val read_constructor_list : instream -> constructor list
+    val read_type_decl_list : instream -> type_decl list
+    val read_view_decl_list : instream -> view_decl list
+    val read_type_qualifier_option : instream -> type_qualifier option
+    val write_path : path -> outstream -> unit
+    val write_type_qualifier : type_qualifier -> outstream -> unit
     val write_field : field -> outstream -> unit
     val write_constructor : constructor -> outstream -> unit
-    val write_asdl_type : asdl_type -> outstream -> unit
-    val write_asdl_module : asdl_module -> outstream -> unit
-    val write_asdl_type_list : asdl_type list -> outstream -> unit
+    val write_type_decl : type_decl -> outstream -> unit
+    val write_view_decl : view_decl -> outstream -> unit
+    val write_decl : decl -> outstream -> unit
     val write_field_list : field list -> outstream -> unit
     val write_constructor_list : constructor list -> outstream -> unit
+    val write_type_decl_list : type_decl list -> outstream -> unit
+    val write_view_decl_list : view_decl list -> outstream -> unit
+    val write_type_qualifier_option : type_qualifier option -> outstream -> unit
     
     
 end

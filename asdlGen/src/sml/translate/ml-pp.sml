@@ -16,15 +16,11 @@ structure MLPP : ALGEBRAIC_PP =
 	val cfg = Params.empty
 	val (cfg,base_sig) =
 	    Params.declareString cfg
-	    {name="base_signature",flag=NONE,default="BASE"} 
+	    {name="base_signature",flag=NONE,default="STD_PRIMS"} 
 
 	val (cfg,base_str) =
 	    Params.declareString cfg
-	    {name="base_structure",flag=NONE,default="Base"} 
-
-	val (cfg,split_mods) =
-	    Params.declareBool cfg
-	    {name="split_modules",flag=NONE,default=false} 
+	    {name="base_structure",flag=NONE,default="Prims"} 
 
 	fun mkComment s =
 	    PP.vblock 2 [PP.s "(*",
@@ -187,6 +183,9 @@ structure MLPP : ALGEBRAIC_PP =
 	fun isStrFun (DeclFun _ ) = true
 	  | isStrFun ((DeclLocal (DeclFun _))) = true
 	  | isStrFun _ = false
+
+	fun isFunArg (DeclExtern decl) = true
+	  | isFunArg _ = false
 	    
 	val sig_prologue =
 	    PPUtil.wrap Module.Mod.interface_prologue 
@@ -261,22 +260,69 @@ structure MLPP : ALGEBRAIC_PP =
 		    PP.cat [PP.nl,
 			    PP.seq{fmt=pp_fun_sig,sep=PP.nl} sigfdecs]
 		    
-		fun pp_struct name body incs =
-			PP.vblock 4
-			[PP.s ("structure "^name^" : "^name^"_SIG = "),  PP.nl,
-			 PP.s "struct",PP.nl,
-			 PP.s ("open "^incs),PP.nl,
-			 body, PP.nl,
-			 PP.untab,PP.s "end"]
+		fun pp_sig_import q [] = PP.empty
+		  | pp_sig_import q mids =
+		  let
+		    fun pp_bind mid =
+		      let val mn = Ast.ModuleId.toString mid
+			val mn_sig = mn^"_SIG"
+		      in PP.s ("structure "^mn^" : "^mn_sig)
+		      end
+		    fun mktyid s = Ast.TypeId.fromPath{qualifier=q,base=s}
+		    fun pp_share s [] = PP.empty
+		      | pp_share s mids =
+		      let fun pp_sid i =
+			PP.s ((Ast.ModuleId.toString i)^"."^s)
+		      in PP.cat
+			[PP.s "sharing type ",
+			 PP.hblock 4
+			 [pp_ty_id (mktyid s),PP.s " = ",
+			  PP.seq{fmt=pp_sid,
+				 sep=PP.cat[PP.s " =",PP.ws]} mids],PP.nl]
+		      end
+		  in PP.vblock 0
+		    [PP.seq_term{fmt=pp_bind,sep=PP.nl} mids,
+		     pp_share "outstream" mids,
+		     pp_share "instream" mids]
+		  end
 
-		fun pp_sig name body incs =
-			PP.vblock 4
-			[PP.s ("signature "^name^"_SIG = "), PP.nl,
-			 PP.s "sig",PP.nl,
-			 PP.s ("include "^incs),PP.nl,
-			 body, PP.nl,
-			 PP.untab,PP.s "end"]
-(* TODO: Clean this logic up *)
+		fun pp_str_import mids =
+		  let
+		    val pmn = (base_str p)
+		    fun pp_bind mid =
+		      let val mn = Ast.ModuleId.toString mid
+		      in PP.s ("structure "^mn^" = "^mn)
+		      end
+		  in PP.vblock 0
+		    [PP.seq_term{fmt=pp_bind,sep=PP.nl} mids,
+		     PP.s ("open "^pmn)]
+		  end
+
+		fun pp_functor name body imports =
+		  let
+		    val mn = (base_str p)
+		    val mns = (base_sig p)
+		  in
+		    PP.vblock 4
+		    [PP.s ("functor mk"^name^"("),
+		     PP.vblock 0 [PP.s ("structure "^mn^" : "^mns),PP.nl,
+				  pp_sig_import [mn] imports],
+		     PP.s (") : "^name^"_SIG ="),  PP.nl,
+		     PP.s "struct",PP.nl,
+		     pp_str_import imports,
+		     body, PP.nl, PP.untab,PP.s "end"]
+		  end
+		fun pp_sig name body imports =
+		  PP.vblock 4
+		  [PP.s ("signature "^name^"_SIG = "), PP.nl,
+		   PP.s "sig",PP.nl,
+		   PP.s ("include "^(base_sig p)), PP.nl,
+		   pp_sig_import [] imports,
+		   PP.untab,
+		   PP.nl,
+		   body, PP.nl,
+		   PP.untab,PP.s "end"]
+		(* TODO: Clean this logic up *)
 		val sig_tys =
 		    [sig_prologue props, PP.nl,
 		     pp_ty_decs, PP.nl]
@@ -297,32 +343,23 @@ structure MLPP : ALGEBRAIC_PP =
 		val pstr_name = mn
 		    
 		val (mname,dsig_body,dstr_body) =
-		    if (split_mods p) then
-			(tstr_name,sig_tys,str_tys)
-		    else
-			(pstr_name,sig_tys@sig_fdecs,str_tys@str_fdecs)
+		  (pstr_name,sig_tys@sig_fdecs,str_tys@str_fdecs)
 	    
 		val dsig =
-		    pp_sig mname (PP.cat dsig_body) (base_sig p)
+		    pp_sig mname (PP.cat dsig_body) imports
 		val dstr =
-		    pp_struct mname (PP.cat dstr_body) (base_str p)
+		    pp_functor mname (PP.cat dstr_body) imports
 
 		val psig =
-		    pp_sig mn (PP.cat sig_fdecs) (mname^"_SIG")
+		    pp_sig mn (PP.cat sig_fdecs) imports
 
 		val pstr =
-		    pp_struct mn (PP.cat str_fdecs) (mname)
+		    pp_functor mn (PP.cat str_fdecs) imports
 
 		fun mk_file x b =
 		    [OS.Path.joinBaseExt{base=x,ext=SOME b}]
 		    
 		val fls =
-		    if (split_mods p) then
-			[(mk_file mname "sig", dsig),
-			 (mk_file mname "sml", dstr),
-			 (mk_file mn "sig", psig),
-			 (mk_file mn "sml", pstr)]
-		    else
 			 [(mk_file mname "sig", dsig),
 			  (mk_file mname "sml", dstr)]
 	    in

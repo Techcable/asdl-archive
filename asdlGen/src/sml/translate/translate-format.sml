@@ -16,17 +16,15 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 	type input_value    = M.module
 	type output_value   = T.format_doc
 	type defined_value  = T.ditem
-	type option_value   = T.format
-	type sequence_value = T.format
+	type type_con_value = T.format
 	type con_value      = (T.format * string option)
 	type field_value    = T.format 
 	type module_value   = T.module * T.ditem
 	type output         = T.module list
-	val set_dir = false
+	val set_dir = true
 	val ignore_supress = true
 	val fix_fields = false
 	val inits = []
-
 	    
 	fun trans_long_id id =  id
 	fun trans_short_id id = (Id.fromString o Id.getBase) id
@@ -72,9 +70,10 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 			trans_short_id tname
 		    else trans_long_id tname
 		val (ty,q) = case (kind) of
-		    M.Id => (T.REF (tid,[toStr' tid]),[])
-		  | M.Option => (T.REF(tid,[toStr' tid]),[T.STR "?"])
-		  | M.Sequence => (T.REF(tid,[toStr' tid]),[T.STR "*"])
+		    NONE => (T.REF (tid,[toStr' tid]),[])
+		  | SOME M.Option => (T.REF(tid,[toStr' tid]),[T.STR "?"])
+		  | SOME M.Sequence => (T.REF(tid,[toStr' tid]),[T.STR "*"])
+		  | SOME M.Shared => (T.REF(tid,[toStr' tid]),[T.STR "!"])
 	    in
 		case (M.field_name finfo) of
 		    NONE => T.RM(ty::q)
@@ -102,7 +101,7 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 			  T.STR " = "]
 		val {tag,fmt} =
 		    (case (cons,fields) of
-			 ([],_) => {tag=name,fmt=f}
+			 ([],_) => {tag=T.RM[name,f],fmt=T.RM []}
 		       | (c,[]) => {tag=name,fmt=fmt_cons cons []}
 		       | (c,_) =>
 			     {tag=name,
@@ -110,13 +109,18 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 	    in
 	      {tag=tag,fmt=T.RM[fmt,doc]}
 	    end
-	
-	fun trans_sequence p {props,tinfo,name,also_opt} =
-	    T.EM[id2STR (trans_long_id name)]
-	fun trans_option p {props,tinfo,name,also_seq} =
-	    T.EM[id2STR (trans_long_id name)]
 
-	fun trans_module p {module,defines,imports,options,sequences,props} =
+	
+	fun trans_type_con p {props,tinfo,name,kinds} =
+	  let
+	    fun do_kind M.Sequence = T.STR "sequence "
+	      | do_kind M.Option = T.STR "option "
+	      | do_kind M.Shared = T.STR "share "
+	  in
+	    T.RM [T.EM[id2STR (trans_long_id name),
+		       T.RM (List.map do_kind kinds)]]
+	  end
+	fun trans_module p {module,defines,imports,type_cons,props} =
 	    let
 		val mname = Id.toString (M.module_name module)
 		val doc =
@@ -130,10 +134,8 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 			 T.P doc,		
 			 T.SECT(2,[T.STR ("Locally defined types")]),
 			 T.DL (defines),
-			 T.SECT(2,[T.STR ("Types used as options")]),
-			 T.UL options,
-			 T.SECT(2,[T.STR ("Types used as sequences")]),
-			 T.UL sequences]}
+			 T.SECT(2,[T.STR ("Qualified types ")]),
+			 T.UL type_cons]}
 		(* todo add import hyper links *)
 		val toc_entry =
 		  {tag=T.REF (Id.fromPath {base="",

@@ -18,12 +18,11 @@ signature SHARE =
 	        boundRef: 'share_ref -> bool,
                  findRef: name -> 'share_ref} ->  ('share_ref,'value) env
 
-   val mk_simple_env : unit ->  {env:'a simple_env,
+   val mk_simple_env : unit ->  {env: 'a simple_env,
  			       clear: unit -> unit,
 			      newRef: 'a -> 'a sref,
 			      refRef: 'a sref -> 'a ref,
 			     refName: 'a sref -> name}
-
 end
 
 structure Share :> SHARE =

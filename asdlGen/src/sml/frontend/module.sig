@@ -7,7 +7,6 @@
  *
  *)
 
-
 signature MODULE =
     sig
 	type module_env
@@ -15,7 +14,8 @@ signature MODULE =
 	type type_info
 	type con_info
 	type field_info
-
+	datatype field_kind = datatype Asdl.type_qualifier
+	  
 	structure Typ : TYP_PROPS
 	structure Con : CON_PROPS
 	structure Mod : MOD_PROPS
@@ -30,13 +30,9 @@ signature MODULE =
 	val prim_string        : Id.mid
 	val prim_identifier    : Id.mid
 
-	val prim_env           : ME.init list -> module_env
 	val module_env_prims   : module_env -> type_info list
-
-	val declare_module     : module_env ->  
-	    {view: Id.mid -> (string * string) list,
-	     file: string,
-	     decl: Asdl.asdl_module}  -> module_env
+	val declare_modules    : {view:string,inits:ME.init list} ->
+	                      {file:string,decl:Asdl.decl} list -> module_env
 
 	val module_env_modules : module_env -> module list
 	val validate_env       : module_env -> string list
@@ -45,14 +41,10 @@ signature MODULE =
 	val module_src_name    : module -> Id.mid
 	val module_file        : module -> string
 
-	val defined_types      : module_env -> module -> Id.mid list
-	val sequence_types     : module_env -> module -> Id.mid list
-	val option_types       : module_env -> module -> Id.mid list
-
-	val is_seq_type        : module_env -> module -> Id.mid -> bool
-	val is_opt_type        : module_env -> module -> Id.mid -> bool
-	    
+	val qualified_types    : module_env ->
+	                         module -> (Id.mid * field_kind list) list
 	val module_imports     : module -> module list 
+	val defined_types      : module -> Id.mid list
 
 	val lookup_type        : module -> Id.mid -> type_info
 	val find_type          : module -> Id.mid -> type_info option 
@@ -79,9 +71,7 @@ signature MODULE =
 	val con_src_name       : con_info -> Id.mid
 	val con_fields         : con_info -> field_info list
 
-	datatype field_kind = Id | Sequence | Option | Shared
-
-	val field_kind         : field_info -> field_kind
+	val field_kind         : field_info -> field_kind option
 	val field_name         : field_info -> Identifier.identifier option
 	val field_src_name     : field_info -> Identifier.identifier 
     end

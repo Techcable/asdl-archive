@@ -37,8 +37,7 @@ functor mkOOModuleTranslator
 			     match:T.exp -> Ty.choice,
 			     enumer:T.enumer}
 	
-      type option_value   = defined_value
-      type sequence_value = defined_value
+      type type_con_value = Ty.ty_decl list
       type module_value   = Ty.ty_decl list * (T.module * M.Mod.props)
       type output         = (T.module * M.Mod.props) list
 
@@ -99,11 +98,12 @@ functor mkOOModuleTranslator
 	  val {natural_ty,...} = Spec.get_wrappers ty props 
 	  val (ty,tid) =
 	    case kind of
-	      M.Id => (natural_ty,tid)
-	    | M.Sequence =>
+	      NONE => (natural_ty,tid)
+	    | SOME M.Sequence =>
 		(Spec.seq_rep natural_ty,Spec.seq_tid tid)
-	    | M.Option =>
+	    | SOME M.Option =>
 		(Spec.opt_rep natural_ty,Spec.opt_tid tid)
+	    | _ => raise Error.unimplemented
 	  val ty = if is_prim then (T.TyId tid) else ty
 	  val trans_fid =
 	    (fix_id o T.VarId.fromString o Identifier.toString)
@@ -306,24 +306,17 @@ functor mkOOModuleTranslator
 	  {decls=decls,ty_decl=ty_decl}
 	end
 
-      fun trans_sequence p {tinfo,name,props,also_opt} = 
-	let
-	  val name = trans_tid name
-	  val name_seq = Spec.seq_tid name
-	  val decls = []
-	in
-	  {ty_decl=(name_seq,Ty.App(Spec.seq_con,name)),decls=decls}
-	end
 
-      fun trans_option p {tinfo,name,props,also_seq} = 
+      fun trans_type_con p {tinfo,name,kinds,props} =
 	let
 	  val name = trans_tid name
 	  val name_opt = Spec.opt_tid name
-	  val decls = []
+	  val name_seq = Spec.seq_tid name
+	  fun do_kind M.Sequence = (name_seq,Ty.App(Spec.seq_con,name))
+	    | do_kind M.Option = (name_opt,Ty.App(Spec.opt_con,name))
 	in
-	  {ty_decl=(name_opt,Ty.App(Spec.opt_con,name)),decls=decls}
+	  List.map do_kind kinds
 	end
-
       structure BA =
 	mkOOBuildAux(structure T = T
 		 fun mk_tid (mid,s) =
@@ -331,17 +324,16 @@ functor mkOOModuleTranslator
 		       {qualifier=[T.ModuleId.toString mid],base=s}
 		 val visit_id = visit_id)
 
-      fun trans_module p {module,imports,defines,options,sequences,props} =
+      fun trans_module p {module,imports,defines,type_cons,props} =
 	let
 	  fun merge ({ty_decl,decls},(ty_decls,rest)) =
 	    (ty_decl::ty_decls,decls@rest)
-	  val (ty_decls,decls) = List.foldr merge ([],[])
-	    (defines@sequences@options)
+	  val ty_cons = List.foldr (op @) [] type_cons 	    
+	  val (ty_decls,decls) = List.foldr merge (ty_cons,[]) defines
 	  val toMid = Ast.ModuleId.fromPath o Id.toPath o M.module_name
 	  val name = toMid module
 	  val decls = BA.build_aux name
-	{walker_code=false,copy_code=false} decls
-	
+	    {walker_code=false,copy_code=false} decls
 	in
 	  (ty_decls,(T.Module
 		     {name=name,

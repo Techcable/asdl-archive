@@ -14,9 +14,8 @@ signature MODULE_TRANSLATOR =
 	structure Ast : LANG_AST
 
 	type defined_value
-	type sequence_value
-	type option_value
 	type con_value
+	type type_con_value
 	type field_value
 	type module_value
 	type output
@@ -33,18 +32,12 @@ signature MODULE_TRANSLATOR =
 	      cons:con_value list,
 	    fields:field_value list} -> defined_value
 
-	val trans_sequence: Module.ME.props ->
-	    {tinfo:Module.type_info,
-	     name:Id.mid,
-	     also_opt:bool,
-	     props:Module.Typ.props} -> sequence_value
-
-	val trans_option: Module.ME.props ->
+	val trans_type_con : Module.ME.props ->
 	    {tinfo:Module.type_info,	     
 	     name:Id.mid,
-	     also_seq:bool,
-	     props:Module.Typ.props} -> option_value
-
+	     kinds:Asdl.type_qualifier list,
+	     props:Module.Typ.props} -> type_con_value 
+	  
 	val trans_con: Module.ME.props ->
 	    {cinfo:Module.con_info,
 	    cprops:Module.Con.props,
@@ -56,20 +49,20 @@ signature MODULE_TRANSLATOR =
        
 	val trans_field: Module.ME.props ->
 	    {finfo:Module.field_info,
-	      kind:Module.field_kind,
+	      kind:Module.field_kind option,
 	      name:Identifier.identifier,
 	     tname:Id.mid,
 	  is_local:bool, 
 	     tinfo:Module.type_info,
 	     props:Module.Typ.props} -> field_value
 
+
 	val trans_module: Module.ME.props ->
 	    {module: Module.module,
 	    imports: Module.module list,
 	      props: Module.Mod.props,
 	    defines: defined_value list,
-	    options: option_value list,
-          sequences: sequence_value list} -> module_value
+	  type_cons: type_con_value list} -> module_value
 
 	val trans : Module.ME.props -> module_value list -> output
     end
@@ -114,28 +107,21 @@ functor mkTranslateFromTranslator
 		  let
 		    val tinfo = Module.lookup_type m id
 		    val cons = List.map check_con  (Module.type_cons tinfo)
-		    val fields = List.map check_field (Module.type_fields tinfo)
+		    val fields =
+		      Set.addList(Set.empty,
+				  List.map check_field
+				  (Module.type_fields tinfo))
 		  in
-		    List.foldl Set.union
-		    (List.foldl Set.union Set.empty cons) fields
+		    List.foldl Set.union fields cons
 		  end
 		and check_con cinfo =
-		  let
-		    val fields = List.map check_field  (Module.con_fields cinfo)
-		  in
-		    (List.foldl Set.union Set.empty fields) 
-		  end
-		and check_field finfo =
-		  let
-		    val finfo = finfo
-		    val src_name = Module.field_src_name finfo
-		  in
-		    Set.singleton src_name
-		  end
+		  Set.addList(Set.empty,List.map check_field
+			      (Module.con_fields cinfo))
+		and check_field finfo = Module.field_src_name finfo
 		and check_all m =
 		  let
 		    val defines =
-		      List.map (check_defined m) ((Module.defined_types menv m))
+		      List.map (check_defined m) (Module.defined_types m)
 		    fun check_conflicts (s,(defined,bad)) =
 		      let
 			val bad = Set.union (Set.intersection(defined,s),bad)
@@ -215,39 +201,21 @@ functor mkTranslateFromTranslator
 			 props=props,
 			 tinfo=tinfo,name=name,tname=tname}
 		      end
-		    and do_sequence id =
+		    and do_type_con (id,kinds) =
 		      let
 			val tinfo = Module.lookup_type m id
 			val props = Module.type_props tinfo 
 			val name = Module.type_src_name tinfo
-			val also_opt = Module.is_opt_type menv m id
 		      in
-			(T.trans_sequence p)
-			{tinfo=tinfo,
-			 name=name,
-			 also_opt=also_opt,
-			 props=props}
-		      end
-		    and do_option id =
-		      let
-			val tinfo = Module.lookup_type m id
-			val props = Module.type_props tinfo 
-			val name = Module.type_src_name tinfo
-			val also_seq = Module.is_seq_type menv m id
-		      in
-			(T.trans_option p)
-			{tinfo=tinfo,
-			 name=name,
-			 also_seq=also_seq,
-			 props=props}
+			(T.trans_type_con p)
+			{tinfo=tinfo,name=name,kinds=kinds,props=props}
 		      end
 		    val props = Module.module_props m
 		    val defines =
-		      List.map do_defined (Module.defined_types menv m)
-		    val options =
-		      List.map do_option (Module.option_types menv m)
-		    val sequences =
-		      List.map do_sequence (Module.sequence_types menv m)
+		      List.map do_defined (Module.defined_types m)
+		    val type_cons =
+		      List.map do_type_con (Module.qualified_types menv m)
+
 		    val module = m
 		    val imports = Module.module_imports m
 		  in
@@ -256,8 +224,7 @@ functor mkTranslateFromTranslator
 		     imports=imports,
 		     props=props,
 		     defines=defines,
-		     options=options,
-		     sequences=sequences}
+		     type_cons=type_cons}
 		  end
 		val res = List.map do_module  (Module.module_env_modules menv)
 	      in
@@ -266,21 +233,21 @@ functor mkTranslateFromTranslator
 	  end
 	
 	fun translate p menv =
-	    let
- 	      fun make_params m =
-		let		    
-		  val input = Module.module_file m
-		  val {dir,file} = OS.Path.splitDirFile input
-		  val dir = if dir = "" then OS.Path.currentArc  else dir
-		  val params =
-		    if T.set_dir then  [("output_directory",dir)]
-		    else []
-		  val params = Params.fromList cfg params
-		  val p = Params.mergeParams(p,params)
-		in p end
-	      val p = make_params (List.hd (Module.module_env_modules menv))
-	      val props = Module.module_env_props menv
-	    in
-	      List.map (G.translate p) (F.translate props menv) 
-	    end
+	  let
+	    fun make_params m =
+	      let		    
+		val input = Module.module_file m
+		val {dir,file} = OS.Path.splitDirFile input
+		val dir = if dir = "" then OS.Path.currentArc  else dir
+		val params =
+		  if T.set_dir then  [("output_directory",dir)]
+		  else []
+		val params = Params.fromList cfg params
+		val p = Params.mergeParams(p,params)
+	      in p end
+		val p = make_params (List.hd (Module.module_env_modules menv))
+		val props = Module.module_env_props menv
+	  in
+	    List.map (G.translate p) (F.translate props menv) 
+	  end
     end

@@ -11,3 +11,8 @@ pkl-int.sml
 pkl-real.sml
 std-types.sml
 share.sml
+asdl-types.sig
+prims.sig
+std-prims.sig
+std-prims.sml
+

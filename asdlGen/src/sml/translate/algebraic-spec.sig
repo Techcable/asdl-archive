@@ -28,18 +28,13 @@ signature ALGEBRAIC_TYPE_DECL =
 signature ALGEBRAIC_SPEC =
   sig
     structure Ty : ALGEBRAIC_TYPE_DECL
-
     val inits : Module.ME.init list
     val prims : Ty.ty_decl list
 
-    val seq_rep : Ty.ty_exp -> Ty.ty_exp
-    val seq_con : Ty.ty_con
-
-    val opt_rep : Ty.ty_exp -> Ty.ty_exp
-    val opt_con : Ty.ty_con
-
-    val seq_tid : Ty.ty_id -> Ty.ty_id
-    val opt_tid : Ty.ty_id -> Ty.ty_id
+    val get_reps : Module.ME.props ->
+                   Module.field_kind -> {mkrep:Ty.ty_exp -> Ty.ty_exp,
+					 mktid:Ty.ty_id -> Ty.ty_id,
+					   con:Ty.ty_con}
 
     val get_info: Module.Typ.props -> Ty.ty_info
 
@@ -51,4 +46,5 @@ signature ALGEBRAIC_SPEC =
     val get_aux_decls : Module.ME.props -> Ty.env
                                         -> Ty.ty_decl list -> Ty.Ast.decl list
   end
+
 

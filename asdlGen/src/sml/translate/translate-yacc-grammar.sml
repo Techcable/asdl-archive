@@ -16,12 +16,12 @@ structure YaccGrammarTranslator : MODULE_TRANSLATOR =
 
 	type input_value    = M.module
 	type defined_value  = T.production
-	type option_value   = T.production list
-	type sequence_value = T.production list
+	type type_con_value = T.production list
 	type con_value      = T.rule
 	type field_value    = T.rule_atom
 	type module_value   = T.production list
 	type output         = T.grammar list
+	type type_con_value = T.production list
 	val set_dir = true
 	val fix_fields = false
 	val inits = []
@@ -45,9 +45,10 @@ structure YaccGrammarTranslator : MODULE_TRANSLATOR =
 	      val tname = trans_tid tname
 	      val tname =
 		case (kind) of
-		M.Id => tname
-	      | M.Option => mangle_opt tname
-	      | M.Sequence => mangle_seq tname
+		NONE => tname
+	      | SOME M.Option => mangle_opt tname
+	      | SOME M.Sequence => mangle_seq tname
+	      | _ => raise Error.unimplemented
 	    in
 	      T.NonTerm tname
 	    end
@@ -62,30 +63,29 @@ structure YaccGrammarTranslator : MODULE_TRANSLATOR =
 	  | trans_defined p {tinfo,name,cons,fields,props} =
 	  (trans_tid name,cons)
 	
-	fun trans_sequence p {props,tinfo,name,also_opt} =
+
+	fun trans_type_con p {tinfo,name,kinds,props} =
 	  let
 	    val ty_name = (trans_tid name)
 	    val seq_name = mangle_seq ty_name
 	    val seq_tmp = mangle_tmp seq_name
-	  in
-	    [(seq_tmp,[([T.NonTerm ty_name,T.NonTerm seq_tmp],NONE),
-		       ([],NONE)]),
-	     (seq_name,[([beg_seq,T.NonTerm seq_tmp,end_seq],NONE)])]
-	  end
-	fun trans_option p {props,tinfo,name,also_seq} =
-	  let
-	    val ty_name = (trans_tid name)
 	    val opt_name = mangle_opt ty_name
 	    val opt_tmp = mangle_tmp opt_name
+	    fun do_con (M.Sequence,xs) =
+	      [(seq_tmp,[([T.NonTerm ty_name,T.NonTerm seq_tmp],NONE),
+			 ([],NONE)]),
+	       (seq_name,[([beg_seq,T.NonTerm seq_tmp,end_seq],NONE)])]@xs
+	      | do_con (M.Option,xs) =
+	      [(opt_tmp,[([T.NonTerm ty_name,T.NonTerm opt_tmp],NONE),
+			 ([],NONE)]),
+	       (opt_name,[([beg_opt,T.NonTerm opt_tmp,end_opt],NONE)])]
 	  in
-	    [(opt_tmp,[([T.NonTerm ty_name,T.NonTerm opt_tmp],NONE),
-		       ([],NONE)]),
-	     (opt_name,[([beg_opt,T.NonTerm opt_tmp,end_opt],NONE)])]
+	    List.foldl do_con [] kinds
 	  end
 
-	fun trans_module p {module,imports,defines,options,sequences,props} =
+	fun trans_module p {module,imports,defines,type_cons,props} =
 	  let
-	    val aux = List.foldr (op @) [] (sequences@options)
+	    val aux = List.foldr (op @) [] type_cons
 	  in
 	    List.foldr (op ::) aux defines 
 	  end
