@@ -1,4 +1,4 @@
-#! /usr/bin/perl
+#! /usr/local/bin/perl5
 # Generated automatically from id_hack.pl.in by configure.
 $mod="";
 while(<>) {

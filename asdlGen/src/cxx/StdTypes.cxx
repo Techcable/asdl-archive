@@ -850,29 +850,29 @@ void StdTypes_uint64_list::write(StdTypes_uint64_list* x_, outstream s_)
           t_1 = t_1 - 1;
      }
 } }
-void StdTypes_Visitor::StdTypes_visit_nat(StdTypes_nat* x);
-void StdTypes_Visitor::StdTypes_visit_TRUE(StdTypes_bool* x);
-void StdTypes_Visitor::StdTypes_visit_FALSE(StdTypes_bool* x);
-void StdTypes_Visitor::StdTypes_visit_int8(StdTypes_int8* x);
-void StdTypes_Visitor::StdTypes_visit_ieee_real(StdTypes_ieee_real* x);
-void StdTypes_Visitor::StdTypes_visit_int16(StdTypes_int16* x);
-void StdTypes_Visitor::StdTypes_visit_int32(StdTypes_int32* x);
-void StdTypes_Visitor::StdTypes_visit_int64(StdTypes_int64* x);
-void StdTypes_Visitor::StdTypes_visit_uint8(StdTypes_uint8* x);
-void StdTypes_Visitor::StdTypes_visit_uint16(StdTypes_uint16* x);
-void StdTypes_Visitor::StdTypes_visit_uint32(StdTypes_uint32* x);
-void StdTypes_Visitor::StdTypes_visit_uint64(StdTypes_uint64* x);
-void StdTypes_Visitor::StdTypes_visit_nat_list(StdTypes_nat_list* x);
-void StdTypes_Visitor::StdTypes_visit_bool_list(StdTypes_bool_list* x);
-void StdTypes_Visitor::StdTypes_visit_int8_list(StdTypes_int8_list* x);
-void StdTypes_Visitor::StdTypes_visit_ieee_real_list(StdTypes_ieee_real_list* x);
-void StdTypes_Visitor::StdTypes_visit_int16_list(StdTypes_int16_list* x);
-void StdTypes_Visitor::StdTypes_visit_int32_list(StdTypes_int32_list* x);
-void StdTypes_Visitor::StdTypes_visit_int64_list(StdTypes_int64_list* x);
-void StdTypes_Visitor::StdTypes_visit_uint8_list(StdTypes_uint8_list* x);
-void StdTypes_Visitor::StdTypes_visit_uint16_list(StdTypes_uint16_list* x);
-void StdTypes_Visitor::StdTypes_visit_uint32_list(StdTypes_uint32_list* x);
-void StdTypes_Visitor::StdTypes_visit_uint64_list(StdTypes_uint64_list* x);
+void StdTypes_Visitor::StdTypes_visit_nat(StdTypes_nat* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_TRUE(StdTypes_bool* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_FALSE(StdTypes_bool* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_int8(StdTypes_int8* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_ieee_real(StdTypes_ieee_real* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_int16(StdTypes_int16* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_int32(StdTypes_int32* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_int64(StdTypes_int64* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_uint8(StdTypes_uint8* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_uint16(StdTypes_uint16* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_uint32(StdTypes_uint32* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_uint64(StdTypes_uint64* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_nat_list(StdTypes_nat_list* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_bool_list(StdTypes_bool_list* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_int8_list(StdTypes_int8_list* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_ieee_real_list(StdTypes_ieee_real_list* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_int16_list(StdTypes_int16_list* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_int32_list(StdTypes_int32_list* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_int64_list(StdTypes_int64_list* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_uint8_list(StdTypes_uint8_list* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_uint16_list(StdTypes_uint16_list* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_uint32_list(StdTypes_uint32_list* x){ ; }
+void StdTypes_Visitor::StdTypes_visit_uint64_list(StdTypes_uint64_list* x){ ; }
 StdTypes_bool* StdTypes_TRUE = new StdTypes_bool(StdTypes_bool::StdTypes_TRUE_enum);
 StdTypes_bool* StdTypes_FALSE = new StdTypes_bool(StdTypes_bool::StdTypes_FALSE_enum);
 

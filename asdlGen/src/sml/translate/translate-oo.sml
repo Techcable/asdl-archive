@@ -285,10 +285,12 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 			
 		fun wr arg = {tag=T.EnumConst(tid,tag_n),body=wr_body arg}
 
-		fun mk_cnstr (fl,sl) =
+		fun mk_cnstr (fl,[]) =
 		    {inline=true,scope=T.Public,
-		      args=fl,body={vars=[],body=sl}}
-
+		     args=fl,body={vars=[],body=[T.Nop]}}
+		  | mk_cnstr (fl,sl) =
+		    {inline=true,scope=T.Public,
+		     args=fl,body={vars=[],body=sl}}
 		val cnstrs =
 		    if (List.null attrbs) then
 			[mk_cnstr(fd_fields,init_fields)]
@@ -328,7 +330,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 					    final=false},
 				      args=[{name=visit_arg,ty=con_ty}],
 				      ret=void_ty,
-				      body={vars=[],body=[]}}
+				      body={vars=[],body=[T.Nop]}}
 			    val accept =
 				{tag=T.EnumConst(tid,tag_n),
 				 body=
@@ -356,7 +358,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 				       final=false},
 				 args=[{name=visit_arg,ty=ty}],
 				 ret=void_ty,
-				 body={vars=[],body=[]}}
+				 body={vars=[],body=[T.Nop]}}
 			    val accept =
 				{tag=T.EnumConst(tid,tag_n),
 				 body=T.Expr
@@ -388,7 +390,10 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 		val tid  = trans_tid (fn x=> x) true tinfo
 		val ty = (T.TyReference (T.TyId tid))
 
-		fun mk_cnstr (fl,sl) =
+		fun mk_cnstr (fl,[]) =
+		    {inline=true,scope=T.Public,
+		     args=fl,body={vars=[],body=[T.Nop]}}
+		  | mk_cnstr (fl,sl) =
 		    {inline=true,scope=T.Public,
 		     args=fl,body={vars=[],body=sl}}
 		
@@ -445,7 +450,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 		    T.Mth
 		    {name=visit_name,
 		     inline=false,
-		     body={vars=[],body=[]},
+		     body={vars=[],body=[T.Nop]},
 		     mods={scope=T.Public,static=false, final=false},
 		     args=[{name=visit_arg,ty=ty}],ret=void_ty}
 		    
@@ -699,7 +704,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 		    T.Mth
 		    {name=visit_name,
 		     inline=false,
-		     body={vars=[],body=[]},
+		     body={vars=[],body=[T.Nop]},
 		     mods={scope=T.Public,static=false, final=false},
 		     args=[{name=visit_arg,ty=ty_seq}],ret=void_ty}
 
