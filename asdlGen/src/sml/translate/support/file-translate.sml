@@ -13,8 +13,8 @@ signature TRANSLATE_TO_FILES =
 	type input = (string list * (outstream -> unit)) list
 	type output = string list
 	    
-	val cfg      : Params.cfg
-	val translate: Params.params -> input -> output
+	val opts      : CommandOptions.args_spec
+	val translate : CommandOptions.args -> input -> output
     end
 			
 functor mkFileOutput(type outstream
@@ -26,11 +26,29 @@ functor mkFileOutput(type outstream
     type input = (string list * (outstream -> unit)) list
     type output = string list
     structure FS = FSUtils
-    val (cfg,output_dir) = Params.requireString Params.empty "output_directory"
-    val (cfg,no_action) =  Params.declareBool cfg
-      {name="no_action",flag=SOME #"n",default=false}
-    val (cfg,cpif) =
-      Params.declareBool cfg {name="cpif",flag=NONE,default=true}
+    structure O = CommandOptions
+    val (opts,output_dir) = O.stringParam O.empty
+      {name="output-dir",
+       flags="d",
+       arg_dflt=NONE,
+       dflt=OS.Path.currentArc,
+       advice="directory",
+       doc="directory for output"}
+      
+    val (opts,no_action) = O.boolFlag opts
+      {name="no-action",
+       flags="n",
+       v=true,
+       dflt=false,
+       doc="dry run without output"}
+
+    val (opts,no_cpif) = O.boolFlag opts
+      {name="no-cpif",
+       flags="",
+       v=true,
+       dflt=false,
+       doc="overwrite unchanged files"}
+
     fun msg x = TextIO.output(TextIO.stdErr,x)
     fun translate p args =
       let
@@ -68,10 +86,11 @@ functor mkFileOutput(type outstream
 	    val {arcs,...} = OS.Path.fromString outname
 	  in if (no_action p) then msg (outname^"\n")
 	     else (ensure_path (arcs,[]);
-		   if cpif p then (copy outname f)
-		   else let val outs = openOut outname
-		   in (f outs) before (closeOut outs)
-		   end);
+		   if no_cpif p then
+		     (let val outs = openOut outname
+		     in (f outs) before (closeOut outs)
+		     end)
+		   else  (copy outname f));
 	       outname
 	  end
       in List.map do_file args

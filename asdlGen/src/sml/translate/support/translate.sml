@@ -15,7 +15,7 @@ functor ComposeTranslations(structure F:TRANSLATE
 	    struct
 		type input  = F.input
 		type output = G.output
-		val cfg = Params.mergeConfig (F.cfg,G.cfg)
+		val opts = CommandOptions.merge (F.opts,G.opts)
 		fun translate p = (G.translate p) o (F.translate p)
             end
 

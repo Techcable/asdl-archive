@@ -28,13 +28,7 @@ functor mkTranslateFromTranslator
       structure Ast = T.Ast
       type output = G.output 
       type input = S.menv_info
-      val cfg = Params.empty
-	
-      val (cfg',output_directory) = Params.declareString cfg
-	{name="output_directory",flag=SOME #"d",
-	 default=OS.Path.currentArc}
-      val cfg = if T.set_dir then cfg' else cfg
-      val cfg = Params.mergeConfig (G.cfg,cfg)
+      val opts = G.opts
       open AsdlSemant
       fun translate p menv =
 	let
@@ -64,49 +58,22 @@ functor mkTranslateFromTranslator
 		     typ=do_typ,
 		    tycon=do_tycon} menv
 	    end
-	  fun make_params m =
-	    let		    
-	      val input = S.Module.file m
-	      val {dir,file} = OS.Path.splitDirFile input
-	      val dir = if dir = "" then OS.Path.currentArc  else dir
-	      val params =
-		if T.set_dir then  [("output_directory",dir)]
-		else []
-	      val params = Params.fromList cfg params
-		val p = Params.mergeParams(p,params)
-	    in p end
-	      val p = make_params (List.hd (S.MEnv.modules menv))
-	      val props = S.MEnv.props menv
+	  val props = S.MEnv.props menv
 	in (G.translate p) (do_it props)
 	end
     end
 
 functor mkTranslateFromFn
   (structure G : TRANSLATE 
-   val cfg : Params.cfg
+   val opts : CommandOptions.args_spec
    val set_dir : bool
    val do_it : Semant.menv_info -> G.input ) : TRANSLATE =
      struct
        type input = Semant.menv_info
        type output = G.output
-      val (cfg',output_directory) = Params.declareString cfg
-	{name="output_directory",flag=SOME #"d",
-	 default=OS.Path.currentArc}
-      val cfg = if set_dir then cfg' else cfg
-      val cfg = Params.mergeConfig (G.cfg,cfg)
+       val opts = opts
      fun translate p menv =
        let
-	 fun make_params m =
-	   let		    
-	     val input = Semant.Module.file m
-	     val {dir,file} = OS.Path.splitDirFile input
-	     val dir = if dir = "" then OS.Path.currentArc  else dir
-	     val params = if set_dir then  [("output_directory",dir)]
-	       else []
-	     val params = Params.fromList cfg params
-	     val p = Params.mergeParams(p,params)
-	   in p end
-	     val p = make_params (List.hd (Semant.MEnv.modules menv))
        in (G.translate p) (do_it menv)
        end
    end

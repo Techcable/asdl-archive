@@ -12,8 +12,8 @@ signature TRANSLATE =
     sig
 	type input
 	type output
-	val cfg : Params.cfg
-	val translate: Params.params -> input -> output
+	val opts : CommandOptions.args_spec
+	val translate: CommandOptions.args -> input -> output
     end
 
 

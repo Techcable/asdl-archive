@@ -21,11 +21,7 @@ structure CPlusPlusPP : OO_PP =
     type code = (Ast.module * Semant.Module.P.props)
     type output = (string list * PPUtil.pp) list
       
-    val cfg = Params.empty 
-(*    val (cfg,base_inc) =
-	    Params.declareString cfg
-	    {name="base_include",flag=NONE,default="StdPrims.hxx"} 
-*)	    
+    val opts = CommandOptions.empty
     open OOAst
     open PP
       

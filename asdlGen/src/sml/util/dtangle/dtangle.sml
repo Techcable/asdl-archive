@@ -281,9 +281,9 @@ different commenting conventions can be processed together.
 	val dflt = {spec=L.null_spec,outs=TextIO.stdOut,kp=0,
 		    close=(fn () => TextIO.flushOut TextIO.stdOut)}
 	val ((opts,non_opts),errs) = ((parseOpts args,[]) handle
-				   Error s => (([],[]),[s]))
+				   Error s => (([Usage],[]),[s]))
 	fun find_arg_errs (ArgErr x,xs) = x::xs
-	  | find_arg_errs (Usage,xs) = xs
+	  | find_arg_errs (Usage,xs) = ""::xs
 	  | find_arg_errs (_,xs) = xs
 	val opt_arg_err = List.foldl find_arg_errs [] opts
 	fun do_usage [] = (print usage;OS.Process.success)

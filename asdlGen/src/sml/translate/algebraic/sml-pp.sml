@@ -19,7 +19,7 @@ structure SMLPP : ALGEBRAIC_PP =
     open Ast
 
     type code =  (Ast.module * Semant.Module.P.props)
-    val cfg = Params.empty
+    val opts = CommandOptions.empty
     fun mkComment s = vb 1 (str "(*") (seq nl str s) (str " *)")
     val mkDeps = PPDepends.cmfile
     fun isSum (DeclSum _) = true

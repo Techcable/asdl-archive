@@ -18,7 +18,7 @@ structure IconPP : DYNAMIC_PP =
 			     val sep = "_")
       open PP
       type code =  (Ast.module * Semant.Module.P.props)
-      val cfg = Params.empty
+      val opts = CommandOptions.empty
       fun mkComment l =
 	vb 0 (str "####") (seq nl (fn x => str ("# "^x)) l) (str "####") 
       val mkDeps = PPDepends.makefile

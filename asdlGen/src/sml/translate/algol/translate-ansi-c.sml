@@ -26,7 +26,7 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 	type input = T.module
 	type output = Ast.module
 
-	val cfg = Params.empty
+	val opts = CommandOptions.empty
 
 	val trans_id =
 	    VarId.fromPath o T.VarId.toPath

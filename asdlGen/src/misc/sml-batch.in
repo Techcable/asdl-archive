@@ -1,7 +1,5 @@
 #! /bin/sh
 # @configure_input@
-cmpath=$1
-shift
 cmfile=sources-$$.cm
 cat > ${cmfile} <<EOF
 Group  is

@@ -47,10 +47,10 @@ structure GenPickleTranslator:TRANSLATE =
 	val cfg = Output.cfg
 	val (cfg,output_file)  =
 	    Params.declareString cfg
-	    {name="output_file",flag=SOME #"o",default="env.typ"}
+	    {name="output-file",flag=SOME #"o",default="env.typ"}
 	val (cfg,output_directory)  =
 	    Params.declareString cfg
-	    {name="output_directory",flag=SOME #"d",default=OS.Path.currentArc}
+	    {name="output-dir",flag=SOME #"d",default=OS.Path.currentArc}
 
 	type input = S.menv_info
 	type output = Output.output

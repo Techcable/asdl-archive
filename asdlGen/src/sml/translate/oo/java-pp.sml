@@ -25,7 +25,7 @@ structure JavaPP :  sig
 		val cap_mod = false
 		val cap_typ = false
 		val sep = ".")
-      val cfg = Params.empty
+      val opts = CommandOptions.empty
       open PP
       open Ast
       fun mkComment s = vb 1 (str "/*") (seq nl str s) (str " */")

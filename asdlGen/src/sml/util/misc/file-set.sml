@@ -17,6 +17,11 @@ structure FileSet :> FILE_SET =
 			  body:PPUtil.pp}
     type file_set = file OM.map
 
+    datatype opt =
+      NO_LIBS  
+    | DUMP     
+    | LAZY_LIBS
+
     val mkFile = F
     val mkLib = L
       
@@ -33,10 +38,11 @@ structure FileSet :> FILE_SET =
       OM.insert' ((#name x,F x),fs)
       | addFile' (L x,fs) =  OM.insert' ((#name x,L x),fs)
     val empty = OM.empty
-    fun export (no_libs,d,fs:file_set) =
+    fun export (opt,d,fs:file_set) =
       let
 	fun get_root (F x,xs) = (#name x)::xs
-	  | get_root (L x,xs) = xs
+	  | get_root (L x,xs) =
+	  (case opt of DUMP => (#name x)::xs | _ => xs)
 	val roots = OM.foldl get_root [] fs
 	fun follow "" = roots
 	  | follow x  =
@@ -52,7 +58,10 @@ structure FileSet :> FILE_SET =
 	  | SOME (L x) =>
 	      List.foldl do_depend  (addFile' (L x,xs)) (#depends x)
 
-	fun do_file (L x,xs) = xs
+	fun do_file (L x,xs) =
+	  (case opt of 
+	     LAZY_LIBS => xs
+	   | _ => List.foldl do_depend (addFile' (L x,xs)) (#depends x))
 	  | do_file (F x,xs) = 
 	  List.foldl do_depend (addFile' (F x,xs)) (#depends x)
 	val fs' =  OM.foldl do_file empty fs
@@ -70,9 +79,11 @@ structure FileSet :> FILE_SET =
 	  {name=libPath name,depends=List.map libPath depends,body=body}
 	fun no_cycle (Scc.SIMPLE x,xs) =
 	  (case (get_node x) of
-	     SOME (L x) => if no_libs then xs
-	                   else ((List.map prefix_it
-				  (export (no_libs,d,#impl x)))@xs)
+	     SOME (L x) =>
+	       (case opt of
+		  NO_LIBS => xs
+		| _ => ((List.map prefix_it
+			 (export (opt,d,#impl x)))@xs))
 	   | SOME (F x) => (cvt (F x)::xs)
 	   | _ => xs)
 	  | no_cycle (Scc.RECURSIVE _,xs) = raise (Fail "cyclic dependency")

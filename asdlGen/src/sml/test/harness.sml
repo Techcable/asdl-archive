@@ -240,21 +240,22 @@ structure Test =
 		  inputs= (get_files "cxx" i),
 		  rest=["-fsyntax-only","-Wall"]}
 
-
-
-	val do_java = java_comp o Link.Java.do_it 
-	val do_c =    c_comp o Link.AnsiC.do_it 
-	val do_cxx =  cxx_comp o Link.CPlusPlus.do_it 
-	val do_sml =  sml_comp o Link.SML.do_it 
-	val do_haskell =  haskell_comp o Link.Haskell.do_it 
-	val do_icon =  icon_comp o Link.Icon.do_it 
-	val do_ocaml =  ocaml_comp o Link.OCaml.do_it 
+	fun do_lang (f,s) args =
+	  (f  (Export.run_it("",("--lang="^s)::args)))
+	    
+	val do_java = do_lang(java_comp,"java")
+	val do_c =    do_lang(c_comp,"ansi-c")
+	val do_cxx =  do_lang(cxx_comp,"cxx")
+	val do_sml =  do_lang(sml_comp,"sml")
+	val do_haskell =  do_lang(haskell_comp,"haskell")
+	val do_icon =  do_lang(icon_comp,"icon")
+	val do_ocaml = do_lang(ocaml_comp,"ocaml")
 	val keep_going = ref false
 	fun test (name,f,i) () = (name,((f i) = OS.Process.success) orelse
 				  (!keep_going))
 
 	fun test_all n i =
-	  let val i = ("--aux_suffix=Util"::"-d"::"../asdl/tests/work"::i)
+	  let val i = ("-d"::"../asdl/tests/work"::i)
 	  in
 	    [test (n^"-ocaml",do_ocaml,"--view=OCaml"::i),
 	     test (n^"-ml",do_sml,"--view=SML"::i),

@@ -286,7 +286,7 @@ structure AnsiCPP : ALGOL_PP =
 	structure PP = mkPPAnsiC(structure T = AnsiC)
 	type code = (Ast.module * Semant.Module.P.props)
 
-	val cfg = Params.empty
+	val opts = CommandOptions.empty
 	val mkDeps = PPDepends.makefile
 	local
 	    open AnsiC

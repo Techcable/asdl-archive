@@ -18,7 +18,7 @@ structure OCamlPP : ALGEBRAIC_PP =
     open PP
     open Ast
     type code =  (Ast.module * Semant.Module.P.props)
-    val cfg = Params.empty
+    val opts = CommandOptions.empty
     fun mkComment s = vb 1 (str "(*") (seq nl str s) (str " *)")
     val mkDeps = PPDepends.makefile
     fun isTyDec (DeclSum _) = true

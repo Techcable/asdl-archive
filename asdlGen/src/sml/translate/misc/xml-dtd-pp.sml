@@ -18,7 +18,7 @@ structure XMLDTDPP : XML_DTD_PP =
 	structure Ast  = XMLDTD
 	structure PP = PPUtil
 	type code = Ast.module
-	val cfg = Params.empty
+	val opts = CommandOptions.empty
 	fun mkComment _ = PP.empty
 	fun mkDeps _ = PP.empty
 	local

@@ -18,7 +18,7 @@ structure YaccGrammarPP : YACC_GRAMMAR_PP =
 	structure Ast  = YaccGrammar
 	structure PP = PPUtil
 	type code = Ast.decls
-	val cfg = Params.empty
+	val opts = CommandOptions.empty
 	fun mkComment _ = PP.empty
 	fun mkDeps _ = PP.empty
 	open Ast

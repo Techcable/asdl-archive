@@ -3,7 +3,9 @@ smlnj-lib.cm
 ../../base/asdl-base.cm
 counter.sml
 scc.sml
-parameters.sml
+command-options.sig
+command-options.sml
+(*parameters.sml*)
 properties.sml
 source-ids.sml
 source-ids.sig

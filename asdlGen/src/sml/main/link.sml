@@ -12,7 +12,7 @@ structure Link =
       structure HTMLGen =
 	mkTranslateFromFn
 	(val set_dir = true
-	 val cfg = Params.empty
+	 val opts = CommandOptions.empty
 	 val do_it = FormatTranslator.do_it
 	 structure G =
 	   mkSourceFileOutput(structure PP = HTMLPP
@@ -202,17 +202,20 @@ structure Link =
 	       structure Gen = IconGen 
 	       val dflt_view = "Icon")
 
+
 (*
+       structure Check =
+	 mkMain(structure S = Semant
+		structure Parser = AsdlParser
+		structure Gen =  mkDependGen(structure S = S)
+		val dflt_view = "Check")	   
+
        structure TypePickler =
 	 mkMain(structure S = Semant
 		structure Parser = AsdlParser
 		structure Gen = GenPickleTranslator
 		val dflt_view = "Typ")	   
 
-       structure Check =
-	 mkMain(structure S = Semant
-		structure Parser = AsdlParser
-		structure Gen =  mkDependGen(structure S = S)
-		val dflt_view = "Check")	   
+
 *)
     end

@@ -24,15 +24,22 @@ structure HaskellPP : ALGEBRAIC_PP =
     open Ast
     val semi = cat [str ";",nl]
     type code =  (Ast.module * Semant.Module.P.props)
-    val cfg = Params.empty
-    val (cfg,base_imp) =
-      Params.declareString cfg
-      {name="base_import",flag=NONE,
-       default="qualified StdPkl"} 
-    val (cfg,data_derives) =
-      Params.declareString cfg
-      {name="haskell_deriving",flag=NONE,
-       default="Prelude.Eq, Prelude.Ord, Prelude.Show"} 
+    structure O = CommandOptions
+    val opts = CommandOptions.empty
+    val (opts,base_imp) = O.stringParam opts
+      {name="haskell-import",
+       flags="",
+       arg_dflt=NONE,
+       dflt="qualified StdPkl",
+       advice="string",
+       doc="global import for Haskell code"}
+    val (opts,data_derives) = O.stringParam opts
+      {name="haskell-deriving",
+       flags="",
+       arg_dflt=NONE,
+       dflt="Prelude.Eq, Prelude.Ord, Prelude.Show",
+       advice="string",
+       doc="haskell deriving clause"}
 
     fun mkComment s = vb 1 (str "{-") (seq nl str s) (str "-}")
     val mkDeps = PPDepends.makefile
