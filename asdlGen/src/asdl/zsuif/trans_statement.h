@@ -4,19 +4,23 @@ private:
      trans_suif* t;
 public:
      
-    trans_statement(trans_suif* t, cfo *c)  { 
+    trans_statement(trans_suif* t,  cfo *c)  { 
     	 this->t = t;
-	 zstmt = new zsuif_Mark_statement(); 
-	 c->apply_pyg_visitor(this);
+	 zstmt  = NULL;
+	 if(c) c->apply_pyg_visitor(this);
     }
-    trans_statement(trans_suif* t, statement *s)  { 
+    trans_statement(trans_suif* t, statement *s) { 
 	 this->t = t;
-	 zstmt = new zsuif_Mark_statement(); 
-	 s->apply_pyg_visitor(this);
+	 zstmt = NULL;
+	 if(s) s->apply_pyg_visitor(this);
     }
     
     zsuif_statement* answer(void) {
-	 return zstmt;
+	 if(zstmt) {
+	      return zstmt;
+	 } else {
+	      return new zsuif_Nop_statement();
+	 }
     }
     
     void handle_jump_cfgn(jump_cfgn *jump_cfgn) { 
@@ -147,19 +151,38 @@ public:
 	      t->trans(&(stmt->decision_operand()));
 	 zsuif_code_label_symbol* default_target = 
 	      t->trans(stmt->default_target());
-	 /* fix me !*/
-	 s_count_t enumeration_count = stmt->enumeration_count();
+
+	 /* cons things on backward so idx 0 is first */
 	 zsuif_multi_way_branch_case_list* cases = NULL;
+	 s_count_t enumeration_count = stmt->enumeration_count();
+	 while(enumeration_count--) {
+	      zsuif_constant* case_constant = 
+		   t->trans(&(stmt->case_constant(enumeration_count)));
+
+	      zsuif_code_label_symbol* case_target =
+		   t->trans(stmt->case_target(enumeration_count));
+
+	      zsuif_multi_way_branch_case* arm =
+		   new zsuif_multi_way_branch_case(case_constant, case_target);
+	      cases = new zsuif_multi_way_branch_case_list(arm,cases);
+	 }
 
 	 zstmt = new zsuif_Multi_way_branch_statement
 	      (decision_operand, default_target, cases);
     }
 
     void handle_return_statement(return_statement *stmt) {
-	 zsuif_source_op* return_value = t->trans(&(stmt->return_value()));
-	 /* fix me */
-	 zsuif_source_op_list* return_values =
-	      new zsuif_source_op_list(return_value,NULL);
+
+	 /* cons things on backward so idx 0 is first */
+	 zsuif_source_op_list* return_values = NULL;
+	 s_count_t num_return_values = stmt->num_return_values();
+
+	 while(num_return_values--) {
+	      zsuif_source_op* return_value = 
+		   t->trans(&(stmt->return_value(num_return_values)));
+	      return_values = 
+		   new zsuif_source_op_list(return_value,return_values);
+	      }
 
 	 zstmt = new zsuif_Return_statement(return_values);
     }

@@ -1,8 +1,27 @@
 #include "trans_suif.h"
 #include "trans_type.h"
 #include "trans_statement.h"
+#include "trans_instruction.h"
 static lstring zsuif_atag_symb = lstring("/trans_suif/sid");
 static lstring zsuif_atag_type = lstring("/trans_suif/tid");
+
+/*****************************************/
+trans_suif::trans_suif(void) { 
+  next_symb_id = 1;
+  next_type_id = 1;
+  
+  null_symb =
+    new zsuif_symbol(0,lstring("NullSymbol"));
+  
+  null_type = 
+    new zsuif_type_id(0);
+  
+  type_table_entries = NULL;
+  symbol_table_entries = NULL;
+  extern_symbol_table_entries = NULL;
+  file_blocks = NULL;
+  information_block = zsuif_C_information_block;
+}
 
 /*****************************************/
 /* code to annotate symbols with their unqiue ids */
@@ -13,20 +32,26 @@ boolean trans_suif::in_table(symbol* s) {
 }
 
 zsuif_symbol* trans_suif::make_symb(symbol* s) {
-  /* get a  symbol to keep track of identity */
-  external_pointer_annote<zsuif_symbol> *a = 
-    (external_pointer_annote<zsuif_symbol>*)
-    s->peek_annote(zsuif_atag_symb);
 
-  if(a == NULL) { 
-    /* seen for the first time */
-    identifier name = lstring(s->name());
-    int uid = next_symb_id++;
-    a = new external_pointer_annote<zsuif_symbol>
-      (zsuif_atag_symb,new zsuif_symbol(uid,name));
-    s->append_annote(a);
+  if(s) {
+    /* get a  symbol to keep track of identity */
+    external_pointer_annote<zsuif_symbol> *a = 
+      (external_pointer_annote<zsuif_symbol>*)
+      s->peek_annote(zsuif_atag_symb);
+    
+    if(a == NULL) { 
+      /* seen for the first time */
+      identifier name = lstring(s->name());
+      int uid = next_symb_id++;
+      a = new external_pointer_annote<zsuif_symbol>
+	(zsuif_atag_symb,new zsuif_symbol(uid,name));
+      s->append_annote(a);
+    }
+    return a->get_pointer();
+  } else {
+    return null_symb;
   }
-  return a->get_pointer();
+    
 }
 
 zsuif_symbol* trans_suif::add_entry(zsuif_symbol_table_entry *e) {
@@ -43,24 +68,32 @@ zsuif_symbol* trans_suif::add_entry_extern(zsuif_symbol_table_entry *e) {
 }
 /*****************************************/
 boolean trans_suif::in_table(type* s) {
-  info(i_integer(1),"checking for annote %s\n",zsuif_atag_symb.chars());
-  annote *a = s->peek_annote(zsuif_atag_type);
-  return (a ? TRUE : FALSE);
+  if(s) {
+    info(i_integer(1),"checking for annote %s\n",zsuif_atag_symb.chars());
+    annote *a = s->peek_annote(zsuif_atag_type);
+    return (a ? TRUE : FALSE);
+  } else {
+    return TRUE;
+  }
 }
 zsuif_type_id* trans_suif::make_type_id(type* s) {
-  /* get a unqiue id for a symbol use annotations to keep track of identity */
-  info(i_integer(1),"checking for annote %s\n",zsuif_atag_type.chars());
-  external_pointer_annote<zsuif_type_id> *a = 
-    (external_pointer_annote<zsuif_type_id>*)
-    s->peek_annote(zsuif_atag_type);
-  if(a == NULL) { 
-    /* seen for the first time */
-    int uid = next_type_id++;
-    a = new external_pointer_annote<zsuif_type_id>
-      (zsuif_atag_type,new zsuif_type_id(uid));
-    s->append_annote(a);
+  if(s) {
+    /* get a unqiue id for a use annotations to keep track of identity */
+    info(i_integer(1),"checking for annote %s\n",zsuif_atag_type.chars());
+    external_pointer_annote<zsuif_type_id> *a = 
+      (external_pointer_annote<zsuif_type_id>*)
+      s->peek_annote(zsuif_atag_type);
+    if(a == NULL) { 
+      /* seen for the first time */
+      int uid = next_type_id++;
+      a = new external_pointer_annote<zsuif_type_id>
+	(zsuif_atag_type,new zsuif_type_id(uid));
+      s->append_annote(a);
+    }
+    return a->get_pointer();
+  } else {
+    return null_type;
   }
-  return a->get_pointer();
 }
 
 zsuif_type_id* trans_suif::add_entry(zsuif_type_table_entry *e) {
@@ -76,6 +109,14 @@ void trans_suif::init_entry_attribs(zsuif_symbol_table_entry* e,
   e->address_taken = (s->is_address_taken() ? StdTypes_TRUE : StdTypes_FALSE);
 }
 /*****************************************/
+zsuif_int_or_source_op* trans_suif::get_type_size(type *t) {
+  if((t->bit_size_const()).is_finite()) {
+    return new zsuif_Int((t->bit_size_const()).c_int());
+  } else {
+    return new  zsuif_SrcOp(trans(&(t->bit_size_op())));
+  }
+}
+/*****************************************/
 zsuif_int_or_source_op* trans_suif::get_type_alignment(type *t) {
   if((t->bit_alignment_const()).is_finite()) {
     return new zsuif_Int((t->bit_alignment_const()).c_int());
@@ -84,16 +125,13 @@ zsuif_int_or_source_op* trans_suif::get_type_alignment(type *t) {
   }
 }
 /*****************************************/
-zsuif_binop* trans_suif::get_binop(lstring x) {
-  return zsuif_Add;
-}
-/*****************************************/
-zsuif_binop* trans_suif::get_cmpop(lstring x) {
-  return zsuif_Is_equal_to;
-}
-/*****************************************/
-zsuif_unop*  trans_suif::get_unop(lstring x) {
-  return zsuif_Negate;
+zsuif_int_or_source_op* trans_suif::get_field_offset(group_type *t,
+						     s_count_t idx) {
+  if((t->field_bit_offset_const(idx)).is_finite()) {
+    return new zsuif_Int((t->field_bit_offset_const(idx)).c_int());
+  } else {
+    return new  zsuif_SrcOp(trans(&(t->field_bit_offset_op(idx))));
+  }
 }
 /*****************************************/
 zsuif_suif_int* trans_suif::trans(i_integer i) {
@@ -113,44 +151,26 @@ zsuif_suif_int* trans_suif::trans(i_integer i) {
     return new zsuif_PlusInf();
   }
 }
+
 /*****************************************/
 zsuif_variable_symbol* trans_suif::trans(variable_symbol* s) {
-  variable_definition* vd = ((s->definition()).get());
-  variable_symbol* vs = vd->get_variable_symbol();
-  if(in_table(s)) {
-    return new zsuif_variable_symbol(make_symb(vs));
-  } else {
-    zsuif_variable_definition* def = trans(vd);
-    zsuif_symbol_table_entry* e = new zsuif_VariableEntry(def);
-    init_entry_attribs(e,vs);
-    add_entry(e);
-    return def->name;
-  }
+ return new zsuif_variable_symbol(trans((symbol*)s));
+}
+
+/*****************************************/
+zsuif_procedure_symbol* trans_suif::trans(procedure_symbol* s) {
+   return new zsuif_procedure_symbol(trans((symbol*)s));
 }
 
 /*****************************************/
 zsuif_register_symbol* trans_suif::trans(register_symbol* s) {
-  if(in_table(s)) {
-    return new zsuif_register_symbol(make_symb(s));
-  } else {
-    zsuif_symbol_table_entry* e = new zsuif_RegisterEntry(trans(s->size()));
-    init_entry_attribs(e,s);
-    add_entry(e);
-    return new zsuif_register_symbol(e->key);
-  }
+  return new zsuif_register_symbol(trans((symbol*)s));
 }
+
 /*****************************************/
 zsuif_field_symbol* trans_suif::trans(field_symbol* s) {
-  if(in_table(s)) {
-    return new zsuif_field_symbol(make_symb(s));
-  } else {
-    zsuif_int_or_source_op* bit_offset = 
-      trans(&(s->bit_offset_const_or_op()));
-    zsuif_symbol_table_entry* e = new zsuif_FieldEntry(bit_offset);
-    init_entry_attribs(e,s);
-    add_entry(e);
-    return new zsuif_field_symbol(e->key);
-  }
+  return new zsuif_field_symbol(trans((symbol*)s));
+
 }
 /*****************************************/
 zsuif_parameter_symbol* trans_suif::trans(parameter_symbol* s) {
@@ -172,15 +192,134 @@ zsuif_parameter_symbol* trans_suif::trans(parameter_symbol* s) {
   }
 }
 /*****************************************/
-zsuif_code_label_symbol* trans_suif::trans(code_label_symbol* s) {
-  if(in_table(s)) {
-    return new zsuif_code_label_symbol(make_symb(s));
-  } else {
-    zsuif_symbol_table_entry* e = new zsuif_CodeLabelEntry();
-    init_entry_attribs(e,s);
-    add_entry(e);
-    return new zsuif_code_label_symbol(e->key);
+/* walk over the symbol table and dump results into them */
+class trans_symbol : public suif_visitor {
+  trans_suif * trans;
+  zsuif_symbol* zsymb;
+  symbol* symb;
+public:
+  trans_symbol(trans_suif* trans,symbol* s) {
+    this->trans = trans;
+    this->zsymb = NULL;
+    this->symb = s;
   }
+  
+  zsuif_symbol* answer(void) {
+    if(trans->in_table(symb)) {
+      return trans->make_symb(symb);
+    }
+    symb->apply_pyg_visitor(this);
+    if(zsymb) {
+      return zsymb;
+    } else {
+      error(-1,"Bad symbol\n");
+      return NULL;
+    }
+  }
+  
+  void return_entry(zsuif_symbol_table_entry* e, symbol* s) {
+    trans->init_entry_attribs(e,s);
+    trans->add_entry(e);
+    zsymb = e->key;
+  }
+
+  void handle_procedure_symbol(procedure_symbol* s) { 
+    procedure_symbol* ps = s;
+    zsuif_procedure_definition* def;
+    procedure_definition* pd = ((s->definition()).get());
+    if(pd == NULL) { 
+      zsuif_procedure_symbol* name =  
+	new zsuif_procedure_symbol(trans->make_symb(ps));
+      trans_type typ(trans,ps->get_type());
+      zsuif_procedure_type* procedure_type = typ.get_procedure_type();
+      zsuif_qualification_list* qualifications = typ.get_qualifications();
+      
+      def = new zsuif_procedure_definition
+	(name, qualifications, procedure_type, NULL); 
+    } else {
+      def = trans->trans(pd);
+    }
+    zsuif_symbol_table_entry* e = new zsuif_ProcedureEntry(def);
+    if(def->procedure_body != NULL) {
+      return_entry(e,s);
+    } else {
+      trans->init_entry_attribs(e,s);
+      trans->add_entry_extern(e);
+      zsymb = e->key;
+    }
+  }
+
+  void handle_parameter_symbol(parameter_symbol* s) { 
+    zsuif_parameter_symbol* name =  
+      new zsuif_parameter_symbol(trans->make_symb(s));
+
+    zsuif_int_or_source_op* bit_alignment =  
+      trans->get_type_alignment(s->get_type());
+
+    zsuif_type_id* type = trans->trans(s->get_type());
+
+    zsuif_procedure_symbol *proc = 
+      trans->trans((s->get_procedure_definition())->get_procedure_symbol());
+
+    zsuif_symbol_table_entry* e = 
+      new zsuif_ParameterEntry(name,bit_alignment,type,proc);
+
+    return_entry(e,s);
+  }
+
+  void handle_code_label_symbol(code_label_symbol* s) { 
+    zsuif_symbol_table_entry* e = new zsuif_CodeLabelEntry();
+    return_entry(e,s);
+  }
+
+  void handle_field_symbol(field_symbol* s) { 
+    zsuif_int_or_source_op* bit_offset = 
+      trans->trans(&(s->bit_offset_const_or_op()));
+    zsuif_symbol_table_entry* e = 
+      new zsuif_FieldEntry(bit_offset);
+    return_entry(e,s);
+  }
+  
+  void handle_register_symbol(register_symbol* s) { 
+    zsuif_symbol_table_entry* e = 
+      new zsuif_RegisterEntry(trans->trans(s->size()));
+    return_entry(e,s);
+  }
+  
+  void handle_variable_symbol(variable_symbol* s) { 
+    variable_definition* vd = ((s->definition()).get());
+    if(vd) {
+      zsuif_variable_definition* def = trans->trans(vd);
+      zsuif_symbol_table_entry* e = new zsuif_VariableEntry(def);
+      return_entry(e,s);
+    } else {
+      zsuif_variable_symbol* vs = 
+	new zsuif_variable_symbol(trans->make_symb(s));
+      
+      zsuif_variable_definition* def = 
+	new zsuif_variable_definition(vs,NULL);
+      
+      zsuif_symbol_table_entry* e = new zsuif_VariableEntry(def);
+      
+      trans->init_entry_attribs(e,s);
+      trans->add_entry_extern(e);
+      zsymb = e->key;
+    }
+  }
+
+};
+
+zsuif_symbol * trans_suif::trans(symbol* s) {
+  if(s) {
+    trans_symbol symb(this,s);
+    return symb.answer();
+  } else {
+    return null_symb;
+  }
+}
+/*****************************************/
+zsuif_code_label_symbol* trans_suif::trans(code_label_symbol* s) {
+  return new zsuif_code_label_symbol(trans((symbol*)s));
 }
 /*****************************************/
 /* walk over the symbol table and dump results into them */
@@ -194,7 +333,9 @@ public:
     int i = 0;
     for(i = 0; i < num_entries ; i++) {
       sto* entry = entries.elem_by_num(i);
-      entry->apply_pyg_visitor(this);
+      if(entry) {
+	entry->apply_pyg_visitor(this);
+      }
     }
   }
   void handle_procedure_symbol(procedure_symbol* s) { trans->trans(s); }
@@ -331,9 +472,10 @@ zsuif_destination_op* trans_suif::trans(destination_op* dst){
     return new zsuif_DstReg(reg,type);
   }
   if(dst->is_instr_destination()) {
-    zsuif_instruction *instr = trans(dst->get_instruction());
+    return new zsuif_DstTmp();
+    /*    zsuif_instruction *instr = 
     s_count_t op_num =  (dst->get_instr_operand_num());
-    return new zsuif_DstSrc(instr,op_num);
+    return new zsuif_DstSrc(instr,op_num);*/
   }
   error(-1,"trans_suif bad destintion_op");
   return NULL; /* not reached */
@@ -363,9 +505,9 @@ zsuif_statement_list* trans_suif::trans(statement_list* sl){
 }
 
 /*****************************************/
-zsuif_instruction* trans_suif::trans(instruction*){ 
-  /* fix me! */
-  return new zsuif_Mark_instruction();
+zsuif_instruction* trans_suif::trans(instruction* i){ 
+  trans_instruction instr(this,i);
+  return instr.answer();
 }
 
 /*****************************************/
@@ -481,49 +623,86 @@ zsuif_procedure_definition* trans_suif::trans(procedure_definition* def){
   }
 }
 
-/*****************************************/
-zsuif_procedure_symbol* trans_suif::trans(procedure_symbol* s) {
-  procedure_symbol* ps = s;
-  zsuif_procedure_definition* def;
-  if(in_table(s)) {
-    return new zsuif_procedure_symbol(make_symb(ps));
-  } else {
-    procedure_definition* pd = ((s->definition()).get());
-    if(pd == NULL) { 
-      zsuif_procedure_symbol* name =  
-	new zsuif_procedure_symbol(make_symb(ps));
-      trans_type typ(this,ps->get_type());
-      zsuif_procedure_type* procedure_type = typ.get_procedure_type();
-      zsuif_qualification_list* qualifications = typ.get_qualifications();
-      
-      def = new zsuif_procedure_definition
-	(name, qualifications, procedure_type, NULL); 
-    } else {
-      def = trans(pd);
-    }
-    zsuif_symbol_table_entry* e = new zsuif_ProcedureEntry(def);
-    init_entry_attribs(e,ps);
-    if(def->procedure_body != NULL) {
-      add_entry(e);
-    } else {
-      add_entry_extern(e);
-    }
-    return def->name;
-  }
-}
+
 /*****************************************/
 zsuif_variable_definition*  trans_suif::trans(variable_definition* def){ 
   variable_symbol* vs = def->get_variable_symbol();
-    zsuif_variable_symbol* name =  new zsuif_variable_symbol(make_symb(vs));
-
-  trans_type typ(this,vs->get_type());
-  zsuif_type* type = typ.get_type();
-  
-  zsuif_int_or_source_op* bit_alignment =  
-    new zsuif_SrcOp (trans(&(def->get_bit_alignment())));
+  zsuif_variable_symbol* name =  new zsuif_variable_symbol(make_symb(vs));
 
   zsuif_value_block* vb = trans(def->initialization());
-  return new zsuif_variable_definition(name,type,bit_alignment,vb); 
+  return new zsuif_variable_definition(name,vb); 
 }
 
 
+/*****************************************/
+zsuif_binop* trans_suif::get_binop(lstring x) {
+  switch(QUICK_OPCODE_FROM_STRING(x)) {
+
+  case OPCODE_add: return zsuif_Add;
+  case OPCODE_subtract: return zsuif_Subtract;
+  case OPCODE_multiply: return zsuif_Multiply;
+  case OPCODE_divide: return zsuif_Divide;
+    
+  case OPCODE_remainder: return zsuif_Remainder;
+  case OPCODE_bitwise_and: return zsuif_Bitwise_and;
+  case OPCODE_bitwise_or: return zsuif_Bitwise_or;
+    
+  case OPCODE_bitwise_nand: return zsuif_Bitwise_nand;
+  case OPCODE_bitwise_nor: return zsuif_Bitwise_nor;
+  case OPCODE_bitwise_xor: return zsuif_Bitwise_xor;
+    
+  case OPCODE_left_shift: return zsuif_Left_shift;
+  case OPCODE_right_shift: return zsuif_Right_shift;
+  case OPCODE_rotate: return zsuif_Rotate;
+  case OPCODE_is_equal_to: return zsuif_Is_equal_to;
+    
+  case OPCODE_is_not_equal_to: return zsuif_Is_not_equal_to;
+  case OPCODE_is_less_than: return zsuif_Is_less_than;
+    
+  case OPCODE_is_less_than_or_equal_to: return zsuif_Is_less_than_or_equal_to;
+
+  case OPCODE_is_greater_than: return zsuif_Is_greater_than;
+    
+  case OPCODE_is_greater_than_or_equal_to:
+    return zsuif_Is_greater_than_or_equal_to;
+  case OPCODE_logical_and: return zsuif_Logical_and;
+  case OPCODE_logical_or: return zsuif_Logical_or;
+    
+  case OPCODE_maximum: return zsuif_Maximum;
+  case OPCODE_minimum: return zsuif_Minimum;
+
+  default:
+      error(-1,"Bad binary op\n");
+      return NULL;
+  }
+}
+/*****************************************/
+zsuif_binop* trans_suif::get_cmpop(lstring x) {
+  switch(QUICK_OPCODE_FROM_STRING(x)) {
+  case OPCODE_is_equal_to: return zsuif_Is_equal_to;
+  case OPCODE_is_not_equal_to: return zsuif_Is_not_equal_to;
+  case OPCODE_is_less_than: return zsuif_Is_less_than;
+  case OPCODE_is_less_than_or_equal_to: return zsuif_Is_less_than_or_equal_to;
+  case OPCODE_is_greater_than: return zsuif_Is_greater_than;
+  case OPCODE_is_greater_than_or_equal_to:
+    return zsuif_Is_greater_than_or_equal_to;
+  default:
+    error(-1,"Bad binary op\n");
+    return NULL;
+  }
+}
+/*****************************************/
+zsuif_unop*  trans_suif::get_unop(lstring x) {
+  switch(QUICK_OPCODE_FROM_STRING(x)) {
+  case OPCODE_negate: return zsuif_Negate;
+  case OPCODE_invert: return zsuif_Invert;
+  case OPCODE_absolute_value: return zsuif_Absolute_value;
+  case OPCODE_bitwise_not: return zsuif_Bitwise_not;
+  case OPCODE_logical_not: return zsuif_Logical_not;
+  case OPCODE_convert: return zsuif_Convert;
+  case OPCODE_treat_as: return zsuif_Treat_as;
+  default:
+    error(-1,"Bad unary op\n");
+    return NULL;
+  }
+}

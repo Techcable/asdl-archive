@@ -15,6 +15,9 @@ private:
     zsuif_global_information_block* information_block;
     zsuif_file_block_list* file_blocks;
 
+    zsuif_symbol* null_symb;
+    zsuif_type_id* null_type;
+
     int next_symb_id;
     int next_type_id;
 public:
@@ -27,6 +30,8 @@ public:
     
     zsuif_type_id* make_type_id(type*);
     zsuif_int_or_source_op*  get_type_alignment(type *);
+    zsuif_int_or_source_op*  get_type_size(type *);
+    zsuif_int_or_source_op*  get_field_offset(group_type *,s_count_t);
     boolean        in_table(type*);
 
     zsuif_type_id* add_entry(zsuif_type_table_entry*);
@@ -36,18 +41,12 @@ public:
     zsuif_binop* get_cmpop(lstring);
     zsuif_unop*  get_unop(lstring);
 
-    trans_suif(void) { 
-	 next_symb_id = 1;
-	 next_type_id = 1;
-	 type_table_entries = NULL;
-	 symbol_table_entries = NULL;
-	 extern_symbol_table_entries = NULL;
-	 file_blocks = NULL;
-	 information_block = zsuif_C_information_block;
-    }
+    trans_suif(void);
 
     /* probably should remove all this overloading */
     zsuif_suif_int*             trans(i_integer);
+
+    zsuif_symbol*               trans(symbol*);
     zsuif_code_label_symbol*    trans(code_label_symbol*);
     zsuif_parameter_symbol*     trans(parameter_symbol*);
     zsuif_field_symbol*         trans(field_symbol*);
@@ -79,4 +78,6 @@ public:
     void handle_file_block(file_block*);
     void handle_file_set_block(file_set_block*);
 };
+
+
 
