@@ -1,11 +1,18 @@
 #!/bin/sh
 # hack to build the source dist
-PACKAGE=$1
-DISTDIR=/usr/tmp/${PACKAGE}
+CVSROOT=":pserver:cvs@vista.cs.princeton.edu:/cvsroot"
+PACKAGE=asdlGen
+VERSION=$1
+RELEASE=$2
+TMPDIR=/usr/tmp/
+NAME=${PACKAGE}-${VERSION}-${RELEASE}
 REV=today
-rm -rf ${DISTDIR}
+DISTDIR=${TMPDIR}/${PACKAGE}-${VERSION}
+cd ${TMPDIR}
 # build the source dist first
-cvs export -d ${DISTDIR} -D${REV} asdlGen
+rm -rf ${NAME}.src.tar.gz ${PACKAGE}-${VERSION}
+
+cvs  -d ${CVSROOT} export -d ${PACKAGE}-${VERSION} -D${REV} ${PACKAGE}
 
 # build the documentation
 mkdir ${DISTDIR}/doc
@@ -26,6 +33,6 @@ for file in *.sgml ; do
    mv ${fbase}.txt $fbase
 done
 
-cd ${DISTDIR}/..
-tar cf ${PACKAGE}-src.tar ${PACKAGE}
-gzip ${PACKAGE}-src.tar
+cd ${TMPDIR}
+tar cf ${NAME}.src.tar ${PACKAGE}-${VERSION}
+gzip ${NAME}.src.tar

@@ -191,13 +191,12 @@ Supported by all output languages.
 </descrip>
 
 When using <tt/natural_type/ and <tt/natural_type_con/ the automatically
-generated type definitions for original type still remain, but all other
+generated type definitions for the original type still remain, but all other
 references to the original type in constructors, picklers, and other type
 definitions that referred to it are replaced with the new type. The original
-definition must remain to support pickling of the type. Pickling is
-achieved by appropriately coercing the new type to the old type and vice
-versa with functions specified by <tt/wrapper/ and <tt/unwrapper/
-properties. 
+definition must remain to support pickling of the type. Pickling is achieved
+by appropriately coercing the new type to the old type and vice versa with
+functions specified by <tt/wrapper/ and <tt/unwrapper/ properties.
 
 <sect2>Examples<p>
 <em/Need more examples/

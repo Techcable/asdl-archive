@@ -82,7 +82,7 @@ pkginclude_HEADERS = gpickle.h asdl_base.h  assoc.h \
 		     AsdlValue.h TypePickle.h \
                      AsdlValue.import.h TypePickle.import.h
 
-bin_PROGRAMS = xlate
+pkglib_PROGRAMS = xlate
 
 pkglib_LIBRARIES = libasdl.a
 mkinstalldirs = $(SHELL) $(top_srcdir)/src/misc/mkinstalldirs
@@ -98,7 +98,7 @@ libasdl_a_LIBADD =
 libasdl_a_OBJECTS =  AsdlValue.o TypePickle.o gpickle.o assoc.o \
 asdl_base.o
 AR = ar
-PROGRAMS =  $(bin_PROGRAMS)
+PROGRAMS =  $(pkglib_PROGRAMS)
 
 xlate_OBJECTS =  xlate.o AsdlValue.o TypePickle.o gpickle.o assoc.o \
 asdl_base.o
@@ -181,29 +181,29 @@ libasdl.a: $(libasdl_a_OBJECTS) $(libasdl_a_DEPENDENCIES)
 	$(AR) cru libasdl.a $(libasdl_a_OBJECTS) $(libasdl_a_LIBADD)
 	$(RANLIB) libasdl.a
 
-mostlyclean-binPROGRAMS:
+mostlyclean-pkglibPROGRAMS:
 
-clean-binPROGRAMS:
-	test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
+clean-pkglibPROGRAMS:
+	test -z "$(pkglib_PROGRAMS)" || rm -f $(pkglib_PROGRAMS)
 
-distclean-binPROGRAMS:
+distclean-pkglibPROGRAMS:
 
-maintainer-clean-binPROGRAMS:
+maintainer-clean-pkglibPROGRAMS:
 
-install-binPROGRAMS: $(bin_PROGRAMS)
+install-pkglibPROGRAMS: $(pkglib_PROGRAMS)
 	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(bindir)
-	@list='$(bin_PROGRAMS)'; for p in $$list; do \
+	$(mkinstalldirs) $(pkglibdir)
+	@list='$(pkglib_PROGRAMS)'; for p in $$list; do \
 	  if test -f $$p; then \
-	    echo "  $(INSTALL_PROGRAM) $$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
-	     $(INSTALL_PROGRAM) $$p $(bindir)/`echo $$p|sed '$(transform)'`; \
+	    echo "  $(INSTALL_PROGRAM) $$p $(pkglibdir)/`echo $$p|sed '$(transform)'`"; \
+	     $(INSTALL_PROGRAM) $$p $(pkglibdir)/`echo $$p|sed '$(transform)'`; \
 	  else :; fi; \
 	done
 
-uninstall-binPROGRAMS:
+uninstall-pkglibPROGRAMS:
 	$(NORMAL_UNINSTALL)
-	list='$(bin_PROGRAMS)'; for p in $$list; do \
-	  rm -f $(bindir)/`echo $$p|sed '$(transform)'`; \
+	list='$(pkglib_PROGRAMS)'; for p in $$list; do \
+	  rm -f $(pkglibdir)/`echo $$p|sed '$(transform)'`; \
 	done
 
 xlate: $(xlate_OBJECTS) $(xlate_DEPENDENCIES)
@@ -260,7 +260,7 @@ dvi:
 check: all
 	$(MAKE)
 installcheck:
-install-exec: install-pkglibLIBRARIES install-binPROGRAMS
+install-exec: install-pkglibLIBRARIES install-pkglibPROGRAMS
 	@$(NORMAL_INSTALL)
 
 install-data: install-pkgincludeHEADERS
@@ -269,14 +269,14 @@ install-data: install-pkgincludeHEADERS
 install: install-exec install-data all
 	@:
 
-uninstall: uninstall-pkglibLIBRARIES uninstall-binPROGRAMS uninstall-pkgincludeHEADERS
+uninstall: uninstall-pkglibLIBRARIES uninstall-pkglibPROGRAMS uninstall-pkgincludeHEADERS
 
 all: Makefile $(LIBRARIES) $(PROGRAMS) $(HEADERS)
 
 install-strip:
 	$(MAKE) INSTALL_PROGRAM='$(INSTALL_PROGRAM) -s' INSTALL_SCRIPT='$(INSTALL_PROGRAM)' install
 installdirs:
-	$(mkinstalldirs)  $(pkglibdir) $(bindir) $(pkgincludedir)
+	$(mkinstalldirs)  $(pkglibdir) $(pkglibdir) $(pkgincludedir)
 
 
 mostlyclean-generic:
@@ -294,21 +294,21 @@ maintainer-clean-generic:
 	test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 	test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 mostlyclean:  mostlyclean-pkglibLIBRARIES mostlyclean-compile \
-		mostlyclean-binPROGRAMS mostlyclean-tags \
+		mostlyclean-pkglibPROGRAMS mostlyclean-tags \
 		mostlyclean-generic
 
-clean:  clean-pkglibLIBRARIES clean-compile clean-binPROGRAMS clean-tags \
-		clean-generic mostlyclean
+clean:  clean-pkglibLIBRARIES clean-compile clean-pkglibPROGRAMS \
+		clean-tags clean-generic mostlyclean
 
 distclean:  distclean-pkglibLIBRARIES distclean-compile \
-		distclean-binPROGRAMS distclean-tags distclean-generic \
-		clean
+		distclean-pkglibPROGRAMS distclean-tags \
+		distclean-generic clean
 	rm -f config.status
 
 maintainer-clean:  maintainer-clean-pkglibLIBRARIES \
-		maintainer-clean-compile maintainer-clean-binPROGRAMS \
-		maintainer-clean-tags maintainer-clean-generic \
-		distclean
+		maintainer-clean-compile \
+		maintainer-clean-pkglibPROGRAMS maintainer-clean-tags \
+		maintainer-clean-generic distclean
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 
@@ -316,8 +316,9 @@ maintainer-clean:  maintainer-clean-pkglibLIBRARIES \
 clean-pkglibLIBRARIES maintainer-clean-pkglibLIBRARIES \
 uninstall-pkglibLIBRARIES install-pkglibLIBRARIES mostlyclean-compile \
 distclean-compile clean-compile maintainer-clean-compile \
-mostlyclean-binPROGRAMS distclean-binPROGRAMS clean-binPROGRAMS \
-maintainer-clean-binPROGRAMS uninstall-binPROGRAMS install-binPROGRAMS \
+mostlyclean-pkglibPROGRAMS distclean-pkglibPROGRAMS \
+clean-pkglibPROGRAMS maintainer-clean-pkglibPROGRAMS \
+uninstall-pkglibPROGRAMS install-pkglibPROGRAMS \
 uninstall-pkgincludeHEADERS install-pkgincludeHEADERS tags \
 mostlyclean-tags distclean-tags clean-tags maintainer-clean-tags \
 distdir info dvi installcheck install-exec install-data install \

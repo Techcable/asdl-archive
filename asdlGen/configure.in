@@ -67,7 +67,8 @@ dnl Checks for library functions.
 dnl Write out the files
 AC_OUTPUT(Makefile src/Makefile
           src/sml/Makefile src/java/Makefile 
-          src/cxx/Makefile src/c/Makefile 
+          src/cxx/Makefile src/c/Makefile
+ 	  src/misc/Makefile src/asdl/Makefile
           src/misc/id_hack.pl src/misc/sml-batch,
 dnl Set the bits on the shell scripts
 [ chmod 755 src/misc/id_hack.pl src/misc/sml-batch ]

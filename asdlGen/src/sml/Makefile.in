@@ -65,9 +65,29 @@ VERSION = @VERSION@
 ZIP_FLAGS = @ZIP_FLAGS@
 ZIP_PRG = @ZIP_PRG@
 
-CLEANFILES = asdlGen.$(HEAP_SUFFIX)
+CLEANFILES = asdlGen.@HEAP_SUFFIX@ run.@HEAP_SUFFIX@
+
+pkglib_PROGRAMS = asdlGen.@HEAP_SUFFIX@ run.@HEAP_SUFFIX@
 mkinstalldirs = $(SHELL) $(top_srcdir)/src/misc/mkinstalldirs
 CONFIG_CLEAN_FILES = 
+PROGRAMS =  $(pkglib_PROGRAMS)
+
+
+DEFS = @DEFS@ -I. -I$(srcdir) 
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+asdlGen__HEAP_SUFFIX__SOURCES = asdlGen.@HEAP_SUFFIX@.c
+asdlGen__HEAP_SUFFIX__OBJECTS =  asdlGen.@HEAP_SUFFIX@.o
+asdlGen__HEAP_SUFFIX__LDADD = $(LDADD)
+asdlGen__HEAP_SUFFIX__LDFLAGS = 
+run__HEAP_SUFFIX__SOURCES = run.@HEAP_SUFFIX@.c
+run__HEAP_SUFFIX__OBJECTS =  run.@HEAP_SUFFIX@.o
+run__HEAP_SUFFIX__LDADD = $(LDADD)
+run__HEAP_SUFFIX__LDFLAGS = 
+CFLAGS = @CFLAGS@
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
+LINK = $(CC) $(CFLAGS) $(LDFLAGS) -o $@
 DIST_COMMON =  Makefile.am Makefile.in
 
 
@@ -75,9 +95,13 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP = --best
+SOURCES = asdlGen.@HEAP_SUFFIX@.c run.@HEAP_SUFFIX@.c
+OBJECTS = asdlGen.@HEAP_SUFFIX@.o run.@HEAP_SUFFIX@.o
+
 default: all
 
 .SUFFIXES:
+.SUFFIXES: .c .o
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
 	cd $(top_srcdir) && $(AUTOMAKE) --foreign --include-deps src/sml/Makefile
 
@@ -85,9 +109,72 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
-tags: TAGS
-TAGS:
 
+mostlyclean-pkglibPROGRAMS:
+
+clean-pkglibPROGRAMS:
+	test -z "$(pkglib_PROGRAMS)" || rm -f $(pkglib_PROGRAMS)
+
+distclean-pkglibPROGRAMS:
+
+maintainer-clean-pkglibPROGRAMS:
+
+install-pkglibPROGRAMS: $(pkglib_PROGRAMS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(pkglibdir)
+	@list='$(pkglib_PROGRAMS)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo "  $(INSTALL_PROGRAM) $$p $(pkglibdir)/`echo $$p|sed '$(transform)'`"; \
+	     $(INSTALL_PROGRAM) $$p $(pkglibdir)/`echo $$p|sed '$(transform)'`; \
+	  else :; fi; \
+	done
+
+uninstall-pkglibPROGRAMS:
+	$(NORMAL_UNINSTALL)
+	list='$(pkglib_PROGRAMS)'; for p in $$list; do \
+	  rm -f $(pkglibdir)/`echo $$p|sed '$(transform)'`; \
+	done
+
+.c.o:
+	$(COMPILE) -c $<
+
+mostlyclean-compile:
+	rm -f *.o core
+
+clean-compile:
+
+distclean-compile:
+	rm -f *.tab.c
+
+maintainer-clean-compile:
+
+asdlGen.@: $(asdlGen__HEAP_SUFFIX__OBJECTS) $(asdlGen__HEAP_SUFFIX__DEPENDENCIES)
+	@rm -f asdlGen.@
+	$(LINK) $(asdlGen__HEAP_SUFFIX__LDFLAGS) $(asdlGen__HEAP_SUFFIX__OBJECTS) $(asdlGen__HEAP_SUFFIX__LDADD) $(LIBS)
+
+run.@: $(run__HEAP_SUFFIX__OBJECTS) $(run__HEAP_SUFFIX__DEPENDENCIES)
+	@rm -f run.@
+	$(LINK) $(run__HEAP_SUFFIX__LDFLAGS) $(run__HEAP_SUFFIX__OBJECTS) $(run__HEAP_SUFFIX__LDADD) $(LIBS)
+
+tags: TAGS
+
+ID: $(HEADERS) $(SOURCES)
+	here=`pwd` && cd $(srcdir) && mkid -f$$here/ID $(SOURCES) $(HEADERS)
+
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES)
+	tags=; \
+	here=`pwd`; \
+	test -z "$(ETAGS_ARGS)$(SOURCES)$(HEADERS)$$tags" \
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $(SOURCES) $(HEADERS) -o $$here/TAGS)
+
+mostlyclean-tags:
+
+clean-tags:
+
+distclean-tags:
+	rm -f TAGS ID
+
+maintainer-clean-tags:
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
@@ -105,7 +192,7 @@ dvi:
 check: all
 	$(MAKE)
 installcheck:
-install-exec: 
+install-exec: install-pkglibPROGRAMS
 	@$(NORMAL_INSTALL)
 
 install-data: 
@@ -114,13 +201,14 @@ install-data:
 install: install-exec install-data all
 	@:
 
-uninstall: 
+uninstall: uninstall-pkglibPROGRAMS
 
-all: Makefile
+all: Makefile $(PROGRAMS)
 
 install-strip:
 	$(MAKE) INSTALL_PROGRAM='$(INSTALL_PROGRAM) -s' INSTALL_SCRIPT='$(INSTALL_PROGRAM)' install
 installdirs:
+	$(mkinstalldirs)  $(pkglibdir)
 
 
 mostlyclean-generic:
@@ -137,25 +225,38 @@ distclean-generic:
 maintainer-clean-generic:
 	test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 	test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
-mostlyclean:  mostlyclean-generic
+mostlyclean:  mostlyclean-pkglibPROGRAMS mostlyclean-compile \
+		mostlyclean-tags mostlyclean-generic
 
-clean:  clean-generic mostlyclean
+clean:  clean-pkglibPROGRAMS clean-compile clean-tags clean-generic \
+		mostlyclean
 
-distclean:  distclean-generic clean
+distclean:  distclean-pkglibPROGRAMS distclean-compile distclean-tags \
+		distclean-generic clean
 	rm -f config.status
 
-maintainer-clean:  maintainer-clean-generic distclean
+maintainer-clean:  maintainer-clean-pkglibPROGRAMS \
+		maintainer-clean-compile maintainer-clean-tags \
+		maintainer-clean-generic distclean
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 
-.PHONY: default tags distdir info dvi installcheck install-exec \
-install-data install uninstall all installdirs mostlyclean-generic \
-distclean-generic clean-generic maintainer-clean-generic clean \
-mostlyclean distclean maintainer-clean
+.PHONY: default mostlyclean-pkglibPROGRAMS distclean-pkglibPROGRAMS \
+clean-pkglibPROGRAMS maintainer-clean-pkglibPROGRAMS \
+uninstall-pkglibPROGRAMS install-pkglibPROGRAMS mostlyclean-compile \
+distclean-compile clean-compile maintainer-clean-compile tags \
+mostlyclean-tags distclean-tags clean-tags maintainer-clean-tags \
+distdir info dvi installcheck install-exec install-data install \
+uninstall all installdirs mostlyclean-generic distclean-generic \
+clean-generic maintainer-clean-generic clean mostlyclean distclean \
+maintainer-clean
 
 
-asdlGen.$(HEAP_SUFFIX): sources.cm build.sml
+asdlGen.@HEAP_SUFFIX@: sources.cm build.sml
 	$(SML_CM) < build.sml
+
+run.@HEAP_SUFFIX@:
+	ln -s `$(SHELL) ../misc/find_runtime.sh`
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

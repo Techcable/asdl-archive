@@ -15,7 +15,7 @@ pkginclude_HEADERS = gpickle.h asdl_base.h  assoc.h \
 		     AsdlValue.h TypePickle.h \
                      AsdlValue.import.h TypePickle.import.h
                      
-bin_PROGRAMS = xlate
+pkglib_PROGRAMS = xlate
 
 pkglib_LIBRARIES = libasdl.a
 
