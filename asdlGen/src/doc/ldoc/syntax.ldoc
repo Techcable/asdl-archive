@@ -92,7 +92,7 @@ or sum type which represent a discriminated union of possible values. Unlike
 sum types, product types cannot form recursive type definitions, but they can
 contain recursively declared sum types.
 
-<sect2>Primitve Types<p> There are only three primitive types in ASDL. They
+<sect2>Primitive Types<p> There are only three primitive types in ASDL. They
 are <tt/string/, <tt/int/, and <tt/identifier/. The <tt/string/ type
 represents length encoded strings of bytes. The <tt/int/ type represents
 arbitrary precision signed integers. The <tt/identifier/ type represents
@@ -151,10 +151,10 @@ be
 structure M =
  struct
   datatype sexpr = 
-           Int(int)
-         | String(string)
-         | Symbol(identifier)
-         | Cons(sexpr * sexpr)
+           Int of (int)
+         | String of (string)
+         | Symbol of (identifier)
+         | Cons of (sexpr * sexpr)
          | Nil
  end
 </verb></tscreen>
