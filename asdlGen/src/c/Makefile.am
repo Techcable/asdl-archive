@@ -34,14 +34,14 @@ libcii.a:
 	-ln -fs $(CII_DIST)/libcii.a .
 
 install-data-local:
-	$(mkinstalldirs) $(pkglibdir)/cii
+	$(mkinstalldirs) $(pkgincludedir)/cii
 	for p in cii/*.h; do \
-	   $(INSTALL_DATA) ./$$p $(pkglibdir)/$$p; \
+	   $(INSTALL_DATA) ./$$p $(pkgincludedir)/$$p; \
         done
 
 uninstall-local:
 	for p in cii/*.h; do \
-	   rm -f $(pkglibdir)/$$p; \
+	   rm -f $(pkgincludedir)/$$p; \
         done
 
 clean-local:

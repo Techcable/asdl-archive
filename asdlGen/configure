@@ -1846,7 +1846,7 @@ case ${METRICS} in
             INT16="short";
             INT32="int";
             INT64="long"; 
- echo "configure: warning: 64-bit ints not properly supported" 1>&2;;
+		;;
  1:2:4:8)   INT8="char";
             INT16="short";
             INT32="int";
