@@ -158,7 +158,7 @@ structure HTMLTablePP =
 	and pp_rec {ty,con,cells} = pp_row con cells
 	and pp_table {fields,rows,id} =
 	    vblock 1 [s "<a name=\"a",d id,s "\">",
-		      s "<table border=1></a>",
+		      s "</a><table border=1>",
 		      nl,
 		      pp_header fields,
 		      nl,
