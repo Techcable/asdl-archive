@@ -1,7 +1,6 @@
 #include "xml_prims.h"
 #include "cii/table.h"
 #include <ctype.h>
-
 static Table_T tag_tbl = NULL;
 static int get_tag(char *x) {
   const char *key = Atom_string(x);
@@ -12,8 +11,10 @@ static int get_tag(char *x) {
     int i = 0;
     tag_tbl = Table_new(128,NULL,NULL);
     while(xml_tag_map[i].name) {
-      Table_put(tag_tbl,xml_tag_map[i].name,&(xml_tag_map[i].tag));
-      i++;
+	 Table_put(tag_tbl,
+		   Atom_string(xml_tag_map[i].name),
+		   &(xml_tag_map[i].tag));
+	 i++;
     }
     v = Table_get(tag_tbl,key);
   }
@@ -27,38 +28,121 @@ static int eat_ws(FILE *s) {
   ungetc(ch,s);
   return 1;
 }
-static int eat_char(char c,FILE *s) {
-  return(c == getc(s));
-}
 static int eat_till(char c,FILE *s) {
   int ch;
-  for(ch = getc(s); (c==ch); ch=getc(s))
+  for(ch = getc(s); (c!=ch); ch=getc(s))
     ; /* nop */
   return 1;
 }
-static int eat_string(const char *n,FILE *s) {
+static int match_char(char c,FILE *s) {
+  return(c == getc(s));
+}
+static int match_string(const char *n,FILE *s) {
   int ch;
   const char *p = n;
   ch = getc(s);
-  while((ch == *p) && (*p != '\0')) {
-    p++;
-    ch = getc(s);
+  while(ch == *p) {
+       p++;
+       if(*p == '\0') 
+	    return 1;
+       ch = getc(s);
   }
-  return (p == '\0');
+  return 0;
 }
-
-static int eat_tok(char *buf,int max,FILE * s) {
-  int ch = getc(s);
-  max--;
-  while( !isspace(ch) && max) {
-    *buf = ch;
-    buf++;
-    max--;
-  }
-  *buf='\0';
-  return 1;
+static int scan_tok(char *buf,int max,FILE * s) {
+     int ch = getc(s);
+     max--;
+     /* first char must be a letter */
+     if(!isalpha(ch)) return 0;
+     while(max && (isalnum(ch) || (ch == '_') || (ch == '.'))) {
+	  *buf = ch;
+	  buf++;
+	  max--;
+	  ch = getc(s);
+	  if(!(isalnum(ch) || (ch == '_') || (ch == '.'))) {
+	       *buf='\0';
+	       ungetc(ch,s);
+	       return 1;
+	  }
+     }
+     return 0;
 }
-
+static int scan_int(int *v,FILE * s) {
+     int res = 0;
+     int ch = getc(s);
+     int neg = (ch == '-') || (ch == '~');
+     if(neg) ch = getc(s);
+     while(isdigit(ch)) {
+	  res += (ch - '0');
+	  ch = getc(s);
+	  if(isdigit(ch)) {
+	       res *= 10;
+	  } else {
+	       ungetc(ch,s);
+	       if(neg) { res = -res; }
+	       *v = res;
+	       return 1;
+	  }
+     }
+     return 0;
+}
+static int ent2char(char *src) {
+     int ch;
+     if(!strcmp(src,"amp")) { return '&'; }
+     else if(!strcmp(src,"apos")) { return '\''; } 
+     else if(!strcmp(src,"quot")) { return '"'; }
+     else if(!strcmp(src,"gt")) { return '>'; }
+     else if(!strcmp(src,"lt")) { return '>'; } 
+     else if(sscanf(src,"#x%x",&ch) == 1) { return ch; } 
+     else { return *src; }
+}
+/* messy clean it up */
+static int scan_string(char **res,int *len,FILE *s) {
+     int max = 32;
+     int i = 0;
+     char *buf = malloc(max);
+     char *src,*dst,*ptr;
+     int ch = getc(s);
+     if(buf == NULL) die();
+     if(ch != '"') return 0;
+     ptr = buf;
+     ch = getc(s);
+     /* read the string expanding the buffer as necssary */
+     while(ch != '"') {
+	  if(i >= max) {
+	       max *= 2;
+	       buf = realloc(buf,max);
+	       if(buf == NULL) die();
+	       ptr = &(buf[i]);
+	  }
+	  *ptr = ch;
+	  ch = getc(s);
+	  i++;ptr++;
+     }
+     if (ch != '"')  return 0;
+     /* rewrite the string in place replacing entity references */
+     src = dst = buf;
+     while(src < ptr) {
+	  if(*src == '&') {
+	       char *tmp = src+1;
+	       while(*tmp != ';' && (tmp < ptr)) {
+		    tmp++;
+	       } 
+	       *tmp = '\0';
+	       *dst = ent2char(src+1);
+	       dst++;
+	       src = tmp+1;
+	  } else {
+	       *dst = *src;
+	       dst++; src++;
+	  }
+     }
+     *len = dst - buf;
+     buf = realloc(buf,*len);
+     if(buf == NULL) die();
+     *res = buf;
+     return 1;
+}
 void xml_write_element_begin(const char* n,outstream_ty s) {
   putc('<',s);
   fputs(n,s);
@@ -71,8 +155,8 @@ void xml_write_element_end(const char* n,outstream_ty s) {
   putc('>',s);
 }
 void xml_read_element_begin(const char* n,instream_ty s) {
-  if (eat_ws(s) && eat_char('<',s) &&
-      eat_ws(s) && eat_string(n,s) &&
+  if (eat_ws(s) && match_char('<',s) &&
+      eat_ws(s) && match_string(n,s) &&
       eat_till('>',s)) {
     return;
   } else {
@@ -80,30 +164,30 @@ void xml_read_element_begin(const char* n,instream_ty s) {
   }
 }
 void xml_read_element_end(const char* n,instream_ty s) {
-  if (eat_ws(s) && eat_char('<',s) &&
-      eat_ws(s) && eat_char('/',s) &&
-      eat_ws(s) && eat_string(n,s) &&
+  if (eat_ws(s) && match_char('<',s) &&
+      eat_ws(s) && match_char('/',s) &&
+      eat_ws(s) && match_string(n,s) &&
       eat_till('>',s)) {
     return;
   } else {  die(); }
 
 }
 int xml_read_tagged_element(instream_ty s) {
-  char buf[128];
+  char buf[256];
   eat_ws(s);
-  eat_char('<',s);
+  match_char('<',s);
   eat_ws(s);
-  eat_tok(buf,128,s);
+  scan_tok(buf,128,s);
   eat_till('>',s); /* ignore attributes */
   return (get_tag(buf));
 }
 
 int_ty xml_read_int(instream_ty s) {
   int res = 0;
-  if (eat_ws(s) && eat_char('<',s) &&
-      eat_ws(s) && eat_string("int",s) &&
-      eat_ws(s) && eat_string("v=\"",s) &&
-      fscanf(s,"%d",&res) && eat_till('>',s)) {
+  if (eat_ws(s) && match_char('<',s) &&
+      eat_ws(s) && match_string("int",s) &&
+      eat_ws(s) && match_string("v=\"",s) &&
+      scan_int(&res,s) && eat_till('>',s)) {
     return res;
   } else {  die(); }
   return 0; /* not reached */
@@ -115,24 +199,47 @@ big_int_ty xml_read_big_int(instream_ty s) {
 }
 
 string_ty xml_read_string(instream_ty s) {
-  char buf[1024]; /* bogus fix me */
-  if (eat_ws(s) && eat_char('<',s) &&
-      eat_ws(s) && eat_string("string",s) &&
-      eat_ws(s) && eat_string("v=\"",s) &&
-      fscanf(s,"%[^\"]",buf) && eat_till('>',s)) {
-    return Text_put(buf);
+  Text_T ret;
+  if (eat_ws(s) && match_char('<',s) &&
+      eat_ws(s) && match_string("string",s) &&
+      eat_ws(s) && match_string("v=",s) &&
+      scan_string(&((char*)ret.str),&ret.len,s) && eat_till('>',s))  {
+       return ret;
   } else {  die(); }
-  return Text_put(NULL); /* not reached */
+  return Text_null; /* not reached */
 }
 identifier_ty xml_read_identifier(instream_ty s) {
-  char buf[1024]; /* bogus fix me */
-  if (eat_ws(s) && eat_char('<',s) &&
-      eat_ws(s) && eat_string("identifier",s) &&
-      eat_ws(s) && eat_string("v=\"",s) &&
-      fscanf(s,"%[^\"]",buf) && eat_till('>',s)) {
-    return Atom_string(buf);
+  char *buf;
+  const char *ret;
+  int len;
+  if (eat_ws(s) && match_char('<',s) &&
+      eat_ws(s) && match_string("identifier",s) &&
+      eat_ws(s) && match_string("v=",s) &&
+      scan_string(&buf,&len,s) && eat_till('>',s)) {
+       ret = Atom_new(buf,len);
+       free(buf); /* free space allocated by scan_string */
+       return  ret;
   } else {  die(); }
   return NULL; /* not reached */
+}
+static void emit_cdata(const char *str,int len,outstream_ty s) {
+     while(len) {
+	  switch(*str) {
+	  case '&': fputs("&amp;",s); break;
+	  case '\'': fputs("&apos;",s); break;
+	  case '"': fputs("&quot;",s); break;
+	  case '>': fputs("&gt;",s); break;
+	  case '<': fputs("&lt;",s);  break;
+	  default: 
+	       if(isprint(*str)) {
+		    putc(*str,s);
+	       } else {
+		    fprintf(s,"&#x%x;",*str);
+	       }
+	  }
+	  str++;
+	  len--;
+     }
 }
 
 void xml_write_int(int_ty x,outstream_ty s) {
@@ -143,23 +250,56 @@ void xml_write_big_int(big_int_ty x,outstream_ty s) {
 }
 void xml_write_string(string_ty x,outstream_ty s) {
   fputs("<string v=\"",s);
-  fwrite(x.str,sizeof(char),x.len,s);
+  emit_cdata(x.str,x.len,s);
   fputs("\"/>",s);
 }
 void xml_write_identifier(identifier_ty x,outstream_ty s) {
   fputs("<identifier v=\"",s);
-  fwrite(Atom_string(x),sizeof(char),Atom_length(x),s);
+  emit_cdata(Atom_string(x),Atom_length(x),s);
   fputs("\"/>",s);
 }
-
 opt_ty xml_read_option(const char *n,generic_reader_ty rd, instream_ty s) {
-
-  return NULL;
+     int len = 0;
+  if (eat_ws(s) && match_char('<',s) &&
+      eat_ws(s) && match_string(n,s) && match_string("-opt",s) &&
+      eat_ws(s) && match_string("sz=\"",s) &&
+      scan_int(&len,s) && eat_till('>',s)) {
+       opt_ty ret;
+       if(len == 0) {
+	    ret = (*rd)(s);
+       } else {
+	    ret = NULL;
+       }
+       /* check end tag */
+       if (eat_ws(s) && match_char('<',s) &&
+	   eat_ws(s) && match_char('/',s) &&
+	   eat_ws(s) && match_string(n,s) && match_string("-opt",s) &&
+	   eat_till('>',s)) {
+	    return ret;
+       } else { die (); }
+  } else {  die(); }
 }
 
 list_ty xml_read_list(const char *n,generic_reader_ty rd,instream_ty s) {
-  die();
-  return NULL;
+     int len = 0;
+  if (eat_ws(s) && match_char('<',s) &&
+      eat_ws(s) && match_string(n,s) && match_string("-seq",s) &&
+      eat_ws(s) && match_string("sz=\"",s) &&
+      scan_int(&len,s) && eat_till('>',s)) {
+       Seq_T ret = Seq_new(len);
+       while(len) {
+	    Seq_addhi(ret,(*rd)(s));
+	    len--;
+       }
+       /* check end tag */
+       if (eat_ws(s) && match_char('<',s) &&
+	   eat_ws(s) && match_char('/',s) &&
+	   eat_ws(s) && match_string(n,s) && match_string("-seq",s) &&
+	   eat_till('>',s)) {
+	    return ret;
+       } else { die (); }
+  } else {  die(); }
+  return NULL; /* not reached */
 }
 
 void xml_write_option(const char *n,generic_writer_ty wr, 
@@ -185,6 +325,11 @@ void xml_write_list(const char *n,generic_writer_ty wr, list_ty v,
   fprintf(s,"</%s-seq>",n);
 }
 
+void* xml_read_generic_int(instream_ty s) {
+  int_ty* ret = malloc(sizeof(int_ty));
+  *ret = xml_read_int(s);
+  return ret;
+}
 
 void* xml_read_generic_string(instream_ty s) {
   Text_T* ret = malloc(sizeof(Text_T));
@@ -194,11 +339,15 @@ void* xml_read_generic_string(instream_ty s) {
 void* xml_read_generic_identifier(instream_ty s) {
   return ((void*)xml_read_identifier(s));
 }
-
+void xml_write_generic_int(void *x,instream_ty s) {
+  xml_write_int(*((int_ty*)x),s);
+}
 void xml_write_generic_string(void *x,instream_ty s) {
   xml_write_string(*((Text_T*)x),s);
 }
 void xml_write_generic_identifier(void *x,instream_ty s) {
   xml_write_identifier(x,s);
 }
+
+
 

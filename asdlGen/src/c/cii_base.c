@@ -17,7 +17,8 @@ struct prim_env_s PrimEnv = {
   xml_read_generic_string,  
   xml_read_generic_identifier,
   
-  NULL,  NULL,  
+  xml_write_generic_int,
+  NULL,  
   xml_write_generic_string, 
   xml_write_generic_identifier
 };

@@ -61,6 +61,14 @@ void write_generic_identifier(void *x, outstream_ty s) {
  PE.gwr_identifier(x,s);
 }
 
+void* to_generic_int(int_ty x) {
+     return to_generic_int32(x);
+}
+
+int_ty from_generic_int(void* x) {
+     return from_generic_int32(x);
+}
+
 void* to_generic_identifier(identifier_ty x) {
   return (void*)x;
 }
@@ -79,3 +87,5 @@ void* to_generic_string(string_ty x) {
   *ret = x;
   return ret;
 }
+
+
