@@ -1,6 +1,6 @@
 #!/bin/sh
 # hack to build the source dist
-CVSROOT=":pserver:cvs@vista.cs.princeton.edu:/cvsroot"
+CVSROOT=":ext:danwang@ux01:/u/danwang/Research/Zephyr/cvsroot/"
 PACKAGE=asdlGen
 case "$#" in
   1) tarball=$1

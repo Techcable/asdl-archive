@@ -24,14 +24,14 @@ pkglib_PROGRAMS = xlate
 pkglib_LIBRARIES = libasdl.a libcii.a
 
 $(ASDL_OUTPUT): $(ASDL_INPUTS)
-	-ln -fs $(CII_DIST)/include cii
+	-ln -f -s $(CII_DIST)/include cii
 	$(ASDLGEN) --c --output_directory ./ $(ASDL_INPUTS) \
   	--base_include "cii_big_base.h"
 
 libcii.a:
 	(cd $(CII_DIST); \
 	$(MAKE) THREADS= EXAMPLES= BUILDDIR=`pwd` )
-	-ln -fs $(CII_DIST)/libcii.a .
+	-ln -f -s $(CII_DIST)/libcii.a .
 
 install-data-local:
 	$(mkinstalldirs) $(pkgincludedir)/cii
