@@ -45,8 +45,8 @@ structure UnixBuildParams =
     fun defFlag (x,NONE) = B.STR ("-D"^x)
       | defFlag (x,SOME y) = B.STR ("-D"^x^"="^y)
 
-    fun linkOutFlag x = B.STR ("-o"^x)
-    fun compOutFlag x = B.STR ("-o"^x)
+    fun linkOutFlag x = B.STR ("-o "^x)
+    fun compOutFlag x = B.STR ("-o "^x)
     fun mklibOutFlag x = B.STR (x)
 
     val lib_suffix = SOME "a"
