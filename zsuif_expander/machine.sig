@@ -16,6 +16,9 @@ sig
   val newAddrReg             : unit -> B.operand
   val newIntReg              : unit -> B.operand
 
+  val emitRegisterTypeMap    : emtTyp -> unit
+  val getRegTypeId           : B.regtype -> string
+
   val initProcedure          : unit -> unit
   val frameOffset            : int
   val getReturnReg           : B.regtype -> B.operand
@@ -121,6 +124,4 @@ sig
 
   val killRegs               : emtTyp * B.operand list -> unit
   val emitComment            : emtTyp * string -> unit
-
-  val emitRegisterTypeMap    : emtTyp -> unit
 end

@@ -4,7 +4,7 @@ Group is
   util.sig
   util.sml
   base.sig
-  base.sml
+  alpha_base.sml
   label.sml
   label.sig
   expander.sml

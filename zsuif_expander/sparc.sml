@@ -114,6 +114,15 @@ struct
   fun newAddrReg () = newReg UInt32Bit
   fun newIntReg  () = newReg Int32Bit
 
+  fun emitRegisterTypeMap (emt) = emt "Mbwrfd\n" [];
+
+  fun getRegTypeId (Int8Bit  | UInt8Bit)  = "0"
+    | getRegTypeId (Int16Bit | UInt16Bit) = "1"
+    | getRegTypeId (Int32Bit | UInt32Bit) = "2"
+    | getRegTypeId Fp32Bit                = "3"
+    | getRegTypeId Fp64Bit                = "4"
+    | getRegTypeId _ = raise (Fail "Invalid register type.")
+
   fun zeroOut (emit, reg) = emit "+%s=0\n" [REG reg]
   fun addOne  (emit, reg) =
       let val r = REG reg in emit "+%s=%s+1\n" [r, r] end
@@ -305,7 +314,7 @@ struct
           val sName = F.STR name
           val sLoc  = B.LOC loc
           val sLev  = F.STR B.localLevel
-          val sRTyp = F.STR (B.regTytoString regTyp)
+          val sRTyp = F.STR (getRegTypeId regTyp)
           val sSiz  = F.INT size
       in
           emt "d.%d_%s\t%s\t%s\t%s\t%d\n"
@@ -317,7 +326,7 @@ struct
           val sName = F.STR name
           val sLoc  = B.GLO loc
           val sLev  = F.STR B.globalLevel
-          val sRTyp = F.STR (B.regTytoString regTyp)
+          val sRTyp = F.STR (getRegTypeId regTyp)
       in
           emt "d%s\t%s\t%s\t%s\t\n" [sName, sLoc, sLev, sRTyp]
       end
@@ -328,7 +337,7 @@ struct
           val sName = F.STR name
           val sLoc  = B.LOC loc
           val sPLev = F.STR B.paramLevel
-          val sRTyp = F.STR (B.regTytoString regTyp)
+          val sRTyp = F.STR (getRegTypeId regTyp)
           val sSiz  = F.INT siz
           val sFrOf = F.INT frOffset
       in
@@ -946,8 +955,6 @@ struct
       end
 
   fun emitComment (emt, comment) = emt "#%s\n" [F.STR comment]
-
-  fun emitRegisterTypeMap (emt) = emt "Mbwrfd\n" [];
 
   fun machineInit () =
       (initStArg ();

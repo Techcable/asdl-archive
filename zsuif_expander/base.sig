@@ -31,9 +31,10 @@ sig
    val isInt                  : regtype -> bool
    val isUnsigned             : regtype -> bool
    val getRType               : operand -> regtype
-   val regTytoString          : regtype -> string
    val regTytoSize            : regtype -> int
+   val getIntRegSize          : regtype -> int
    val isGroup                : zsuif.type' -> bool
+   val isArray                : zsuif.type' -> bool
    val LAB                    : operand -> Format.fmt_item
    val LOC                    : operand -> Format.fmt_item
    val GLO                    : operand -> Format.fmt_item
@@ -44,7 +45,6 @@ sig
    val atomicType             : zsuif.type' -> bool
    val getAlignment           : zsuif.type' -> int
    val getTypeSize            : zsuif.type' -> int
-   val getAtomicTypeSize      : zsuif.type' -> int
    val labToString            : operand     -> string
    val newLabel               : string option -> operand
    val getGroupSize           : zsuif.type' -> int

@@ -72,19 +72,18 @@ struct
     fun getRType (Reg (r, _)) = r
       | getRType _ = raise (Fail "Not a reg in getRegType")
 
-    fun regTytoString (Int8Bit  | UInt8Bit)  = "0"
-      | regTytoString (Int16Bit | UInt16Bit) = "1"
-      | regTytoString (Int32Bit | UInt32Bit) = "2"
-      | regTytoString (Int64Bit | UInt64Bit) = "5"
-      | regTytoString Fp32Bit                = "3"
-      | regTytoString Fp64Bit                = "4"
-
     fun regTytoSize (Int8Bit  | UInt8Bit)  = 1
       | regTytoSize (Int16Bit | UInt16Bit) = 2
       | regTytoSize (Int32Bit | UInt32Bit) = 4
       | regTytoSize (Int64Bit | UInt64Bit) = 8
       | regTytoSize Fp32Bit                = 4
       | regTytoSize Fp64Bit                = 8
+
+    fun getIntRegSize (Int8Bit  | UInt8Bit)  = 1
+      | getIntRegSize (Int16Bit | UInt16Bit) = 2
+      | getIntRegSize (Int32Bit | UInt32Bit) = 4
+      | getIntRegSize (Int64Bit | UInt64Bit) = 8
+      | getIntRegSize _ = raise (Fail "Bad register in getIntRegSize")
 
     fun labToString (Lab label) = L.toString label
       | labToString _ = raise (Fail "Bad label in labToString")
@@ -211,6 +210,7 @@ struct
       | getTypeSize _ =
        raise (Fail "Invalid type specified in getTypeSize")
 
+(*
     fun getAtomicTypeSize (Z.Data (Z.BooleanType _)) = 4
       | getAtomicTypeSize (Z.Data
 			   (Z.IntegerType {bit_size = Z.Finite n, ...}))
@@ -234,11 +234,15 @@ struct
         getAtomicTypeSize type'
       | getAtomicTypeSize _ =
         raise (Fail "Invalid type specified in getAtomicTypeSize")
+*)
 
    fun isGroup (Z.Data (Z.ArrayType _))           = true
      | isGroup (Z.Data (Z.GroupType _))           = true
      | isGroup (Z.Qualified {type' = type', ...}) = isGroup type'
      | isGroup _                                  = false
+
+   fun isArray (Z.Data (Z.ArrayType _))           = true
+     | isArray _                                  = false
 
    fun getGroupSize (Z.Data (Z.GroupType {bit_size = Z.Finite bit_size,
                                           ...})) = IntInf.toInt(bit_size)

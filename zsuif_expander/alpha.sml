@@ -53,6 +53,15 @@ struct
 	| regToString r =
 	 raise (Fail "Bad Register in regToString")
 
+      fun emitRegisterTypeMap (emt) = emt "Mbwrqst\n" [];
+
+      fun getRegTypeId (Int8Bit  | UInt8Bit)  = "0"
+	| getRegTypeId (Int16Bit | UInt16Bit) = "1"
+	| getRegTypeId (Int32Bit | UInt32Bit) = "2"
+	| getRegTypeId (Int64Bit | UInt64Bit) = "3"
+	| getRegTypeId Fp32Bit                = "4"
+	| getRegTypeId Fp64Bit                = "5"
+
       fun REG reg             = F.STR (regToString (reg))
       val fp                  = newFixedReg (Int64Bit, 30)
       val sp                  = newFixedReg (Int64Bit, 30)
@@ -216,7 +225,7 @@ struct
           val sName = F.STR name
           val sLoc  = B.LOC loc
           val sLev  = F.STR B.localLevel
-          val sRTyp = F.STR (B.regTytoString regTyp)
+          val sRTyp = F.STR (getRegTypeId regTyp)
           val sSiz  = F.INT size
       in
           emt "d%s_%d\t%s\t%s\t%s\t%d\n"
@@ -228,7 +237,7 @@ struct
           val sName = F.STR name
           val sLoc  = B.GLO loc
           val sLev  = F.STR B.globalLevel
-          val sRTyp = F.STR (B.regTytoString regTyp)
+          val sRTyp = F.STR (getRegTypeId regTyp)
       in
           emt "d%s\t%s\t%s\t%s\t\n" [sName, sLoc, sLev, sRTyp]
       end
@@ -243,7 +252,7 @@ struct
           val sName = F.STR name
           val sLoc  = B.LOC loc
           val sPLev = F.STR B.paramLevel
-          val sRTyp = F.STR (B.regTytoString regTyp)
+          val sRTyp = F.STR (getRegTypeId regTyp)
           val sSiz  = F.INT siz
           val sFrOf = F.INT frOffset
       in
@@ -436,13 +445,27 @@ struct
      emitComparisonOp (emt, rd, r2, Z.Is_less_than_or_equal_to, r1, kr)
     | emitComparisonOp (emt, rd, r1, Z.Is_greater_than, r2, kr) =
      emitComparisonOp (emt, rd, r2, Z.Is_less_than, r1, kr)
-    | emitComparisonOp (emt, rd, r1 as Reg(rty, _), oper, r2, kr) =
-     let
-	val sOper = F.STR (getRtlOper(oper, rty))
-     in
-	emt "+%s=%s%s%s" [REG rd, REG r1, sOper, REG r2];
-	emitKilledRegs (emt, [], kr)
-     end
+    | emitComparisonOp (emt, rd, r1 as Reg(regTy, _), oper, r2, kr) =
+     if B.isReal regTy then
+	let
+	   val sOper = F.STR (getRtlOper(oper, regTy))
+	   val rt    = newReg regTy
+	   val lab   = B.newLabel NONE
+	in
+	   emt "+%s=0\n" [REG rd];
+	   emt "+%s=%s%s%s" [REG rt, REG r1, sOper, REG r2];
+	   emitKilledRegs (emt, [], kr);
+	   emt "+PC=%s:0,%s\t%s\n" [REG rt, B.LAB lab, REG rt];
+	   emt "+%s=%s+1\n" [REG rd, REG rd];
+	   emitLabel (emt, lab)
+	end
+     else
+	let
+	   val sOper = F.STR (getRtlOper(oper, regTy))
+	in
+	   emt "+%s=%s%s%s" [REG rd, REG r1, sOper, REG r2];
+	   emitKilledRegs (emt, [], kr)
+	end
     | emitComparisonOp (emt, rd, r1, oper, r2, kr) =
      raise (Fail "Error in emitComparisonOp")
 
@@ -460,22 +483,8 @@ struct
   fun emitGetFunResult (emt, reg, resultReg) =
       emt "+GP=%s,%s\n" [REG q29, REG q26]
 
-  fun emitRegAssign (emt, rd as Reg (Int64Bit, _), r as Reg(Int32Bit, _),
-		     _, kr) =
-     let
-	val tr = newReg (Int64Bit)
-     in
-	emt "+%s=%s{32" [REG tr, REG r]; emitKilledRegs(emt, [], kr);
-	emt "+%s=%s}32" [REG rd, REG tr]; emitKilledRegs(emt, [], [tr])
-     end
-    | emitRegAssign (emt, rd as Reg (Fp64Bit, _), r as Reg(Fp32Bit, _),
-		     _, kr) =
-     (emt "+%s=CV[%s]" [REG rd, REG r]; emitKilledRegs (emt, [], kr))
-    | emitRegAssign (emt, rd as Reg (Fp32Bit, _), r as Reg(Fp64Bit, _),
-		     _, kr) =
-     (emt "+%s=CV[%s]" [REG rd, REG r]; emitKilledRegs (emt, [], kr))
-    | emitRegAssign (emt, rd, r, _, kr) =
-     (emt "+%s=%s" [REG rd, REG r]; emitKilledRegs (emt, [], kr))
+  fun emitRegAssign (emt, rd, r1, _, kr) =
+     (emt "+%s=%s" [REG rd, REG r1]; emitKilledRegs (emt, [], kr))
 
   fun emitReturnStatement emt = emt "+PC=RT\n" []
 
@@ -511,34 +520,31 @@ struct
 
 	 fun useReg r = emt "u%s\n" [REG r]
 
-	 fun compileArg reg =
+	 fun compileArg (reg as Reg (regTy, _)) =
 	    let
 	       val offset = !cDepth
-	       val (stInc, reglist) =
-		  case reg of
-		     (Reg (Fp64Bit, _))  =>
-			let
-			   val r = newFixedReg(Fp64Bit, 16 + nextArg())
-			in
-			   emitRegAssign (emt, r, reg, false, [reg]);
-			   useReg r;
-			   (8, [r])
-			end
-		   | (Reg (Fp32Bit, _))  =>
-			(8, [])
-		   | (Reg (_, _)) =>
-			let
-			   val r = newFixedReg (Int64Bit, 16 + nextArg())
-			in
-			   emitRegAssign (emt, r, reg, false, [reg]);
-			   useReg r;
-			   (8, [r])
-			end
-		   | _ => raise (Fail "Bad Type in compileArg")
+	       val reglist =
+		  if offset < 48 then
+		     let
+			val r = newFixedReg(regTy, 16 + nextArg())
+		     in
+			emitRegAssign (emt, r, reg, false, [reg]);
+			useReg r;
+			[r]
+		     end
+		  else
+		     let
+			val s = F.STR (S.map C.toUpper (regToLetter reg))
+		     in
+			emt "+%s[%s+%d]=%s\t%s\n"
+			    [s, REG sp, F.INT (offset-48), REG reg, REG reg];
+			[]
+		     end
 	    in
-	       cDepth := !cDepth + stInc;
+	       cDepth := !cDepth + 8;
 	       reglist
 	    end
+	   | compileArg _ = raise (Fail "Bad Type in compileArg")
 	 val reglist = foldr op@ [] (map compileArg regs)
       in
           (reglist, !cDepth)
@@ -588,43 +594,113 @@ struct
           emitLabel (emt, lab)
       end
 
-    | cUnaryOperator (emt, Z.Convert, regfrom, regto, kr,
-                      ctx as (nextLocal, pNum)) =
-      (case (regfrom, regto) of
-	 (Reg (Fp32Bit, _),  Reg (Fp64Bit, _)) =>
-	    emitRegAssign (emt, regto, regfrom, false, kr)
-       | (Reg (Fp64Bit, _),  Reg (Fp32Bit, _)) =>
-	    emitRegAssign (emt, regto, regfrom, false, kr)
-       | (Reg (from, _), Reg (to, _)) =>
-	    let
-	       val regfromt = REG regfrom
-	       val regtot   = REG regto
-	    in
-	       if B.isSChar from andalso not (B.isChar to) then
-		  (emt "+%s=%s{24\t%s\n"
-		   [regtot, regfromt, regfromt];
-		   emt "+%s=%s}24\n" [regtot, regtot])
-	       else if from <> to andalso
-		  (B.isChar to orelse B.isChar from) then
-		  (emt "+%s=%s\t%s\n"
-		   [regtot, regfromt, regfromt];
-		   if B.isUChar from
-		      then emt "+%s=%s&255\n" [regtot, regtot]
-		   else ())
-	       else if B.isSShort from andalso not (B.isShort to) then
-		  (emt "+%s=%s{16\t%s\n"
-		   [regtot, regfromt, regfromt];
-		   emt "+%s=%s}16\n" [regtot, regtot])
-	       else if from <> to andalso
-		  (B.isShort to orelse B.isShort from) then
-		  (emt "+%s=%s\t%s\n" [regtot, regfromt, regfromt];
-		   if B.isUShort from then
-		      (emt "+%s=%s{16\n" [regtot, regtot];
-		       emt "+%s=%s\"16\n" [regtot, regtot])
-		   else ())
-	       else emitRegAssign (emt, regto, regfrom, false, kr)
-	    end)
-                                       (* Needs more work *)
+    | cUnaryOperator (emt, Z.Convert, r1, rd, kr, ctx as (nextLocal, pNum)) =
+      (case (r1, rd) of
+	  (Reg (Fp64Bit, _), Reg (Fp32Bit, _)) =>
+	     (emt "+%s=CV[%s]" [REG rd, REG r1]; emitKilledRegs (emt, [], kr))
+	| (Reg (Fp32Bit, _), Reg (Fp64Bit, _)) =>
+	     (emt "+%s=CV[%s]" [REG rd, REG r1]; emitKilledRegs (emt, [], kr))
+	| (Reg (from, _), Reg (Fp32Bit, _)) =>
+	     let
+		val rt  = newReg Fp64Bit
+		val rq  = newReg Int64Bit
+		val loc = nextLocal ()
+	     in
+		(cUnaryOperator (emt, Z.Convert, r1, rq, kr, ctx);
+		 emt "dxfer_%d\t%s\t2\t3\t8\t1\n" [F.INT pNum, B.LOC loc];
+		 emt "+Q[%s+%s]=%s\t%s\n"[REG sp, B.LOC loc, REG rq, REG rq];
+		 emt "t%s\n" [B.LOC loc];
+		 emt "+%s=T[%s+%s]\n" [REG rt, REG sp, B.LOC loc];
+		 emt "+%s=QF[%s]\t%s\n" [REG rd, REG rt, REG rt])
+	     end
+	| (Reg (from, _), Reg (Fp64Bit, _)) =>
+	     let
+		val rt  = newReg Fp64Bit
+		val rq  = newReg Int64Bit
+		val loc = nextLocal ()
+	     in
+		(cUnaryOperator (emt, Z.Convert, r1, rq, kr, ctx);
+		 emt "dxfer_%d\t%s\t2\t3\t8\t1\n" [F.INT pNum, B.LOC loc];
+		 emt "+Q[%s+%s]=%s\t%s\n"[REG sp, B.LOC loc, REG rq, REG rq];
+		 emt "t%s\n" [B.LOC loc];
+		 emt "+%s=T[%s+%s]\n" [REG rt, REG sp, B.LOC loc];
+		 emt "+%s=QF[%s]\t%s\n" [REG rd, REG rt, REG rt])
+	     end
+	| (Reg (Fp32Bit, _), Reg (to, _)) =>
+	     let
+		val rt  = newReg Fp64Bit
+		val rt2 = newReg Fp64Bit
+		val rq  = newReg Int64Bit
+		val loc = nextLocal ()
+	     in
+		(cUnaryOperator (emt, Z.Convert, r1, rt, kr, ctx);
+		 emt "+%s=FQ[%s]\t%s\n" [REG rt2, REG rt, REG rt];
+		 emt "dxfer_%d\t%s\t2\t3\t8\t1\n" [F.INT pNum, B.LOC loc];
+		 emt "+T[%s+%s]=%s\t%s\n"[REG sp, B.LOC loc, REG rt2, REG rt2];
+		 emt "t%s\n" [B.LOC loc];
+		 emt "+%s=Q[%s+%s]\n" [REG rq, REG sp, B.LOC loc];
+		 emt "+%s=%s\t%s\n" [REG rd, REG rq, REG rq])
+	     end
+	| (Reg (Fp64Bit, _), Reg (to, _)) =>
+	     let
+		val rt  = newReg Fp64Bit
+		val rq  = newReg Int64Bit
+		val loc = nextLocal ()
+	     in
+		(emt "+%s=FQ[%s]\t" [REG rt, REG r1];
+		 emitKilledRegs (emt, [], kr);
+		 emt "dxfer_%d\t%s\t2\t3\t8\t1\n" [F.INT pNum, B.LOC loc];
+		 emt "+T[%s+%s]=%s\t%s\n"[REG sp, B.LOC loc, REG rt, REG rt];
+		 emt "t%s\n" [B.LOC loc];
+		 emt "+%s=Q[%s+%s]\n" [REG rq, REG sp, B.LOC loc];
+		 emt "+%s=%s\t%s\n" [REG rd, REG rq, REG rq])
+	     end
+	| (Reg (Int8Bit, _), Reg (to, _)) =>
+	     if B.getIntRegSize to > 1 then
+		(emt "+%s=%s{56" [REG rd, REG r1];
+		 emitKilledRegs (emt, [], kr);
+		 emt "+%s=%s}56\n" [REG rd, REG rd])
+	     else
+		emitRegAssign (emt, rd, r1, false, kr)
+	| (Reg (UInt8Bit, _), Reg (to, _)) =>
+	     if B.getIntRegSize to > 1 then
+		(emt "+%s=%s" [REG rd, REG r1];
+		 emitKilledRegs (emt, [], kr);
+		 emt "+%s=%s&255\n" [REG rd, REG rd])
+	     else
+		emitRegAssign (emt, rd, r1, false, kr)
+	| (Reg (Int16Bit, _), Reg (to, _)) =>
+	     if B.getIntRegSize to > 2 then
+		(emt "+%s=%s{48" [REG rd, REG r1];
+		 emitKilledRegs (emt, [], kr);
+		 emt "+%s=%s}48\n" [REG rd, REG rd])
+	     else
+		emitRegAssign (emt, rd, r1, false, kr)
+	| (Reg (UInt16Bit, _), Reg (to, _)) =>
+	     if B.getIntRegSize to > 2 then
+		(emt "+%s=%s" [REG rd, REG r1];
+		 emitKilledRegs (emt, [], kr);
+		 emt "+%s=%s{48\n" [REG rd, REG rd];
+		 emt "+%s=%s\"48\n" [REG rd, REG rd])
+	     else
+		emitRegAssign (emt, rd, r1, false, kr)
+	| (Reg (Int32Bit, _), Reg (to, _)) =>
+	     if B.getIntRegSize to > 4 then
+		(emt "+%s=%s{32" [REG rd, REG r1];
+		 emitKilledRegs (emt, [], kr);
+		 emt "+%s=%s}32\n" [REG rd, REG rd])
+	     else
+		emitRegAssign (emt, rd, r1, false, kr)
+	| (Reg (UInt32Bit, _), Reg (to, _)) =>
+	     if B.getIntRegSize to > 4 then
+		(emt "+%s=%s&4294967295" [REG rd, REG r1];
+		 emitKilledRegs (emt, [], kr))
+	     else
+		emitRegAssign (emt, rd, r1, false, kr)
+	| (Reg (_, _), Reg (_, _)) =>
+	     emitRegAssign (emt, rd, r1, false, kr)
+	| _ =>
+	     raise (Fail "Invalid operand in cUnaryOperator."))
     | cUnaryOperator (emt, Z.Treat_as, reg, res, kr, _) =
       raise B.Can'tDoItYet
 
@@ -641,13 +717,15 @@ struct
 
   fun emitUncondJump (emt, lab) = emt "+PC=%s\n" [B.LAB lab]
 
-  fun emitConditionalJump (emt, r1, oper, r2, kr, t) =
+  fun emitConditionalJump (emt, r1 as Reg(regTy, _), oper, r2, kr, t) =
      let
-	val rd = newReg(Int32Bit)
+	val rd = newIntReg ()
      in
-	emitComparisonOp(emt, rd, r1, oper, r2, kr);
-	emitJumpIfZero(emt, rd, t, [rd])
+	emitComparisonOp (emt, rd, r1, oper, r2, kr);
+	emitJumpIfZero (emt, rd, t, [rd])
      end
+    | emitConditionalJump (emt, r1, oper, r2, kr, t) =
+     raise (Fail "Invalid operand in emitConditionalJump.");
 
   fun cSwitchSt (emt, decReg, newReg, addrReg,
                  tabLab, cases, findAndSetLabel) =
@@ -668,13 +746,13 @@ struct
       in
           emitConstIntToReg (emt, n, first);
           emt "+%s=%s-%s\t%s\n" [REG newReg, REG newReg, REG first, REG first];
-          emt "+%s=%s{2\n" [REG newReg, REG newReg];
+          emt "+%s=%s{3\n" [REG newReg, REG newReg];
           compileVarReference (emt, addrReg, tabLab);
 	  emt "+%s=%s+%s\t%s\n" [REG addrReg, REG addrReg,
 				 REG newReg, REG newReg];
           emt "+%s=Q[%s]\t%s\n" [REG first, REG addrReg, REG addrReg];
           emt "+PC=%s\t%s\n" [REG first, REG first];
-          emt "-.%s:\n" [B.LAB tabLab];
+          emt "-%s:\n" [B.LAB tabLab];
           app doCase cases
       end
 
@@ -695,8 +773,6 @@ struct
 
   (* Move to expander ??? *)
   fun emitComment (emt, comment) = emt "#%s\n" [F.STR comment]
-
-  fun emitRegisterTypeMap (emt) = emt "Mbwrqst\n" [];
 
   fun machineInit () =
      (initStArg ();

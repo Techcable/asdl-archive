@@ -37,11 +37,12 @@ struct
    val newLabel = B.newLabel
 
    (* Atomic type or aggregate type *)
-   datatype Kind = Atomic | Group of int
+   datatype Kind = Atomic | Array of int | Group of int
 
    fun getKind t =
       case B.isGroup t of
-	 true  => Group (B.getGroupSize t)
+	 true  => if B.isArray (t) then Array (B.getGroupSize t)
+		  else Group (B.getGroupSize t)
        | false => Atomic
 
    (* Compiles a zsuif file to a VPO rtl file. *)
@@ -618,32 +619,7 @@ struct
 			     selection1 = selection1,
 			     selection2 = selection2,
 			     result_type = type_id} =
-	 let
-            val (selReg, _) = compileExpr selector
-            val rd          = M.newReg (type2RegType  type_id)
-            val lab1        = newLabel NONE
-            val lab2        = newLabel NONE
-            val typ         = #value (findType type_id)
-	 in
-            M.emitJumpIfZero (emt, selReg, lab1, [selReg]);
-            let
-	       val (sel1Reg, _) = compileExpr selection1
-            in
-	       M.emitRegAssign (emt, rd, sel1Reg, false, [sel1Reg])
-            end;
-
-            M.emitUncondJump (emt, lab2);
-            M.emitLabel (emt, lab1);
-
-            let
-	       val (sel2Reg, _) = compileExpr selection2
-            in
-	       M.emitRegAssign (emt, rd, sel2Reg, false, [sel2Reg])
-            end;
-
-            M.emitLabel (emt, lab2);
-            (rd, getKind typ)
-	 end
+	 raise B.Can'tDoItYet
 
       and compileMultiDimArrayExpr {base_array_address = address,
 				    indices = indices,
@@ -773,8 +749,10 @@ struct
             val typ     = #value (findType type_id)
 	    val kr      = case a of Reg _ => [a] | _ => []
 	 in
-            if B.isGroup typ then M.emitRegAssign (emt, rd, a, false, kr)
-            else M.emitMemRead (emt, rd, a, kr);
+            if B.isGroup typ then
+	       M.emitRegAssign (emt, rd, a, false, kr)
+            else
+	       M.emitMemRead (emt, rd, a, kr);
 	    (rd, getKind typ)
 	 end
 
@@ -822,6 +800,7 @@ struct
                                 compileGroup (siz, reg, destReg, false);
                                 destReg
                             end
+		      | Array _ => reg
                       | Atomic => reg
                 end
 
@@ -906,34 +885,10 @@ struct
 	    end
 
 	| compileBinOp (Z.Maximum, r1 as Reg (r, _), r2, rd, kr) =
-	    let
-	       val lab1 = newLabel NONE
-	       val lab2 = newLabel NONE
-	       val oper = M.getRtlOper (Z.Maximum, r)
-	    in
-	       M.compareRegs (emt, r1, r2, oper, []);
-	       M.jumpWhen oper r1 (emt, lab1);
-	       M.emitRegAssign (emt, rd, r1, false, [r1]);
-	       M.emitUncondJump (emt, lab2);
-	       M.emitLabel (emt, lab1);
-	       M.emitRegAssign (emt, rd, r2, false, [r2]);
-	       M.emitLabel (emt, lab2)
-	    end
+	    raise B.Can'tDoItYet
 
 	| compileBinOp (Z.Minimum, r1 as Reg (r, _), r2, rd, kr) =
-	    let
-	       val lab1 = newLabel NONE
-	       val lab2 = newLabel NONE
-	       val oper = M.getRtlOper (Z.Minimum, r)
-	    in
-	       M.compareRegs (emt, r1, r2, oper, []);
-	       M.jumpWhen oper r1 (emt, lab1);
-	       M.emitRegAssign (emt, rd, r1, false, [r1]);
-	       M.emitUncondJump (emt, lab2);
-	       M.emitLabel (emt, lab1);
-	       M.emitRegAssign (emt, rd, r2, false, [r2]);
-	       M.emitLabel (emt, lab2)
-	    end
+	    raise B.Can'tDoItYet
 
 	| compileBinOp _  = raise (Fail "No binary operator matched")
 
@@ -1081,6 +1036,7 @@ struct
 	 in
             case kind of
 	       Group siz => M.copyBlock (emt, r, a, siz, true)
+	     | Array siz => M.copyBlock (emt, r, a, siz, true)
 	     | Atomic    => M.emitMemWrite (emt, a, r, [a, r])
 	 end
 
@@ -1132,6 +1088,7 @@ struct
 	 in
             case dataKind of
 	       Group size => M.copyBlock (emt, r, a, size, true)
+	     | Array size => M.copyBlock (emt, r, a, size, true)
 	     | Atomic     =>
 		  let
 		     val kr = case a of Reg _ => [a, r] | _ => [r]
@@ -1279,7 +1236,7 @@ struct
 		  let
 		     val typ          = #value (findType type_id)
 		     val (regType, _) = B.getRegType typ
-		     val size         = B.getAtomicTypeSize typ
+		     val size         = B.getTypeSize typ
 		     val loc          = newArg();
 		  in
 		     M.emitProcParameterDef (emt, currentProc (),
