@@ -21,7 +21,7 @@ private:
     int next_symb_id;
     int next_type_id;
 public:
-
+    int is_extern; /* hack */
     zsuif_symbol* make_symb(symbol*);
     boolean       in_table(symbol*);
     zsuif_symbol* add_entry(zsuif_symbol_table_entry*);

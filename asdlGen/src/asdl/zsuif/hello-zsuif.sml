@@ -60,8 +60,8 @@ structure ZSUIFHelloWorld =
 	val slen = ((String.size  hello_string))
 	val string_literal_type =
 	    Data(Array_type{element_type=char_type,
-			    lower_bound=Int 0,
-			    upper_bound=Int slen,
+			    lower_bound=SOME(Int 0),
+			    upper_bound=SOME(Int slen),
 			    bit_size=Int (slen*8),
 			    bit_alignment=Int 32})
 	    
@@ -158,6 +158,7 @@ structure ZSUIFHelloWorld =
 	       bit_alignment=Int 32, proc=main_symbol},
 	      VariableEntry
 	      {key=string_literal_symbol, address_taken=true,
+	       is_local=true,
 	       def=string_literal_def}]}
 
 	val type_table =

@@ -78,7 +78,7 @@ symbol_table_entry =
        CodeLabelEntry
      | ProcedureEntry(procedure_definition def)
      | RegisterEntry(suif_int size)
-     | VariableEntry(variable_definition def)
+     | VariableEntry(variable_definition def, StdTypes.bool is_local)
      | ParameterEntry(parameter_symbol name,
                       int_or_source_op bit_alignment,
                       type_id type, procedure_symbol proc)

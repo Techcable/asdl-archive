@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "trans_suif.h"
 #include "trans_type.h"
 #include "trans_statement.h"
@@ -9,7 +10,7 @@ static lstring zsuif_atag_type = lstring("/trans_suif/tid");
 trans_suif::trans_suif(void) { 
   next_symb_id = 1;
   next_type_id = 1;
-  
+  is_extern = 0;
   null_symb =
     new zsuif_symbol(0,lstring("NullSymbol"));
   
@@ -202,6 +203,7 @@ public:
     this->trans = trans;
     this->zsymb = NULL;
     this->symb = s;
+
   }
   
   zsuif_symbol* answer(void) {
@@ -237,7 +239,10 @@ public:
       def = new zsuif_procedure_definition
 	(name, qualifications, procedure_type, NULL); 
     } else {
+      int hack = trans->is_extern;
+      trans->is_extern = 0;
       def = trans->trans(pd);
+      trans->is_extern = hack;
     }
     zsuif_symbol_table_entry* e = new zsuif_ProcedureEntry(def);
     if(def->procedure_body != NULL) {
@@ -290,7 +295,8 @@ public:
     variable_definition* vd = ((s->definition()).get());
     if(vd) {
       zsuif_variable_definition* def = trans->trans(vd);
-      zsuif_symbol_table_entry* e = new zsuif_VariableEntry(def);
+      zsuif_symbol_table_entry* e = 
+	new zsuif_VariableEntry(def,StdTypes_FALSE);
       return_entry(e,s);
     } else {
 
@@ -299,15 +305,24 @@ public:
 
       trans_type vtype(trans,s->get_type());
       zsuif_type* type = vtype.get_type();
+      if(trans->is_extern) {
+	zsuif_variable_definition* def = 
+	  new zsuif_variable_definition(vs,type,NULL);
+	
+	zsuif_symbol_table_entry* e = 
+	  new zsuif_VariableEntry(def,StdTypes_FALSE);
+	
+	trans->init_entry_attribs(e,s);
+	trans->add_entry_extern(e);
+	zsymb = e->key;
+      } else {
+	zsuif_variable_definition* def = 
+	  new zsuif_variable_definition(vs,type,NULL);
+	zsuif_symbol_table_entry* e =  
+	  new zsuif_VariableEntry(def,StdTypes_TRUE);
+	return_entry(e,s);
+      }
 
-      zsuif_variable_definition* def = 
-	new zsuif_variable_definition(vs,type,NULL);
-      
-      zsuif_symbol_table_entry* e = new zsuif_VariableEntry(def);
-      
-      trans->init_entry_attribs(e,s);
-      trans->add_entry_extern(e);
-      zsymb = e->key;
     }
   }
 
@@ -352,13 +367,19 @@ public:
 };
 /*****************************************/
 void trans_suif::do_table(symbol_table *s) {
+  assert(s != NULL);
   trans_symbol_table trans_symbtab(this,s);
 }
 /*****************************************/
 void trans_suif::handle_file_set_block(file_set_block* fbs) {
+  assert(fbs != NULL);
   s_count_t num_blocks = fbs->file_block_count();
+  is_extern = 0;
   do_table(fbs->get_file_set_symbol_table());
+  is_extern = 1;
   do_table(fbs->get_external_symbol_table());
+ 
+
   int i;
   for(i=0; i < num_blocks ; i++) {
     file_block *fb = ((fbs->get_file_block(i)).get());
@@ -367,7 +388,7 @@ void trans_suif::handle_file_set_block(file_set_block* fbs) {
 }
 /*****************************************/
 void trans_suif::handle_file_block(file_block *fb) {
-
+  assert(fb != NULL);
   string source_file_name = fb->source_file_name();
   zsuif_definition_block *zdb = trans(fb->get_definition_block());
 
@@ -380,6 +401,7 @@ void trans_suif::handle_file_block(file_block *fb) {
 }
 /*****************************************/
 zsuif_definition_block* trans_suif::trans(definition_block* db) {
+  assert(db != NULL);
   zsuif_variable_symbol_list *defined_variables   = NULL;
   zsuif_procedure_symbol_list *defined_procedures = NULL;
 
@@ -412,6 +434,7 @@ zsuif_definition_block* trans_suif::trans(definition_block* db) {
 
 /*****************************************/
 zsuif_file_set_block* trans_suif::trans(file_set_block* block) {
+  assert(block != NULL);
    handle_file_set_block(block);
    return new zsuif_file_set_block
      (file_blocks,
@@ -430,6 +453,7 @@ zsuif_type_id* trans_suif::trans(type* t){
  
 /*****************************************/
 zsuif_int_or_source_op* trans_suif::trans(int_or_source_op* op){ 
+  assert(op != NULL);
   if(op->is_integer()) {
     i_integer i = op->get_integer();
     return new zsuif_Int(i.c_int());
@@ -441,6 +465,7 @@ zsuif_int_or_source_op* trans_suif::trans(int_or_source_op* op){
 
 /*****************************************/
 zsuif_int_or_source_op* trans_suif::trans_opt(int_or_source_op* op){ 
+  assert(op != NULL);
   if(op->is_integer()) {
     i_integer i = op->get_integer();
     if(i.is_finite()) {
@@ -456,6 +481,7 @@ zsuif_int_or_source_op* trans_suif::trans_opt(int_or_source_op* op){
 
 /*****************************************/
 zsuif_source_op* trans_suif::trans(source_op* src){ 
+  assert(src != NULL);
   if(src->is_variable()) {
     zsuif_variable_symbol *var = trans(src->get_variable());
     return new zsuif_SrcVar(var);
@@ -479,6 +505,7 @@ zsuif_source_op* trans_suif::trans(source_op* src){
 
 /*****************************************/
 zsuif_destination_op* trans_suif::trans(destination_op* dst){ 
+  assert(dst != NULL);
   if(dst->is_null()) {
     return new zsuif_DstTmp();
   }
@@ -526,12 +553,14 @@ zsuif_statement_list* trans_suif::trans(statement_list* sl){
 
 /*****************************************/
 zsuif_instruction* trans_suif::trans(instruction* i){ 
+  assert(i != NULL);
   trans_instruction instr(this,i);
   return instr.answer();
 }
 
 /*****************************************/
 zsuif_constant* trans_suif::trans(constant* c){
+  assert(c != NULL);
   if(c->is_integer()) {
     return new zsuif_ConstInt(trans(c->get_integer()));
   }
@@ -567,6 +596,8 @@ private:
   trans_suif* t;
 public:
   trans_value_block(trans_suif *trans, value_block *vb) {
+    assert(trans != NULL);
+    assert(vb != NULL);
     this->t = trans; 
     vb->apply_pyg_visitor(this);
     zvb->data_type = t->trans(vb->get_type());
@@ -616,12 +647,14 @@ public:
 
 /*****************************************/
 zsuif_value_block* trans_suif::trans(value_block* vb) {
+  assert(vb != NULL);
   trans_value_block block(this,vb);
   return block.answer();
 }
 
 /*****************************************/
 zsuif_procedure_definition* trans_suif::trans(procedure_definition* def){ 
+  assert(def != NULL);
   procedure_symbol* ps = def->get_procedure_symbol();
   zsuif_procedure_symbol* name =  new zsuif_procedure_symbol(make_symb(ps));
 
@@ -660,6 +693,7 @@ zsuif_procedure_definition* trans_suif::trans(procedure_definition* def){
 
 /*****************************************/
 zsuif_variable_definition*  trans_suif::trans(variable_definition* def){ 
+  assert(def != NULL);
   variable_symbol* vs = def->get_variable_symbol();
   zsuif_variable_symbol* name =  new zsuif_variable_symbol(make_symb(vs));
 
