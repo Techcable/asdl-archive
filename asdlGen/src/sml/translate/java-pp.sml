@@ -208,7 +208,8 @@ structure JavaPP : JAVA_PP =
 			     PP.ws,pp_stmt body,PP.nl,
 			     pp_str_if "break;" (need_break body)]
 
-	    and pp_block {vars=[],body} =
+	    and pp_block {vars=[],body=[]} = PP.s " { } "
+	      | pp_block {vars=[],body} =
 		PP.vblock 4
 		 [PP.s "{",
 		  PP.nl,
