@@ -59,31 +59,6 @@ dnl AC_CHECK_SIZEOF(long long,0)
 
 METRICS="${ac_cv_sizeof_char}:${ac_cv_sizeof_short}:${ac_cv_sizeof_int}"
 METRICS="${METRICS}:${ac_cv_sizeof_long}"
-case ${METRICS} in
- 1:2:4:4)   INT8="char";
-            INT16="short";
-            INT32="int";
-            INT64="long"; 
-		;;
- 1:2:4:8)   INT8="char";
-            INT16="short";
-            INT32="int";
-            INT64="long"; ;;
- *:*:4:8)   INT8="char";
-            INT16="int";
-            INT32="int";
-            INT64="long"; ;;
- *)         INT8="char";
-            INT16="short";
-            INT32="int";
-            INT64="long"; 
- AC_MSG_WARN([Unrecoginzed size metrics edit src/c/pkl-int.h by hand]);;
-esac
-
-AC_SUBST(INT8)
-AC_SUBST(INT16)
-AC_SUBST(INT32)
-AC_SUBST(INT64)
 
 dnl Check for java 
 dnl AM_CONDITIONAL(HAVE_JAVA, test -n "${JAVAC}" )
@@ -91,7 +66,6 @@ dnl AM_CONDITIONAL(HAVE_JAVA, test -n "${JAVAC}" )
 dnl Checks for library functions.
 dnl Write out the files
 AC_OUTPUT(Makefile
-	  src/c/pkl-int.h
 	  src/sml/config.sml
           src/misc/sml-batch,
 dnl Set the bits on the shell scripts
