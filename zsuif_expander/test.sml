@@ -58,7 +58,7 @@ fun test1 () = (Ztv.main("", [dir ^ file ^ ".zsuif"]); ())
          print "\n\n"
      end)
 *)
-val _ = test1 ()
+(*val _ = test1 ()*)
 (* val _ = app test1 ["g2"] *)
 
 end

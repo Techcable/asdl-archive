@@ -11,6 +11,7 @@ Group is
   suifsymtabs.sml
   machine.sig
   sparc.sml
+  alpha.sml
   test.sml
 
   /u/danwang/Research/scratch/zsuif_gateway/sources.cm

@@ -150,8 +150,8 @@ struct
 
       | getRegType (Z.Procedure _) = (UInt32Bit, 4)
       | getRegType (Z.Qualified {type' = typ, ...}) = getRegType typ
-      | getRegType (Z.Void) =
-        raise (Fail ("Type specified as void in function getRegType"))
+      | getRegType _ =
+        raise (Fail ("Invalid type specified in function getRegType"))
 
     fun atomicType (Z.Data (Z.BooleanType _))        = true
       | atomicType (Z.Data (Z.IntegerType _))        = true
@@ -163,8 +163,8 @@ struct
       | atomicType (Z.Data (Z.GroupType _))          = false
       | atomicType (Z.Procedure _)                    = false
       | atomicType (Z.Qualified {type' = typ, ...})   = atomicType typ
-      | atomicType (Z.Void)                           =
-        raise (Fail ("Type specified as void in function atomicType"))
+      | atomicType _                           =
+        raise (Fail ("Invalid type specified in function atomicType"))
 
     fun getAlignment (Z.Data (Z.BooleanType
 			       {bit_alignment = n, ...})) = n
@@ -182,7 +182,8 @@ struct
       | getAlignment (Z.Data (Z.GroupType _))             = 64
       | getAlignment (Z.Procedure procedureType)          = 32
       | getAlignment (Z.Qualified {type' = type', ...})   = getAlignment type'
-      | getAlignment (Z.Void) = raise (Fail "Bad allignment in getAlignment")
+      | getAlignment _ =
+       raise (Fail "Invalid type specified in getAlignment")
 
     fun getTypeSize (Z.Data (Z.BooleanType _)) = 4
       | getTypeSize (Z.Data (Z.IntegerType
@@ -205,11 +206,10 @@ struct
 
       | getTypeSize (Z.Data (Z.GroupType {bit_size = Z.Finite n, ...}))
 	= IntInf.toInt(n) div 8
-      | getTypeSize (Z.Data _) =
-        raise (Fail "Bad size for Data in getTypeSize")
       | getTypeSize (Z.Procedure _) = 4
       | getTypeSize (Z.Qualified {type' = type', ...})   = getTypeSize type'
-      | getTypeSize (Z.Void) = raise (Fail "Void has no size in getTypeSize")
+      | getTypeSize _ =
+       raise (Fail "Invalid type specified in getTypeSize")
 
     fun getAtomicTypeSize (Z.Data (Z.BooleanType _)) = 4
       | getAtomicTypeSize (Z.Data
@@ -229,25 +229,11 @@ struct
       | getAtomicTypeSize (Z.Data (Z.ArrayType _))            = 4
       | getAtomicTypeSize (Z.Data (Z.GroupType
                                    {bit_size = Z.Finite n, ...})) = 4
-      | getAtomicTypeSize (Z.Data _) =
-        raise (Fail "Bad size for Data in getAtomicTypeSize")
       | getAtomicTypeSize (Z.Procedure _) = 4
       | getAtomicTypeSize (Z.Qualified {type' = type', ...}) =
         getAtomicTypeSize type'
-      | getAtomicTypeSize (Z.Void) =
-        raise (Fail "Void has no size in getAtomicTypeSize")
-
-   fun getTypeName (Z.Data (Z.BooleanType _))         = "Boolean"
-     | getTypeName (Z.Data (Z.IntegerType _))         = "Integer"
-     | getTypeName (Z.Data (Z.UIntegerType _))        = "UInteger"
-     | getTypeName (Z.Data (Z.FloatingPointType _))   = "Float"
-     | getTypeName (Z.Data (Z.EnumeratedType _))      = "Enum"
-     | getTypeName (Z.Data (Z.PointerType _))         = "Pointer"
-     | getTypeName (Z.Data (Z.ArrayType _))           = "Array"
-     | getTypeName (Z.Data (Z.GroupType _))           = "Group"
-     | getTypeName (Z.Procedure _)                    = "Procedure"
-     | getTypeName (Z.Qualified {type' = type', ...}) = getTypeName type'
-     | getTypeName (Z.Void)                           = "Void"
+      | getAtomicTypeSize _ =
+        raise (Fail "Invalid type specified in getAtomicTypeSize")
 
    fun isGroup (Z.Data (Z.ArrayType _))           = true
      | isGroup (Z.Data (Z.GroupType _))           = true

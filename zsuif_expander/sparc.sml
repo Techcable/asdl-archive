@@ -245,10 +245,6 @@ struct
         | emitFloat _ = raise (Fail "Bad Float in emitFloat")
   end
 
-  fun emitProcedureDecl (emt, name, static) =
-    (emitVariableDecl (emt, name, static, false);
-     emt "f%s\n" [F.STR name])
-
   fun emitPlusInf     emt = emt "%s\n" [F.STR "-\t.word\t2147483647"]
   fun emitNegInf      emt = emt "%s\n" [F.STR "-\t.word\t-2147483648"]
   fun emitUnsignedInf emt = emt "%s\n" [F.STR "-\t.word\t4294967295U"]
@@ -298,6 +294,10 @@ struct
       emt "-\t.common\t.%s,%d,%d\n" [F.STR name, F.INT siz, F.INT align]
     | emitGroupVarDecl (emt, name, siz, align, false) =
       emt "-\t.common\t%s,%d,%d\n" [F.STR name, F.INT siz, F.INT align]
+
+  fun emitProcedureDecl (emt, name, static) =
+    (emitVariableDecl (emt, name, static, false);
+     emt "f%s\n" [F.STR name])
 
   fun emitLocVariableDef (emt, procNum, name, loc, regTyp, size) =
       let

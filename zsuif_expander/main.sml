@@ -1,13 +1,12 @@
 signature ZTV =
 sig
   val main : string * string list -> OS.Process.status
-  val main' : string * string list -> OS.Process.status
 end
 
 structure Ztv : ZTV =
 struct
   structure L = List
-  structure M = Sparc
+  structure M = Alpha
   structure Exp = Expander (M)
 
   fun mkOutFile iFile =
@@ -47,9 +46,11 @@ struct
                            raise e)
 
       in
-          print ("Compiling file " ^ file ^ "\n");
-          Exp.compileFile (inFile, outFile);
-          OS.Process.success
+          (print ("Compiling file " ^ file ^ "\n");
+	   Exp.compileFile (inFile, outFile);
+	   OS.Process.success) handle e =>
+	  (List.app print (SMLofNJ.exnHistory e);
+	   print "\n"; OS.Process.failure)
       end
     | main _ =
       let
@@ -57,7 +58,4 @@ struct
       in
           print "\n"; print errorStr; print "\n"; raise (Fail errorStr)
       end
-
-   fun main'(x, y) = main(x, y) handle e =>
-      (List.app print (SMLofNJ.exnHistory e); print "\n"; OS.Process.failure)
 end

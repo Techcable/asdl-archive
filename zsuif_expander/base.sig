@@ -45,7 +45,6 @@ sig
    val getAlignment           : zsuif.type' -> int
    val getTypeSize            : zsuif.type' -> int
    val getAtomicTypeSize      : zsuif.type' -> int
-   val getTypeName            : zsuif.type' -> string
    val labToString            : operand     -> string
    val newLabel               : string option -> operand
    val getGroupSize           : zsuif.type' -> int
