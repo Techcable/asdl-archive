@@ -53,7 +53,9 @@ public:
     zsuif_code_label_symbol*    trans(code_label_symbol*);
     zsuif_parameter_symbol*     trans(parameter_symbol*);
     zsuif_field_symbol*         trans(field_symbol*);
+    /* Gone for now
     zsuif_register_symbol*      trans(register_symbol*);
+    */
     zsuif_procedure_symbol*     trans(procedure_symbol*);
     zsuif_variable_symbol*      trans(variable_symbol*);
 

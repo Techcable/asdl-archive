@@ -186,10 +186,11 @@ zsuif_procedure_symbol* trans_suif::trans(procedure_symbol* s) {
 }
 
 /*****************************************/
+/* gone in suif
 zsuif_register_symbol* trans_suif::trans(register_symbol* s) {
   return new zsuif_register_symbol(trans((symbol*)s));
 }
-
+*/
 /*****************************************/
 zsuif_field_symbol* trans_suif::trans(field_symbol* s) {
   return new zsuif_field_symbol(trans((symbol*)s));
@@ -267,7 +268,7 @@ public:
 	trans->state = hack;
       }
       zsuif_symbol_table_entry* e = new zsuif_ProcedureEntry(def);
-      if(def->procedure_body != NULL) {
+      if(trans->state != trans_suif::EXTERN_PROCS) {
 	return_entry(e,s);
       } else {
 	trans->init_entry_attribs(e,s);
@@ -306,13 +307,13 @@ public:
       new zsuif_FieldEntry(bit_offset);
     return_entry(e,s);
   }
-  
-  void handle_register_symbol(register_symbol* s) { 
+
+  void handle_register_symbol(variable_symbol* s) { 
     zsuif_symbol_table_entry* e = 
-      new zsuif_RegisterEntry(trans->trans(s->size()));
+      new zsuif_RegisterEntry(trans->trans(i_integer(32)));
     return_entry(e,s);
   }
-  
+
   void handle_variable_symbol(variable_symbol* s) {
     variable_definition* vd = ((s->definition()).get());
     if(vd) {
@@ -391,7 +392,7 @@ public:
   void handle_parameter_symbol(parameter_symbol* s) { trans->trans(s); }
   void handle_code_label_symbol(code_label_symbol* s) { trans->trans(s); }
   void handle_field_symbol(field_symbol* s) { trans->trans(s); }
-  void handle_register_symbol(register_symbol* s) { trans->trans(s); }
+  void handle_register_symbol(variable_symbol* s) { trans->trans(s); }
   void handle_variable_symbol(variable_symbol* s) {
      /* don't deal with variables when doing extern procedures */
     if (trans->state != trans_suif::EXTERN_PROCS) {
@@ -420,7 +421,6 @@ void trans_suif::handle_file_set_block(file_set_block* fbs) {
 
   state = EXTERN_PROCS;
   do_table(fbs->get_external_symbol_table());
-
 
   state = NORMAL;
   do_table(fbs->get_file_set_symbol_table());
@@ -531,11 +531,12 @@ zsuif_source_op* trans_suif::trans(source_op* src){
     zsuif_variable_symbol *var = trans(src->get_variable());
     return new zsuif_SrcVar(var);
   }
+  /*  gone in suif 2.0
   if(src->is_register()) {
     zsuif_register_symbol *reg = trans(src->get_register());
     zsuif_type_id *type = trans(src->type());
     return new zsuif_SrcReg(reg,type);
-  }
+  } */
   if(src->is_instr_source()) {
     zsuif_instruction *instr = trans(src->get_instruction());
     s_count_t op_num =  (src->get_instr_operand_num());
@@ -558,11 +559,12 @@ zsuif_destination_op* trans_suif::trans(destination_op* dst){
     zsuif_variable_symbol *var = trans(dst->get_variable());
     return new zsuif_DstVar(var);
   }
+  /* gone in new version of suif
   if(dst->is_register()) {
     zsuif_register_symbol *reg = trans(dst->get_register());
     zsuif_type_id *type = trans(dst->type());
     return new zsuif_DstReg(reg,type);
-  }
+  } */
   if(dst->is_instr_destination()) {
     return new zsuif_DstTmp();
     /*    zsuif_instruction *instr = 
