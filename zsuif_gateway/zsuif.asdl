@@ -137,7 +137,8 @@ statement =
                            multi_way_branch_case* cases)
  | LabelLocationStatement (code_label_symbol defined_label)
  | StoreVariableStatement(variable_symbol destination, expression value)
- | CForStatement(statement before,
+ | CForStatement(statement beforee, 
+		          -- weird name to work around asdlGen 1.2 bug
                  expression test,
 	         statement step,
                  statement body,
