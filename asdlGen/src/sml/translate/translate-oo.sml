@@ -104,7 +104,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 
 	fun mk_block sl = T.Block {vars=[],body=sl}
 
-	fun trans_field p {finfo,kind,name,tname,tinfo,is_local} =
+	fun trans_field p {finfo,kind,name,tname,tinfo,is_local,props} =
 	    let
 		val toId = fix_id o T.VarId.fromString o Identifier.toString 
 		val is_prim = M.type_is_prim tinfo
@@ -136,7 +136,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 	val tid_base = (fix_ty o T.TypeId.fromPath o (mId2path false))
 	val id_base = (fix_id o T.VarId.fromPath o (mId2path false)) 
 
-	fun trans_con p {cinfo,tinfo,name,fields,attrbs} =
+	fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} =
 	    let
 		val is_boxed = M.type_is_boxed tinfo
 		val con_tid = tid_base  name
@@ -148,6 +148,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 
 		val tag_n = T.VarId.suffixBase "_enum" con
 		val tag_v  = M.con_tag cinfo
+		val tag_enum  = M.Con.enum_value cprops
 		val tag_ty = (T.TyId (mk_tag_ty tinfo))
 		val tag_c = T.Const(T.EnumConst (tid,tag_n))
 							    
@@ -161,14 +162,14 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 		val wr_fields    = List.map do_field (attrbs@fields)
 		val rd_fields    = List.map #rd (attrbs@fields)
 
-		val init_fields   = List.map #init (fields)
-		val init_all      = List.map #init (attrbs@fields)
+		val init_fields  = List.map #init (fields)
+		val init_all     = List.map #init (attrbs@fields)
 
 		val fd_fields    = List.map #fd (fields)
 		val fd_attrbs    = List.map #fd  (attrbs)
 		val fd_all       = fd_attrbs @ fd_fields
 
-		val enumer       = {name=tag_n,value=SOME(tag_v)}
+		val enumer       = {name=tag_n,value=tag_enum}
 
  		val call_cnstr =
 		    T.Block{vars=fd_all,
@@ -233,7 +234,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 	fun null2none [] v  = NONE
 	  | null2none x  v = (SOME v)
 
-	fun trans_defined  p {tinfo,name,cons=[],fields} =
+	fun trans_defined  p {tinfo,name,cons=[],fields,props} =
 	    let
 		fun do_field ({wr,...}:field_value) = wr (T.Id Pkl.arg_id)
 		val wr_fields    = List.map do_field fields
@@ -269,7 +270,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 	    in
 		{ty_dec=ty_dec,cnstrs=[]}
 	    end
-	  | trans_defined p {tinfo,name,cons,fields} =
+	  | trans_defined p {tinfo,name,cons,fields,props} =
 	    let
 		(* rewrite as unzipper *)
 	
@@ -371,7 +372,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 		{ty_dec=ty_dec,cnstrs=cnstrs}
 	    end
 	
-	fun trans_sequence p {tinfo,name} =
+	fun trans_sequence p {tinfo,name,props,also_opt} =
 	    let
 		val tid_seq = trans_tid listify_id true tinfo
 		val tid = trans_tid (fn x => x) true tinfo
@@ -451,10 +452,10 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 	    end
 	  
 
-	fun trans_option p {tinfo,name} = ()
+	fun trans_option p {tinfo,name,props,also_seq} = ()
 
 
-	fun trans_all p {module,defines,options,sequences} =
+	fun trans_all p {module,defines,options,sequences,props} =
 	    let
 		val defines = (defines@sequences:defined_value list)
 		val ty_decs = List.map #ty_dec defines

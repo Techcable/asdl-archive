@@ -32,10 +32,12 @@ structure Export =
 	fun asdlGen (name, ("--java"::rs)) = JavaGenFn(name,rs)
 	  | asdlGen (name, ("--c"::rs)) = AnsiCGenFn(name,rs)
 	  | asdlGen (name, ("--cxx"::rs)) = CPlusPlusGenFn(name,rs)
-	  | asdlGen (name, ("--ml"::rs)) = MLGenFn(name,rs)
+	  | asdlGen (name, ("--sml"::rs)) = MLGenFn(name,rs)
 	  | asdlGen (name, ("--html"::rs)) = HTMLGenFn(name,rs)
 	  | asdlGen (name, ("--check"::rs)) = CheckFn(name,rs)
 	  | asdlGen (name, ("--typ"::rs)) = TypGenFn(name,rs)
+	  | asdlGen (name, ("--pp_pkl"::rs)) = PicklePP.pickle_pp(name,rs)
+	  | asdlGen ("pp_pkl", (rs)) = PicklePP.pickle_pp("pp_pkl",rs)
 	  | asdlGen (name, ("--all"::rs)) =
 	    let
 		val rets =
@@ -52,7 +54,7 @@ structure Export =
 		     (Error.say
 		      (String.concat
 		       ["Usage: ",name,
-			" --{java|c|cxx|ml|check|typ|html|all}",
+			" --{java|c|cxx|sml|check|typ|html|all}",
 		       " [options ...]"," files ...","\n"]);
 		      OS.Process.exit OS.Process.failure)
 	fun export_it () =

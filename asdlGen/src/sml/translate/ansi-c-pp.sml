@@ -118,7 +118,9 @@ functor mkPPAnsiC(structure T: ANSI_C) : PP_ANSI_C =
 		    pp_ty_exp te, PP.s " ", pp_id id,
 		    PP.s " = ",pp_exp exp]
 
-	and pp_fun_dec (T.FunPrototypeDec(id,fl,te)) =
+	and pp_fun_dec (T.FunPrototypeDec(id,[],te)) =
+	    PP.cat[pp_ty_exp te,PP.s " ",pp_id id,PP.s "(void);"]
+	  | pp_fun_dec (T.FunPrototypeDec(id,fl,te)) =
 	    PP.cat[pp_ty_exp te,PP.s " ",
 		   pp_id id,
 		   PP.hblock 0 [PP.s "(",
@@ -159,6 +161,7 @@ functor mkPPAnsiC(structure T: ANSI_C) : PP_ANSI_C =
 	and pp_unary_op T.NEG = PP.s "-"
 	  | pp_unary_op T.NOT = PP.s "!"
 	  | pp_unary_op T.DEREF = PP.s "*"
+	  | pp_unary_op T.ADDR = PP.s "&"
 
 	and pp_binary_op T.BLSHIFT = PP.s "<<"
 	  | pp_binary_op T.BRSHIFT = PP.s ">>"
@@ -335,14 +338,16 @@ structure AnsiCPP : ANSI_C_PP =
 	type output = (string list * PPUtil.pp) list
 
 	val cfg = Params.empty
-	val (cfg,module_name) = Params.requireString cfg "module_name"
+	val (cfg,base_inc) =
+	    Params.declareString cfg
+	    {name="base_include",flag=NONE,default="asdl_base.h"} 
 	local
 	    open AnsiC
 	in
 	(* hack need to generailze in future  *)
 	fun fix_decls decls =
 	    let
-		fun fix_ty_dec
+		fun fix_ty_dec 
 		    (TyDec(tid,
 			   TyPointer
 			   (TyAggregate(aggre,SOME id,fl as (x::xs))))) =
@@ -385,36 +390,49 @@ structure AnsiCPP : ANSI_C_PP =
 	    PPUtil.vblock 4 [PPUtil.s "/*",
 			 PPUtil.seq_term {fmt=PPUtil.s,sep=PPUtil.nl} s,
 			 PPUtil.s "*/"]
-	fun translate p  (arg as {name,decls,imports})  =
+	val header_prologue =
+	    PPUtil.wrap Module.Mod.interface_prologue 
+	val header_epilogue =
+	    PPUtil.wrap Module.Mod.interface_epilogue
+	val body_prologue =
+	    PPUtil.wrap Module.Mod.implementation_prologue 
+	val body_epilogue =
+	    PPUtil.wrap Module.Mod.implementation_epilogue
+	    
+	fun translate p  (arg as {name,decls,imports},props)  =
 	    let
 		val mn = T.ModuleId.toString name
-		val x =
-		    List.map T.ModuleId.toString imports
 		fun mk_file suffix f =
 		    OS.Path.joinBaseExt{base=f,ext=SOME suffix}
-
+		val x =
+		    List.map T.ModuleId.toString imports
 
 		fun pp_inc s =  PPUtil.s ("#include \""^s^"\"")
 		val pp_incs =
 		    PPUtil.seq_term {fmt=pp_inc,sep=PPUtil.nl}
 
 		fun pp_impl name body =
-		    PPUtil.cat [pp_inc name,PPUtil.nl,body,PPUtil.nl]
-
-
-		fun pp_interface name body incs =
+		    PPUtil.cat [pp_inc name,
+				body_prologue props,PPUtil.nl,
+				body,PPUtil.nl,
+				body_epilogue props,PPUtil.nl]
+		    
+		fun pp_interface name header incs =
 		    PPUtil.cat
 		    [PPUtil.s ("#ifndef _"^name^"_"), PPUtil.nl,
 		     PPUtil.s ("#define _"^name^"_"), PPUtil.nl,
 		     pp_incs incs,
-		     body,
+		     header_prologue props,PPUtil.nl,
+		     header,
 		     PPUtil.nl,
+		     header_epilogue props,PPUtil.nl,
 		     PPUtil.s ("#endif /* _"^name^"_ */"), PPUtil.nl]
 		val {decls,name,imports} = Trans.translate p arg
 		val (header,body) = fix_decls decls
 
 		    
-		val includes = List.map (mk_file "h") ("asdl_base"::x)
+		val includes =
+		    (base_inc p)::(List.map (mk_file "h") x)
 	    in
 		[([mk_file "h" mn],pp_interface mn header includes),
 		 ([mk_file "c" mn], pp_impl (mk_file "h" mn) body)]

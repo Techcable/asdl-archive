@@ -79,7 +79,7 @@ structure BinIOFileOutput =
 functor mkSourceFileOutput (structure PP:TRANSLATE_TO_SOURCE) : TRANSLATE =
     struct
 	structure Out = TextIOFileOutput
-	type input = PP.input
+	type input = (PP.input * Module.Mod.props)
 	type output = Out.output
 	val cfg = Params.mergeConfig (PP.cfg,Out.cfg)
 	val (cfg,width) =
@@ -111,7 +111,8 @@ functor mkSourceFileOutput (structure PP:TRANSLATE_TO_SOURCE) : TRANSLATE =
 functor mkTranslateFromTranslator
     (structure T : MODULE_TRANSLATOR
      structure G : TRANSLATE where type input =
-	 {name:T.T.mod_id,decls:T.output_value,imports:T.T.mod_id list}) =
+	 ({name:T.T.mod_id,decls:T.output_value,
+	   imports:T.T.mod_id list} * T.M.Mod.props)) =
     struct
 	structure M = T.M
 	structure AST = T.T
@@ -119,9 +120,6 @@ functor mkTranslateFromTranslator
 	type input = M.module_env 
 	val cfg = Params.empty
 	    
-	val (cfg,module_name) = Params.declareString cfg
-	    {name="module_name",flag=NONE,default="T"}
-
 	val (cfg',output_directory) = Params.declareString cfg
 	     {name="output_directory",flag=NONE,default=OS.Path.currentArc}
 	val cfg = if T.set_dir then cfg' else cfg
@@ -205,6 +203,7 @@ functor mkTranslateFromTranslator
 			fun do_defined id =
 			    let
 				val tinfo = M.lookup_type m id
+				val props = M.type_props tinfo 
 				val name = M.type_name tinfo
 				val cons =
 				    List.map do_con (M.type_cons tinfo)
@@ -213,13 +212,16 @@ functor mkTranslateFromTranslator
 				    (M.type_fields tinfo)
 			    in
 				(T.trans_defined p)
-				{tinfo=tinfo,name=name,cons=cons,fields=fields}
+				{tinfo=tinfo,props=props,
+				 name=name,cons=cons,fields=fields}
 			    end
 
 			and do_con cinfo =
 			    let
 				val cinfo = cinfo
+				val cprops = M.con_props cinfo
 				val tinfo = M.con_type m cinfo
+				val tprops = M.type_props tinfo 
 				val name = M.con_name cinfo
 				val attrbs =
 				    List.map
@@ -230,6 +232,7 @@ functor mkTranslateFromTranslator
 			    in
 				(T.trans_con p)
 				{cinfo=cinfo,tinfo=tinfo,name=name,
+				 tprops=tprops,cprops=cprops,
 				 attrbs=attrbs,fields=fields}
 			    end
 			and do_field srct finfo =
@@ -237,6 +240,7 @@ functor mkTranslateFromTranslator
 				val finfo = finfo
 				val kind = M.field_kind finfo
 				val tinfo = M.field_type m finfo
+				val props = M.type_props tinfo 
 				val is_local = M.type_is_local m tinfo
 				val name = fixer (srct,M.field_name finfo)
 				val tname = M.type_name tinfo
@@ -244,26 +248,36 @@ functor mkTranslateFromTranslator
 				(T.trans_field p)
 				{finfo=finfo,kind=kind,
 				 is_local=is_local,
+				 props=props,
 				 tinfo=tinfo,name=name,tname=tname}
 			    end
 			and do_sequence id =
 			    let
 				val tinfo = M.lookup_type m id
+				val props = M.type_props tinfo 
 				val name = M.type_name tinfo
+				val also_opt = M.is_opt_type menv m id
 			    in
 				(T.trans_sequence p)
-				{tinfo=tinfo,name=name}
+				{tinfo=tinfo,
+				 name=name,
+				 also_opt=also_opt,
+				 props=props}
 			    end
 			and do_option id =
 			    let
 				val tinfo = M.lookup_type m id
+				val props = M.type_props tinfo 
 				val name = M.type_name tinfo
+				val also_seq = M.is_seq_type menv m id
 			    in
 				(T.trans_option p)
-				{tinfo=tinfo,name=name}
+				{tinfo=tinfo,
+				 name=name,
+				 also_seq=also_seq,
+				 props=props}
 			    end
 			
-
 			
 			val defines =
 			    List.map do_defined (M.defined_types menv m)
@@ -273,19 +287,19 @@ functor mkTranslateFromTranslator
 			    List.map do_sequence (M.sequence_types menv m)
 
 
-
-				
+			val props = M.module_props m 
 			val decls =
 			    (T.trans_all p)
-			    {module=m,defines=defines,
+			    {module=m,defines=defines,props=props,
 			     options=options,sequences=sequences}
 
 			val get_mid = (AST.ModuleId.fromString o M.module_name)
 			val imports =
 			    List.map get_mid (M.module_imports m)
 			val name = get_mid m
+			val props = M.module_props m
 		    in
-			{imports=imports,decls=decls,name=name}
+			({imports=imports,decls=decls,name=name},props)
 		    end
 	    end
 

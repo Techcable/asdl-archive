@@ -18,6 +18,14 @@ structure MLPP : ML_PP =
 	type output = (string list * PPUtil.pp) list
 
 	val cfg = Params.empty
+	val (cfg,base_sig) =
+	    Params.declareString cfg
+	    {name="base_signature",flag=NONE,default="BASE"} 
+
+	val (cfg,base_str) =
+	    Params.declareString cfg
+	    {name="base_structure",flag=NONE,default="Base"} 
+
 	fun mkComment s =
 	    PP.vblock 2 [PP.s "(*",
 			 PP.seq_term {fmt=PP.s,sep=PP.nl} s,
@@ -59,6 +67,11 @@ structure MLPP : ML_PP =
 	    PP.cat [pp_ty_exp te,PP.s " option"]
 	  | pp_ty_exp (T.TySequence te) =
 	    PP.cat [pp_ty_exp te,PP.s " Seq.seq"]
+	  | pp_ty_exp (T.TyCon (tid,[te])) =
+	    PP.cat [pp_ty_exp te,PP.s " ",pp_ty_id tid]
+	  | pp_ty_exp (T.TyCon (tid,tes)) =
+	    PP.cat [PP.s "(",PP.seq{fmt=pp_ty_exp,sep=comma_sep} tes,PP.s")",
+		    PP.s " ",pp_ty_id tid]
 	  | pp_ty_exp (T.TyVector te) =
 	    PP.cat [pp_ty_exp te,PP.s " vector"]
 	  | pp_ty_exp (T.TyTuple []) = unit_pp
@@ -81,7 +94,9 @@ structure MLPP : ML_PP =
 	and pp_exp (T.Id id) = pp_id id
 	  | pp_exp (T.Int i) = PP.d i
 	  | pp_exp (T.Call (e,el)) =
-	    PP.hblock 0 [PP.seq {fmt=pp_exp,sep=PP.ws}  (e::el)]
+	    PP.hblock 0 [PP.s "(",
+			 PP.seq {fmt=pp_exp,sep=PP.ws}  (e::el),
+			 PP.s ")"]
 	  | pp_exp (T.Cnstr(id,T.Tuple([]))) = pp_id id
 	  | pp_exp (T.Cnstr(id,T.Record([],[]))) = pp_id id
 	  | pp_exp (T.Cnstr(id,e)) =
@@ -158,17 +173,31 @@ structure MLPP : ML_PP =
 	fun isTy (T.DeclTy _ ) = true
 	  | isTy _ = false
 
-	fun isFun (T.DeclFun _ ) = true
-	  | isFun _ = false
+	fun isSigFun (T.DeclFun _ ) = true
+	  | isSigFun _ = false
+
+	fun isStrFun (T.DeclFun _ ) = true
+	  | isStrFun ((T.DeclLocal (T.DeclFun _))) = true
+	  | isStrFun _ = false
 	    
-	fun translate p {name,imports,decls} =
+	val sig_prologue =
+	    PPUtil.wrap Module.Mod.interface_prologue 
+	val sig_epilogue =
+	    PPUtil.wrap Module.Mod.interface_epilogue
+	val struct_prologue =
+	    PPUtil.wrap Module.Mod.implementation_prologue 
+	val struct_epilogue =
+	    PPUtil.wrap Module.Mod.implementation_epilogue
+
+	fun translate p ({name,imports,decls},props) =
 	    let
 		val ast = decls
 		val mn = T.ModuleId.toString name
 
 		val sdecs = List.filter isSum ast
 		val decs = List.filter isTy ast
-		val fdecs = List.filter isFun ast
+		val sigfdecs = List.filter isSigFun ast
+		val strfdecs = List.filter isStrFun ast
 
 		fun pp_sdec (T.DeclSum (i,cnstrs)) =
 		    PP.cat
@@ -186,11 +215,12 @@ structure MLPP : ML_PP =
 		    PP.cat [pp_ty_id i,PP.s " = ",pp_ty_exp te]
 		  | pp_dec _ = raise Error.impossible
 
-		fun pp_funs (T.DeclFun (id,args,body,ret)) =
+		fun pp_fun_str (T.DeclFun (id,args,body,ret)) =
 		    PP.vblock 4 [pp_id id,PP.s " ",
 				 PP.seq {fmt=pp_id o #name ,sep=PP.s " "} args,
 				 PP.s " = ",PP.nl, pp_exp body]
-		  | pp_funs _ = raise Error.impossible
+		  | pp_fun_str (T.DeclLocal x) = pp_fun_str (x)
+		  | pp_fun_str _ = raise Error.impossible
 
 		fun pp_fun_sig (T.DeclFun (id,args,body,ret)) =
 		    PP.vblock 4 [PP.s "val ",pp_id id,PP.s " : ",
@@ -217,19 +247,21 @@ structure MLPP : ML_PP =
 		val pp_ty_decs = PP.cat pp_ty_decs
 		val pp_fdecs =
 		    PP.cat [PP.nl,PP.s "fun ",
-		     PP.seq{fmt=pp_funs,sep=dec_sep} fdecs]
+		     PP.seq{fmt=pp_fun_str,sep=dec_sep} strfdecs]
 
 		val pp_fsigs =
 		    PP.cat [PP.nl,
-			    PP.seq{fmt=pp_fun_sig,sep=PP.nl} fdecs]
+			    PP.seq{fmt=pp_fun_sig,sep=PP.nl} sigfdecs]
 		    
 		fun pp_struct name body incs =
 			PP.vblock 4
 			[PP.s ("structure "^name^" : "^name^"_SIG = "),  PP.nl,
 			 PP.s "struct",PP.nl,
 			 PP.s ("open "^incs),PP.nl,
+			 struct_prologue props,PP.nl,
 			 body,
 			 PP.nl,
+			 struct_epilogue props,PP.nl,
 			 PP.untab,PP.s "end"]
 
 		fun pp_sig name body incs =
@@ -237,16 +269,25 @@ structure MLPP : ML_PP =
 			[PP.s ("signature "^name^"_SIG = "), PP.nl,
 			 PP.s "sig",PP.nl,
 			 PP.s ("include "^incs),PP.nl,
-			 body,
-			 PP.nl,
+			 sig_prologue props,PP.nl,
+			 body, PP.nl,
+			 sig_epilogue props,PP.nl,
 			 PP.untab,PP.s "end"]
 	    in
 		[([OS.Path.joinBaseExt{base=mn,ext=SOME "sig"}],
-		  pp_sig mn (PP.cat [pp_ty_decs,PP.nl,pp_fsigs])"BASE"),
+		  pp_sig mn (PP.cat [pp_ty_decs,PP.nl,pp_fsigs])
+		  (base_sig p)),
 		 ([OS.Path.joinBaseExt{base=mn,ext=SOME "sml"}],
-		  pp_struct mn (PP.cat [pp_ty_decs,PP.nl,pp_fdecs]) "Base")]
+		  pp_struct mn (PP.cat [pp_ty_decs,PP.nl,pp_fdecs])
+		  (base_str p))]
 	    end
     end
+
+
+
+
+
+
 
 
 

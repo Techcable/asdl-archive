@@ -3,22 +3,22 @@ signature PROPERTIES =
     sig
 	type props_desc
 	type props
+	type prop_value
 
-	datatype prop_value =
-	    B of bool
-	  | I of int
-	  | S of string
-	  | Q of Id.mid
-	  | P of props
 	type init = (string * prop_value)
-	type 'a prop_decl = props_desc ->  {name:string,default:'a} ->  ((props -> 'a) * ('a -> init))
+	type 'a prop_decl = props_desc ->  
+	    {name:string,default:'a} ->  ((props -> 'a) * ('a -> init))
 
-	val decl_val   : prop_value prop_decl
-	val decl_bool  : bool       prop_decl
-	val decl_string: string     prop_decl
-	val decl_qid   : Id.mid     prop_decl
-	val decl_int   : int        prop_decl
-	val decl_props : props      prop_decl
+	val decl_bool       : bool       prop_decl
+	val decl_string     : string     prop_decl
+	val decl_path       : Id.path    prop_decl
+	val decl_int        : int        prop_decl
+
+	val decl_bool_opt   : bool    option prop_decl
+	val decl_string_opt : string  option prop_decl
+	val decl_path_opt   : Id.path option prop_decl
+	val decl_int_opt    : int     option prop_decl
+	val decl_props_opt  : props   option prop_decl
 
 	val make_desc : string -> props_desc
 	    
@@ -37,11 +37,11 @@ structure Properties :> PROPERTIES =
 
 	type key = int ref
 	datatype prop_value =
-	    B of bool
-	  | I of int
-	  | S of string
-	  | Q of Id.mid
-	  | P of props
+	    B of bool   option
+	  | I of int    option 
+	  | S of string option
+	  | Q of Id.path option 
+	  | P of props  option
 	withtype props = {id:string ref,v:prop_value Vector.vector}
 	and props_desc = {id:string ref,
 			  map:{key:key,default:prop_value} Map.map ref}
@@ -69,38 +69,60 @@ structure Properties :> PROPERTIES =
 	fun toI (I x) = x
 	  | toI _ = raise Error.error ["Bad prop expected int"]
 	fun toQ (Q x) = x
-	  | toQ _ = raise Error.error ["Bad prop expected qid"]
+	  | toQ _ = raise Error.error ["Bad prop expected path"]
 	fun toP (P x) = x
 	  | toP _ = raise Error.error ["Bad prop expected prop"]
+
 
 	fun mkdecl c d {id,map} {name,default} =
 	    let
 		val k = add_prop map {name=name,default=c default}
 		fun get {id=id',v} =
 		    if id = id' then d(Vector.sub(v,!k))
-		    else raise Error.error ["Wrong prop type  got:",!id'," expected:",!id]
+		    else raise Error.error
+			["Wrong prop type  got:",!id'," expected:",!id]
 		fun init x = (name,c x)
 	    in
 		(get,init)
 	    end
-	fun vid (x:prop_value) = x
-	val decl_val = mkdecl vid vid
-	val decl_bool = mkdecl B toB
-	val decl_string = mkdecl S toS
-	val decl_int = mkdecl I toI
-	val decl_qid = mkdecl Q toQ
-	val decl_props = mkdecl P toP
+
+	val decl_bool = mkdecl   (B o SOME) (valOf o toB)
+	val decl_string = mkdecl (S o SOME) (valOf o toS)
+	val decl_int = mkdecl    (I o SOME) (valOf o toI)
+	val decl_path = mkdecl   (Q o SOME) (valOf o toQ)
+	val decl_props = mkdecl  (P o SOME) (valOf o toP)
+
+	val decl_bool_opt = mkdecl    B  toB
+	val decl_string_opt = mkdecl  S  toS
+	val decl_int_opt = mkdecl     I  toI
+	val decl_path_opt = mkdecl    Q  toQ
+	val decl_props_opt = mkdecl   P  toP
 
 	fun fromOpt p (NONE,x) = 
 	    (Error.warn
 	     ["Error while parsing property ",p," using default"];x)
-	  | fromOpt p (SOME y,_) = y
+	  | fromOpt p (SOME y,_) = (SOME y)
 
+	(* hack for now *)
+	fun parse_path x =
+	    let
+		fun kill_spc x =
+		    if (Char.isSpace x) then ""
+		    else Char.toString x
+		val x = String.translate kill_spc x
+		val x = String.tokens (fn x => x = #".") x
+		val len = List.length x
+		val (qualifier,base) =
+		    (List.take (x,len-1),List.drop (x,len - 1))
+	    in
+		{base=List.hd base,qualifier=qualifier}
+	    end
 	fun parse_prop p (B x,s) = B(fromOpt p (Bool.fromString s,x))
 	  | parse_prop p (I x,s) = I(fromOpt p (Int.fromString s,x))
-	  | parse_prop p (S _,s) = (S s)
-	  | parse_prop p (Q _,s) = (Q (Id.fromString s))
+	  | parse_prop p (S _,s) = (S (SOME s))
+	  | parse_prop p (Q _,s) = (Q (SOME (parse_path s)))
 	  | parse_prop p (P _,s) = raise Error.unimplemented
+
 
 	fun parse_inits {id,map=ref p} args =
 	    let

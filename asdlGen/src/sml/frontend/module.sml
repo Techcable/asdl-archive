@@ -7,6 +7,10 @@ structure Module :> MODULE =
 	structure Id = ModuleId
 	datatype field_kind = Id | Sequence | Option
 	    
+	structure Con = ConProps	    
+	structure Typ = TypProps	    
+	structure Mod = ModProps	    
+
         type field_info =
 	    {kind:field_kind,
   	     name:Identifier.identifier,
@@ -89,7 +93,8 @@ structure Module :> MODULE =
        fun get_m (M x) = x
 
        val module_name = Id.toString o #name o get_m
-       val module_file = ModProps.file o #props o get_m
+       val module_props = #props o get_m
+       val module_file = ModProps.file o module_props
 
        fun module_imports m =
 	   let
@@ -97,8 +102,9 @@ structure Module :> MODULE =
 		 | get_i _ = raise Error.unimplemented
 	       val imports =
 		   (List.map get_i) o Env.listItems o #imports o get_m
+
 	   in
-	       imports m
+	       (imports m)
 	   end
 
        fun qualify_id _ nil = raise Error.internal
@@ -249,8 +255,9 @@ structure Module :> MODULE =
 			       val name = qualify_id mname [id]
 			       val box = box orelse
 				   not (List.null fl)
+			       val inits = ConProps.parse (view name)
 			       val props =
-				   ConProps.new  [ConProps.mk_enum_value tag]
+				   ConProps.new inits
 			   in
 			       (tag,box,{tag=tag,name=name,
 					 fields=mk_field_info fl,
@@ -276,7 +283,8 @@ structure Module :> MODULE =
 		       val (box_cons,cons) = mk_con_info tname cons
 		       val is_boxed = box_cons orelse (not (List.null fields))
 		       val (plain',seqs',opts') = types_used t
-		       val props = TypProps.new ([])
+		       val inits = TypProps.parse (view tname)
+		       val props = TypProps.new (inits)
 		       val tinfo = T {tag=count,
 				      is_prim=false,
 				      name=tname,
@@ -369,6 +377,18 @@ structure Module :> MODULE =
 		   
        fun sequence_types me = S.listItems o (get_minfo #seqs me)
        fun option_types   me = S.listItems o (get_minfo #opts me)
+       fun is_seq_type   me m x =
+	   let
+	       val seqs = (get_minfo #seqs me) m 
+	   in
+	       S.member(seqs,x)
+	   end
+       fun is_opt_type   me m x =
+	   let
+	       val opts = (get_minfo #opts me) m 
+	   in
+	       S.member(opts,x)
+	   end
 
        fun lookup_type m mid =
 	   case (find_type m mid) of
@@ -395,7 +415,7 @@ structure Module :> MODULE =
        val type_fields = #fields o get_t
        val type_is_boxed = #is_boxed o get_t
        val type_is_prim  = #is_prim o get_t
-       val type_is_abstract  = TypProps.abstract o #props o get_t
+       val type_props    = #props o get_t
        val type_uses = S.listItems o #uses o get_t
 
        fun type_is_local m t =
@@ -411,6 +431,7 @@ structure Module :> MODULE =
        val con_tag = #tag o get_c
        val con_name = #name o get_c
        val con_fields = #fields o get_c
+       val con_props = #props o get_c
        fun con_type m = ((lookup_type m) o #tref o get_c)
 
        fun get_f (x:field_info) =  x

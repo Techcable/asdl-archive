@@ -17,12 +17,7 @@ structure AlgebraicPklGen : FUN_PKL_GEN =
 
 	val outstream_ty = T.TyId (T.TypeId.fromString "outstream")
 	val instream_ty  = T.TyId (T.TypeId.fromString "instream")
-	val len_ty       = T.TyId (T.TypeId.fromString "int")
 	val tag_ty       = T.TyId (T.TypeId.fromString "int")
-	fun private_type (T.TyId x) =
-	    (T.TyId (T.TypeId.suffixBase "'" x))
-	  | private_type _ = raise Error.unimplemented
-
 
 	local
 	    open T
@@ -56,35 +51,31 @@ structure AlgebraicPklGen : FUN_PKL_GEN =
 		Call(Id(VarId.fromString "read_option"),
 		     [Id (mk_name "read" name),Id stream_id])
 
-	    fun write_len x =
-		Call(Id (VarId.fromString "write_tag"),[x,Id stream_id])
-
-	    val write_tag = write_len o Int
-		
+	    fun write_tag x = 
+		Call(Id (VarId.fromString "write_tag"),[Int x,Id stream_id])
 	    val read_tag =
 		Call(Id (VarId.fromString "read_tag"),[Id stream_id])
 
-
-	val read_len = read_tag
-
 	fun write_decl {name,arg_ty,body} =
-	    DeclLocal(DeclFun(mk_name "write" name,
+(*	    DeclLocal*)
+	    (DeclFun(mk_name "write" name,
 			      [{name=arg_id,ty=arg_ty},
 			       {name=stream_id,ty=outstream_ty}],
 			      body,write_ret_ty))
 
 	fun read_decl {name,ret_ty,body} =
-	    DeclLocal(DeclFun(mk_name "read" name,
-			      [{name=stream_id,ty=instream_ty}],body,ret_ty))
+(*	    DeclLocal*)
+	    (DeclFun(mk_name "read" name,
+		     [{name=stream_id,ty=instream_ty}],body,ret_ty))
 	fun die _ =
 	    (Call(Id (VarId.fromString "die"),[Tuple[]]))
 
-	fun pkl_write_decl {name,tag,arg_ty,body} =
+	fun write_tagged_decl {name,tag,arg_ty,body} =
 	    DeclFun(mk_name "pkl_write" name,
 		    [{name=arg_id,ty=arg_ty},{name=stream_id,ty=outstream_ty}],
 		    Seq[write_tag tag,body],write_ret_ty)
 
-	fun pkl_read_decl {name,tag,ret_ty,body} =
+	fun read_tagged_decl {name,tag,ret_ty,body} =
 	    DeclFun(mk_name "pkl_read" name,
 		    [{name=stream_id,ty=instream_ty}],
 		    Match(read_tag,[(MatchInt tag,body),

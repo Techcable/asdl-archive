@@ -10,7 +10,8 @@ structure Main =
 	     structure G = mkSourceFileOutput(structure PP = HTMLPP))
 	structure HTML =  mkMain(structure M = Module
 				structure Parser = AsdlParser
-				structure Gen = HTMLGen )
+				structure Gen = HTMLGen
+				val dflt_view = "Html")
 
         structure MLTranslator =
 	    mkAlgebraicTranslator(structure IdFix = IdFix.ML
@@ -21,7 +22,9 @@ structure Main =
 	    structure G = mkSourceFileOutput(structure PP = MLPP))
        structure ML =  mkMain(structure M = Module
 			      structure Parser = AsdlParser
-			      structure Gen = MLGen )
+			      structure Gen = MLGen 
+			      val dflt_view = "SML")
+
 
        structure HaskellTranslator =
 	   mkAlgebraicTranslator(structure IdFix = IdFix.Haskell
@@ -32,7 +35,8 @@ structure Main =
 	    structure G = mkSourceFileOutput(structure PP = HaskellPP))
        structure Haskell =  mkMain(structure M = Module
 			      structure Parser = AsdlParser
-			      structure Gen = HaskellGen )
+			      structure Gen = HaskellGen
+			      val dflt_view = "Haskell")
 
 
        structure AnsiCTranslator =
@@ -43,7 +47,9 @@ structure Main =
 	    structure G = mkSourceFileOutput(structure PP = AnsiCPP))
        structure AnsiC =  mkMain(structure M = Module
 				 structure Parser = AsdlParser
-				 structure Gen = AnsiCGen)
+				 structure Gen = AnsiCGen
+				 val dflt_view = "C")
+
 	   
 
        structure JavaTranslator =
@@ -61,7 +67,8 @@ structure Main =
 		
        structure Java =  mkMain(structure M = Module
 				structure Parser = AsdlParser
-				structure Gen = JavaGen )
+				structure Gen = JavaGen
+				val dflt_view = "Java")
 
        structure CPlusPlusTranslator =
 	   mkOOTranslator(structure IdFix = IdFix.CPlusPlus
@@ -77,8 +84,8 @@ structure Main =
 	    structure G = mkSourceFileOutput(structure PP = CPlusPlusPP))
        structure CPlusPlus =  mkMain(structure M = Module
 				     structure Parser = AsdlParser
-				     structure Gen = CPlusPlusGen)
-	   
+				     structure Gen = CPlusPlusGen
+				     val dflt_view = "Cxx")	   
 
        structure Check =
 		mkMain(structure M = Module
@@ -89,10 +96,13 @@ structure Main =
 			       type output = (Params.params * input)
 			       val cfg = Params.empty
 			       fun translate p x =  (p,x)
-			   end)
+			   end
+		       val dflt_view = "Check")	   
+
        structure TypePickler =
 	   mkMain(structure M = Module
 		  structure Parser = AsdlParser
-		  structure Gen = GenPickleTranslator)
+		  structure Gen = GenPickleTranslator
+		  val dflt_view = "Typ")	   
 
     end

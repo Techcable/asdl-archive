@@ -205,7 +205,7 @@ structure HaskellPP : HASKELL_PP =
 
 	(* val translate = fn : Params.params -> HaskellTypes.decl list -> (string list * PPUtil.pp) list *)
     
-	fun translate p {name,decls,imports} =
+	fun translate p ({name,decls,imports},_) =
 	    let
 		val ast = decls
 		val mn = T.ModuleId.toString name

@@ -17,9 +17,10 @@ functor mkAlgebraicTranslator(structure IdFix : ID_FIX
 	fun trans_tid  true = fix_ty o T.TypeId.fromString o Id.getBase
 	  | trans_tid false = fix_ty o T.TypeId.fromPath o Id.toPath
 
-	type  input_value   = M.module
+	type input_value    = M.module
 	type output_value   = T.decl list
-	type defined_value  = {ty:T.decl,rd:T.decl,wr:T.decl}
+	type defined_value  = {ty:T.decl,rd:T.decl list,
+			                 wr:T.decl list}
 	type con_value      = {con:T.cnstr,wr:T.clause,rd:T.clause}
 	type field_value    = {fd:T.field,rd:T.exp,wr:T.exp,ulabel:bool}
 		    
@@ -29,25 +30,74 @@ functor mkAlgebraicTranslator(structure IdFix : ID_FIX
 	val cfg = Params.empty
 	val get_module = (fn x => x)
 
-	    
-	fun trans_field p {finfo,kind,name,tname,tinfo,is_local} =
+
+	fun wrappers p ty =
+	    let
+		val name = Pkl.type_name ty
+		val ty =
+		    case (M.Typ.natural_type p,M.Typ.natural_type_con p) of
+			(SOME t,_) => (T.TyCon (T.TypeId.fromPath t,[ty]))
+		      | (NONE,SOME t) => T.TyId (T.TypeId.fromPath t)
+		      | _ => ty
+		val unwrap =
+		    case (M.Typ.unwrapper p) of
+			(SOME x) =>
+			    (fn e =>
+			     T.Call(T.Id(T.VarId.fromPath x),[e]))
+		      | NONE => (fn x => x)
+		val wrap =
+		    case (M.Typ.wrapper p) of
+			(SOME y) =>
+			    (fn x => T.Call(T.Id(T.VarId.fromPath y),[x]))
+		      | NONE => (fn x => x)
+		    
+	    in
+		{natural_ty=ty,pkl_name=name,unwrap=unwrap,wrap=wrap}
+	    end
+
+	fun get_bodies p {wr_body,rd_body} =
+	    let
+		val rd_body =
+		    case (M.Typ.user_reader p) of
+			(SOME x) =>
+			    T.Call(T.Id(T.VarId.fromPath x),
+				   [T.Id Pkl.stream_id])
+		      | NONE => rd_body
+		val wr_body =
+		    case (M.Typ.user_writer p) of
+			(SOME x) =>
+			    T.Call(T.Id(T.VarId.fromPath x),
+				   [T.Id Pkl.arg_id,T.Id Pkl.stream_id])
+		      | NONE => wr_body
+	    in
+		{wr_body=wr_body,rd_body=rd_body}
+	    end
+
+	fun trans_field p {finfo,kind,name,tname,tinfo,is_local,props} =
 	    let
 		val tid = (trans_tid is_local tname)
-		val ty = T.TyId tid
-		val ty =
+		val ty = (T.TyId tid)
+		val {natural_ty,pkl_name,unwrap,wrap} =
+		    wrappers props (T.TyId tid)
+		val (rd,wr,ty) =
 		    case kind of
-			M.Id => ty
-		      | M.Sequence => T.TyList ty
-		      | M.Option => T.TyOption ty
+			M.Id => (Pkl.read,Pkl.write,natural_ty)
+		      | M.Sequence =>
+			    (Pkl.read_list,Pkl.write_list,
+			     T.TyList natural_ty)
+		      | M.Option =>
+			    (Pkl.read_option,Pkl.write_option,
+			     T.TyOption natural_ty)
 		val trans_fid =
 		    (fix_id o T.VarId.fromString o Identifier.toString)
 		val name = trans_fid name
-		val rd = Pkl.read ty
-		val wr = Pkl.write ty (T.Id name)
+		val rd = rd pkl_name
+		val wr = wr pkl_name (T.Id name)
 		val (fd,ulabel) =
 		    case (M.field_name' finfo) of
 			NONE => ({name=name,ty=ty},true)
-		  | (SOME x) =>	({name=name,ty=ty},false)
+		      | (SOME x) =>
+			    ({name=name,ty=ty},false)
 	    in
 		{fd=fd,ulabel=ulabel,rd=rd,wr=wr}
 	    end
@@ -81,7 +131,7 @@ functor mkAlgebraicTranslator(structure IdFix : ID_FIX
 		(ty,match,exp,wr_exp,bind_clauses)
 	    end
 
-	fun trans_con p {cinfo,tinfo,name,fields,attrbs} =
+	fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} =
 	    let
 		val trans_cid = fix_id o T.VarId.fromString o Id.getBase
 		val tag_v = M.con_tag cinfo
@@ -103,42 +153,80 @@ functor mkAlgebraicTranslator(structure IdFix : ID_FIX
 		{con=cnstr,rd=rd,wr=wr}
 	    end
 
-	fun trans_defined p {tinfo,name,fields,cons=[]} =
+	fun trans_defined p {tinfo,name,fields,cons=[],props} =
 	    let
 		val (ty_decl,match,exp,wr_exp,bind_clauses)
 		    = trans_fields fields
 		val name = trans_tid true name
+		val tag = M.type_tag tinfo
 		val ty = (T.TyId name)
-		val wr = Pkl.write_decl ty
-		    (T.LetBind([(match,T.Id Pkl.arg_id)],(T.Seq wr_exp)))
-		val rd = Pkl.read_decl ty (T.LetBind(bind_clauses,exp))
-		
+		val {natural_ty,pkl_name,unwrap,wrap} = wrappers props ty
+		val {rd_body,wr_body} = get_bodies props
+		    {rd_body=
+		     T.LetBind(bind_clauses,
+			       unwrap exp),
+		     wr_body=
+		     T.LetBind([(match,wrap (T.Id Pkl.arg_id))],
+			       T.Seq wr_exp)}
+
+		val wr = Pkl.write_decl
+		    {name=pkl_name,arg_ty=natural_ty,
+		     body=wr_body}
+
+		val rd = Pkl.read_decl
+		    {name=pkl_name,ret_ty=natural_ty,
+		     body=rd_body}
+
+		val wr_tagged =
+		    Pkl.write_tagged_decl
+		    {name=pkl_name,tag=tag,arg_ty=natural_ty,
+		     body=Pkl.write pkl_name (T.Id Pkl.arg_id)}
+
+		val rd_tagged = Pkl.read_tagged_decl
+		    {name=pkl_name,tag=tag,ret_ty=natural_ty,
+		     body=(Pkl.read pkl_name)}
 	    in
-		{ty=T.DeclTy(name,ty_decl),rd=rd,wr=wr}
+		{ty=T.DeclTy(name,ty_decl),rd=[rd,rd_tagged],wr=[wr,wr_tagged]}
 	    end
-	  | trans_defined p {tinfo,name,fields,cons} =
+	  | trans_defined p {tinfo,name,fields,cons,props} =
 	    let
 		val rds  =  List.map #rd  (cons:con_value list)
 		val wrs  =  List.map #wr  (cons:con_value list)
 		val cons =  List.map #con (cons:con_value list)
+		val tag = M.type_tag tinfo
 		val name = trans_tid true name
 		val ty = (T.TyId name)
-		val wr_body =
-		    T.Match(T.Id Pkl.arg_id,wrs)
-		val rd_body =
-		    T.Match(Pkl.read_tag,rds@[(T.MatchAny,Pkl.die "")])
+		val {natural_ty,pkl_name,unwrap,wrap} =  wrappers props ty
+		    
+		val {rd_body,wr_body} = get_bodies props
+		    {rd_body=unwrap(T.Match(Pkl.read_tag,
+					    rds@[(T.MatchAny,Pkl.die "")])),
+		     wr_body=T.Match(wrap(T.Id Pkl.arg_id),wrs)}
 
-		val wr =  Pkl.write_decl ty wr_body
-		val rd = Pkl.read_decl ty  rd_body
+		val wr = Pkl.write_decl
+		    {name=pkl_name,arg_ty=natural_ty,
+		     body=wr_body}
+		val rd = Pkl.read_decl
+		    {name=pkl_name,ret_ty=natural_ty,
+		     body=rd_body}
+
+		val wr_tagged =
+		    Pkl.write_tagged_decl
+		    {name=pkl_name,tag=tag,arg_ty=natural_ty,
+		     body=Pkl.write pkl_name (T.Id Pkl.arg_id)}
+
+		val rd_tagged = Pkl.read_tagged_decl
+		    {name=pkl_name,tag=tag,ret_ty=natural_ty,
+		     body=Pkl.read pkl_name}
 	    in
-		{ty=T.DeclSum(name,cons),wr=wr,rd=rd}
+		{ty=T.DeclSum(name,cons),wr=[wr,wr_tagged],rd=[rd,rd_tagged]}
 	    end
 
-	fun trans_sequence p {tinfo,name} = ()
-	fun trans_option p {tinfo,name} = ()
-	fun trans_all p {module,defines,options,sequences} =
+	fun trans_sequence p {tinfo,name,props,also_opt} = ()
+	fun trans_option p {tinfo,name,props,also_seq} = ()
+	fun trans_all p {module,defines,options,sequences,props} =
 	    let
-		fun merge ({ty,rd,wr},rest) = ty::wr::rd::rest
+		fun merge ({ty,rd,wr},rest) = (ty::(wr@rd))@rest
 		val decls = List.foldr merge [] defines
 	    in
 		decls

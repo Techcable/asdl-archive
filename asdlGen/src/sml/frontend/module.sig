@@ -8,7 +8,15 @@ signature MODULE =
 	type type_info
 	type con_info
 	type field_info
+
+	structure Typ : TYP_PROPS
+	structure Con : CON_PROPS
+	structure Mod : MOD_PROPS
 	    
+	val type_props         : type_info -> Typ.props
+	val con_props          : con_info  -> Con.props
+	val module_props       : module    -> Mod.props
+
 	val prim_int           : Id.mid
 	val prim_string        : Id.mid
 	val prim_identifier    : Id.mid
@@ -16,9 +24,10 @@ signature MODULE =
 	val prim_env           : module_env
 	val module_env_prims   : module_env -> type_info list
 
-	val declare_module     : module_env ->  {view: Id.mid -> (string * string) list,
-						 file: string,
-						 decl: Asdl.asdl_module}  -> module_env
+	val declare_module     : module_env ->  
+	    {view: Id.mid -> (string * string) list,
+	     file: string,
+	     decl: Asdl.asdl_module}  -> module_env
 
 	val module_env_modules : module_env -> module list
 	val validate_env       : module_env -> string list
@@ -29,6 +38,9 @@ signature MODULE =
 	val defined_types      : module_env -> module -> Id.mid list
 	val sequence_types     : module_env -> module -> Id.mid list
 	val option_types       : module_env -> module -> Id.mid list
+
+	val is_seq_type        : module_env -> module -> Id.mid -> bool
+	val is_opt_type        : module_env -> module -> Id.mid -> bool
 	    
 	val module_imports     : module -> module list 
 
@@ -47,9 +59,8 @@ signature MODULE =
 	val type_uses          : type_info -> Id.mid list
 	val type_cons          : type_info -> con_info list
 	val type_fields        : type_info -> field_info list
-
+	    
 	val type_is_prim       : type_info -> bool
-	val type_is_abstract   : type_info -> bool
 	val type_is_boxed      : type_info -> bool
 	    
 	val con_tag            : con_info -> int

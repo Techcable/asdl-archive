@@ -48,12 +48,15 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 
 	fun inc x = (Assign(x,Binop(PLUS,x,Constant (I 1))))
 
+	val seq_type = (TyId (TypeId.fromString "list"))
+	val opt_type = (TyId (TypeId.fromString "opt"))
 	fun emalloc(dst,size) =
 	    [Exp(Assign(dst,Call(Variable new_id,[size]))),
 	     If{test=Binop(EQ,dst,Constant(NULL)),
 		then_stmt=Exp(Call(Variable die_id,[])),
 		else_stmt=Nop}]
 	fun trans_ty_exp _ (T.TyId i) = TyId (trans_tid i)
+	  | trans_ty_exp id (T.TyRefAny) = TyPointer(TyPrim(VOID))
 	  | trans_ty_exp id (T.TyArray (x,s)) =
 	    TyArray (trans_ty_exp id x,s)
 	  | trans_ty_exp id (T.TyReference x) =
@@ -75,18 +78,19 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 	    TyEnum(Option.map trans_id id,trans_enumers el)
 	  | trans_ty_exp id (T.TyFunction(fl,ty)) =
 	    TyFunctionPtr(trans_fields fl,trans_ty_exp id ty)
-	  | trans_ty_exp id (T.TyOption ty) = trans_ty_exp id ty
-	  | trans_ty_exp id (T.TySequence ty) =
-	    TyArray(trans_ty_exp id ty,NONE)
+	  | trans_ty_exp id (T.TyOption ty) = opt_type
+	  | trans_ty_exp id (T.TySequence ty) = seq_type
+
 	    
 	and trans_const (T.IntConst i) = I i
 	  | trans_const (T.EnumConst id) = E (trans_eid id)
+          | trans_const (T.NoneConst ) = E (VarId.fromString "NONE")
 
 	and trans_exp (T.Const c) = Constant (trans_const c)
 	  | trans_exp (T.NilPtr) = Constant (NULL)
 	  | trans_exp (T.Id id) = Variable (trans_id id)
-	  | trans_exp (T.FnCall (e,el)) =
-	    Call(trans_exp e,List.map trans_exp el)
+	  | trans_exp (T.FnCall (id,el)) =
+	    Call(Variable(trans_id id),List.map trans_exp el)
 	  | trans_exp (T.RecSub (exp,id)) = AggarSub(trans_exp exp,trans_id id)
 	  | trans_exp (T.VarRecSub(exp,k,fid)) =
 	    AggarSub
@@ -96,6 +100,7 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 	  | trans_exp (T.ArraySub(exp,idx)) =
             ArraySub(trans_exp exp,trans_exp idx)
 	  | trans_exp (T.DeRef exp) =  Unop(DEREF,trans_exp exp)
+	  | trans_exp (T.Addr exp) =  Unop(ADDR,trans_exp exp)
 	  | trans_exp (T.PlusOne exp) =  Binop(PLUS,trans_exp exp,
 					       Constant (I 1))
 	  | trans_exp (T.MinusOne exp) =  Binop(SUB,trans_exp exp,
@@ -104,7 +109,9 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 	    Binop(NEQ,trans_exp exp,Constant NULL)
 	  | trans_exp (T.NotZero exp) =
 	    Binop(NEQ,trans_exp exp,Constant (I 0))
-		 
+	  | trans_exp (T.NotEqConst (exp,const)) =
+	    Binop(NEQ,trans_exp exp,(Constant (trans_const const)))
+
 	and trans_stmt (T.Nop) = Nop
 	  | trans_stmt (T.Assign(src,dst)) =
 	    Exp(Assign(trans_exp src,trans_exp dst))
@@ -193,7 +200,7 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 	    CaseInt(i,(trans_stmt body)::[Break])
 	  | trans_clause {tag=(T.EnumConst i),body}=
 	    CaseEnum(trans_eid i,(trans_stmt body)::[Break])
-
+	  | trans_clause _ = raise Error.unimplemented
 	and trans_field_init dst {name,init} =
 	    Exp(Assign(AggarSub(dst,trans_id name),trans_exp init))
 

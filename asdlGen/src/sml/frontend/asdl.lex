@@ -9,7 +9,7 @@ type arg = lexarg
 
 fun mkTok yypos tok = tok(yypos,yypos+1)
 fun mkSTok yypos yytext tok = tok(yytext,yypos, yypos + (String.size yytext))
-
+fun trimFirst x = String.extract(x,1,NONE)
 (* Doesn't handle quote string filename correctly *)
 fun mySynch(sm,err,yypos,yytext) =
     let
@@ -35,9 +35,15 @@ val eof = fn ({err,sourceMap}:lexarg) =>
     in
 	Tokens.EOF(pos,pos)
     end
+val charlist = ref ([]:string list)
+fun addString (charlist,s:string) = charlist := s :: (!charlist)
+fun addChar (charlist, c:char) = addString(charlist, String.str c)
+fun makeString charlist = (concat(rev(!charlist)) before charlist := nil)
+
 %%
 %arg ({sourceMap,err});
 %header (functor AsdlLexFun(structure Tokens: Asdl_TOKENS));
+%s LT;
 ws = [\ \t];
 comment="--".*;
 alpha=[A-Za-z];
@@ -46,30 +52,57 @@ id={alpha}{alpha_num}*;
 resynch="--#line"{ws}+[0-9]+({ws}+\"[^\"]*\")?;
 %%
 
-\n     => (SourceMap.newline sourceMap yypos; continue());
-{resynch} => (mySynch(sourceMap,err,yypos,yytext);continue());
-{comment}         => (continue());
-{ws}+             => (continue());
-"["               => (mkTok yypos Tokens.LBRACK);
-"]"               => (mkTok yypos Tokens.RBRACK);
-"<"               => (mkTok yypos Tokens.LANGLE);
-">"               => (mkTok yypos Tokens.RANGLE);
-"("               => (mkTok yypos Tokens.LPAREN);
-")"               => (mkTok yypos Tokens.RPAREN);
-"{"               => (mkTok yypos Tokens.LBRACE);
-"}"               => (mkTok yypos Tokens.RBRACE);
-","               => (mkTok yypos Tokens.FIELDSEP);
-"*"               => (mkTok yypos Tokens.SEQ);
-"."               => (mkTok yypos Tokens.DOT);
-"?"               => (mkTok yypos Tokens.OPT);
-"|"               => (mkTok yypos Tokens.PIPE);
-"="               => (mkTok yypos Tokens.EQ);
-"attributes"      => (mkSTok yypos yytext Tokens.ATTRIBUTES);
-"module"          => (mkSTok yypos yytext Tokens.MODULE);
-"imports"         => (mkSTok yypos yytext Tokens.IMPORTS);
-{id}              => (mkSTok yypos yytext Tokens.ID);
-. => (err (yypos,yypos)  "ignoring bad character"; continue());
+<INITIAL>\n     => (SourceMap.newline sourceMap yypos; continue());
+<INITIAL>{resynch} => (mySynch(sourceMap,err,yypos,yytext);continue());
+<INITIAL>{comment}         => (continue());
+<INITIAL>{ws}+             => (continue());
+<INITIAL>"["               => (mkTok yypos Tokens.LBRACK);
+<INITIAL>"]"               => (mkTok yypos Tokens.RBRACK);
+<INITIAL>"<"               => (mkTok yypos Tokens.LANGLE);
+<INITIAL>">"               => (mkTok yypos Tokens.RANGLE);
+<INITIAL>"("               => (mkTok yypos Tokens.LPAREN);
+<INITIAL>")"               => (mkTok yypos Tokens.RPAREN);
+<INITIAL>"{"               => (mkTok yypos Tokens.LBRACE);
+<INITIAL>"}"               => (mkTok yypos Tokens.RBRACE);
+<INITIAL>","               => (mkTok yypos Tokens.FIELDSEP);
+<INITIAL>"*"               => (mkTok yypos Tokens.SEQ);
+<INITIAL>"."               => (mkTok yypos Tokens.DOT);
+<INITIAL>"?"               => (mkTok yypos Tokens.OPT);
+<INITIAL>"|"               => (mkTok yypos Tokens.PIPE);
+<INITIAL>"="               => (mkTok yypos Tokens.EQ);
+<INITIAL>"attributes"      => (mkSTok yypos yytext Tokens.ATTRIBUTES);
+<INITIAL>"module"          => (mkSTok yypos yytext Tokens.MODULE);
+<INITIAL>"imports"         => (mkSTok yypos yytext Tokens.IMPORTS);
+<INITIAL>"view"            => (mkSTok yypos yytext Tokens.VIEW);
+<INITIAL>{id}              => (mkSTok yypos yytext Tokens.ID);
+<INITIAL>":".*             => (mkSTok yypos (trimFirst yytext) Tokens.QUOTE);
+<INITIAL>"%%"{ws}*         => (YYBEGIN LT; continue ());
+<LT>"%%"{ws}*		   => (YYBEGIN INITIAL;
+			       mkSTok yypos (makeString(charlist))
+			       Tokens.QUOTE);
+<LT>.*		           => (addString(charlist,yytext);continue());
+<LT>\n                     => (SourceMap.newline sourceMap  yypos;
+			       addString(charlist,yytext); continue());	    
+
+<INITIAL>. => (err (yypos,yypos)  "ignoring bad character"; continue());
 	  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

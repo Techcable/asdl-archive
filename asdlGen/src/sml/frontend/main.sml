@@ -4,8 +4,12 @@
 functor mkMain (structure      M : MODULE
 		structure Parser : ASDL_PARSER
 		structure    Gen : TRANSLATE
-		    where type input = M.module_env) =
+		    where type input = M.module_env
+		val dflt_view    : string) =
     struct
+(* hack clean up*)
+
+
 	structure IdOrdKey =
 	    struct
 		type ord_key = Identifier.identifier
@@ -16,6 +20,8 @@ functor mkMain (structure      M : MODULE
 	structure M = M
 	    
 	val cfg = Gen.cfg
+	val (cfg,view_name)  =  Params.declareString cfg 
+	    {name="view",flag=NONE,default=dflt_view}
 
 	structure Scc =
 	    SCCUtilFun(structure Node =
@@ -53,18 +59,19 @@ functor mkMain (structure      M : MODULE
 		List.foldl check [] torder 
 	    end
 
+
 	fun do_it args =
 	    let
 		val (params,files) = Params.fromArgList cfg args
-		val modules = Parser.parse files
+		val (modules,views) = Parser.parse files
 		val modules = build_scc modules
-		    
+		val view = views (Id.fromString (view_name params))
 		fun do_module ({file,module},menv) =
 		    let
 			val input = OS.Path.mkCanonical file
-			fun view _ = []
 		    in
-			M.declare_module menv {file=input,decl=module,view=view}
+			M.declare_module menv
+			{file=input,decl=module,view=view}
 		    end
 
 		val menv = List.foldl do_module  M.prim_env modules

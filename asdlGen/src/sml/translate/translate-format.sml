@@ -43,7 +43,7 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 		T.RM (T.NBS::(List.foldr bar_sep [] c))
 	    end
 
-	fun trans_field p {finfo,kind,name,tname,tinfo,is_local} =
+	fun trans_field p {finfo,kind,name,tname,tinfo,is_local,props} =
 	    let
 		val toStr = T.STR o Identifier.toString 
 		fun toStr' x = T.EM [T.STR (Id.toString  x)]
@@ -61,10 +61,10 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 		  | (SOME x) => T.RM ((ty::q)@[toStr x])
 	    end
 	val id2STR = T.STR o Id.toString 
-	fun trans_con p {cinfo,tinfo,name,fields,attrbs} =
+	fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} =
 	    T.RM [T.BF [id2STR (trans_short_id name)],(fmt_fields fields),T.BR]
 
-	fun trans_defined p {tinfo,name,cons,fields} =
+	fun trans_defined p {tinfo,name,cons,fields,props} =
 	    let
 		val f = fmt_fields fields
 		val tid = trans_short_id name
@@ -78,10 +78,12 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 			       fmt=fmt_cons cons [T.STR "attributes",f]})
 	    end
 	
-	fun trans_sequence p {tinfo,name} = T.EM[id2STR (trans_long_id name)]
-	fun trans_option p {tinfo,name} = T.EM[id2STR (trans_long_id name)]
+	fun trans_sequence p {props,tinfo,name,also_opt} =
+	    T.EM[id2STR (trans_long_id name)]
+	fun trans_option p {props,tinfo,name,also_seq} =
+	    T.EM[id2STR (trans_long_id name)]
 
-	fun trans_all p {module,defines,options,sequences} =
+	fun trans_all p {module,defines,options,sequences,props} =
 	    let
 		val mname = M.module_name module
 	    in

@@ -13,6 +13,10 @@ signature GENERIC_PICKLER =
 	    
 	val read_asdl_value  :
 	    T.type_env -> Id.mid -> T.instream -> V.asdl_value
+
+	val type_labels : T.type_env -> (T.qid option * T.qid option)
+	    -> 'a list ->  ('a * Identifier.identifier) list
+
 (*	val write_asdl_value :
 	    T.type_env -> Identifier.identifier ->
 	    V.asdl_value -> T.outstream
@@ -21,7 +25,7 @@ signature GENERIC_PICKLER =
     end
 
 functor GenericPickler(structure T:TYPE_PICKLE
-		       structure V:ASDL_VALUE) =
+		       structure V:ASDL_VALUE):GENERIC_PICKLER =
 
     struct
 	structure T = T
@@ -61,11 +65,54 @@ functor GenericPickler(structure T:TYPE_PICKLE
 	      | (T.Prim{p=T.String,...}) => str_qid
 	      | (T.Prim{p=T.Identifier,...}) => id_qid
 
+	fun type_fields x =
+	    case (x) of
+		(T.Defined{fields,...}) => fields
+	      | _ => []
+
+	fun qid2Id {base,qualifier} =
+	    Id.fromPath{base=Identifier.toString base,
+			qualifier=List.map Identifier.toString qualifier}
+
+
+	fun type_labels ({version,magic,mmap,tmap,cmap}:T.type_env) =
+	    let
+		fun insert ({key,v},tmapi) =
+		    Env.insert(tmapi,qid2Id (type_name v),type_fields v)
+
+		fun insert_con ({key,v}:T.cnstr_map_entry,cmapi) =
+		    Env.insert(cmapi,qid2Id (#name v),#fields v)
+		    
+		val tmapi = List.foldl insert Env.empty (#entries tmap)
+		val cmapi = List.foldl insert_con Env.empty (#entries   cmap)
+		fun find_con_fields id =
+		    case (Env.find(cmapi,qid2Id id)) of
+			NONE => []
+		      | (SOME x) => x
+		fun find_typ_fields id =
+		    case (Env.find(tmapi,qid2Id id)) of
+			NONE => []
+		      | (SOME x) => x
+
+		fun get_ids (NONE,NONE) =  []
+		  | get_ids (SOME t,NONE) =
+		    (find_typ_fields t)
+		  | get_ids (NONE,SOME c) =  (find_con_fields c)
+		  | get_ids (SOME t,SOME c) =
+		    (find_typ_fields t)@(find_con_fields c)
+		fun get_label (T.Id{label,...}) = label
+		  | get_label (T.Option{label,...}) = label
+		  | get_label (T.Sequence{label,...}) = label
+		fun do_it x y =
+		    ListPair.zip (y,(List.map get_label (get_ids x)))
+	    in
+		do_it
+	    end
+	
 	fun read_asdl_value ({version,magic,mmap,tmap,cmap}:T.type_env) =
 	    let
-		fun qid2Id {base,qualifier} =
-		    Id.fromPath{base=Identifier.toString base,
-		     qualifier=List.map Identifier.toString qualifier}
+
+
 		fun insert ({key,v},tmapi) =
 		    Env.insert(tmapi,qid2Id (type_name v),key)
 
@@ -75,10 +122,10 @@ functor GenericPickler(structure T:TYPE_PICKLE
 		val tmap = mk_map "types"       add tmap
 		val cmap = mk_map "constructor" add cmap
 
-		fun prim_reader T.Int  = V.IntValue o Base.read_int
+		fun prim_reader T.Int  = (V.IntValue o Base.read_int)
 		  | prim_reader T.Identifier =
-		    V.IdentifierValue o Base.read_identifier
-		  | prim_reader T.String = V.StringValue o Base.read_string
+		    (V.IdentifierValue o Base.read_identifier)
+		  | prim_reader T.String = (V.StringValue o Base.read_string)
 
 		fun type_reader (x as (T.Prim{pkl_tag,p})) =
 		    let
@@ -130,26 +177,29 @@ functor GenericPickler(structure T:TYPE_PICKLE
 				mk
 			    end
 			val readers = List.map field_reader x
-			fun reader s =
+			fun mk s =
 			    List.map (fn rd => rd s) readers
 		    in
-			reader
+			mk
 		    end
 		and cnstrs_reader name attrbs cnstrs_map_keys =
 		    let
 			fun add (c) =
 			    let
 				val {pkl_tag,name=con,fields,...} = cmap c
-				val attrbs_reader = fields_reader attrbs
-				val vs_reader =   fields_reader fields
 				fun mk s =
 				    let
+					val attrbs_reader =
+					    fields_reader attrbs
+					val vs_reader =
+					    fields_reader fields
+
 					val attrbs = attrbs_reader s
 					val vs = vs_reader s
 				    in
-					V.SumValue
+					(V.SumValue
 					{typename=name,con=con,
-					 attrbs=attrbs,vs=vs}
+					 attrbs=attrbs,vs=vs})
 				    end
 			    in
 				{key=pkl_tag,v=mk}
@@ -157,10 +207,15 @@ functor GenericPickler(structure T:TYPE_PICKLE
 			val max = (List.length cnstrs_map_keys) 
 			val crmap = mk_map "Con Reader" add
 			    {max_key=max,entries=cnstrs_map_keys}
-			fun reader s =
-			    (crmap (Base.read_tag s)) s
+			fun mk s =
+			    let
+				val tag = (Base.read_tag s)
+				val rd = (crmap tag)
+			    in
+				rd s
+			    end
 		    in
-			reader
+			mk
 		    end
 		fun do_it i =
 		    case (Env.find(tmapi,i)) of

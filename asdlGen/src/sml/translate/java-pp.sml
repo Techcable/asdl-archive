@@ -20,12 +20,11 @@ structure JavaPP : JAVA_PP =
 	type output = (string list * PPUtil.pp) list
 
 	val cfg = Params.empty
-(*	val (cfg,package_name) =
-	    Params.declareString cfg {name="package_name",
-				      flag=NONE,
-				      default="ast"} 
+	val (cfg,base_imp) =
+	    Params.declareString cfg
+	    {name="base_import",flag=NONE,default="asdl_base"} 
 
-*)	val package_prefix = "asts"
+	val package_prefix = "asts"
 	fun mkComment s =
 	    PPUtil.vblock 2
 	    [PP.s "/*",
@@ -87,7 +86,8 @@ structure JavaPP : JAVA_PP =
 	      | pp_ty_decl _ = raise Error.internal
 		
 	    and pp_ty_idecl (IDeclEnum{name,enums}) =
-		PP.seq_term {fmt=pp_enumer,sep=semi_sep} enums
+		PP.seq_term {fmt=pp_enumer,sep=semi_sep}
+		(AstMisc.cannon_enumers enums)
 
 	    and pp_mth (MthAbstract{name,mods,args,ret}) =
 		PP.vblock 0
@@ -223,9 +223,8 @@ structure JavaPP : JAVA_PP =
 
 	    and pp_enumer  {name,value=(SOME i)} =
 		PP.cat [PP.s "final static int ",pp_id name,PP.s " = ",PP.d i]
-	      | pp_enumer  {name,value=NONE} =
-		PP.cat [PP.s "/*final static int ",pp_id name,
-			PP.s "= NONE*/"]
+	      | pp_enumer  {name,value=NONE} = raise Error.internal
+		
 	    and pp_field {name,ty} =
 		PP.cat [pp_ty_exp ty,PP.s " ",pp_id name]
 	    and pp_modifiers {scope,static,final} =  
@@ -292,12 +291,12 @@ structure JavaPP : JAVA_PP =
 		end
 		    
 	end
-	fun translate p  {name,imports,decls} =
+	fun translate p  ({name,imports,decls},_) =
 	    let
 		val (cs,ds) = List.foldr do_const ([],[]) decls
 		val mn = T.ModuleId.toString name
 	    in
-		(pp_consts  mn "asdl_base" cs)::
-		(List.map (pp_cls  mn "asdl_base") ds)
+		(pp_consts  mn (base_imp p) cs)::
+		(List.map (pp_cls  mn (base_imp p)) ds)
 	    end
     end

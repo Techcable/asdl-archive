@@ -20,6 +20,9 @@ val mktyid =
 	  (String.translate (Char.toString o Char.toLower))
 	  "Type must begin with a lowercase letter ")
 
+type view_entry = (T.identifier list * string * string)
+type view = (T.identifier * view_entry list)
+    
 %%
 %header (functor AsdlLrValsFun(structure Token : TOKEN
    			       structure T     : ASDL))
@@ -35,6 +38,7 @@ val mktyid =
 	| LBRACE | RBRACE
         | LANGLE | RANGLE
         | LPAREN | RPAREN
+        | QUOTE of string
         | FIELDSEP
         | DOT
         | SEQ | OPT
@@ -42,6 +46,7 @@ val mktyid =
         | PIPE
         | ATTRIBUTES of string
         | MODULE  of string
+        | VIEW  of string
 	| ID of string
 	| IMPORTS of string
 	| EOF	
@@ -62,14 +67,17 @@ val mktyid =
         | ty_id of T.identifier
 	| module of T.asdl_module	
 	| module_list of T.asdl_module	list
-	| start of (T.asdl_module list)
+        | start of (T.asdl_module list * view list)
+        | view_list of view list
+	| view of view
+	| view_entries of view_entry list
 	  
 %name Asdl
 %noshift EOF
 %verbose
 %%
 (* the parser returns the value associated with the expression *)
-start: module_list (module_list)
+start: module_list  view_list ((module_list,view_list))
 
 module_list: module module_list (module::module_list)
            | (nil)
@@ -87,6 +95,7 @@ import_list : IMPORTS id import_list (id::import_list)
 ty_id     : ID      (mktyid ID)
           | MODULE  (mktyid MODULE)
 	  | IMPORTS (mktyid IMPORTS)
+          | VIEW    (mktyid VIEW)
 
 con_id    : ID      (mkconid ID)
           | MODULE  (mkconid MODULE)
@@ -95,7 +104,8 @@ con_id    : ID      (mkconid ID)
 id        : ID         (Identifier.fromString ID)
           | MODULE (Identifier.fromString MODULE)
           | IMPORTS (Identifier.fromString IMPORTS)
-          
+          | VIEW (Identifier.fromString VIEW)
+
 id_opt    : id (SOME id)
           | (NONE)
 
@@ -129,3 +139,13 @@ field_list': field FIELDSEP field_list' (field::field_list')
            | field                        ([field])
 
 
+(* hacked ugly syntax for now *)
+view     : VIEW id LBRACE view_entries RBRACE ((id,view_entries))
+view_entries: id DOT id_list LANGLE EQ ID QUOTE view_entries
+                          ((id::id_list,ID,QUOTE)::view_entries)
+         | MODULE id LANGLE EQ ID QUOTE view_entries
+                          (([id],ID,QUOTE)::view_entries)
+         |                (nil)
+
+view_list: view view_list (view::view_list)
+         | (nil)

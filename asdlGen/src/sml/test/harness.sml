@@ -47,8 +47,8 @@ structure SupportFiles: SUPPORT_FILES =
 			      vol="",
 			      arcs=OS.Path.parentArc::x}]
 
-	val c_includes = mk_path ["c"]
-	val c_libs = mk_path ["c"]
+	val c_includes = (mk_path ["c"])@["/usr/local/include"]
+	val c_libs = mk_path ["c"]@["/usr/local/lib"]
 
 	val cxx_includes = mk_path ["cxx"]
 	val cxx_libs = mk_path ["cxx"]
@@ -194,10 +194,10 @@ structure Test =
 	fun test (name,f,i) () = (name,f i = OS.Process.success)
 
 	fun test_all n i =
-	    [test (n^"-ml",do_sml,i),
-	     test (n^"-c",do_c,i),
-	     test (n^"-cxx",do_cxx,i),
-	     test (n^"-java",do_java,i)]
+	    [test (n^"-ml",do_sml,"--view"::"SML"::i),
+	     test (n^"-c",do_c,"--view"::"C"::i),
+	     test (n^"-cxx",do_cxx,"--view"::"Cxx"::i),
+	     test (n^"-java",do_java,"--view"::"Java"::i)]
 
 	    
 	fun run_test s =
@@ -220,18 +220,32 @@ structure Test =
 			      vol="",
 			      arcs=OS.Path.parentArc::
 			           "asdl"::"tests"::x}
-	val tests =
-	    (test_all "all test" [mk_path ["modTest","all.asdl"]])@
+	val modTest1 =
+	    test_all "all test" [mk_path ["modTest","all.asdl"]]
+	val modTest2 =
 	    (test_all "modTest"
-	      [mk_path ["modTest","stm.asdl"],
-	       mk_path ["modTest","exp.asdl"],
-	       mk_path ["modTest","op.asdl"],
-	       mk_path ["modTest","pos.asdl"]]) @
-	    (test_all "asdl.asdl"  [mk_path ["asdl.asdl"]]) @
+	     [mk_path ["modTest","stm.asdl"],
+	      mk_path ["modTest","exp.asdl"],
+	      mk_path ["modTest","op.asdl"],
+	      mk_path ["modTest","pos.asdl"]]) 
+
+	val asdl_test =
+	    (test_all "asdl.asdl"  [mk_path ["asdl.asdl"]])
+	val slp_test =
 	    (test_all "slp.asdl"  [mk_path ["slp.asdl"]])
-
-
-
+	val views_test =
+	    (test_all "views.asdl"  [mk_path ["views.asdl"]])
+	val views_test' =
+	    (test_all "views.asdl'"  ["--base_include","foo.h",
+				      mk_path ["views.asdl"]])
+	val cii_test =
+	    [test ("cii",do_c,["--view","C",
+			       "--mono_types","false",
+				"--base_include","cii_base.h",
+				mk_path ["slp3.asdl"]])]
+	    
+	val tests =
+	    modTest1@modTest2@asdl_test@slp_test@views_test
 	fun do_it () = run_test tests
 (*    	val _ = do_it()*)
     end

@@ -20,10 +20,7 @@ structure HTMLPP : HTML_PP =
 	structure PP = PPUtil
 	type input = T.decls
 	type output = (string list * PPUtil.pp) list
-
-	val (cfg,module_name) =
-	    Params.requireString Params.empty "module_name"
-	    
+	val cfg = Params.empty
 	fun mkComment _ = PP.empty
 	fun group s pp =
 	    PP.hblock 0 [PP.s ("<"^s^">"),pp,
@@ -81,8 +78,11 @@ structure HTMLPP : HTML_PP =
 				PP.s "<dd>",pp_format fmt]),
 		     sep=PP.ws} fl)
 
-	fun translate p ({name,decls={title,body},imports}) =
-	    [([OS.Path.joinBaseExt{base=(module_name p),ext=SOME "html"}],
+	fun translate p ({name,decls={title,body},imports},_) =
+	    let
+		val base = T.ModuleId.toString name
+	    in
+	    [([OS.Path.joinBaseExt{base=base,ext=SOME "html"}],
 	      PP.vblock 0 [PP.s "<HTML>",
 			   PP.nl, 
 			   PP.s "<HEAD>",
@@ -95,4 +95,13 @@ structure HTMLPP : HTML_PP =
 			   PP.s "</BODY>",PP.nl,
 			   PP.s "</HTML>"
 			   ])]
+
+	    end
     end
+
+
+
+
+
+
+

@@ -20,12 +20,12 @@ signature TRANSLATE_FROM_MODULE =
 
 signature TRANSLATE_TO_SOURCE =
     sig
-	type input 
+	type input  
 	type output = (string list * PPUtil.pp) list
 
 	val cfg      : Params.cfg
 	val mkComment: string list -> PPUtil.pp
-	val translate: Params.params -> input -> output
+	val translate: Params.params -> (input * Module.Mod.props) -> output
     end
 
 						    
@@ -61,18 +61,27 @@ signature MODULE_TRANSLATOR =
 
 	val trans_defined: Params.params ->
 	    {tinfo:M.type_info,
+	     props:M.Typ.props,
  	      name:Id.mid,
 	      cons:con_value list,
 	    fields:field_value list} -> defined_value
 
 	val trans_sequence: Params.params ->
-	    {tinfo:M.type_info,name:Id.mid} -> sequence_value
+	    {tinfo:M.type_info,
+	     name:Id.mid,
+	     also_opt:bool,
+	     props:M.Typ.props} -> sequence_value
 
 	val trans_option: Params.params ->
-	    {tinfo:M.type_info,name:Id.mid} -> option_value
+	    {tinfo:M.type_info,	     
+	     name:Id.mid,
+	     also_seq:bool,
+	     props:M.Typ.props} -> option_value
 
 	val trans_con: Params.params ->
 	    {cinfo:M.con_info,
+	    cprops:M.Con.props,
+	    tprops:M.Typ.props,
 	     tinfo:M.type_info,
 	      name:Id.mid,
 	    attrbs:field_value list,
@@ -84,10 +93,12 @@ signature MODULE_TRANSLATOR =
 	      name:Identifier.identifier,
 	     tname:Id.mid,
 	  is_local:bool, 
-	     tinfo:M.type_info} -> field_value
+	     tinfo:M.type_info,
+	     props:M.Typ.props} -> field_value
 
 	val trans_all: Params.params ->
 	    {module: M.module,
+	      props: M.Mod.props,
 	    defines: defined_value list,
 	    options: option_value list,
           sequences: sequence_value list} -> output_value

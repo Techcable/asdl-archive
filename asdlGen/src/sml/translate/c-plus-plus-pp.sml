@@ -19,7 +19,9 @@ structure CPlusPlusPP : C_PLUS_PLUS_PP =
 	type output = (string list * PPUtil.pp) list
 
 	val cfg = Params.empty 
-	val (cfg,module_name) = Params.requireString cfg "module_name"
+	val (cfg,base_inc) =
+	    Params.declareString cfg
+	    {name="base_include",flag=NONE,default="asdl_base.hxx"} 
 
 	fun mkComment s =
 	    PPUtil.vblock 2
@@ -450,7 +452,7 @@ structure CPlusPlusPP : C_PLUS_PLUS_PP =
 		end
 	end
 
-	fun translate p {name,imports,decls} =
+	fun translate p ({name,imports,decls},_) =
 	    let
 		val mn = T.ModuleId.toString name
 		val x = List.map T.ModuleId.toString imports
@@ -475,7 +477,7 @@ structure CPlusPlusPP : C_PLUS_PLUS_PP =
 		     PPUtil.s ("#endif /* _"^name^"_ */"), PPUtil.nl]
 
 		val (header,body) = fix_decs_pp decls
-		val includes = List.map (mk_file "hxx") ("asdl_base"::x)
+		val includes = (base_inc p)::(List.map (mk_file "hxx") x)
 	    in
 		[([mk_file "hxx" mn],pp_interface mn header includes),
 		 ([mk_file "cxx" mn], pp_impl (mk_file "hxx" mn) body)]
