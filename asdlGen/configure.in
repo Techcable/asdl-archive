@@ -2,7 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/c/asdl_base.c)
 AC_CONFIG_AUX_DIR(src/misc)
 AUTOMAKE_OPTIONS = no-dependencies
-AM_INIT_AUTOMAKE(asdlGen, 1.0)
+AM_INIT_AUTOMAKE(asdlGen, 1.0b)
 AC_PROG_MAKE_SET
 
 dnl package options
