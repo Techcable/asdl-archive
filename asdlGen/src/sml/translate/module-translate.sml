@@ -278,7 +278,7 @@ functor mkTranslateFromTranslator
 			val prop = M.module_props m
 		    in
 			T.ignore_supress
-			orelse (not (M.Mod.supress prop))
+			orelse (not (M.Mod.suppress prop))
 		    end
 
 

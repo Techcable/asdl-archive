@@ -31,8 +31,13 @@ Read and write the <bf/identifier/ type out in the ASDL identifier format.
 <tag/die/ Signal a fatal error.
 </descrip>
 
-<sect1>Lists and Options<p>
+<sect1>BigNums<p> C and SML have libraries that use a bignum type
+rather than the a fixnum for the ASDL int type. To have the int type
+be a bignum in C use the flag <tt/--base_include cii_big_base.h/. In
+SML the flags are <tt/--base_signature BIG_BASE/ and
+<tt/--base_structure BigBase/.
 
+<sect1>Lists and Options<p>
 For code that does not use polymorphic list and option the following extra
 types are needed along with the corresponding read and write functions
 <descrip>

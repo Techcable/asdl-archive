@@ -37,20 +37,20 @@ view Doc {
 
 view SML {
  -- implementation provided by hand
- module StdTypes <= supress : true
+ module StdTypes <= suppress : true
  module StdTypes <= is_library : true
 }
 
 view C {
  -- implementation provided by hand
- module StdTypes <= supress : true
+ module StdTypes <= suppress : true
  module StdTypes <= is_library : true
 }
 
 view Java {
 
--- set supress to false to generate stubs
-module StdTypes <= supress    : true
+-- set suppress to false to generate stubs
+module StdTypes <= suppress    : true
 module StdTypes <= is_library : true
 
 -- define the type substitutions
@@ -100,8 +100,8 @@ module StdTypes <= is_library : true
 
 view Cxx {
 
--- set supress to false to generate stubs
-module StdTypes <= supress    : true
+-- set suppress to false to generate stubs
+module StdTypes <= suppress    : true
 module StdTypes <= is_library : true
 
 StdTypes.int8  <= { natural_type : int8
@@ -138,6 +138,6 @@ StdTypes.uint16  <= { natural_type : uint16
 
 
 view Haskell {
-module StdTypes <= supress    : true
+module StdTypes <= suppress    : true
 module StdTypes <= is_library : true
 }

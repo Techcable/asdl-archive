@@ -1,10 +1,10 @@
 <!entity asdlGen "<tt/asdlGen/" >
-<!entity asdlGen.version "1.0" >
-<!entity asdlGen.release-date "January 30, 1998" >
+<!entity asdlGen.version "1.10" >
+<!entity asdlGen.release-date "February 27, 1998" >
 
 <!entity author.danwang "Daniel C. Wang" >
-<!entity doc.version "1.0" >
-<!entity doc.date "January 30, 1998" >
+<!entity doc.version "1.1" >
+<!entity doc.date "Februaru 27, 1998" >
 <!entity doc.copyright system "copyright.ldoc">
 
 <!entity asdlGen.supported-languages 

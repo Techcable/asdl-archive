@@ -5,8 +5,31 @@
 <article>
 <title>CHANGES
 <author>&author.danwang;
-<date>&asdlGen.release-date;
-<sect>CHANGES in &asdlGen.version; Release<p>
+<date> &asdlGen.release-date;
+<sect>CHANGES in 1.10 Release<p>
+<sect1>Incompatible Changes<p>
+<itemize>
+<item>C code now use libcii by default. To get more of the old behavior try
+the flags <tt/--mono_types true/ and <tt/--include_base asdl_base.h/. 
+See src/c/asdl_base.h and src/c/asdl_base.c.
+<item>C code now generates constant pointers to statically allocated enums
+rather than using enums themselves, for non carrying value constructors.
+</itemize>
+<sect1>New Features<p>
+<itemize>
+<item>src/asdl/std-types.asdl
+<item>View option to completely suppress the generation of code on a per-module
+level. View option for generating library code that produces list and option
+types for every type in the module not just types that are used as lists and
+options. See src/asdl/std-types.asdl for examples.
+<item>Vistor patterns for Java and C++.
+<item>Mangled variables to avoid name clashes.
+</itemize>
+<sect1>Know Bugs
+<p>Handling of optional types in StdTypes module not implemented in all
+languages. 
+
+<sect>CHANGES in 1.0 Release<p>
 <sect1>Bugs Fixed<p>
 Added <tt/source_name/ option to help with name collisions.
 <sect1>Incompatible Changes<p>
@@ -24,7 +47,6 @@ See the Reference Manual For Details
 <item>Integrated Haskell Support thanks to 
 <url url="http://www.dcs.gla.ac.uk/~reig/" name="Fermin Reig Galilea">
 <item><tt/doc_string/ view property now dumps description in HTML output
-<item>
 </itemize>
 
 

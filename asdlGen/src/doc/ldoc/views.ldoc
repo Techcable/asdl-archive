@@ -39,9 +39,8 @@ remain <tt/M.t/ in SML, Java, and Haskell.
 
 <sect1>Adding User Code<p>
 It is useful to be able to add arbitrary user code to the modules
-produced by &asdlGen;. Modules have four properties that can be set to allow
-the addition of user code. All these properties interpret their values as
-strings. 
+produced by &asdlGen;. Modules have six properties that can be set to allow
+the addition of user code. strings. 
 
 <descrip>
         <tag><tt/interface_prologue/</tag>
@@ -59,6 +58,19 @@ strings.
        <tag><tt/implementation_epilogue/</tag>     
        Include text verbatim after all definitions defined in the module
        implementation.  
+
+       <tag><tt/suppress/</tag>
+       Default value is false. Do not produce any code for this module, 
+       assume it's implementation is 
+       written by hand. It's often a good idea to first generate code and then
+       set the flag, so the generated code can be used as stubs for the 
+       user implementation.
+
+       <tag><tt/is_library/</tag>     
+       Default value is flase. If true instantiate assume all types can be used
+       as lists or options and generate any needed code, rather then 
+       generating list and option code on demand. Useful for generating stubs.
+
 </descrip>
 
 The precise meaning of interface and implementation for the different

@@ -31,12 +31,21 @@ ASDL&lowbar;HOME to the location of where you unpacked the distribution.
 Also set your path to include <url url="bin/asdlGen.bat" 
 name="bin/asdlGen.bat">. 
 
-<sect>Installing from Sources<p> 
+<sect1>Library Code<p> 
+Both the Unix and Windows binary distribution include some compiled
+libraries and header files found in the <tt/{include,share,lib}/
+directories. The generated C code produced by &asdlGen; now uses Dave
+Hanson's <url url="http://www.cs.princeton.edu/software/cii/" name="C
+Interfaces and Implementations"> library. The source for the library is
+redistributed with &asdlGen;, and the binary distribution contains a
+compiled library <em>without</em> thread support. 
 
+
+<sect>Installing from Sources<p> 
 &asdlGen; now builds with <tt/autoconf/. To build from
-sources you should have the latest version <url
-url="ftp://ftp.research.bell-labs.com/dist/smlnj/working/110.0.2/"
-name="110.0.2"> of <url
+sources you should have  
+<url url="http://cm.bell-labs.com/cm/cs/what/smlnj/NEWS/110-README.html"
+name="version 110"> of <url
 url="http://cm.bell-labs.com/cm/cs/what/smlnj/index.html" name="Standard ML
 of New Jersey">. In the future, I plan to experiment with releasing sources
 via a read only remote CVS repository.
@@ -62,7 +71,7 @@ program itself.
 
 On a Windows machine after sml-cm starts up in <tt>src/sml/</tt>.
 <tscreen><verb>
-Standard ML of New Jersey, Version 110.0.2, January 16, 1998 
+Standard ML of New Jersey, Version 110.0.3, January 30, 1998 
 - use "build.sml";
 </verb></tscreen>
 </article>
