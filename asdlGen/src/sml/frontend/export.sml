@@ -3,10 +3,10 @@
  *)
 structure Export =
     struct
-	fun mkExportFn f (n:string,args) =
-	    Error.try
-	    {catch=(fn x => (f x;OS.Process.success)),
-	     fail=OS.Process.failure} args
+	fun mkExportFn f (y:string,x:string list) =
+	    (f x;OS.Process.success) handle e =>
+		(print ("Error: "^(exnMessage e)^"\n");
+		 OS.Process.failure)
 
 	val HTMLGenFn =  mkExportFn Main.HTML.do_it
 	    

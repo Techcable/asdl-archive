@@ -162,9 +162,11 @@ structure CxxPklGen : OO_PKL_GEN =
 
 structure JavaPklGen : OO_PKL_GEN =
     OOPklGen(val outstream_ty =
-		 OOTypes.TyId (OOTypes.TypeId.fromPath {base="OutputStream",
-				       qualifier=["java","io"]})
+		 OOTypes.TyId (OOTypes.TypeId.fromPath
+			       {base="java.io.OutputStream",
+				       qualifier=[]})
 	     val instream_ty =
-		 OOTypes.TyId (OOTypes.TypeId.fromPath {base="InputStream",
-					    qualifier=["java","io"]}))
+		 OOTypes.TyId (OOTypes.TypeId.fromPath
+			       {base="java.io.InputStream",
+					    qualifier=[]}))
     

@@ -38,8 +38,21 @@ structure JavaPP : JAVA_PP =
 		SOME{qualifier=qualifier,
 		     base=String.map (fn #"." => #"_" | x => x) base}
 	    val const_class =  "g"
-	    val pp_id = PP.wrap VarId.toString 
-	    val pp_tid = PP.wrap TypeId.toString
+	    fun pp_id x =
+		if List.null (VarId.getQualifier x) then
+		    PP.s (VarId.getBase x)
+		else
+		    PP.s (package_prefix^"."^(VarId.toString x))
+
+	    fun pp_tid x =
+		if List.null (TypeId.getQualifier x) then
+		    PP.s (TypeId.getBase x)
+		else
+		    PP.s (package_prefix^"."^(TypeId.toString x))
+
+
+	    val pp_idb = PP.wrap VarId.getBase
+	    val pp_tidb = PP.wrap TypeId.getBase
 
 	    val semi_sep = PP.cat [PP.s ";",PP.ws]
 	    val comma_sep = PP.cat [PP.s ",",PP.ws]
@@ -62,7 +75,7 @@ structure JavaPP : JAVA_PP =
 		PP.vblock 4
 		[pp_scope scope,
 		 PP.s " abstract class ",
-		 pp_tid name,
+		 pp_tidb name,
 		 PP.opt {some=(fn x => PP.cat [PP.s " extends ",pp_tid x]),
 			 none=PP.empty} inherits,
 		 PP.s " {", PP.ws,
@@ -77,7 +90,7 @@ structure JavaPP : JAVA_PP =
 		[pp_scope scope,
 		 pp_str_if " final" final,
 		 PP.s " class ",
-		 pp_tid name,
+		 pp_tidb name,
 		 PP.opt {some=(fn x => PP.cat [PP.s " extends ",pp_tid x]),
 			 none=PP.empty} inherits,
 		 PP.s " {",
@@ -98,7 +111,7 @@ structure JavaPP : JAVA_PP =
 		[PP.s "abstract ",
 		 pp_modifiers mods,
 		 pp_ty_exp ret,PP.s " ",
-		 pp_id name,
+		 pp_idb name,
 		 PP.hblock 1
 		 [PP.s "(",
 		  PP.seq {fmt=pp_field,sep=comma_sep} args,
@@ -107,7 +120,7 @@ structure JavaPP : JAVA_PP =
 		PP.vblock 1
 		[pp_modifiers mods,
 		 pp_ty_exp ret,PP.s " ",
-		 pp_id name,
+		 pp_idb name,
 		 PP.hblock 1
 		 [PP.s "(",
 		  PP.seq {fmt=pp_field,sep=comma_sep} args,
@@ -115,9 +128,9 @@ structure JavaPP : JAVA_PP =
 
 	    and pp_const (IntConst i) = PP.d i
 	      | pp_const (EnumConst (tid,id)) =
-		PP.cat[pp_tid tid,PP.s ".",pp_id id]
+		PP.cat[pp_tid tid,PP.s ".",pp_idb id]
 	      | pp_const (VarConst id) =
-		PP.cat[PP.s const_class,PP.s ".",pp_id id]
+		PP.cat[PP.s const_class,PP.s ".",pp_idb id]
 	    and pp_exp (NilPtr) = PP.s "null"
 	      | pp_exp (MthCall(e,es)) =
 		PP.hblock 1
@@ -241,11 +254,11 @@ structure JavaPP : JAVA_PP =
 
 	    and pp_enumer  {name,value=(SOME i)} =
 		PP.cat [PP.s "public final static int ",
-			pp_id name,PP.s " = ",PP.d i]
+			pp_idb name,PP.s " = ",PP.d i]
 	      | pp_enumer  {name,value=NONE} = raise Error.internal
 		
 	    and pp_field {name,ty} =
-		PP.cat [pp_ty_exp ty,PP.s " ",pp_id name]
+		PP.cat [pp_ty_exp ty,PP.s " ",pp_idb name]
 	    and pp_modifiers {scope,static,final} =  
 		PP.cat [pp_scope scope,PP.s " ",
 			pp_str_if "final " final,
@@ -255,7 +268,7 @@ structure JavaPP : JAVA_PP =
 	    and pp_cnstr tid {scope,args,body,inline} =
 		PP.vblock 0
 		[pp_scope scope,PP.s " ",
-		 pp_tid tid,PP.hblock 1
+		 pp_tidb tid,PP.hblock 1
 		 [PP.s "(",
 		  PP.seq {fmt=pp_field,sep=comma_sep} args,
 		  PP.s ")"],PP.ws,
@@ -282,7 +295,7 @@ structure JavaPP : JAVA_PP =
 
 		    val fname =
 			OS.Path.joinBaseExt
-			{base=TypeId.toString (get_name x),ext=SOME "java"}
+			{base=TypeId.getBase (get_name x),ext=SOME "java"}
 		in
 		    ([package_prefix,mn,fname],pp)
 		end

@@ -20,8 +20,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 			   and type Pkl.id = T.id
 			   and type Pkl.decl = T.mth
 		       val  prefix_ids : string option
-		       val  int_kind : bool
-		       val  short_names: bool): MODULE_TRANSLATOR =
+		       val  int_kind : bool): MODULE_TRANSLATOR =
     struct
 
 	structure M = Module
@@ -95,26 +94,12 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 	fun get_tail x = (T.FieldSub(T.DeRef(x),tail_id))
 	fun get_head x = (T.FieldSub(T.DeRef(x),head_id))
 	    
-	local
-	    fun keepPath _ ({qualifier=[],base}:Id.path) =
-		{qualifier=[],base=base}
-	      | keepPath true {qualifier,base}  =
-		(case prefix_ids of
-		    NONE => {qualifier=qualifier,base=base}
-		  | (SOME x) =>
-			{qualifier=x::qualifier,base=base})
-	      | keepPath false ({qualifier,base}:Id.path) =
-		{qualifier=[],base=base}
-	    fun id _ x = x
-	in
-	    val keepPath = if short_names then keepPath else id
-	end
 
-	fun mId2path q = (keepPath q) o Id.toPath
+	val mId2path = Id.toPath
 
 	fun trans_tid f x =
-	    (T.TypeId.fromPath o (keepPath (not x)) o
-	     Id.toPath o f o (Id.subst IdFix.ty_fix) o M.type_src_name)
+	    (T.TypeId.fromPath o Id.toPath o f o
+	     (Id.subst IdFix.ty_fix) o M.type_src_name)
 
 	val listify_id = (Id.suffixBase "_list")
 	val optify_id =  (Id.suffixBase "_option")
@@ -221,23 +206,24 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 	fun tomfield x =
 		{mods={scope=T.Public,static=false,final=false},field=x}
 
-	val tid_base = (fix_ty o T.TypeId.fromPath o (mId2path false))
-	val id_base = (fix_id o T.VarId.fromPath o (mId2path false)) 
-	val visit_id = (T.VarId.prefixBase "visit_") o  id_base
+	val tid_base = (fix_ty o T.TypeId.fromPath o mId2path)
+	val id_base = (fix_id o T.VarId.fromPath o mId2path)
+	fun visit_id f x =
+	    T.VarId.fromPath
+	    {qualifier=[],
+	     base=(T.VarId.getBase o (T.VarId.prefixBase "visit_") o
+		   T.VarId.fromPath o f ) x}
 
-	fun mk_tid (mname,c) = T.TypeId.fromPath
-	    (keepPath false
-	     {qualifier=[Id.toString mname], base=c})
+	fun mk_tid (mname,c) =
+	    T.TypeId.fromPath {qualifier=[Id.toString mname], base=c}
 
 	    
 	structure BuildAux =
 	    mkOOBuildAux(structure T = T
-		        val mk_tid = mk_tid
+			 val mk_tid = mk_tid
 			val visit_id =
-			     (T.VarId.fromPath o
-			      T.TypeId.toPath o
-			      (T.TypeId.prefixBase "visit_")))
-
+			     visit_id T.TypeId.toPath)
+	val visit_id = visit_id mId2path 
 			     
 	    
 	fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} =

@@ -264,11 +264,11 @@ structure CPlusPlusPP : C_PLUS_PLUS_PP =
 		 PP.nl,PP.untab, PP.s "}"]
 	      | pp_stmt (T.If{test,then_stmt,else_stmt=T.Nop}) =
 		PP.vblock 4
-		[PP.s "if(",pp_exp test,PP.s ")", pp_stmt then_stmt]
+		[PP.s "if(",pp_exp test,PP.s ") ", pp_stmt then_stmt]
 	      | pp_stmt (T.If{test,then_stmt as (Block _),
 			      else_stmt}) =
 		PP.cat
-		[PP.s "if(",pp_exp test,PP.s ")",
+		[PP.s "if(",pp_exp test,PP.s ") ",
 		 pp_stmt then_stmt,
 		 PP.s " else ",pp_stmt else_stmt]
 	      | pp_stmt (T.If{test,then_stmt,else_stmt}) =

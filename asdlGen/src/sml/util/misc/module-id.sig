@@ -19,6 +19,7 @@ signature MODULE_ID =
 	val getBase      : mid -> string
 
 	val eq           : (mid * mid) -> bool
+	val eqQualifier  : (mid * mid) -> bool
 	val fromString   : string -> mid
 	val toString     : mid -> string
 	val toString'    : string -> mid -> string

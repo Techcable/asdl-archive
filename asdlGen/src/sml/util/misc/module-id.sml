@@ -58,6 +58,19 @@ structure ModuleId :> MODULE_ID =
 	    
 	fun fromString s =  fromPath {base=s,qualifier=[]}
 	fun eq x = (compare x) = EQUAL
+	fun eqQualifier (M{base=_,qualifier=xs},
+			 M{base=_,qualifier=ys}) =
+	    let
+		fun compl ([],[]) = EQUAL
+		  | compl (_,[]) = GREATER
+		  | compl ([],_) = LESS
+		  | compl (x::xs,y::ys) =
+		    (case (Atom.compare(x,y)) of
+			 EQUAL => compl(xs,ys)
+		       | x => x)
+	    in
+		compl (xs,ys) = EQUAL
+	    end
     end
 
 structure  Id = ModuleId
