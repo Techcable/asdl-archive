@@ -1,6 +1,6 @@
 (* 
  * Copyright (c) 1997 by Daniel C. Wang 
- *)						    
+ *)
 signature TRANSLATE_TO_FILES =
     sig
 	type outstream
