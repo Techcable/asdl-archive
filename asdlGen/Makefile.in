@@ -3,7 +3,7 @@ all: @top_srcdir@/src/c/cii/ cii-all
 	cd @top_srcdir@/src/sml/; \
 	echo 'CM.make();Build.Config.all();' | @SML_CM@
 
-install: cii-install
+install: 
 	cd @top_srcdir@/src/sml/; \
 	echo 'CM.make();Build.Config.install();' | @SML_CM@
 
@@ -14,7 +14,7 @@ cii-all:
 	cd @top_srcdir@/src/cii/; \
         $(MAKE) THREADS= EXAMPLES=  BUILDDIR=./ $(CIIARGS) all
 
-cii-install: cii-all
+cii-install: cii-all install
 	test -d @prefix@/include/cii/ || mkdir  @prefix@/include/cii/
 	test -d @prefix@/lib/cii/ || mkdir @prefix@/lib/cii/
 	@INSTALL_DATA@ @top_srcdir@/src/cii/include/*.h @prefix@/include/cii/
