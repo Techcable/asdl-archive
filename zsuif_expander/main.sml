@@ -7,7 +7,7 @@ end
 structure Ztv : ZTV =
 struct
   structure L = List
-  structure M = Alpha
+  structure M = Sparc
   structure Exp = Expander (M)
 
   fun mkOutFile iFile =

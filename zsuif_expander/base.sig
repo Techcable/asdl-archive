@@ -42,7 +42,7 @@ sig
    val localLevel             : string
    val getRegType             : zsuif.type' -> regtype * int
    val atomicType             : zsuif.type' -> bool
-   val getAllignment          : zsuif.type' -> int
+   val getAlignment           : zsuif.type' -> int
    val getTypeSize            : zsuif.type' -> int
    val getAtomicTypeSize      : zsuif.type' -> int
    val getTypeName            : zsuif.type' -> string

@@ -45,7 +45,8 @@ struct
 	     | Int32Bit  => "r"
 	     | UInt32Bit => "r"
 	     | Fp32Bit   => "f"
-	     | Fp64Bit   => "d")
+	     | Fp64Bit   => "d"
+	     | _         => raise (Fail "Error in regToLetter"))
 	| regToLetter _ = raise (Fail "Non-Register passed to regToLetter")
 
       fun newFixedReg (typ, n) = Reg (typ, n)
@@ -83,6 +84,7 @@ struct
         | getReturnReg UInt16Bit = w8
         | getReturnReg Int32Bit  = r8
         | getReturnReg UInt32Bit = r8
+	| getReturnReg _         = raise (Fail "Error in getReturnReg")
 
       datatype OptOperators = Mul | Div | Rem
       val multi : operand option ref = ref NONE
@@ -109,6 +111,13 @@ struct
       fun initTmpLocArg () = tempArg := 0
   end
 
+  fun newAddrReg () = newReg UInt32Bit
+  fun newIntReg  () = newReg Int32Bit
+
+  fun zeroOut (emit, reg) = emit "+%s=0\n" [REG reg]
+  fun addOne  (emit, reg) =
+      let val r = REG reg in emit "+%s=%s+1\n" [r, r] end
+
   fun doKilledRegs (emt, [], []) = emt "\n" []
     | doKilledRegs (emt, sList, kRegs) =
       let
@@ -124,15 +133,90 @@ struct
     | killRegs (emt, reglist) =
       (emt "+" []; doKilledRegs (emt, [], reglist))
 
+  fun getRtlOper (Z.Add, _)                         = "+"
+    | getRtlOper (Z.Subtract, _)                    = "-"
+    | getRtlOper (Z.Multiply, B.Fp32Bit)            = "*"
+    | getRtlOper (Z.Multiply, B.Fp64Bit)            = "*"
+    | getRtlOper (Z.Multiply, _)                    =
+      raise (Fail "Operator does not exist for Multiply")
+    | getRtlOper (Z.Divide, B.Fp32Bit)              = "/"
+    | getRtlOper (Z.Divide, B.Fp64Bit)              = "/"
+    | getRtlOper (Z.Divide, _)                      =
+      raise (Fail "Operator does not exist for Divide")
+    | getRtlOper (Z.Remainder, _)                   =
+      raise (Fail "Operator does not exist for Remainder")
+    | getRtlOper (Z.Bitwise_and, _)                 = "&"
+    | getRtlOper (Z.Bitwise_or, _)                  = "|"
+    | getRtlOper (Z.Bitwise_nand, _)                = "b"
+    | getRtlOper (Z.Bitwise_nor, _)                 = "o"
+    | getRtlOper (Z.Bitwise_xor, _)                 = "^"
+    | getRtlOper (Z.Left_shift, _)                  = "{"
+    | getRtlOper (Z.Right_shift, r)                 =
+      if B.isUnsigned r then "\"" else "}"
+    | getRtlOper (Z.Rotate, _)                      =
+      raise (Fail "Operator does not exist for Rotate")
+                                        (* For the comparison operators we *)
+                                        (* return the negated rtl operator *)
+    | getRtlOper (Z.Is_equal_to, _)                 = "!"
+    | getRtlOper (Z.Is_not_equal_to, _)             = ":"
+    | getRtlOper (Z.Is_less_than, r)                =
+      if B.isUnsigned r then "g" else "`"
+    | getRtlOper (Z.Is_less_than_or_equal_to, r)    =
+      if B.isUnsigned r then "h" else ">"
+    | getRtlOper (Z.Is_greater_than, r)             =
+      if B.isUnsigned r then "s" else "'"
+    | getRtlOper (Z.Is_greater_than_or_equal_to, r) =
+      if B.isUnsigned r then "l" else "<"
+    | getRtlOper (Z.Logical_and, _)                 =
+      raise (Fail "Operator does not exist for Logical And")
+    | getRtlOper (Z.Logical_or, _)                  =
+      raise (Fail "Operator does not exist for Logical Or")
+    | getRtlOper (Z.Maximum, _)                     =
+      raise (Fail "Operator does not exist for Maximum")
+    | getRtlOper (Z.Minimum, _)                     =
+      raise (Fail "Operator does not exist for Minimum")
+
+  fun getCondCode (_, "!")        = "?"
+    | getCondCode (_, ":")        = "?"
+    | getCondCode (Reg (r, _), _) = if B.isUnsigned r then "u" else "?"
+    | getCondCode _               = raise (Fail "Bad reg in getCondCode")
+
+  fun getCondRegister (Reg (Fp32Bit, _)) = "FC"
+    | getCondRegister (Reg (Fp64Bit, _)) = "FC"
+    | getCondRegister (Reg _)            = "IC"
+    | getCondRegister _                  =
+      raise (Fail "Not a reg in getCondRegister")
+
+
+  fun compareRegs (emt, reg1, reg2, oper, kRegs) =
+      let
+          val sCondReg  = F.STR (getCondRegister reg1)
+          val sCondCode = F.STR (getCondCode (reg1, oper))
+          val sReg1     = REG reg1
+          val sReg2     = REG reg2
+      in
+          emt "+%s=%s%s%s" [sCondReg, sReg1, sCondCode, sReg2];
+          doKilledRegs (emt, [], kRegs)
+      end
+
+  fun compareRegToZero (emt, reg, oper, kRegs) =
+      let
+          val zreg = newIntReg ()
+      in
+          zeroOut (emt, zreg);
+          compareRegs (emt, reg, zreg, oper, zreg :: kRegs)
+      end
+
+  fun jumpWhen oper reg (emt, lab) =
+      let
+          val condReg = getCondRegister reg
+      in
+          emt ("+PC=" ^ condReg ^ oper ^ "0,%s\n") [B.LAB lab]
+      end
+
   fun initProcedure() = (initRegCount  ();
                          initSEmited   ())
 
-  fun newAddrReg () = newReg UInt32Bit
-  fun newIntReg  () = newReg Int32Bit
-
-  fun zeroOut (emit, reg) = emit "+%s=0\n" [REG reg]
-  fun addOne  (emit, reg) =
-      let val r = REG reg in emit "+%s=%s+1\n" [r, r] end
   fun emitLabel (emit, lab) = ((emit "%s\n") o (fn x => [x]) o B.LAB) lab
 
   fun beginDataSection emt = emt "%s\n" [F.STR "-\t.seg\t\"data\""]
@@ -313,6 +397,30 @@ struct
 
   fun emitUncondJump (emt, lab) = emt "+PC=%s\n" [B.LAB lab]
 
+  fun emitConditionalJump (emt, r1 as Reg(r, _), oper, r2, kr, t) =
+     let
+	val opStr = getRtlOper(oper, r)
+     in
+	compareRegs (emt, r1, r2, opStr, [r1, r2]);
+	jumpWhen opStr r1 (emt, t)
+     end
+    |  emitConditionalJump (emt, r1, oper, r2, kr, t) =
+     raise (Fail "Error in emitConditionalJump")
+
+  fun emitComparisonOp (emt, rd, r1 as Reg(r, _), oper, r2, kr) =
+     let
+	val lab = B.newLabel NONE
+	val opStr = getRtlOper(oper, r)
+     in
+	zeroOut (emt, rd);
+	compareRegs (emt, r1, r2, opStr, kr);
+	jumpWhen opStr r1 (emt, lab);
+	addOne (emt, rd);
+	emitLabel (emt, lab)
+     end
+    | emitComparisonOp (emt, rd, r1, oper, r2, kr) =
+     raise (Fail "Error in emitComparisonOp")
+
   fun emitMemWrite (emt, regt, regs, kRegs) =
       let
           val sRLet = F.STR (S.map C.toUpper (regToLetter regs))
@@ -392,43 +500,6 @@ struct
           emt "+%s=R[%s]\t%s%s\n" [ftReg, fsReg, fsReg, !ddreg];
           emt "+R[%s]=%s\t%s%s\n" [fdReg, ftReg, ftReg,
                                    if killdest then fdReg else F.STR ""]
-      end
-
-  fun getCondCode (_, "!")        = "?"
-    | getCondCode (_, ":")        = "?"
-    | getCondCode (Reg (r, _), _) = if B.isUnsigned r then "u" else "?"
-    | getCondCode _               = raise (Fail "Bad reg in getCondCode")
-
-  fun getCondRegister (Reg (Fp32Bit, _)) = "FC"
-    | getCondRegister (Reg (Fp64Bit, _)) = "FC"
-    | getCondRegister (Reg _)            = "IC"
-    | getCondRegister _                  =
-      raise (Fail "Not a reg in getCondRegister")
-
-  fun compareRegs (emt, reg1, reg2, oper, kRegs) =
-      let
-          val sCondReg  = F.STR (getCondRegister reg1)
-          val sCondCode = F.STR (getCondCode (reg1, oper))
-          val sReg1     = REG reg1
-          val sReg2     = REG reg2
-      in
-          emt "+%s=%s%s%s" [sCondReg, sReg1, sCondCode, sReg2];
-          doKilledRegs (emt, [], kRegs)
-      end
-
-  fun compareRegToZero (emt, reg, oper, kRegs) =
-      let
-          val zreg = newIntReg ()
-      in
-          zeroOut (emt, zreg);
-          compareRegs (emt, reg, zreg, oper, zreg :: kRegs)
-      end
-
-  fun jumpWhen oper reg (emt, lab) =
-      let
-          val condReg = getCondRegister reg
-      in
-          emt ("+PC=" ^ condReg ^ oper ^ "0,%s\n") [B.LAB lab]
       end
 
   local
@@ -517,49 +588,6 @@ struct
        \d[16]d[18]d[20]d[22]d[24]d[26]d[28]d[30]\nt*\n" []
 
   fun adjustStackReg _ = ()
-
-  fun getRtlOper (Z.Add, _)                         = "+"
-    | getRtlOper (Z.Subtract, _)                    = "-"
-    | getRtlOper (Z.Multiply, B.Fp32Bit)            = "*"
-    | getRtlOper (Z.Multiply, B.Fp64Bit)            = "*"
-    | getRtlOper (Z.Multiply, _)                    =
-      raise (Fail "Operator does not exist for Multiply")
-    | getRtlOper (Z.Divide, B.Fp32Bit)              = "/"
-    | getRtlOper (Z.Divide, B.Fp64Bit)              = "/"
-    | getRtlOper (Z.Divide, _)                      =
-      raise (Fail "Operator does not exist for Divide")
-    | getRtlOper (Z.Remainder, _)                   =
-      raise (Fail "Operator does not exist for Remainder")
-    | getRtlOper (Z.Bitwise_and, _)                 = "&"
-    | getRtlOper (Z.Bitwise_or, _)                  = "|"
-    | getRtlOper (Z.Bitwise_nand, _)                = "b"
-    | getRtlOper (Z.Bitwise_nor, _)                 = "o"
-    | getRtlOper (Z.Bitwise_xor, _)                 = "^"
-    | getRtlOper (Z.Left_shift, _)                  = "{"
-    | getRtlOper (Z.Right_shift, r)                 =
-      if B.isUnsigned r then "\"" else "}"
-    | getRtlOper (Z.Rotate, _)                      =
-      raise (Fail "Operator does not exist for Rotate")
-                                        (* For the comparison operators we *)
-                                        (* return the negated rtl operator *)
-    | getRtlOper (Z.Is_equal_to, _)                 = "!"
-    | getRtlOper (Z.Is_not_equal_to, _)             = ":"
-    | getRtlOper (Z.Is_less_than, r)                =
-      if B.isUnsigned r then "g" else "`"
-    | getRtlOper (Z.Is_less_than_or_equal_to, r)    =
-      if B.isUnsigned r then "h" else ">"
-    | getRtlOper (Z.Is_greater_than, r)             =
-      if B.isUnsigned r then "s" else "'"
-    | getRtlOper (Z.Is_greater_than_or_equal_to, r) =
-      if B.isUnsigned r then "l" else "<"
-    | getRtlOper (Z.Logical_and, _)                 =
-      raise (Fail "Operator does not exist for Logical And")
-    | getRtlOper (Z.Logical_or, _)                  =
-      raise (Fail "Operator does not exist for Logical Or")
-    | getRtlOper (Z.Maximum, _)                     =
-      raise (Fail "Operator does not exist for Maximum")
-    | getRtlOper (Z.Minimum, _)                     =
-      raise (Fail "Operator does not exist for Minimum")
 
   fun compileArgs (emt, regs) =
       let

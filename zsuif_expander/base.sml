@@ -166,23 +166,23 @@ struct
       | atomicType (Z.Void)                           =
         raise (Fail ("Type specified as void in function atomicType"))
 
-    fun getAllignment (Z.Data (Z.BooleanType
+    fun getAlignment (Z.Data (Z.BooleanType
 			       {bit_alignment = n, ...})) = n
-      | getAllignment (Z.Data (Z.IntegerType
+      | getAlignment (Z.Data (Z.IntegerType
 			       {bit_alignment = n, ...})) = n
-      | getAllignment (Z.Data (Z.UIntegerType
+      | getAlignment (Z.Data (Z.UIntegerType
 			       {bit_alignment = n, ...})) = n
-      | getAllignment (Z.Data (Z.FloatingPointType
+      | getAlignment (Z.Data (Z.FloatingPointType
 			       {bit_alignment = n, ...})) = n
-      | getAllignment (Z.Data (Z.EnumeratedType
+      | getAlignment (Z.Data (Z.EnumeratedType
                                {bit_alignment = n, ...})) = n
-      | getAllignment (Z.Data (Z.PointerType
+      | getAlignment (Z.Data (Z.PointerType
                                {bit_alignment = n, ...})) = n
-      | getAllignment (Z.Data (Z.ArrayType _))                 = 64
-      | getAllignment (Z.Data (Z.GroupType _))                 = 64
-      | getAllignment (Z.Procedure procedureType)               = 32
-      | getAllignment (Z.Qualified qualifications)              = 32
-      | getAllignment (Z.Void) = raise (Fail "Bad allignment in getAlignment")
+      | getAlignment (Z.Data (Z.ArrayType _))             = 64
+      | getAlignment (Z.Data (Z.GroupType _))             = 64
+      | getAlignment (Z.Procedure procedureType)          = 32
+      | getAlignment (Z.Qualified {type' = type', ...})   = getAlignment type'
+      | getAlignment (Z.Void) = raise (Fail "Bad allignment in getAlignment")
 
     fun getTypeSize (Z.Data (Z.BooleanType _)) = 4
       | getTypeSize (Z.Data (Z.IntegerType
@@ -202,14 +202,7 @@ struct
       | getTypeSize (Z.Data (Z.ArrayType
                              {bit_size = Z.Finite n, ...}))
 	= IntInf.toInt(n) div 8
-(*
-        (case x of
-             Z.SrcVar _ => print "\nI am a SrcVar.\n\n"
-           | Z.SrcReg _ => print "\nI am a SrcReg.\n\n"
-           | Z.SrcDst _ => print "\nI am a SrcDst.\n\n"
-           | Z.SrcZero  => print "\nI am a SrcZero.\n\n";
-        raise (Fail "bizarre"))
-*)
+
       | getTypeSize (Z.Data (Z.GroupType {bit_size = Z.Finite n, ...}))
 	= IntInf.toInt(n) div 8
       | getTypeSize (Z.Data _) =

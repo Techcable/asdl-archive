@@ -10,7 +10,7 @@ Group is
   expander.sml
   suifsymtabs.sml
   machine.sig
-  alpha.sml
+  sparc.sml
   test.sml
 
   /u/danwang/Research/scratch/zsuif_gateway/sources.cm
