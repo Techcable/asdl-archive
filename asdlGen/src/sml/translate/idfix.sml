@@ -99,7 +99,8 @@ structure IdFix =
 			"signed", "sizeof", "static", "struct", "switch",
 			"typedef", "union", "unsigned", "void",
 			"volatile", "while"]
-		   val ty_map = []
+		   val ty_map = id_map@
+		       [("int","int")]
 		   val name = "AnsiC")
 	   
        structure CPlusPlus =

@@ -52,7 +52,8 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 	fun mk_block sl = T.Block {vars=[],body=sl}
 
 	fun trans_tid f =
-	    (fix_ty o T.TypeId.fromPath o Id.toPath o f o M.type_name)
+ 	    (T.TypeId.fromPath o Id.toPath o f o
+	      (Id.subst IdFix.ty_fix) o M.type_name)
 
 	fun trans_field p {finfo,kind,name,tname,tinfo,is_local} =
 	    let

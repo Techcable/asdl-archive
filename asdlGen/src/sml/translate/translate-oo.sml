@@ -92,8 +92,8 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 	fun mId2path q = (keepPath q) o Id.toPath
 
 	fun trans_tid f x =
-	    (fix_ty o T.TypeId.fromPath o (keepPath (not x)) o
-	     Id.toPath o f o M.type_name)
+	    (T.TypeId.fromPath o (keepPath (not x)) o
+	     Id.toPath o f o (Id.subst IdFix.ty_fix) o M.type_name)
 
 	val listify_id = (Id.suffixBase "_list")
 	val optify_id =  (Id.suffixBase "_option")
