@@ -1,0 +1,32 @@
+digraph G {
+ratio=fill;
+size="7.5,5";
+graph [fontname = "Helvetica"];
+node [fontname = "Helvetica",fontsize="12"];
+
+node [shape = "diamond"];
+"functor mkAlgebraicSpec"
+"functor mkAlgebraicModuleTranslator"
+
+node [shape = "box"];
+"structure AlgebraicTy" 
+
+node [fontname="Courier",shape = "plaintext"];
+ "signature MODULE_TRANSLATOR"
+ "signature ALGEBRAIC_SPEC"
+ "signature ALGEBRAIC_TYPE_DECL"
+ algebraic_spec_args 
+[label="sig\l val get_attribs : bool\l val streams_ty : {outs:string,ins:string} option\l val monad_name : string option\lend\l"]
+
+
+"structure AlgebraicTy" 
+-> "signature ALGEBRAIC_TYPE_DECL"
+-> "functor mkAlgebraicSpec" 
+-> "signature ALGEBRAIC_SPEC"
+-> "functor mkAlgebraicModuleTranslator"
+-> "signature MODULE_TRANSLATOR"
+
+algebraic_spec_args -> "functor mkAlgebraicSpec" 
+}
+
+
