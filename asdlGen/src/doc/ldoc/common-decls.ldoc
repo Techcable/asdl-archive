@@ -1,10 +1,10 @@
 <!entity asdlGen "<tt/asdlGen/" >
-<!entity asdlGen.version "1.10" >
-<!entity asdlGen.release-date "February 27, 1998" >
+<!entity asdlGen.version "1.2" >
+<!entity asdlGen.release-date "May 4, 1998" >
 
 <!entity author.danwang "Daniel C. Wang" >
-<!entity doc.version "1.1" >
-<!entity doc.date "February 27, 1998" >
+<!entity doc.version "1.2" >
+<!entity doc.date "May 4, 1998" >
 <!entity doc.copyright system "copyright.ldoc">
 
 <!entity asdlGen.supported-languages 
@@ -34,6 +34,7 @@
 <!entity url.nci     "http://www.cs.virginia.edu/nci">
 
 <!entity url.suif    "http://www-suif.stanford.edu/suif/NCI/suif.html">
+<!entity url.zsuif    "http://www.cs.princeton.edu/zephyr/ASDL/zsuif">
 
 <!entity code.slp-basic      system "code/slp1.asdl">
 <!entity code.slp-sugar      system "code/slp2.asdl">

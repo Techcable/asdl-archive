@@ -6,6 +6,40 @@
 <title>CHANGES
 <author>&author.danwang;
 <date> &asdlGen.release-date;
+
+<sect>CHANGES in 1.20 Release<p>
+<sect1>Bugs Fixed<p>
+<itemize>
+<item> Bug in Java code that would cause pickler to go into
+infinite loop.
+<item> Bug in Java code handling of StdTypes.bool.
+</itemize>
+<sect1>Incompatible Changes<p>
+<itemize>
+<item>Command line syntax has changed. See the Reference manual for details.
+</itemize>
+<sect1>New Features<p>
+<itemize>
+<item><tt/--simple_lists=false/ flag for Java and C++ to control how
+sequences are handled.
+<item>Java code now uses fully qualified identifiers everywhere. This solves
+many name conflicts at the cost of some uglier looking code.
+<item>Tree walkers generated for all the nodes defined in a module for C++
+and Java via the <tt/--walker_code=true/ option.
+<item>Deep and shallow copy methods 
+generated for all the nodes defined in a module for C++
+and Java via the <tt/--copy_code=true/ option.
+<item>HTML dump of pickles now uses nested HTML tables to get the old
+behavior see the Reference manual.
+</itemize>
+<sect1>Known Bugs<p>
+<itemize>
+<item> Handling of optional types in StdTypes module not implemented in all
+languages. 
+<item>Deep copy methods produced for sequence types not actually 
+preforming a deep copy. 
+</itemize>
+
 <sect>CHANGES in 1.10 Release<p>
 <sect1>Incompatible Changes<p>
 <itemize>
@@ -28,7 +62,7 @@ options. See src/asdl/std-types.asdl for examples.
 <item>Mangled variables to avoid name clashes.
 <item>See  lib/asdlGen/sml for precompiled support code for sml.
 </itemize>
-<sect1>Know Bugs
+<sect1>Known Bugs
 <p>Handling of optional types in StdTypes module not implemented in all
 languages. 
 
