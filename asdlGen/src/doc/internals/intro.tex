@@ -1,0 +1,65 @@
+\section{About This Document} 
+The purpose of this document is to provide a high-level overview of how
+\asdlGen is structured. It assumes familiarity with ASDL and Standard ML in
+general. It's purpose is to be a ``hackers guide'' and not a user reference
+manual. The main goal of this document is to make fixing bugs and adding new
+features to \asdlGen a bit easier for programmers reasonably familiar with
+Standard ML. All the source code in this document and most of the prose
+comes directly for the \asdlGen sources which are annotated with stylized
+comments which a tool ({\tt dtangle}) than extracts and converts into \LaTeX
+with the help of {\tt noweb}. Those familiar with {\tt noweb} should note
+that we are completely reversing the normal way of doing things and deriving
+{\tt noweb} documents from source. So one should always edit the sources.
+
+\section{The Big Picture}
+\begin{myfigure}
+\psfig{figure=big-picture.eps,width=6in}
+\caption{Data flow through \asdlGen \label{big-picture}}
+\end{myfigure}
+Figure \ref{big-picture} is a high-level diagram of how ASDL descriptions
+are transformed into source code for different target languages. Each node
+in the graph is either an ML structure (solid box), functor (diamond), or
+signature constraint (plain text). An arrow indicates the direction of data
+flow. Data that passes through a signature means that the data is accessed
+through the interface described by the signature. For example if we we're
+producing ML code as output, data from the {\tt Semant} structure
+constrained by the {\tt SEMANT} signature would be used by the {\tt
+mkAlgebraicSemantTranslator} functor whose output would be constrained by
+the {\tt SEMANT\_TRANSLATOR} signature. The output then flows through the
+{\tt mkTranslateFromTranslator} functor whose output is constrained by the
+{\tt TRANSLATE} signature where the type of {\tt output} should be {\tt
+Algebraic.module list} and then from there it is passed to the {\tt MLPP}
+structure which builds a pretty printed representation of ML source
+expressions that are finally passed to the {\tt mkSourceFileTranslate}
+functor which pretty prints the value constrained by the {\tt CODE\_PP}
+signature.
+
+\asdlGen attempts to deal with the problems of supporting several different
+target languages, by separating the semantics of the target language from
+the syntax. This encourages code sharing and makes adding new languages that
+differ only syntactically easier. Languages are grouped into the following
+broad categories:
+\begin{description}
+\item[Algebraic] - Languages with and algebraic datatypes and
+polymorphims. e.g. Standard ML and Haskell
+\item[Algol] - Block structured languages in the Algol family with
+variant records. e.g. C and Pascal
+\item[Object Oriented] - Languages with objects and subtyping e.g. Java and
+C++
+\end{description}
+The ASDL type declarations are converted into the appropriate language level
+declarations for a given language family. Since the exact details of each
+language vary slightly the translation from ASDL type declarations into a
+language category is parametrized by arguments to the a functor that builds
+an appropriate translation. There are a few special purpose translations such
+as the conversion of ASDL type declarations into HTML documentation.
+
+After converting the ASDL type declarations into a language specific
+semantics, a particular kind of abstract syntax tree, it is converted into a
+pretty printer specification and then passed to a pretty printer that nicely
+formats the resulting code.
+ 
+
+
+
+
