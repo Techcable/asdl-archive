@@ -31,7 +31,8 @@ $(ASDL_OUTPUT): $(ASDL_INPUTS)
 
 libcii.a:
 	(cd $(CII_DIST); \
-	$(MAKE) THREADS= EXAMPLES= BUILDDIR=`pwd` )
+	$(MAKE) THREADS= EXAMPLES= BUILDDIR=`pwd` \
+	CC=$(CC) CFLAGS='$(CFLAGS) -Iinclude' )
 	-ln -f -s $(CII_DIST)/libcii.a .
 
 install-data-local:
