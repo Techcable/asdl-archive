@@ -20,7 +20,8 @@ signature ALGOL_TYPES =
 	and const =
 	    IntConst of (int)
 	  | EnumConst of (id)
-	  | NoneConst 
+	  | AddrConst of (id)
+
 	and exp =
 	    Const of const
 	  | NilPtr
@@ -50,11 +51,13 @@ signature ALGOL_TYPES =
 	  | Return      of (exp)
 
 	and decl =
-	    DeclTy of (ty_id * ty_exp)
-	  | DeclFun of (id * field list * block * ty_exp)
-	  | DeclProc of (id * field list * block)
+	    DeclTy    of (ty_id * ty_exp)
+	  | DeclFun   of (id * field list * block * ty_exp)
+	  | DeclProc  of (id * field list * block)
 	  | DeclConst of (id * const * ty_exp)
-	  
+	  | DeclLocalConst of (id * const * ty_exp)
+
+
 	withtype field        = {name:id,ty:ty_exp}
 	     and choice       = {name:id,fields:field list}
              and enumer       = {name:id,value:int option}

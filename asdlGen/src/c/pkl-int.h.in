@@ -1,0 +1,67 @@
+#ifndef _Pkl_int_
+#define _Pkl_int_
+#include <stdio.h>
+#include "cii/mp.h"
+/* @configure_input@ */
+
+typedef signed @INT8@ int8;
+typedef signed @INT16@ int16;
+typedef signed @INT32@ int32;
+
+			        
+typedef unsigned @INT8@ uint8;  
+typedef unsigned @INT16@ uint16;
+typedef unsigned @INT32@ uint32;
+
+signed char  read_C_signed_char(FILE* s);
+signed short read_C_signed_short(FILE* s);
+signed int   read_C_signed_int(FILE* s);
+signed long  read_C_signed_long(FILE* s);
+
+void write_C_signed_char(signed char x, FILE *s);
+void write_C_signed_short(signed short x, FILE *s);
+void write_C_signed_int(signed int x, FILE *s);
+void write_C_signed_long(signed long x, FILE *s);
+
+unsigned char  read_C_unsigned_char(FILE* s);
+unsigned short read_C_unsigned_short(FILE* s);
+unsigned int   read_C_unsigned_int(FILE* s);
+unsigned long  read_C_unsigned_long(FILE* s);
+
+void write_C_unsigned_char(unsigned char x, FILE *s);
+void write_C_unsigned_short(unsigned short x, FILE *s);
+void write_C_unsigned_int(unsigned int x, FILE *s);
+void write_C_unsigned_long(unsigned long x, FILE *s);
+
+#define write_int8   write_C_signed_@INT8@
+#define write_int16  write_C_signed_@INT16@
+#define write_int32  write_C_signed_@INT32@
+
+#define write_uint8  write_C_unsigned_@INT8@
+#define write_uint16 write_C_unsigned_@INT16@
+#define write_uint32 write_C_unsigned_@INT32@
+
+#define read_int8    read_C_signed_@INT8@
+#define read_int16   read_C_signed_@INT16@
+#define read_int32   read_C_signed_@INT32@
+
+#define read_uint8   read_C_unsigned_@INT8@
+#define read_uint16  read_C_unsigned_@INT16@
+#define read_uint32  read_C_unsigned_@INT32@
+
+/* todo use native 64 bit support when possible */
+typedef MP_T int64;
+typedef MP_T uint64;
+
+void write_cii_MP_T(MP_T x, FILE *s);
+MP_T read_cii_MP_T(FILE* s);
+
+#define read_int64   read_cii_MP_T
+#define write_int64  write_cii_MP_T
+#define read_uint64  read_cii_MP_T
+#define write_uint64 write_cii_MP_T
+
+
+
+#endif
+

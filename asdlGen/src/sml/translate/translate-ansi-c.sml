@@ -34,6 +34,7 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 	    TypeId.fromPath o T.TypeId.toPath
 
 	val tid2id =  T.VarId.fromPath o T.TypeId.toPath
+	val id2tid =  T.TypeId.fromPath o T.VarId.toPath
 
 	val trans_id' =
 	    VarId.fromPath o T.VarId.toPath o (T.VarId.suffixBase "_s")
@@ -75,7 +76,7 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 		TyAggregate(Struct,Option.map trans_id' id,fields)
 	    end
 	  | trans_ty_exp id (T.TyEnum el) =
-	    TyEnum(Option.map trans_id id,trans_enumers el)
+	    TyEnum(Option.map trans_id  id,trans_enumers el)
 	  | trans_ty_exp id (T.TyFunction(fl,ty)) =
 	    TyFunctionPtr(trans_fields fl,trans_ty_exp id ty)
 	  | trans_ty_exp id (T.TyOption ty) = opt_type
@@ -84,7 +85,7 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 	    
 	and trans_const (T.IntConst i) = I i
 	  | trans_const (T.EnumConst id) = E (trans_eid id)
-          | trans_const (T.NoneConst ) = E (VarId.fromString "NONE")
+          | trans_const (T.AddrConst id) = A(trans_id id)
 
 	and trans_exp (T.Const c) = Constant (trans_const c)
 	  | trans_exp (T.NilPtr) = Constant (NULL)
@@ -164,6 +165,14 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 		Var(VarDecInit(NONE,te,trans_id id,
 				Constant (trans_const c)))
 	    end
+	  | trans_decl (T.DeclLocalConst(id,c,te)) =
+	    let
+		val te = TyQualified(Const,trans_ty_exp NONE te)
+	    in
+		Var(VarDecInit(SOME Static,te,trans_id id,
+				Constant (trans_const c)))
+	    end
+
 
 	and trans_fields fl =
 	    let

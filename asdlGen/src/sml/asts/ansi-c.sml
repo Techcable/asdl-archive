@@ -46,7 +46,7 @@ structure AnsiC:ANSI_C =
 	  | Com of (string)
 
 	and const_exp = I of (int) | C of (char) | E of (id) | Void | NULL
-
+	  | A of id
 	and unary_op  = NEG | NOT | DEREF  | ADDR
 
 	and binary_op =

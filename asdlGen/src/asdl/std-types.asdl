@@ -1,6 +1,8 @@
 module StdTypes {
  nat = (int) -- natural numbers (unsigned numbers)
 
+ bool = TRUE | FALSE
+
  int8   = (int)
  int16  = (int)
  int32  = (int)
@@ -36,11 +38,13 @@ view Doc {
 view SML {
  -- implementation provided by hand
  module StdTypes <= supress : true
+ module StdTypes <= is_library : true
 }
 
 view C {
  -- implementation provided by hand
  module StdTypes <= supress : true
+ module StdTypes <= is_library : true
 }
 
 view Java {
@@ -50,6 +54,11 @@ module StdTypes <= supress    : true
 module StdTypes <= is_library : true
 
 -- define the type substitutions
+ StdTypes.bool   
+                <= { natural_type : boolean
+                           reader : read_java_boolean
+                           writer : write_java_boolean
+                   }
 
  StdTypes.ieee_real   
                 <= { natural_type : double
@@ -89,3 +98,46 @@ module StdTypes <= is_library : true
 
 }
 
+view Cxx {
+
+-- set supress to false to generate stubs
+module StdTypes <= supress    : true
+module StdTypes <= is_library : true
+
+StdTypes.int8  <= { natural_type : int8
+                           reader : read_int8
+                           writer : write_int8
+                   }
+
+StdTypes.int16  <= { natural_type : int16
+                           reader : read_int16
+                           writer : write_int16
+                   }
+StdTypes.int32  <= { natural_type : int32
+                           reader : read_int32
+                           writer : write_int32
+                   }
+
+StdTypes.uint8  <= { natural_type : uint8
+                           reader : read_uint8
+                           writer : write_uint8
+                   }
+StdTypes.uint16  <= { natural_type : uint16
+                            reader : read_uint16
+                            writer : write_uint16
+                   }
+{ StdTypes.nat StdTypes.uint32 } 
+	         <= { natural_type : uint32
+                            reader : read_uint32
+                            writer : write_uint32
+                   }
+
+
+
+}
+
+
+view Haskell {
+module StdTypes <= supress    : true
+module StdTypes <= is_library : true
+}

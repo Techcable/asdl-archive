@@ -47,7 +47,7 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 	    {name="default_only",flag=NONE,default=true}
 
 	val (cfg,mono_types)     =  Params.declareBool cfg
-	    {name="mono_types",flag=NONE,default=true}
+	    {name="mono_types",flag=NONE,default=false}
 
 	val tag_id = T.VarId.fromString "kind"
 	val get_module = (fn x => x)
@@ -219,12 +219,20 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 		 mk_cnstr=mk_cnstr,wr=wr,rd=rd}
 	    end
 
-	fun decl_consts tid e =
+	fun decl_consts enum_id tid e =
 	    let
-		fun e2const {name,value} =
-		    T.DeclConst(name,T.EnumConst name,T.TyId tid)
+
+		fun e2const ({name,value},xs) =
+		    let
+			val var_name = T.VarId.suffixBase "_val" name
+		    in
+			(T.DeclLocalConst(var_name,
+					  T.EnumConst name,T.TyId enum_id))::
+			(T.DeclConst(name,
+				     T.AddrConst var_name,T.TyId tid))::xs
+		    end
 	    in
-		List.map e2const e
+		List.foldr e2const [] e
 	    end
 
 	fun decl_cnstrs  p tid name (fields,inits) [] =
@@ -286,6 +294,10 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 			    [{name=user_field_name,
 			      ty=T.TyId (T.TypeId.fromPath x)}]
 
+
+		val etid = T.TypeId.suffixBase "_enum" tid
+		val decl_enum  = T.DeclTy(etid,T.TyEnum enumers)
+
 		val variant_opt =
 		    null2none choices
 		    {tag=tag_id,tag_ty=enumers,choices=choices}
@@ -293,19 +305,18 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 		val (ty,decls) =
 		    case (fields,choices) of 
 			([],[]) =>
-			    (T.TyEnum enumers,
-			     decl_consts tid enumers)
+			    (T.TyId etid,(decl_consts etid tid enumers))
 		      | _ =>
 			    (T.TyRecord{fixed=user_field@fields,
 					variant=variant_opt},
 			     decl_cnstrs p tid name (fields,inits)  mk_cnstrs)
-
-
-		val (ty',wr_test) =
+		    
+		val ty' = T.TyReference ty
+		val wr_test =
 		    if is_boxed then
-			(T.TyReference ty,
-			 T.RecSub(T.DeRef(T.Id Pkl.arg_id),tag_id))
-		    else (ty,T.Id Pkl.arg_id)
+			(T.RecSub(T.DeRef(T.Id Pkl.arg_id),tag_id))
+		    else (T.DeRef(T.Id Pkl.arg_id))
+
 		val rd_test = Pkl.read_tag
 		val temp_id = Pkl.temp_id 10;
 
@@ -363,9 +374,14 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 		val rd_tagged = Pkl.read_tagged_decl
 		    {name=pkl_name,tag=tag,ret_ty=natural_ty,
 		     body=[T.Assign(T.Id Pkl.ret_id,Pkl.read pkl_name)]}
-		val ty_dec = T.DeclTy(tid,ty')
+		val ty_dec =
+		    if is_boxed then
+			[T.DeclTy(tid,ty')]
+		    else
+			[decl_enum,T.DeclTy(tid,ty')]
+		    
 	    in
-		{ty_dec=[ty_dec],cnstrs=decls,wr=[wr,wr_tagged],
+		{ty_dec=ty_dec,cnstrs=decls,wr=[wr,wr_tagged],
 		 rd=[rd,rd_tagged]}
 	    end
 	
@@ -463,12 +479,7 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 		val opt_name = Pkl.type_name ty_opt
 		val ty = natural_ty
 		val read = Pkl.read pkl_name
-		val (read,v,test) =
-		    if is_boxed then
-			(Pkl.read pkl_name,T.NilPtr,T.NotNil)
-		    else
-			(Pkl.read pkl_name,T.Const(T.NoneConst),
-			 (fn x => T.NotEqConst(x,T.NoneConst)))
+		val (read,v,test) = (Pkl.read pkl_name,T.NilPtr,T.NotNil)
 
 		val wr = Pkl.write_decl
 		    {name=opt_name,arg_ty=ty_opt,

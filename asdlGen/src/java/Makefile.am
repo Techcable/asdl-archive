@@ -1,10 +1,11 @@
 ASDLGEN     = @RUN_SML_HEAP@ @SMLload=@ASDLGEN_HEAP@
-ASDL_INPUTS = @top_srcdir@/src/asdl/generic.asdl
+ASDL_INPUTS = @top_srcdir@/src/asdl/generic.asdl \
+	@top_srcdir@/src/asdl/std-types.asdl
 ASDL_OUTPUT = asts/AsdlValue/g.java asts/TypePickle/g.java
 
 if HAVE_JAVA
 pkgdata_DATA = asdl.zip
-CLEANFILES = asdl.zip asts/*/* asdl_base/*.class
+CLEANFILES = asdl.zip asts/*/*.class asdl_base/*.class
 endif
 
 

@@ -12,8 +12,8 @@ module TypePickle (imports StdTypes) {
     type_map_entry = (StdTypes.nat key, type_map_value v)
 
     type_map_value = Defined(qid name, 
-                             field * fields,
-                             StdTypes.nat * cnstr_map_keys)
+                             field* fields,
+                             StdTypes.nat* cnstr_map_keys)
 		   | Prim (prim p)
 		     attributes(StdTypes.nat pkl_tag)
 

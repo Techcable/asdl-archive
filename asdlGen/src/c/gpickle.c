@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-
 #define T(x) TypePickle_##x
 #define V(x) AsdlValue_##x
 #define P(x) GPickle_##x
@@ -37,9 +36,11 @@ P(maps_ty) P(make_maps)(T(type_env_ty) tenv) {
      Assoc_ty tassoc;
      Assoc_ty cassoc;
 
-     T(type_map_entry_list_ty)   tentries;
-     T(cnstr_map_entry_list_ty)  centries;
-     T(module_map_entry_list_ty) mentries;
+     list_ty tentries;
+     list_ty centries;
+     list_ty mentries;
+     int num_entries;
+     int entry_num;
 
      new_map = malloc(sizeof(*new_map));
      assert(new_map != NULL);
@@ -70,25 +71,32 @@ P(maps_ty) P(make_maps)(T(type_env_ty) tenv) {
      new_map->cassoc = cassoc;
 
      tentries = tenv->tmap->entries;
-     while(tentries !=NULL) {
-	  tmap[tentries->head->key] = tentries->head->v;
-	  Assoc_SetData(tassoc,
-			get_name(tentries->head->v),tentries->head);
-	  tentries = tentries->tail;
+     num_entries = Seq_length(tentries);
+     entry_num = 0;
+     while(entry_num < num_entries) {
+          T(type_map_entry_ty) entry = Seq_get(tentries,entry_num);
+	  tmap[entry->key] = entry->v;
+	  Assoc_SetData(tassoc,get_name(entry->v),entry);
+	  entry_num++;
      }
 
      centries = tenv->cmap->entries;
-     while(centries !=NULL) {
-	  cmap[centries->head->key] = centries->head->v;
-	  Assoc_SetData(cassoc,
-			centries->head->v->name,centries->head);
-	  centries = centries->tail;
+     num_entries = Seq_length(centries);
+     entry_num = 0;
+     while(entry_num < num_entries) {
+          T(cnstr_map_entry_ty) entry = Seq_get(centries,entry_num);
+	  cmap[entry->key] = entry->v;
+	  Assoc_SetData(cassoc,entry->v->name,entry);
+	  entry_num++;
      }
 
      mentries = tenv->mmap->entries;
-     while(mentries !=NULL) {
-	  mmap[mentries->head->key] = mentries->head->v;
-	  mentries = mentries->tail;
+     num_entries = Seq_length(mentries);
+     entry_num = 0;
+     while(entry_num < num_entries) {
+          T(module_map_entry_ty) entry = Seq_get(mentries,entry_num);
+	  mmap[entry->key] = entry->v;
+	  entry_num++;
      }
      return new_map;
 }
@@ -134,25 +142,29 @@ T(cnstr_map_value_ty)  P(lookup_cnstr_by_tag)(P(maps_ty) m,
 					      T(type_map_value_ty) ty,
 					      int tag) {
      /* should  precompute this rather than using this naive search */
-     int_list_ty cnstrs;
+     list_ty cnstrs;
+     int entry_num,num_entries;
+
      switch(ty->kind) {
      case T(Defined_enum): 
 	  cnstrs = ty->v.T(Defined).cnstr_map_keys;
 	  break;
      default: assert(0); return NULL;
      }
-     while(cnstrs) {
-	  T(cnstr_map_value_ty) cnstr = P(lookup_cnstr)(m,cnstrs->head);
-	  if(cnstr->pkl_tag == tag) {
-	       return cnstr;
-	  }
-	  cnstrs=cnstrs->tail;
+     num_entries = Seq_length(cnstrs);
+     entry_num = 0;
+     while(entry_num < num_entries) {
+       StdTypes_nat_ty *entry = Seq_get(cnstrs,entry_num++);
+       T(cnstr_map_value_ty) cnstr = P(lookup_cnstr)(m,*entry);
+       if(cnstr->pkl_tag == tag) {
+	 return cnstr;
+       }
      }
      assert(0); return NULL;
 }
 
 static V(prim_value_ty) read_prim(T(prim_ty) p,instream_ty s) {
-     switch(p) {
+     switch(*p) {
      case T(Int_enum)       :  return V(IntValue)(read_int(s));       
      case T(String_enum)    :  return V(StringValue)(read_string(s));
      case T(Identifier_enum):  return V(IdentifierValue)(read_identifier(s)); 
@@ -167,20 +179,20 @@ static T(qid_ty) id_qid;
 static T(qid_ty) get_name (T(type_map_value_ty) ty) {
 
      if(!int_qid) {
-	   int_qid = T(qid)(NULL,mk_identifier("int"));
-	   str_qid = T(qid)(NULL,mk_identifier("string"));
-	   id_qid = T(qid)(NULL,mk_identifier("identifier"));
+	   int_qid = T(qid)(Seq_new(0),Atom_string("int"));
+	   str_qid = T(qid)(Seq_new(0),Atom_string("string"));
+	   id_qid = T(qid)(Seq_new(0),Atom_string("identifier"));
      }
 
      switch(ty->kind) {
      case T(Defined_enum): return ty->v.T(Defined).name;
      case T(Prim_enum)   : 
-	     switch(ty->v.T(Prim).p) {
-	     case T(Int_enum)       : return int_qid;
-	     case T(String_enum)    : return str_qid;
-	     case T(Identifier_enum): return id_qid;
-	     default: assert(0); return NULL;
-	     }
+       switch(*(ty->v.T(Prim).p)) {
+       case T(Int_enum)       : return int_qid;
+       case T(String_enum)    : return str_qid;
+       case T(Identifier_enum): return id_qid;
+       default: assert(0); return NULL;
+       }
      default: assert(0); return NULL;
      }
 
@@ -204,23 +216,12 @@ static V(asdl_value_ty) read_field(P(maps_ty) maps,T(field_ty) fd,
 	  }
      }
      case T(Sequence_enum) : {
-	  int len;
-	  V(asdl_value_list_ty) vs;
-	  V(asdl_value_list_ty) t;
-	  len = read_tag(s);
-	  if(len != 0) {
-	       vs = V(asdl_value_list)(read_type(maps,tid,s), NULL);
-	       len--;
-	       t = vs;
-	       while(len != 0)  {
-		    t->tail = V(asdl_value_list)(read_type(maps,tid,s), NULL);
-		    t = t->tail;
-		    len--;
-	       }
-	  } else {
-	       vs = NULL;
+	  int len = read_tag(s);
+	  list_ty vs = Seq_new(len);
+	  while(len > 0) {
+	    Seq_addhi(vs,read_type(maps,tid,s));
+	    len--;
 	  }
-
 	  return V(SequenceValue)(name,vs);
      }
      default : assert(0); return NULL;
@@ -228,38 +229,42 @@ static V(asdl_value_ty) read_field(P(maps_ty) maps,T(field_ty) fd,
      
 }
 
-static V(asdl_value_list_ty) read_fields(P(maps_ty) maps,
-					 T(field_list_ty) fds, instream_ty s) {
+static list_ty read_fields(P(maps_ty) maps, list_ty fds, instream_ty s) {
+	  int num_fields = Seq_length(fds);
+	  int field_num = 0;
+	  list_ty vs = Seq_new(num_fields);
 
-	  V(asdl_value_list_ty) vs;
-	  V(asdl_value_list_ty) t;
+	  while(field_num < num_fields) {
+	    Seq_addhi(vs,read_field(maps,Seq_get(fds,field_num),s));
+	    field_num++;
+	  }
+	  return vs;
+}
 
-	  if(fds != NULL)
-	       vs = V(asdl_value_list)(read_field(maps,fds->head,s), NULL);
-	  else
-	       return NULL;
-	  fds=fds->tail;
-	  t = vs;
-	  while(fds)  {
-	       t->tail = 
-		    V(asdl_value_list)(read_field(maps,fds->head,s), NULL);
-	       t = t->tail;
-	       fds=fds->tail;
+static list_ty read_fields_off(P(maps_ty) maps, int off,
+			       list_ty fds, instream_ty s) {
+	  int num_fields = Seq_length(fds)-off;
+	  int field_num = 0;
+	  list_ty vs = Seq_new(num_fields);
+
+	  while(field_num < num_fields) {
+	    Seq_addhi(vs,read_field(maps,Seq_get(fds,off+field_num),s));
+	    field_num++;
 	  }
 	  return vs;
 }
 
 static V(asdl_value_ty) read_cnstr(P(maps_ty) maps,
 				   T(type_map_value_ty) ty,
-				   T(field_list_ty) fds,
+				   list_ty fds,
 				   T(qid_ty) name,
 				   instream_ty  s) {
 
      int tag = read_tag(s);
      T(cnstr_map_value_ty) cnstr =  P(lookup_cnstr_by_tag)(maps,ty,tag);
      
-     V(asdl_value_list_ty) attrbs = read_fields(maps,fds,s);
-     V(asdl_value_list_ty) vs     = read_fields(maps,cnstr->fields,s);
+     list_ty attrbs = read_fields(maps,fds,s);
+     list_ty vs     = read_fields(maps,cnstr->fields,s);
      
      return V(SumValue)(name,cnstr->name,attrbs,vs);
 }
@@ -273,13 +278,13 @@ static V(asdl_value_ty) read_type(P(maps_ty) maps, int tid,instream_ty  s) {
      T(qid_ty) name = get_name(ty);
      switch(ty->kind) {
      case T(Defined_enum): {
-	  int_list_ty cnstrs;
+	  list_ty cnstrs;
 	  cnstrs = ty->v.T(Defined).cnstr_map_keys;
-	  if(cnstrs == NULL ) { /* product type */
-	       V(asdl_value_ty) v = 
-		    read_field(maps,ty->v.T(Defined).fields->head,s);
-	       V(asdl_value_list_ty) vs = 
-		    read_fields(maps,ty->v.T(Defined).fields->tail,s);
+	  if(Seq_length(cnstrs) == 0) { /* product type */
+	    V(asdl_value_ty) v = 
+	      read_field(maps,
+			 Seq_get(ty->v.T(Defined).fields,0),s);
+	    list_ty vs =  read_fields_off(maps,1,ty->v.T(Defined).fields,s);
 	       return V(ProductValue)(name,v,vs);
 	  } else { /* sum type */
 	       return read_cnstr(maps,ty,ty->v.T(Defined).fields,name,s);
@@ -322,22 +327,15 @@ static void write_prim(V(prim_value_ty) val, outstream_ty output)
         }
 }
  
-static void write_value_list(P(maps_ty) m,
-			     V(asdl_value_list_ty) l, outstream_ty output) {
-     while (l) {
-	  write_value(m,l->head, output);
-	  l = l->tail;
+static void write_value_list(P(maps_ty) m, list_ty l, outstream_ty output) {
+  int num_entries = Seq_length(l);
+  int entry_num = 0;
+     while (entry_num < num_entries) {
+	  write_value(m,Seq_get(l,entry_num), output);
+	  entry_num++;
      }
 }
  
-static int value_list_length(V(asdl_value_list_ty) l) {
-     int len = 0; 
-     while (l) {
-	  len++;
-	  l = l->tail;
-     }
-     return len;
-}
 
 static void write_value(P(maps_ty) m,
 			V(asdl_value_ty) val, outstream_ty output) {
@@ -348,7 +346,7 @@ static void write_value(P(maps_ty) m,
  
         switch(val->kind) {
 	case V(SumValue_enum):
-	     tidx = P(lookup_type_idx_by_name)(m,val->typename);
+	     tidx = P(lookup_cnstr_idx_by_name)(m,val->v.V(SumValue).con);
 	     assert(tidx != -1);
 	     cnstr = P(lookup_cnstr)(m,tidx);
 	     num = cnstr->pkl_tag;
@@ -361,7 +359,7 @@ static void write_value(P(maps_ty) m,
 	     write_value_list(m,val->v.V(ProductValue).vs, output);
 	     break;
 	case V(SequenceValue_enum):
-	     num = value_list_length(val->v.V(SequenceValue).vs);
+	     num = Seq_length(val->v.V(SequenceValue).vs);
 	     write_tag(num, output);
 	     write_value_list(m,val->v.V(SequenceValue).vs, output);
                 break;

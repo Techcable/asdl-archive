@@ -1,3 +1,4 @@
+# Build order is important don't mess with it
+SUBDIRS = sml c cxx java misc asdl 
 
-# We need build in sml before anything else
-SUBDIRS = sml c cxx java misc asdl
+

@@ -11,6 +11,12 @@ typedef FILE* outstream;
 typedef FILE* instream;
 #endif 
 
+
+
+extern "C" {
+#include "pkl-int.h"
+}
+
 typedef char* string;
 typedef char* identifier;
 
@@ -19,29 +25,19 @@ typedef identifier identifier_option;
 
 typedef int* int_option;
 
-class int_list {
+template <class T> 
+class List {
 public:
-    int_list* tail;
-    int head;
-    inline int_list(int head, int_list* tail)
+  T head;
+  List<T>* tail;
+  inline List(T head, List<T>* tail) {
     { this->head = head; this->tail = tail; }
+  }
 };
 
-class string_list {
-public:
-    string_list* tail;
-    string head;
-    inline string_list(string head, string_list* tail)
-    { this->head = head; this->tail = tail; }
-};
-
-class identifier_list {
-public:
-    identifier_list* tail;
-    identifier head;
-    inline identifier_list(identifier head, identifier_list* tail)
-    { this->head = head; this->tail = tail; }
-};
+typedef List<int> int_list;
+typedef List<string> string_list;
+typedef List<identifier> identifier_list;
 
 extern void   write_tag(int x,outstream s);
 extern int    read_tag(instream s);

@@ -54,7 +54,7 @@ structure SupportFiles: SUPPORT_FILES =
 	val c_includes = (mk_path ["c"])@["/usr/local/include"]
 	val c_libs = mk_path ["c"]@["/usr/local/lib"]
 
-	val cxx_includes = mk_path ["cxx"]
+	val cxx_includes = mk_path ["cxx"]@(mk_path ["c"])
 	val cxx_libs = mk_path ["cxx"]
 
 	val java_classes = mk_path ["java"]
@@ -256,23 +256,38 @@ structure Test =
 
 	val asdl_test =
 	    (test_all "asdl.asdl"  [mk_path ["asdl.asdl"]])
+
+	val pattern_test =
+	    (test_all "pattern.asdl"  [mk_path ["pattern.asdl"]])
+
 	val slp_test =
 	    (test_all "slp.asdl"  [mk_path ["slp.asdl"]])
 	val views_test =
 	    (test_all "views.asdl"  [mk_path ["views.asdl"]])
+
 	val views_test' =
 	    (test_all "views.asdl'"  ["--base_include","foo.h",
 				      mk_path ["views.asdl"]])
+
+	val zsuif_test =
+	    (test_all "zsuif.asdl"  [mk_path ["zsuif.asdl"],
+				     mk_path ["..","std-types.asdl"]])
 	val cii_test =
 	    [test ("cii",do_c,["--view","C",
-			       "--mono_types","false",
-				"--base_include","cii_base.h",
+
 				mk_path ["slp3.asdl"]])]
 	    
 	val tests =
-	    modTest1@modTest2@asdl_test@slp_test@views_test
+	    pattern_test@
+	    modTest1@
+	    modTest2@
+	    asdl_test@
+	    slp_test@
+	    views_test@zsuif_test
+
 	fun do_it () = run_test tests
 (*    	val _ = do_it()*)
     end
     
 	
+

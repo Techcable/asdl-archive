@@ -18,18 +18,24 @@ void          write_tag(int x,outstream_ty s);
 int           read_tag(instream_ty s);
 
 /* int type */
+#include "pkl-int.h"
 /* TODO #ifdef for fixed nums */
+#ifdef USE_BIG_INTS
 typedef MP_T  int_ty;
+#define write_int write_cii_MP_T
+#define read_int read_cii_MP_T
+#else
+typedef int32  int_ty;
+#define write_int write_int32
+#define read_int read_int32
+#endif
+
 typedef Text_T string_ty;
 typedef Seq_T list_ty;
 typedef void* opt_ty;
 typedef const char* identifier_ty; /* atom type */
 
 #define NONE NULL /* for option type */
-
-/* int type */
-void          write_int(int_ty x,outstream_ty s);
-int_ty        read_int(instream_ty s);
 
 void           write_generic_int(void *x, outstream_ty s);
 void*          read_generic_int(instream_ty s);
@@ -62,4 +68,10 @@ void write_list(generic_writer_ty wr, list_ty v, outstream_ty s);
 
 
 #endif /* _ASDL_BASE_ */
+
+
+
+
+
+
 

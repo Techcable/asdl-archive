@@ -76,6 +76,7 @@ view Cxx {
 
   module Slp <= interface_epilogue 
 %%
+     
   int User_pos2int(Slp_pos* s);
   Slp_pos* User_int2pos(int s);
 

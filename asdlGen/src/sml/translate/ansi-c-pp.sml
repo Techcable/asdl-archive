@@ -154,6 +154,7 @@ functor mkPPAnsiC(structure T: ANSI_C) : PP_ANSI_C =
 
 	and pp_const_exp (T.I i) = PP.d i
 	  | pp_const_exp (T.E i) = pp_id i
+	  | pp_const_exp (T.A i) = PP.cat [PP.s "&",pp_id i]
 	  | pp_const_exp (T.C c) = PP.s ("'"^(Char.toString c )^"'" )
 	  | pp_const_exp (T.Void) = PP.s "((void)0)"
 	  | pp_const_exp (T.NULL) = PP.s "NULL"
@@ -340,7 +341,7 @@ structure AnsiCPP : ANSI_C_PP =
 	val cfg = Params.empty
 	val (cfg,base_inc) =
 	    Params.declareString cfg
-	    {name="base_include",flag=NONE,default="asdl_base.h"} 
+	    {name="base_include",flag=NONE,default="cii_base.h"} 
 	local
 	    open AnsiC
 	in

@@ -3,7 +3,7 @@
 #include <memory.h>
 #include <stdlib.h>
 #include <assert.h>
-
+/* todo use cii Tables */
 #define TBL_SZ 1031
 
 typedef struct bucket_s { /* private type */
@@ -54,31 +54,40 @@ static unsigned int hashString(char *x) {
 }
 
 static int eqKey(TypePickle_qid_ty x, TypePickle_qid_ty y) {
-     identifier_list_ty xq;
-     identifier_list_ty yq;
+     list_ty xq;
+     list_ty yq;
+     int i;
+     int j;
 
      if(x == y) { return 1; }         /* hackish optimiziation */
      
      if((x->base != y->base)) { return 0; }
      xq = x->qualifier;
      yq = y->qualifier;
-     while(xq && yq) {
-	  if (xq == yq) { return 1;} /* hackish optimiziation */
-	  if(xq->head != yq->head) { return 0; } 
-	  xq=xq->tail;
-	  yq=yq->tail;
+
+     if (xq == yq) { return 1;} /* hackish optimiziation */
+
+     i = Seq_length(xq);
+     j = Seq_length(yq);
+
+     if (i != j ) { return 0; }
+     
+     j = 0;
+     while(j < i) {
+       if(Seq_get(xq,j) != Seq_get(yq,j)) { return 0; } 
+       j++; 
      }
-     if ((xq == NULL) && (yq == NULL)) { return 1;}
-     return 0;
+     return 1;
 }
 
 static unsigned int hashKey(TypePickle_qid_ty qid) {
      unsigned int x;
+     int i = Seq_length(qid->qualifier);
      /* just hash the base and first qualifier */
-     x = hashString(qid->base);
+     x = hashString((char*)qid->base);
 
-     if(qid->qualifier != NULL) { 
-	  x += hashString(qid->qualifier->head);
+     if(i > 0) { 
+	  x += hashString((char*)Seq_get(qid->qualifier,0));
      }
      return x;
 }

@@ -53,6 +53,10 @@ ASDLGEN_HEAP = @ASDLGEN_HEAP@
 CC = @CC@
 CXX = @CXX@
 HEAP_SUFFIX = @HEAP_SUFFIX@
+INT16 = @INT16@
+INT32 = @INT32@
+INT64 = @INT64@
+INT8 = @INT8@
 JAVAC = @JAVAC@
 KSH = @KSH@
 MAKEINFO = @MAKEINFO@
@@ -66,27 +70,31 @@ ZIP_FLAGS = @ZIP_FLAGS@
 ZIP_PRG = @ZIP_PRG@
 
 ASDLGEN     = @RUN_SML_HEAP@ @SMLload=@ASDLGEN_HEAP@
-ASDL_INPUTS = @top_srcdir@/src/asdl/generic.asdl
-ASDL_OUTPUT = AsdlValue.c TypePickle.c AsdlValue.h TypePickle.h
-BUILT_SOURCES = $(ASDL_OUTPUT) AsdlValue.import.h TypePickle.import.h
+ASDL_INPUTS = @top_srcdir@/src/asdl/generic.asdl \
+	      @top_srcdir@/src/asdl/std-types.asdl
+ASDL_OUTPUT = AsdlValue.c TypePickle.c AsdlValue.h TypePickle.h 
+BUILT_SOURCES = $(ASDL_OUTPUT) AsdlValue.import.h TypePickle.import.h 
 CLEANFILES = $(BUILT_SOURCES)
+CII_DIST = @top_srcdir@/src/cii
 
 libasdl_a_SOURCES = $(ASDL_OUTPUT) \
-	gpickle.c gpickle.h \
-	assoc.c assoc.h \
-        asdl_base.c asdl_base.h
+        StdTypes.h StdTypes.c \
+	assoc.h assoc.c \
+        gpickle.c gpickle.h \
+	pkl-int.h pkl-int.c \
+        cii_base.c cii_base.h 
 
-xlate_SOURCES = xlate.c $(libasdl_a_SOURCES)
+xlate_SOURCES = xlate.c 
+xlate_LDADD =  libasdl.a libcii.a
 
-pkginclude_HEADERS = gpickle.h asdl_base.h  assoc.h \
-		     AsdlValue.h TypePickle.h \
-                     AsdlValue.import.h TypePickle.import.h
+pkginclude_HEADERS = gpickle.h	match.h \
+		     cii_base.h  cii_big_base.h  \
+		     AsdlValue.h TypePickle.h 
 
 pkglib_PROGRAMS = xlate
-
-pkglib_LIBRARIES = libasdl.a
+pkglib_LIBRARIES = libasdl.a libcii.a
 mkinstalldirs = $(SHELL) $(top_srcdir)/src/misc/mkinstalldirs
-CONFIG_CLEAN_FILES = 
+CONFIG_CLEAN_FILES =  pkl-int.h
 LIBRARIES =  $(pkglib_LIBRARIES)
 
 
@@ -95,29 +103,31 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libasdl_a_LIBADD = 
-libasdl_a_OBJECTS =  AsdlValue.o TypePickle.o gpickle.o assoc.o \
-asdl_base.o
+libasdl_a_OBJECTS =  AsdlValue.o TypePickle.o StdTypes.o assoc.o \
+gpickle.o pkl-int.o cii_base.o
+libcii_a_LIBADD = 
+libcii_a_SOURCES = libcii.a.c
+libcii_a_OBJECTS =  libcii.a.o
 AR = ar
 PROGRAMS =  $(pkglib_PROGRAMS)
 
-xlate_OBJECTS =  xlate.o AsdlValue.o TypePickle.o gpickle.o assoc.o \
-asdl_base.o
-xlate_LDADD = $(LDADD)
+xlate_OBJECTS =  xlate.o
+xlate_DEPENDENCIES =  libasdl.a libcii.a
 xlate_LDFLAGS = 
 CFLAGS = @CFLAGS@
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 LINK = $(CC) $(CFLAGS) $(LDFLAGS) -o $@
 HEADERS =  $(pkginclude_HEADERS)
 
-DIST_COMMON =  Makefile.am Makefile.in
+DIST_COMMON =  Makefile.am Makefile.in pkl-int.h.in
 
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP = --best
-SOURCES = $(libasdl_a_SOURCES) $(xlate_SOURCES)
-OBJECTS = $(libasdl_a_OBJECTS) $(xlate_OBJECTS)
+SOURCES = $(libasdl_a_SOURCES) libcii.a.c $(xlate_SOURCES)
+OBJECTS = $(libasdl_a_OBJECTS) libcii.a.o $(xlate_OBJECTS)
 
 default: all
 
@@ -130,6 +140,8 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
+pkl-int.h: $(top_builddir)/config.status pkl-int.h.in
+	cd $(top_builddir) && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
 
 mostlyclean-pkglibLIBRARIES:
 
@@ -263,13 +275,13 @@ installcheck:
 install-exec: install-pkglibLIBRARIES install-pkglibPROGRAMS
 	@$(NORMAL_INSTALL)
 
-install-data: install-pkgincludeHEADERS
+install-data: install-pkgincludeHEADERS install-data-local
 	@$(NORMAL_INSTALL)
 
 install: install-exec install-data all
 	@:
 
-uninstall: uninstall-pkglibLIBRARIES uninstall-pkglibPROGRAMS uninstall-pkgincludeHEADERS
+uninstall: uninstall-pkglibLIBRARIES uninstall-pkglibPROGRAMS uninstall-pkgincludeHEADERS uninstall-local
 
 all: Makefile $(LIBRARIES) $(PROGRAMS) $(HEADERS)
 
@@ -298,7 +310,7 @@ mostlyclean:  mostlyclean-pkglibLIBRARIES mostlyclean-compile \
 		mostlyclean-generic
 
 clean:  clean-pkglibLIBRARIES clean-compile clean-pkglibPROGRAMS \
-		clean-tags clean-generic mostlyclean
+		clean-tags clean-generic mostlyclean clean-local
 
 distclean:  distclean-pkglibLIBRARIES distclean-compile \
 		distclean-pkglibPROGRAMS distclean-tags \
@@ -328,7 +340,31 @@ maintainer-clean
 
 
 $(ASDL_OUTPUT): $(ASDL_INPUTS)
-	$(ASDLGEN) --c --output_directory ./ $(ASDL_INPUTS)
+	-ln -fs $(CII_DIST)/include cii
+	$(ASDLGEN) --c --output_directory ./ $(ASDL_INPUTS) \
+  	--base_include "cii_big_base.h"
+
+libcii.a:
+	(cd $(CII_DIST); \
+	$(MAKE) THREADS= EXAMPLES= BUILDDIR=`pwd` )
+	-ln -fs $(CII_DIST)/libcii.a .
+
+install-data-local:
+	$(mkinstalldirs) $(pkglibdir)/cii
+	for p in cii/*.h; do \
+	   $(INSTALL_DATA) ./$$p $(pkglibdir)/$$p; \
+        done
+
+uninstall-local:
+	for p in cii/*.h; do \
+	   rm -f $(pkglibdir)/$$p; \
+        done
+
+clean-local:
+	(cd $(CII_DIST); \
+	$(MAKE) THREADS= EXAMPLES= BUILDDIR=`pwd` clean)
+	-rm -f cii
+	-rm -f libcii.a 
 
 %.import.h: %.h
 	@top_srcdir@/src/misc/id_hack.pl $< > $@

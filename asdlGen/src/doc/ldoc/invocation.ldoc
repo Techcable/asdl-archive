@@ -81,17 +81,13 @@ primitive types and functions provided with the current release.
 <tag/C/
   <descrip>
   <tag><tt/--base_include file.h/</tag> 
-  The default value is <tt/asdl_base.h/. Name of the C header file to
+  The default value is <tt/cii_base.h/. Name of the C header file to
   include that define the primitive types and functions for all the generated
   code. 
 
   <tag><tt/--mono_types {true | false}/</tag> 
-  The default value is true. If true expand sequence and option types into
-  new distinct types for each different qualified type.  If false use a
-  universal representation such as a linked listed of <tt/void */
-  type. Setting this to false requires support code which is not written
-  yet. You will need to role your own primitive functions and use
-  <tt/--base_include/ option. 
+  The default value is false. If true expand sequence and option types into
+  new distinct types for each different qualified type.  
 
   <tag><tt/--attribs_default {true | false}/</tag> 
   The default value is true. Controls whether attributes fields are included in

@@ -6,5 +6,7 @@ error.sml
 identifier.sig
 identifier.sml
 pkl.sml
+pkl.sig
 pkl-int.sml
+pkl-real.sml
 std-types.sml

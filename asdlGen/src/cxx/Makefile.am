@@ -1,12 +1,14 @@
 ASDLGEN     = @RUN_SML_HEAP@ @SMLload=@ASDLGEN_HEAP@
-ASDL_INPUTS = @top_srcdir@/src/asdl/generic.asdl
+ASDL_INPUTS = @top_srcdir@/src/asdl/generic.asdl \
+		@top_srcdir@/src/asdl/std-types.asdl
 ASDL_OUTPUT = AsdlValue.cxx TypePickle.cxx AsdlValue.hxx TypePickle.hxx
 
 BUILT_SOURCES = $(ASDL_OUTPUT) AsdlValue.import.hxx TypePickle.import.hxx
 CLEANFILES = $(BUILT_SOURCES)
-
+INCLUDES = -I@top_srcdir@/src/c/
 libasdlxx_a_SOURCES = $(ASDL_OUTPUT) \
-	        asdl_base.cxx asdl_base.hxx
+	        StdTypes.cxx StdTypes.hxx \
+                asdl_base.cxx asdl_base.hxx
 
 
 pkginclude_HEADERS = asdl_base.hxx \

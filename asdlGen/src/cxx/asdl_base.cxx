@@ -142,16 +142,14 @@ int_list* read_int_list(instream s)
           int_list* t2;
           t1 = read_tag(s);
           if(t1 != 0)
-              t = new int_list(read_int(s),
-                   NULL);
+              t = new int_list(read_int(s),NULL);
           else
               return NULL;
           t1 = t1 - 1;
           t2 = t;
           while(t1 != 0)
           {
-               t2->tail = new int_list(read_int(s),
-                           NULL);
+               t2->tail = new int_list(read_int(s), NULL);
                t2 = t2->tail;
                t1 = t1 - 1;
           }

@@ -138,7 +138,10 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 			(fn e =>
 			 T.FunCall(T.VarId.fromPath y,[ret e]))
 		  | NONE => ret
+
+
 	    in
+
 		{natural_ty=ty,pkl_name=name,unwrap=unwrap,wrap=wrap}
 	    end
 
@@ -186,6 +189,12 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 
 		val {pkl_name,natural_ty,unwrap,wrap} =
 		    wrappers props ty
+
+		val natural_ty =
+		    case (kind) of
+			(M.Sequence) => ty
+		      | _ => natural_ty
+
 		val name = toId name
 
 		val (rf,wf) =
@@ -609,15 +618,21 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 	    let
 
 		val ty = T.TyId (trans_tid (fn x => x) true tinfo)
-		val {pkl_name,natural_ty,unwrap,wrap} =
-		    wrappers props ty
 		val tid_seq = trans_tid listify_id true tinfo
 		val ty_seq = (T.TyReference (T.TyId tid_seq))
+
 		val is_prim = M.type_is_prim tinfo
+		val ty =
+		    if is_prim then ty
+		    else (T.TyReference (ty))
+			
+		val {pkl_name,natural_ty,unwrap,wrap} =
+		    wrappers props ty
+
+		val head_ty = natural_ty
 		val head_name = pkl_name
-		val head_ty =
-		    if is_prim then natural_ty
-		    else (T.TyReference (natural_ty))
+
+		
 		val seq_name = Pkl.type_name ty_seq
 		val tail_ty = ty_seq
 		val fields = [{name=head_id,ty=head_ty},

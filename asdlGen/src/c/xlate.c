@@ -11,21 +11,19 @@ static T(qid_ty) str2qid(const char *s) {
      char buf[1024]; /* hack */
      char *dot,*ptr;
      identifier_ty base;
-     identifier_list_ty qualifier;
+     list_ty qualifier = Seq_new(1);
      strcpy(buf,s);
 
      ptr = buf;
      dot = strchr(ptr,'.');
 
      if(dot == NULL) {
-	  base = mk_identifier(ptr);
-	  qualifier = NULL;
+	  base = Atom_string(ptr);
      } else {
 	  *dot = '\0';
           /* hack not as fully general as it should be */
-	  qualifier = 
-	       identifier_list(mk_identifier(ptr),NULL);
-	  base = mk_identifier(dot+1);
+	  Seq_addhi(qualifier,(void*)Atom_string(ptr));
+	  base = Atom_string(dot+1);
      }
      return T(qid)(qualifier,base);
 }

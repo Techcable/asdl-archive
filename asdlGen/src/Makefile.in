@@ -4,7 +4,7 @@
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy, distribute and modify it.
 
-# We need build in sml before anything else
+# Build order is important don't mess with it
 
 
 SHELL = /bin/sh
@@ -55,6 +55,10 @@ ASDLGEN_HEAP = @ASDLGEN_HEAP@
 CC = @CC@
 CXX = @CXX@
 HEAP_SUFFIX = @HEAP_SUFFIX@
+INT16 = @INT16@
+INT32 = @INT32@
+INT64 = @INT64@
+INT8 = @INT8@
 JAVAC = @JAVAC@
 KSH = @KSH@
 MAKEINFO = @MAKEINFO@
@@ -67,7 +71,7 @@ VERSION = @VERSION@
 ZIP_FLAGS = @ZIP_FLAGS@
 ZIP_PRG = @ZIP_PRG@
 
-SUBDIRS = sml c cxx java misc asdl
+SUBDIRS = sml c cxx java misc asdl 
 mkinstalldirs = $(SHELL) $(top_srcdir)/src/misc/mkinstalldirs
 CONFIG_CLEAN_FILES = 
 DIST_COMMON =  Makefile.am Makefile.in

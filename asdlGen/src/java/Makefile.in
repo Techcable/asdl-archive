@@ -70,11 +70,12 @@ ZIP_FLAGS = @ZIP_FLAGS@
 ZIP_PRG = @ZIP_PRG@
 
 ASDLGEN     = @RUN_SML_HEAP@ @SMLload=@ASDLGEN_HEAP@
-ASDL_INPUTS = @top_srcdir@/src/asdl/generic.asdl
+ASDL_INPUTS = @top_srcdir@/src/asdl/generic.asdl \
+	@top_srcdir@/src/asdl/std-types.asdl
 ASDL_OUTPUT = asts/AsdlValue/g.java asts/TypePickle/g.java
 
 @HAVE_JAVA_TRUE@pkgdata_DATA = asdl.zip
-@HAVE_JAVA_TRUE@CLEANFILES = asdl.zip asts/*/* asdl_base/*.class
+@HAVE_JAVA_TRUE@CLEANFILES = asdl.zip asts/*/*.class asdl_base/*.class
 mkinstalldirs = $(SHELL) $(top_srcdir)/src/misc/mkinstalldirs
 CONFIG_CLEAN_FILES = 
 DATA =  $(pkgdata_DATA)

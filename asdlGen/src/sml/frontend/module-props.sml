@@ -34,7 +34,6 @@ signature TYP_PROPS =
 	val wrapper             : props -> Id.path option
 	val unwrapper           : props -> Id.path option
 
-
     end
 
 signature CON_PROPS =

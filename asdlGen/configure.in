@@ -1,18 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/c/asdl_base.c)
 AC_CONFIG_AUX_DIR(src/misc)
-AM_INIT_AUTOMAKE(asdlGen, 1.0)
+AM_INIT_AUTOMAKE(asdlGen, 1.10)
 AC_PROG_MAKE_SET
-
-dnl package options
-AC_ARG_WITH(cii, 
-[--with-cii Add library support for libcii],
-[case "${withval}" in
-  yes) 	LIBCII=d  ;;
-   no)  LIBCII="" ;;
-    *)  AC_MSG_ERROR(bad value ${withval} or --with-cii) ;;
- esac],[LIBCII=""])
-AM_CONDITIONAL(HAVE_CII, test -n "${LIBCII}")
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -58,10 +48,40 @@ AC_CHECK_HEADERS(limits.h malloc.h)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
-
 dnl look at the size metrics
-dnl AC_CHECK_SIZEOF(char) AC_CHECK_SIZEOF(short) 
-dnl AC_CHECK_SIZEOF(int) AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(char,0) 
+AC_CHECK_SIZEOF(short,0) 
+AC_CHECK_SIZEOF(int,0) 
+AC_CHECK_SIZEOF(long,0)
+dnl AC_CHECK_SIZEOF(long long,0)
+
+METRICS="${ac_cv_sizeof_char}:${ac_cv_sizeof_short}:${ac_cv_sizeof_int}"
+METRICS="${METRICS}:${ac_cv_sizeof_long}"
+case ${METRICS} in
+ 1:2:4:4)   INT8="char";
+            INT16="short";
+            INT32="int";
+            INT64="long"; 
+ AC_MSG_WARN([64-bit ints not properly supported]);;
+ 1:2:4:8)   INT8="char";
+            INT16="short";
+            INT32="int";
+            INT64="long"; ;;
+ *:*:4:8)   INT8="char";
+            INT16="int";
+            INT32="int";
+            INT64="long"; ;;
+ *)         INT8="char";
+            INT16="short";
+            INT32="int";
+            INT64="long"; 
+ AC_MSG_WARN([Unrecoginzed size metrics edit src/c/pkl-int.h by hand]);;
+esac
+
+AC_SUBST(INT8)
+AC_SUBST(INT16)
+AC_SUBST(INT32)
+AC_SUBST(INT64)
 
 dnl Check for java 
 AM_CONDITIONAL(HAVE_JAVA, test -n "${JAVAC}" )
@@ -72,7 +92,9 @@ AC_OUTPUT(Makefile src/Makefile
           src/sml/Makefile src/java/Makefile 
           src/cxx/Makefile src/c/Makefile
  	  src/misc/Makefile src/asdl/Makefile
+          src/c/pkl-int.h
           src/misc/id_hack.pl src/misc/sml-batch,
+
 dnl Set the bits on the shell scripts
 [ chmod 755 src/misc/id_hack.pl src/misc/sml-batch ]
 )
