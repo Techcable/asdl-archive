@@ -70,7 +70,6 @@ zsuif_symbol* trans_suif::add_entry_extern(zsuif_symbol_table_entry *e) {
 /*****************************************/
 boolean trans_suif::in_table(type* s) {
   if(s) {
-    info(i_integer(1),"checking for annote %s\n",zsuif_atag_symb.chars());
     annote *a = s->peek_annote(zsuif_atag_type);
     return (a ? TRUE : FALSE);
   } else {
@@ -80,7 +79,6 @@ boolean trans_suif::in_table(type* s) {
 zsuif_type_id* trans_suif::make_type_id(type* s) {
   if(s) {
     /* get a unqiue id for a use annotations to keep track of identity */
-    info(i_integer(1),"checking for annote %s\n",zsuif_atag_type.chars());
     external_pointer_annote<zsuif_type_id> *a = 
       (external_pointer_annote<zsuif_type_id>*)
       s->peek_annote(zsuif_atag_type);
