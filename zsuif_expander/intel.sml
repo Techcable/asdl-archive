@@ -371,15 +371,24 @@ struct
           doKilledRegs (emt, ["NZ"], kRegs)
       end
 
-  fun emitMemRead (emt, regt, regs, kRegs) =
+  fun emitMemRead (emt, regt, regs as Reg (ty, _), kRegs) =
       let
           val ch    = C.toUpper (hd (explode( (regToLetter regt))))
           val sRLet = F.STR (if ch = #"R" then "L" else implode[ch]) 
           val sRegt = REG regt
           val sRegs = REG regs
       in
-          emt "+%s=%s[A[%s]]" [sRegt, sRLet, sRegs];
-          doKilledRegs (emt, ["NZ"], kRegs)
+          if (not (ty = Int32Bit orelse  ty = UInt32Bit)) then
+              let
+                  val newITemp = newReg (Int32Bit)
+              in
+                  emt "+%s=%s" [REG newITemp, sRegs];
+                  doKilledRegs (emt, ["NZ"], []);
+                  emt "+%s=%s[A[%s]]" [sRegt, sRLet, REG newITemp];
+                  doKilledRegs (emt, ["NZ"], newITemp::kRegs)
+              end
+          else ( emt "+%s=%s[A[%s]]" [sRegt, sRLet, sRegs];
+                doKilledRegs (emt, ["NZ"], kRegs))
       end
 
   fun createTempLocal (emt, name, loc, kind, siz) =
@@ -463,11 +472,42 @@ struct
                              sCondCode(reg1, oper), REG reg2];
            doKilledRegs (emt, ["NZ"], kRegs);
            emt "uw[0]\ntw[0]\n" [])
-        | compareRegs (emt, reg1, reg2, oper, kRegs) =
+        | compareRegs (emt, reg1 as Reg ((Int32Bit | UInt32Bit),_),
+                            reg2 as Reg ((Int32Bit | UInt32Bit),_), oper, kRegs) =
           (
            emt "+%s=%s%s%s" [sCondReg reg1, REG reg1,
                              sCondCode(reg1, oper), REG reg2];
            doKilledRegs (emt, ["NZ"], kRegs))
+        | compareRegs (emt, reg1, 
+                            reg2 as Reg ((Int32Bit | UInt32Bit),_), oper, kRegs) =
+          let
+              val newTemp = newReg (Int32Bit)
+          in (emt "+%s=%s" [REG newTemp, REG reg1];
+              doKilledRegs (emt, ["NZ"], []);
+              emt "+%s=%s%s%s" [sCondReg newTemp, REG newTemp, sCondCode(newTemp, oper), REG reg2];
+              doKilledRegs (emt, ["NZ"], newTemp :: kRegs))
+          end 
+      
+        | compareRegs (emt, reg1 as Reg ((Int32Bit | UInt32Bit),_), reg2, oper, kRegs) =
+           let
+               val newTemp = newReg (Int32Bit)
+           in (emt "+%s=%s" [REG newTemp, REG reg2];
+               doKilledRegs (emt, ["NZ"], []);
+               emt "+%s=%s%s%s" [sCondReg reg1, REG reg1, sCondCode(reg1, oper), REG newTemp];
+               doKilledRegs (emt, ["NZ"], newTemp :: kRegs))
+           end  
+        | compareRegs (emt, reg1, reg2, oper, kRegs) =
+           let
+               val newTemp = newReg (Int32Bit)
+               val newTemp2 = newReg (Int32Bit)
+           in (emt "+%s=%s" [REG newTemp, REG reg1];
+               doKilledRegs (emt, ["NZ"], []);
+               emt "+%s=%s" [REG newTemp2, REG reg2];
+               doKilledRegs (emt, ["NZ"], []);
+               emt "+%s=%s%s%s" [sCondReg newTemp, REG newTemp, sCondCode(newTemp, oper), REG newTemp2];
+               doKilledRegs (emt, ["NZ"], newTemp :: newTemp2 :: kRegs))
+           end  
+          
   end 
           
   fun compareRegToZero (emt, reg, oper, kRegs) =
