@@ -47,7 +47,7 @@ signature ANSI_C =
 	and const_exp = I of (int) | C of (char) | E of (id)
 	  | Void | NULL
 
-	and unary_op  = NEG | NOT | DEREF 
+	and unary_op  = NEG | NOT | DEREF  | ADDR
 
 	and binary_op =
 	    BLSHIFT | BRSHIFT | BAND  | BOR | BXOR | BNOT
