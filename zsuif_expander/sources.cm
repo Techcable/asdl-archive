@@ -1,0 +1,17 @@
+Group is
+
+  main.sml
+  util.sig
+  util.sml
+  base.sig
+  base.sml
+  label.sml
+  label.sig
+  expander.sml
+  suifsymtabs.sml
+  machine.sig
+  sparc.sml
+  test.sml
+
+  /u/nmichael/Research/asdlGen/src/asdl/zsuif/sources.cm
+  smlnj-lib.cm
