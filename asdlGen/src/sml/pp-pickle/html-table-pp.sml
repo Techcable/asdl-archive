@@ -128,8 +128,7 @@ structure HTMLTablePP =
 				  pp_header fields,
 				  nl,
 				  seq_term {fmt=pp_rec,sep=nl} rows,
-				  s "</table>",
-				  s "</a>"]
+				  s "</table>"]
 		    end
 		  | _ => 
 		    (seq {fmt=pp_cell,sep=mk_sep "<br>"} cells)
@@ -159,13 +158,12 @@ structure HTMLTablePP =
 	and pp_rec {ty,con,cells} = pp_row con cells
 	and pp_table {fields,rows,id} =
 	    vblock 1 [s "<a name=\"a",d id,s "\">",
-		      s "<table border=1>",
+		      s "<table border=1></a>",
 		      nl,
 		      pp_header fields,
 		      nl,
 		      seq_term {fmt=pp_rec,sep=nl} rows,
-		      s "</table>",
-		      s "</a>"]
+		      s "</table>"]
 
 	and pp_prim_value (V.IntValue x) = PPUtil.wrap V.Integer.toString x
 	  | pp_prim_value (V.StringValue x) =
