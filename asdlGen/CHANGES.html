@@ -11,6 +11,22 @@ For bug fixes and current open bugs see
 <tt>http://www.cs.princeton.edu/zephyr/ASDL/asdlGen-bugs.html</tt></a>
 <h2>New Features</h2>
 <ul>
+<li> Support for writting and reading pickled values preceded by a unique
+     type tag. (Currently SML and C only)
+
+<li> Introduction of <a href=src/doc/views.html>src/doc/views.html</a> to
+provide more user control over code. 
+
+<li> The beginnings of support for David Hanson's 
+<a href=http://www.cs.princeton.edu/software/cii/><tt>libcii</tt></a>.
+See the <b>untested</b> code for libcii support in
+<a href=src/c/cii_base.h><tt>src/c/cii_base.h</tt></a>
+<a href=src/c/cii_base.c><tt>src/c/cii_base.c</tt></a>. You need to
+invoke asdlGen with the following options to try the libcii code out
+<pre>
+  asdlGen --c --base_include base_cii.h --mono_types false T.asdl
+</pre>
+
 <li>Added generic pickle pretty printer.
 Given an an ASDL defintion such as
 <pre>
@@ -37,10 +53,26 @@ will produce a plain text dump of the pickle.
   <ul> 
   <li>--base_include (C,C++)
   <li>--base_import  (Java)
-  <li>--base_signature --base_structure (ML)
+  <li>--base_signature (ML)
+  <li>--base_structure (ML)
   </ul>
-<li>Added views to allow turning of several knobs. See
-<a href=src/doc/views.html><tt>src/doc/views.html</tt></a>
+
+<li>Added --mono_types option. The mono_type option controls whether C code
+generated will create a new type for every list or option type or use one
+uniform type. Rather than creating a new list type for each different type
+of list. See <a href=src/c/cii_base.h><tt>src/c/cii_base.h</tt></a> for an
+example of the required functions to provided this interface. By default
+this flag is set to true.
+
+For details compare the output of
+<pre>
+  asdlGen --c --mono_types false src/asdl/slp3.asdl
+</pre>
+and 
+<pre>
+  asdlGen --c --mono_types true src/asdl/slp3.asdl
+</pre>
+<li>Added option views to override the default view
 <pre>
   asdlGen --lang --view view_name
 </pre>
@@ -122,24 +154,6 @@ picklers and constructor functions. A user defined wrapper functions can be
 used to initialize it when pickling or unpickling a value. See the
 discussion or <tt>wrapper</tt> and <tt>unwrapper</tt> above.
 
-<li>Added --mono_types option. The mono_type option controls whether code
-generated will create a new type for every list or option type or use one
-uniform type.Rather
-than creating a new list type for each different type of list. See <a
-href=src/c/cii_base.h><tt>src/c/cii_base.h</tt></a> for an example of the
-required functions to provided this interface. By default this flag is set
-to true.
-For details compare the output of
-<pre>
-  asdlGen --c --mono_types false src/asdl/slp3.asdl
-</pre>
-and 
-<pre>
-  asdlGen --c --mono_types true src/asdl/slp3.asdl
-</pre>
-<li> Untested code for libcii support
-<a href=src/c/cii_base.h><tt>src/c/cii_base.h</tt></a>
-<a href=src/c/cii_base.c><tt>src/c/cii_base.c</tt></a>
 </body>
 </html>
 

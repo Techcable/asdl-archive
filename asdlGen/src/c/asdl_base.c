@@ -60,6 +60,7 @@ int read_tag(instream_ty s) { return read_int(s); }
 string_ty read_string(instream_ty s) {
      int sz = read_int(s);
      char *ret = malloc(sz+1);
+     if(ret == NULL) die();
 
      READ_BYTES(ret,sz,s);
      ret[sz]='\0';
@@ -121,6 +122,7 @@ static char *uniquify(char *x) {
 
      /* new entry */
      p = malloc(sizeof(struct _bucket));
+     if (p == NULL) die();
      p->id=x;
      p->hash=hc;
      p->next=buckets[idx];
@@ -133,7 +135,7 @@ identifier_ty mk_identifier(char *x) {
 }
 
 void write_int_option(int_option_ty x,outstream_ty s) {
-     if(x!=NULL) {
+     if(x!=NONE) {
 	  write_int(1,s);
 	  write_int(*x,s);
      } else 
@@ -144,11 +146,9 @@ void write_int_option(int_option_ty x,outstream_ty s) {
 int_option_ty read_int_option(instream_ty s) {
      int_option_ty x;
      if(read_int(s) !=0) {
-	  x = malloc(sizeof(int));
-	  *x = read_int(s);
 	  return x;
      } else 
-	  return NULL;
+	  return NONE;
 }
 
 void write_string_option(string_option_ty x,outstream_ty s) {
@@ -333,6 +333,7 @@ identifier_list_ty identifier_list(identifier_ty head, identifier_list_ty tail)
 {
    identifier_list_ty t;
    t = malloc(sizeof(*t));
+   if(t == NULL) die();
    t->head = head;
    t->tail = tail;
    return t;
@@ -342,6 +343,7 @@ string_list_ty string_list(string_ty head, string_list_ty tail)
 {
    string_list_ty t;
    t = malloc(sizeof(*t));
+   if(t == NULL) die();
    t->head = head;
    t->tail = tail;
    return t;
@@ -351,6 +353,7 @@ int_list_ty int_list(int_ty head, int_list_ty tail)
 {
    int_list_ty t;
    t = malloc(sizeof(*t));
+   if(t == NULL) die();
    t->head = head;
    t->tail = tail;
    return t;

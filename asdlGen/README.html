@@ -3,25 +3,38 @@
 <title>README</title>
 </head>
 <body BGCOLOR=#ffffff>
-<h1>asdlGen 0.9a Release</h1>
+<h1>asdlGen 0.91a Release</h1>
 <p>
-This is an alpha release of <tt>asdlGen</tt>. It is missing a few important
-features and has not been heavily tested yet. There is scant
-documentation. This README is all there really is right now. For describing
-simple compiler IR and ASTs seen in your average introductory compiler
-course this version of <tt>asdlGen</tt> should be up to the task, and save
-you quite a bit of time if you're programming in a language with out
-algebraic data types.
+This is the second alpha release of <tt>asdlGen</tt>. It includes most all
+of the features that will make it into the final release. All these features
+however are not fully supported for all langauges.
+
+<p>See the <a href=CHANGES.html>CHANGES</a> file for more details. Several
+bugs in the first alpha release have also been fixed. See the <a
+href=http://www.cs.princeton.edu/zephyr/ASDL/asdlGen-bugs.html>master bug
+list</a> for details.
+
+<p>There is scant documentation. What there is is either in this README or
+can be found in the <a href=src/doc/><tt>src/doc</tt></a> directory. For
+describing simple compiler IR and ASTs seen in your average introductory
+compiler course this version of <tt>asdlGen</tt> should be up to the task,
+and save you quite a bit of time if you're programming in a language with
+out algebraic data types.
 
 <p>
 However, for more advanced work, it's very likely that this alpha version of
 <tt>asdlGen</tt> will not do exactly what you wanted. You'll probably be
-forced to modify the outputed source. The long term goals are to add enough
-features to <tt>asdlGen</tt> so that you will not have to modify the output
-of <tt>asdlGen</tt> in anyway. For this magical event to happen, the authors
-of <tt>asdlGen</tt> would like as much feed back as possible. Please take
-the time to send us a note as to what you found good or bad about
-<tt>asdlGen</tt>.
+forced to modify the outputed source. This version of <tt>asdlGen</tt> has a
+new mechanism called views. Views should be powerfull enough so that you can
+avoid having to alter any of the outputed source. If this is not the case
+please let the developers know. See the <a href=src/doc/views.html>views</a>
+documentation for more details.
+
+<p>The long term goals are to add enough features to <tt>asdlGen</tt> so
+that you will not have to modify the output of <tt>asdlGen</tt> in
+anyway. For this magical event to happen, the authors of <tt>asdlGen</tt>
+would like as much feed back as possible. Please take the time to send us a
+note as to what you found good or bad about <tt>asdlGen</tt>.
 
 <p> An official non alpha release is going to happen sometime in late January
 of 1998. The final release will have some real user level
@@ -109,12 +122,9 @@ src/misc/id_hack.pl</tt></a> generates #defines so you can program with
 sorter names. See the <a href=src/c/Makefile><tt>Makefile</tt></a> in
 <tt>src/c</tt> for an example 
 
-<h1>BUGS/TODO</h1>
+<h1>TODO</h1>
 <ul>
-<li> Need to provide hooks for user defined representation of types see ....
-<a href=http://www.cs.princeton.edu/zephyr/ASDL/docs/design/user_types.html>
-<tt>http://www.cs.princeton.edu/zephyr/ASDL/docs/design/user_types.html</tt>
-</a>
+<li> Finish support for cii and user defined types.
 <li> In the not too distant future, pickle files will come stamped with a
 magic number that identifies the type environment from which it was
 generated. If the type environments are not exactly the same. The code will
@@ -144,7 +154,8 @@ conservative.
 <li> The pretty printing rules could be tweaked. 
 <li> The handling of primitive types is more ad hoc than I'd like. 
 </ul>
-
+<hr>
+<em>$Date$</em>
 </body>
 </html>
 
