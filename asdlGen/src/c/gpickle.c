@@ -120,13 +120,13 @@ int P(lookup_type_idx_by_name)(P(maps_ty) m,T(qid_ty) n) {
 }
 
 int P(lookup_cnstr_idx_by_name)(P(maps_ty) m,T(qid_ty) n) {
-     T(type_map_entry_ty) tentry;
+     T(cnstr_map_entry_ty) centry;
 
-     tentry = Assoc_GetData(m->tassoc,n);
-     if(tentry == NULL) {
+     centry = Assoc_GetData(m->cassoc,n);
+     if(centry == NULL) {
 	  return -1;
      } else {
-	  return tentry->key;
+	  return centry->key;
      }
 }
 
@@ -342,15 +342,15 @@ static int value_list_length(V(asdl_value_list_ty) l) {
 static void write_value(P(maps_ty) m,
 			V(asdl_value_ty) val, outstream_ty output) {
         int num;
-	int cidx;
+	int tidx;
         T(cnstr_map_value_ty) cnstr;
 	
  
         switch(val->kind) {
 	case V(SumValue_enum):
-	     cidx = P(lookup_cnstr_idx_by_name)(m,val->typename);
-	     assert(cidx != -1);
-	     cnstr = P(lookup_cnstr)(m,cidx);
+	     tidx = P(lookup_type_idx_by_name)(m,val->typename);
+	     assert(tidx != -1);
+	     cnstr = P(lookup_cnstr)(m,tidx);
 	     num = cnstr->pkl_tag;
 	     write_tag(num, output);
 	     write_value_list(m,val->v.V(SumValue).attrbs, output);
