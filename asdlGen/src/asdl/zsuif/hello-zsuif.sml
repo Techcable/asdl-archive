@@ -46,14 +46,14 @@ structure ZSUIFHelloWorld =
 	val main_type =
 	    (Basic_procedure_type{bit_size=Int 32,
 					   bit_alignment=Int 32,
-					   result_type=int_type,
+					   result_types=[int_type],
 					   args=
 					   [int_type,
 					    char_pointer_pointer_type]})
 	val printf_type =
 	    (Basic_procedure_type{bit_size=Int 32,
 					   bit_alignment=Int 32,
-					   result_type=int_type,
+					   result_types=[int_type],
 					   args=[char_pointer_type]})
 	val printf_type_id = new_type_id()
 
@@ -142,8 +142,7 @@ structure ZSUIFHelloWorld =
 	val string_literal_def = 
 	    {name=string_literal_symbol,
 	     type'=string_literal_type,
-	     bit_alignment=Int 32,
-	     value_block=string_literal_value_block}
+	     value_block=SOME (string_literal_value_block)}
 
 	val symbol_table =
 	    {entries=
