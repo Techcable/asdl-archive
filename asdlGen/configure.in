@@ -29,11 +29,13 @@ AC_PATH_PROGS(PERL5,perl5 perl)
 
 dnl how to run an sml heap
 eval `/bin/sh src/misc/sysname`
-AC_CHECK_PROGS(RUN_SML_HEAP, 
-	sml sml-cm sml-cm.bat)
+AC_CHECK_PROGS(RUN_SML_HEAP,sml sml-cm sml-cm.bat)
+
 case "${RUN_SML_HEAP}" in
-	sml-cm.bat) RUN_SML_HEAP=`/bin/sh src/misc/find_runtime.sh` ;;
-easc
+	sml-cm.bat) 
+        RUN_SML_HEAP=`/bin/sh src/misc/find_runtime.sh`
+        ;;
+esac
 
 ASDLGEN_HEAP='${top_srcdir}/src/sml/asdlGen.${HEAP_SUFFIX}'
 AC_SUBST(ASDLGEN_HEAP)
