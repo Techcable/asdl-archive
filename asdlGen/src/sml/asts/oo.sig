@@ -92,10 +92,16 @@ signature OO_AST = (* really more Java than anything else *)
 	  | NotNil     of (exp)
 	  | NotZero    of (exp)
 	  | Less       of (exp * exp)
+
 	  | SeqNew     of {elm_ty:ty_exp, len:exp}
 	  | SeqLen     of {elm_ty:ty_exp, seq:exp}
 	  | SeqGet     of {elm_ty:ty_exp, seq:exp, idx:exp}
 	  | SeqSet     of {elm_ty:ty_exp, seq:exp, idx:exp,v:exp}
+
+	  | OptNone    of (ty_exp)
+	  | OptSome    of (ty_exp * exp)
+	  | OptIsSome  of (ty_exp * exp)
+	  | OptGetVal  of (ty_exp * exp)
 
 	and stmt =
 	    Nop

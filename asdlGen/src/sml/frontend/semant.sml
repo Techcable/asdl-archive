@@ -84,8 +84,7 @@ Sets of qualifers.
 	
 	val toMid = Id.fromString o Identifier.toString
 	fun mk_src_name (name,NONE) = name
-	 | mk_src_name (name,SOME x) =
-	 Id.fromPath {qualifier=Id.getQualifier name,  base=x}
+	 | mk_src_name (name,SOME x) = Id.fromPath x
 (**)
 (**:[[structure Semant]] [[structure Type]]:**)
 	structure Type =
@@ -506,10 +505,11 @@ Build a new module info and add it to the current module environment.
 		 val short_name =
 		   Id.fromPath{qualifier=[],base=base}
 		 val count = count + 1
+		 val inits = TypProps.parse (view full_name)
 		 val tinfo =
 		   {tag=count,name=full_name,
 		    uses=S.empty,fields=[],cons=[],
-		    props=TypProps.new [],is_prim=true,is_enum=false}
+		    props=TypProps.new inits,is_prim=true,is_enum=false}
 	       in ME{menv=menv,errs=errs,props=props,uenv=uenv,
 		     penv=Env.insert(penv,short_name,tinfo),count=count}
 	       end
@@ -621,15 +621,26 @@ Build a new module info and add it to the current module environment.
 
 	    fun is_prim {file,decl=T.PrimitiveModule _} = true
 	      | is_prim _ = false
-	    val std_prims = {file="<builtin>",
+	    (* TODO: factor builtins out *)				 
+	    val std_prims = [{file="<builtin>",
 			     decl=T.PrimitiveModule
 			     {name=Identifier.fromString "StdPrims",
 			      exports=List.map Identifier.fromString
-			      ["int","string","identifier"]}}
+			      ["int","string","identifier"]}}]
+	    fun mk_vd (e,p,v) = {entity=List.map Identifier.fromString e,
+				 prop=p,value=v}
+	    val std_views = [{file="<bultin>",
+			     decl=T.View
+			     {name=Identifier.fromString "Java",
+			      decls=
+			      [mk_vd (["StdPrims","int"],"source_name","int"),
+			       mk_vd (["StdPrims","string"],"source_name",
+				"String")]}}]
+				     
 	    fun declare {view,inits} ds =
 	      let
-		val prim_ms = std_prims::(List.filter is_prim ds)
-		val ds = List.filter (not o is_prim) ds
+		val prim_ms = std_prims@(List.filter is_prim ds)
+		val ds = std_views@(List.filter (not o is_prim) ds)
 		val (ds,gv) = build_scc ds
 		val v = gv (Id.fromString view)
 		val penv = prim_env inits

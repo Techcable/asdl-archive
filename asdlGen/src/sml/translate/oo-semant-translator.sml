@@ -94,7 +94,8 @@ functor mkOOSemantTranslator
 	let
 	  val tid = (trans_tid tname)
 	  val is_prim = S.Type.is_prim tinfo
-	  val ty = (T.TyReference (T.TyId tid))
+	  val ty = if is_prim then (T.TyId tid)
+		   else (T.TyReference (T.TyId tid))
 	  val {natural_ty,...} = Spec.get_wrappers ty props 
 	  val (ty,tid) =
 	    case kind of
@@ -104,7 +105,6 @@ functor mkOOSemantTranslator
 	    | SOME S.Option =>
 		(Spec.opt_rep natural_ty,Spec.opt_tid tid)
 	    | _ => raise Error.unimplemented
-	  val ty = if is_prim then (T.TyId tid) else ty
 	  val trans_fid =
 	    (fix_id o T.VarId.fromString o Identifier.toString)
 		  val name = trans_fid name
@@ -342,7 +342,8 @@ functor mkOOSemantTranslator
 	end
       fun trans p {modules=ms,prim_types,prim_modules} =
 	let
-	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs) Spec.prims ms
+	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs)
+	    (Spec.prims prim_types) ms
 	  val new_decls = (aux_decls (Ty.mk_env ty_decls))
 	  fun add_decls (ty_decls,(T.Module{name,imports,decls},mp)) =
 	    (T.Module{name=name,

@@ -30,6 +30,7 @@ signature PP_UTIL =
 	val seq_term: {fmt:'a -> pp,sep:pp} -> 'a list -> pp
 
 	val pp_to_outstream: TextIO.outstream -> int -> pp -> unit
+	val pp_to_string: int -> pp -> string
 
 	(* deprecated *)
 	val hblock : int -> pp list -> pp
@@ -70,6 +71,7 @@ structure PPUtil :> PP_UTIL =
 	  | seq_term {fmt,sep} x = Wpp.^^(seq {fmt=fmt,sep=sep} x,sep)
 
 	fun pp_to_outstream outs i pp = Wpp.pretty i pp outs
+	fun pp_to_string i pp = Wpp.prettyStr i pp 
     end
 
 

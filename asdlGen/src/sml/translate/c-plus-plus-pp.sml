@@ -19,7 +19,7 @@ structure CPlusPlusPP : OO_PP =
 	val cfg = Params.empty 
 	val (cfg,base_inc) =
 	    Params.declareString cfg
-	    {name="base_include",flag=NONE,default="asdl_base.hxx"} 
+	    {name="base_include",flag=NONE,default="StdPrims.hxx"} 
 
 	fun mkComment s =
 	    PPUtil.vblock 2
@@ -31,7 +31,7 @@ structure CPlusPlusPP : OO_PP =
 	in
 	    val pp_id = PP.wrap (VarId.toString' "_")
 	    val pp_tid = PP.wrap (TypeId.toString' "_")
-	    val semi_sep = PP.cat [PP.s ";",PP.ws]
+	    val semi_sep = PP.cat [PP.s ";",PP.nl]
 	    val comma_sep = PP.cat [PP.s ",",PP.ws]
 
 	    fun group_scopes_pp init pp f l =
@@ -56,7 +56,7 @@ structure CPlusPlusPP : OO_PP =
 			else 
 			    [PP.vblock 4
 			    [PP.s s, PP.nl,
-			     PP.seq_term {fmt=id,sep=PP.ws}
+			     PP.seq_term {fmt=id,sep=PP.nl}
 			     (List.rev x)]]
 
 		    val public_pp = do_pp public "public:"
@@ -83,9 +83,9 @@ structure CPlusPlusPP : OO_PP =
 	      | pp_ty_exp (TyReference te) =
 		PP.cat [pp_ty_exp te,PP.s "*"]
 	      | pp_ty_exp (TyOption te) =  
-		PP.cat [pp_ty_exp te,PP.s "/* opt */"] 
+		PP.cat [PP.s "Opt<",pp_ty_exp te,PP.s ">"] 
 	      | pp_ty_exp (TySequence te) =
-		PP.cat [PP.s "Seq<",pp_ty_exp te,PP.s ">*"] 
+		PP.cat [PP.s "Seq<",pp_ty_exp te,PP.s ">"] 
 
 	    and pp_ty_decl (DeclAbstractClass
 			    {name,idecls,scope,inherits,fields,mths}) =
@@ -241,19 +241,28 @@ structure CPlusPlusPP : OO_PP =
 	      | pp_exp (ArraySub (e,idx)) =
 		PP.cat [pp_exp e, PP.s "[" ,pp_exp idx,PP.s "]"]
 	      | pp_exp (SeqNew {elm_ty,len}) =
-		PP.cat [PP.s "new Seq<" ,pp_ty_exp elm_ty,
+		PP.cat [PP.s "Seq<" ,pp_ty_exp elm_ty,
 			PP.s ">(",pp_exp len,PP.s")"]
 	      | pp_exp (SeqLen {elm_ty,seq}) =
-		PP.cat [PP.s"((",pp_exp seq, PP.s ")->len())"]
+		PP.cat [PP.s"((",pp_exp seq, PP.s ").len())"]
 	      | pp_exp (SeqGet {elm_ty,seq,idx}) =
-		PP.cat [PP.s "((",pp_exp seq, PP.s ")->get(",pp_exp idx,
+		PP.cat [PP.s "((",pp_exp seq, PP.s ").get(",pp_exp idx,
 			PP.s "))"]
 	      | pp_exp (SeqSet {elm_ty,seq,idx,v}) =
-		PP.cat [PP.s "((",pp_exp seq, PP.s ")->set(",
+		PP.cat [PP.s "((",pp_exp seq, PP.s ").set(",
 			pp_exp idx,
 			PP.s ", ",
 			pp_exp v,
 			PP.s "))"]
+	      | pp_exp (OptNone(elm_ty)) =
+		PP.cat [PP.s "Opt<" ,pp_ty_exp elm_ty,PP.s ">()"]
+	      | pp_exp (OptSome(elm_ty,exp)) =
+		PP.cat [PP.s "Opt<" ,pp_ty_exp elm_ty,
+			PP.s ">(",pp_exp exp,PP.s")"]
+	      | pp_exp (OptIsSome (elm_ty,e)) = 
+		PP.cat [PP.s "((",pp_exp e, PP.s ").is_some())"]
+	      | pp_exp (OptGetVal (elm_ty,e)) = 
+		PP.cat [PP.s "((",pp_exp e, PP.s ").get_val())"]
 	    and pp_stmt (Assign(dst,src)) =
 		PP.cat [pp_exp dst, PP.s " = " ,pp_exp src,PP.s ";"]
 	      | pp_stmt (Die s) = PP.s "throw Error(\"fatal\");"
@@ -314,7 +323,7 @@ structure CPlusPlusPP : OO_PP =
 		 PP.s "{",
 		 PP.vblock 4
 		 [PP.nl,
-		  PP.seq{fmt=pp_stmt,sep=PP.ws} body],
+		  PP.seq{fmt=pp_stmt,sep=PP.nl} body],
 		 PP.nl,
 		 PP.s "}"]
 		
@@ -325,7 +334,7 @@ structure CPlusPlusPP : OO_PP =
 		 PP.vblock 4
 		 [PP.nl,
 		  PP.seq_term {fmt=pp_field,sep=semi_sep} vars,
-		  PP.seq{fmt=pp_stmt,sep=PP.ws} body],
+		  PP.seq{fmt=pp_stmt,sep=PP.nl} body],
 		 PP.nl,
 		 PP.s "}"]
 

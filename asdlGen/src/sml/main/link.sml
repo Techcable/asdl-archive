@@ -144,6 +144,25 @@ structure Link =
 		structure Gen = CPlusPlusGen
 		val dflt_view = "Cxx")	   
 
+       structure IconDynamicSpec =
+	 mkDynamicSpec(structure Ty = DynamicTy)
+
+      structure IconTranslator =
+	mkDynamicSemantTranslator
+	(structure IdFix = IdFix.Icon
+	 structure Spec = IconDynamicSpec)
+	   
+      structure IconGen =
+	mkTranslateFromTranslator
+	(structure T = IconTranslator
+	 structure G = mkSourceFileOutput(structure PP = IconPP))
+
+      structure Icon =
+	mkMain(structure S = Semant
+	       structure Parser = AsdlParser
+	       structure Gen = IconGen 
+	       val dflt_view = "Icon")
+
        structure TypePickler =
 	 mkMain(structure S = Semant
 		structure Parser = AsdlParser

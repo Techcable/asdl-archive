@@ -50,7 +50,6 @@ view Java {
 -- set suppress to false to generate stubs
 module StdTypes <= suppress   : true
 module StdTypes <= is_library : true
-
 -- define the type substitutions
  StdTypes.bool <= { natural_type : boolean
                           reader : read_java_boolean
@@ -87,7 +86,7 @@ module StdTypes <= is_library : true
                    }
 
 { StdTypes.uint64 }
-                 <= { natural_type : java.math.BigInteger 
+                 <= { natural_type : BigInteger 
                             reader : read_java_BigInteger
                             writer : write_java_BigInteger 
                     }
@@ -96,7 +95,7 @@ module StdTypes <= is_library : true
 
 view Cxx {
 -- set suppress to false to generate stubs
-module StdTypes <= suppress   : true
+module StdTypes <= suppress   : false
 module StdTypes <= is_library : true
 
 StdTypes.int8  <= { natural_type : int8

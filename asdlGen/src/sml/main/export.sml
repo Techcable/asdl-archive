@@ -29,6 +29,8 @@ structure Export =
 
 	val HaskellGenFn =  mkExportFn Link.Haskell.do_it
 
+	val IconGenFn =  mkExportFn Link.Icon.do_it
+
 	val CPlusPlusGenFn =
 	    mkExportFn Link.CPlusPlus.do_it
 
@@ -52,6 +54,7 @@ structure Export =
 	  | asdlGen (name, ("--cxx"::rs)) = CPlusPlusGenFn(name,rs)
 	  | asdlGen (name, ("--sml"::rs)) = MLGenFn(name,rs)
 	  | asdlGen (name, ("--haskell"::rs)) = HaskellGenFn(name,rs)
+	  | asdlGen (name, ("--icon"::rs)) = IconGenFn(name,rs)
 	  | asdlGen (name, ("--doc"::rs)) = HTMLGenFn(name,rs)
 	  | asdlGen (name, ("--typ"::rs)) = TypGenFn(name,rs)
 	  | asdlGen (name, ("--dtd"::rs)) = XMLDTDGenFn(name,rs)
@@ -64,6 +67,7 @@ structure Export =
 	  | asdlGen (name, ("-Lcxx"::rs)) = CPlusPlusGenFn(name,rs)
 	  | asdlGen (name, ("-Lsml"::rs)) = MLGenFn(name,rs)
 	  | asdlGen (name, ("-Lhaskell"::rs)) = HaskellGenFn(name,rs)
+	  | asdlGen (name, ("-Licon"::rs)) = IconGenFn(name,rs)
 	  | asdlGen (name, ("-Ldoc"::rs)) = HTMLGenFn(name,rs)
 	  | asdlGen (name, ("-Ltyp"::rs)) = TypGenFn(name,rs)
 	  | asdlGen (name, ("-Ldtd"::rs)) = XMLDTDGenFn(name,rs)
@@ -76,6 +80,7 @@ structure Export =
 	  | asdlGen (name, ("-L"::"cxx"::rs)) = CPlusPlusGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"sml"::rs)) = MLGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"haskell"::rs)) = HaskellGenFn(name,rs)
+	  | asdlGen (name, ("-L"::"icon"::rs)) = IconGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"doc"::rs)) = HTMLGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"typ"::rs)) = TypGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"dtd"::rs)) = XMLDTDGenFn(name,rs)
@@ -100,7 +105,7 @@ structure Export =
 		     (Error.say
 		      (String.concat
 		       ["Usage: ",name,
-			" --{java|c|cxx|sml|haskell|check|typ|doc|all}",
+			" --{java|c|cxx|sml|haskell|icon|check|typ|doc|all}",
 			" [options ...]"," files ...","\n"]);
 		      OS.Process.failure)
     end

@@ -21,7 +21,8 @@ signature  WPP =
     val text  : string -> doc
     val ^^ : doc * doc -> doc
 
-    val pretty : int -> doc -> TextIO.outstream -> unit
+    val pretty    : int -> doc -> TextIO.outstream -> unit
+    val prettyStr : int -> doc -> string 
   end
 
 structure Wpp :> WPP =
@@ -56,7 +57,8 @@ struct
     val nl       = TEXT "\n"
     val line     = BREAK 
     fun group x	 = GROUP x
-	
+
+      
     local
       (* preallocate some text *)
       val pad_2 = copy 2 #" "
@@ -67,13 +69,12 @@ struct
       val pad_64 = copy 64 #" "
     in
       fun layout Nil outs	  = ()
-	| layout (Text(s,x)) outs =
-	(TextIO.output(outs,s);layout (force x) outs)
+	| layout (Text(s,x)) outs = (outs s;layout (force x) outs)
 	| layout (Line(i,x)) outs =
 	let
 	  fun loop 0 = ()
 	    | loop n =
-	    let fun out s = (TextIO.output (outs,s);loop (n-(String.size s)))
+	    let fun out s = (outs s;loop (n-(String.size s)))
 	    in if n < 0 then ()
 	       else (case (n mod 64) of
 		     0 =>  out pad_64
@@ -85,7 +86,7 @@ struct
 		   | r => out (copy r #" "))
 	    end
       in
-	TextIO.output1(outs,#"\n");loop i;
+	outs "\n";loop i;
 	layout (force x) outs
       end
     end
@@ -123,9 +124,17 @@ struct
 	fun best w x = be w 0 [(0,B,x)]
     end
 
-    fun pretty w x outs = (layout (best w x) outs;
-			   TextIO.output1(outs,#"\n"))
-    
+    fun pretty w x outstream =
+      let fun outs s = TextIO.output(outstream,s)
+      in (layout (best w x) outs; (outs "\n"))
+      end
+    fun prettyStr w x =
+      let val str = ref []
+	fun outs s = (str := (s::(!str)))
+	val _ = layout (best w x) outs
+	val _ = outs "\n"
+      in String.concat (List.rev (!str))
+      end
 end
 
 

@@ -28,6 +28,10 @@ signature EXTERNAL_PROGRAMS =
 		       inputs: string list,
 		         rest: string list} -> OS.Process.status
 
+	val icont: {ipath: string list,
+		   inputs: string list,
+		     rest: string list} -> OS.Process.status
+
 	val haskell: {haskell_path: string list,
 		        inputs: string list} -> OS.Process.status
 
@@ -46,7 +50,8 @@ signature SUPPORT_FILES =
 
 	val java_classes   : string list
 	val cm_path        : string list
-	val haskell_path        : string list
+	val haskell_path   : string list
+	val icon_ucode     : string list
     end
 
 structure SupportFiles: SUPPORT_FILES =
@@ -67,16 +72,17 @@ structure SupportFiles: SUPPORT_FILES =
 	val java_classes = mk_path ["java"]
 
 	val cm_path = mk_path ["sml","base"]
-
+	val icon_ucode = mk_path ["icon"]
 	val haskell_path = (mk_path ["haskell"])@["/usr/local/share/hugs/lib"]
     end
 
 structure UnixExternalProgs:EXTERNAL_PROGRAMS =
     struct
 	val cc_prg  = "gcc"
-	val cxx_prg = "echo g++"
-	val javac_prg = "echo javac"
+	val cxx_prg = "g++"
+	val javac_prg = "javac"
 	val haskell_prg = "echo hugs"
+	val icont_prg = "icont"
 	val sml_prg = "sh ../misc/sml-batch"
 
 	fun prefix x s = x^s
@@ -126,8 +132,15 @@ structure UnixExternalProgs:EXTERNAL_PROGRAMS =
 		    (shpath (class_path@["${CLASSPATH}"]))
 		val cmd =
 		    join (env::javac_prg::(inputs@rest))
-	    in
-		run cmd
+	    in	run cmd
+	    end
+	fun icont {ipath,inputs,rest} = 
+	    let
+		val env = "env IPATH="^
+		    (shpath (ipath@["${IPATH}"]))
+		val cmd =
+		    join (env::icont_prg::(rest@inputs))
+	    in run cmd
 	    end
 
 	fun rm s = run (join ("rm -rf"::s))
@@ -171,9 +184,16 @@ structure Test =
 		val outs = get_files "java" i
 		val dirs = Set.addList (Set.empty,List.map OS.Path.dir outs)
 		val class_path = (Set.listItems dirs)@S.java_classes
-	    in
-		P.javac{class_path=class_path,inputs=outs,
-			rest=["-nowrite"]}
+	    in P.javac{class_path=class_path,inputs=outs,
+		       rest=["-nowrite"]}
+	    end
+	fun icon_comp i =
+	    let
+		val outs = get_files "icn" i
+		val dirs = Set.addList (Set.empty,List.map OS.Path.dir outs)
+		val ipath = (Set.listItems dirs)@S.java_classes
+	    in P.icont{ipath=ipath,inputs=outs,
+		       rest=["-o /dev/null"]}
 	    end
 
 	fun sml_comp i =
@@ -212,6 +232,7 @@ structure Test =
 	val do_cxx =  cxx_comp o Link.CPlusPlus.do_it 
 	val do_sml =  sml_comp o Link.ML.do_it 
 	val do_haskell =  haskell_comp o Link.Haskell.do_it 
+	val do_icon =  icon_comp o Link.Icon.do_it 
 	val keep_going = ref false
 	fun test (name,f,i) () = (name,((f i) = OS.Process.success) orelse
 				  (!keep_going))
@@ -224,7 +245,8 @@ structure Test =
 	     test (n^"-hs",do_haskell,"--view=Haskell"::i),
 	     test (n^"-c",do_c,"--view=C"::i),
 	     test (n^"-cxx",do_cxx,"--view=Cxx"::i),
-	     test (n^"-java",do_java,"--view=Java"::i)]
+	     test (n^"-java",do_java,"--view=Java"::i),
+	     test (n^"-icon",do_icon,"--view=Icon"::i)]
 	  end
 	    
 	fun run_test s =
@@ -264,6 +286,10 @@ structure Test =
 
 	val slp_test =
 	    (test_all "slp.asdl"  [mk_path ["slp.asdl"]])
+
+	val slp3_test =
+	    (test_all "slp3.asdl"  [mk_path ["slp3.asdl"]])
+
 	val views_test =
 	    (test_all "views.asdl"  [mk_path ["views.asdl"]])
 
@@ -274,21 +300,21 @@ structure Test =
 	val zsuif_test =
 	    (test_all "zsuif.asdl"  [mk_path ["zsuif.asdl"],
 				     mk_path ["..","std-types.asdl"]])
+	val rcc_test =
+	    (test_all "rcc.asdl"  [mk_path ["rcc.asdl"]])
+
 	val cii_test =
 	    [test ("cii",do_c,["--view=C",
 				mk_path ["slp3.asdl"]])]
-	val seq_test =
-	    [test ("seq",do_java,["--simple_sequences=false",
-			       mk_path ["slp3.asdl"]])]@
-	    [test ("seq",do_cxx,["--simple_sequences=false",
-			       mk_path ["slp3.asdl"]])]
+
 	    
 	val tests =
-	    seq_test@
-	    pattern_test@
-	    modTest2@
-	    asdl_test@
 	    slp_test@
+	    slp3_test@
+	    asdl_test@
+	    modTest2@
+	    pattern_test@
+	    rcc_test@
 	    views_test@zsuif_test
 
 	fun do_it () = run_test tests

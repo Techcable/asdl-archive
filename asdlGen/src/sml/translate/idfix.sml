@@ -76,7 +76,7 @@ structure IdFix =
 			 "funsig", "handle", "if", "in", "include",
 			 "infix", "infixr", "let", "local", "nonfix",
 			 "o", "of", "op", "open", "overload", "raise",
-			 "rec", "sharing", "sig", "signature",
+			 "rec", "ref","sharing", "sig", "signature",
 			 "struct", "structure", "then", "type", "val",
 			 "where", "while", "with", "withtype",
 			 "orelse", "andalso"]
@@ -148,8 +148,22 @@ structure IdFix =
 		       [("int","int"),
 			("string","String")]
 		   val name = "Java")
-	   
+       (* todo dump in the right keywords *)
+       structure Icon =
+	 mkFixer(val id_map =
+		   List.map (fix_kw "_")
+		   ["break", "do", "global", "next", "repeat", "to",
+		    "by", "else", "if", "not", "return", "until",
+		    "case", "end initial", "of", "static", "while",
+		    "create", "every", "link", "procedure",
+		    "suspend", "default fail", "local", "record",
+		    "then"]
+		 val ty_map = id_map
+		 val name = "Icon")
     end
+
+
+
 
 
 

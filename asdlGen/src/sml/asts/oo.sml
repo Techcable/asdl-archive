@@ -96,6 +96,11 @@ structure OOAst: OO_AST =
 	  | SeqGet     of {elm_ty:ty_exp, seq:exp, idx:exp}
 	  | SeqSet     of {elm_ty:ty_exp, seq:exp, idx:exp, v:exp}
 
+	  | OptNone    of (ty_exp)
+	  | OptSome    of (ty_exp * exp)
+	  | OptIsSome  of (ty_exp * exp)
+	  | OptGetVal  of (ty_exp * exp)
+
 	and stmt =
 	    Nop
 	  | Expr    of (exp)

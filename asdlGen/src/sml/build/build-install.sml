@@ -1,4 +1,5 @@
 functor BuildInstall(structure BuildC   : BUILD_C
+		     structure BuildCXX : BUILD_CXX
 		     structure BuildSML : BUILD_SML
 		     structure BuildDoc : BUILD_DOC
 		     structure FileOps  : FILE_OPS_BUILD
@@ -33,8 +34,11 @@ functor BuildInstall(structure BuildC   : BUILD_C
 
     val rules = BuildC.rules @ BuildSML.rules
     val rules = List.foldl install_includes rules BuildC.headers
+    val rules = List.foldl install_includes rules BuildCXX.headers
     val rules = List.foldl install_doc rules BuildDoc.docs
     val rules = List.foldl install_libs rules [BuildC.xml_lib,BuildC.asdl_lib]
+    val rules = List.foldl install_libs rules
+      [BuildCXX.xml_lib,BuildCXX.asdl_lib]
     val rules = List.foldl install_heap rules BuildSML.heaps
   end
   

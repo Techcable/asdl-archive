@@ -26,7 +26,7 @@ functor CommonProps(val name : string) =
 		val new = from_inits p
 		val parse = parse_inits p
 		val (source_name,_) =
-		    decl_string_opt p {name="source_name",default=NONE}
+		    decl_path_opt p {name="source_name",default=NONE}
 		val (doc_string,_) =
 		    decl_string_opt p {name="doc_string",default=NONE}
 	    end

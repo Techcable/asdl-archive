@@ -14,8 +14,8 @@ algebraic.sml
 ansi-c.sig
 ansi-c.sml
 
-untyped.sig
-untyped.sml
+dynamic.sig
+dynamic.sml
 
 format.sig
 format.sml

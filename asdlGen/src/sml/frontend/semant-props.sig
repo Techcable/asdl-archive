@@ -40,7 +40,7 @@ is a human readable string descriping some entity.
 **)
 signature COMMON_PROPS =
   sig	include PROPS
-    val source_name         :  props -> string option
+    val source_name         :  props -> Id.path option
     val doc_string          :  props -> string option
   end
 (**)

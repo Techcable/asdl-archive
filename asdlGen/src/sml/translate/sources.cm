@@ -55,6 +55,8 @@ yacc-grammar-pp.sml
 stmt-exp.sig
 stmt-exp.sml
 
-
-
-
+dynamic-spec.sig
+dynamic-spec.sml
+dynamic-semant-translator.sml
+icon-pp.sml
+(* perl ... scheme ... lisp *)

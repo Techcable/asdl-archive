@@ -3,6 +3,7 @@ signature BUILD_WORLD =
     val docs  : unit -> bool
     val heaps : unit -> bool
     val c     : unit -> bool
+    val cxx   : unit -> bool
     val all   : unit -> bool
     val install : unit -> bool
   end
@@ -21,6 +22,11 @@ functor BuildWorld(structure SML      : SML_BUILD
       BuildC(structure CC = CC
 	     val debug = debug
 	     val src_dir = src_path ["c"]);
+    structure MkCXX =
+      BuildCXX(structure CC = CC
+	     val debug = debug
+	     val c_src_dir = src_path ["c"]
+	     val src_dir = src_path ["cxx"]);
     structure MkDT =
       BuildDTangle(structure SML = SML
 		   val debug = debug
@@ -35,6 +41,7 @@ functor BuildWorld(structure SML      : SML_BUILD
 	       val src_root = src_root)
     structure I =
       BuildInstall(structure BuildC = MkC
+		   structure BuildCXX = MkCXX
 		   structure BuildSML = MkSML
 		   structure BuildDoc = MkDoc
 		   structure FileOps = FO
@@ -42,6 +49,7 @@ functor BuildWorld(structure SML      : SML_BUILD
     fun install () = do_it I.rules
     fun heaps () = do_it MkSML.rules
     fun c () = do_it MkC.rules
+    fun cxx () = do_it MkCXX.rules
     fun docs () = do_it MkDoc.rules
     fun all x = (heaps x) andalso (c x) andalso (docs x)
   end

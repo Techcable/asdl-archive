@@ -237,8 +237,7 @@ functor mkAlgolSemantTranslator
 
 	  val cnstrs =
 	    (List.foldr (op @) [] (List.map (cnstr_decl is_enum) cons))
-	in
-	  {decls=decls@cnstrs,ty_decl=ty_decl}
+	in {decls=decls@cnstrs,ty_decl=ty_decl}
 	end
 
       fun trans_type_con p {tinfo,name,props,kinds} =
@@ -250,8 +249,7 @@ functor mkAlgolSemantTranslator
 	    in (mktid name,Ty.App(con,name))
 	    end
 	  val ty_decls = List.map do_kind kinds
-	in
-	  {ty_decls=ty_decls,decls=decls}
+	in {ty_decls=ty_decls,decls=decls}
 	end
 
       fun trans_module p {module,imports,defines,type_cons,props} =

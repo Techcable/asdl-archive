@@ -6,27 +6,20 @@
  * Author: Daniel C. Wang
  *
  *)
-(**:[[structure AlgebraicTy]]:**)
-structure AlgebraicTy : ALGEBRAIC_TYPE_DECL =
+structure DynamicTy : DYNAMIC_TYPE_DECL =
   struct
-    structure Ast = AlgebraicAst
+    structure Ast = DynamicAst
     structure T =
       mkTypeDecl(structure TypeId = Ast.TypeId
 		 structure VarId = Ast.VarId
 		 type ty_exp = Ast.ty_exp
 		 type exp = Ast.exp
-		 type tag = {c:Ast.cnstr,v:int}) 
+		 type tag = {c:Ast.ty_id,v:int}) 
     open T
   end
-(**)
-(**:[[functor mkAlgebraicSpec]]:**)
-functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
-			val get_attribs : bool
-			val streams_ty : {outs:string,ins:string} option
-			val monad_name : string option) =
+
+functor mkDynamicSpec(structure Ty : DYNAMIC_TYPE_DECL) =
   struct
-    val aux_suffix = "Util"
-(**:[[functor mkAlgebraicSpec]] [[structure Arg]]:**)
     structure Arg =
       struct 
 	open Ty.Ast
@@ -34,23 +27,15 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 	type get_ty = (Ty.ty_id -> Ty.ty_exp option)
 	structure Ty = Ty
 	val inits = []
-	val streams_ty = Option.getOpt
-	  (streams_ty,{ins="instream",outs="outstream"})
-	val monad = Option.map TypeId.fromString  monad_name
+	val streams_ty ={ins="instream",outs="outstream"}
 	fun std_pkl s = VarId.fromPath{qualifier=["StdPkl"],base=s}
 
-	fun die _ =
-	  if Option.isSome monad then Id (std_pkl "die")
-	  else Call(Id (std_pkl "die"),[Tuple([],NONE)])
+	fun die s = Error s
 	
 	fun mk_name s id =
 	  let
 	    val {qualifier,base} = TypeId.toPath id
 	    val base = s^"_"^base
-	    val qualifier =
-	      case qualifier of
-		[q] => [q^aux_suffix]
-	      | _ => qualifier
 	  in VarId.fromPath{base=base,qualifier=qualifier}
 	  end
 	  
@@ -61,7 +46,7 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 	val wr_tag_name = std_pkl "write_tag"
 	val rd_tag_name = std_pkl "read_tag"
 
-	val unit_ty = (TyTuple [])
+	val unit_ty = (TyId (TypeId.fromString "void"))
 	val outstream_ty = TyId 
 	  (TypeId.fromPath {qualifier=["StdPkl"],
 			    base=(#outs streams_ty)})
@@ -69,17 +54,13 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 	  (TypeId.fromPath {qualifier=["StdPkl"],
 			    base=(#ins streams_ty)})
 
-	val wrap = case monad of
-	    NONE => (fn x => x)
-	  | (SOME i) => (fn x => TyCon(i,[x]))
-	    
-	fun write_tag {c,v} = Call(Id(wr_tag_name),[Int v,Id stream_id])
+	fun write_tag {c,v} = Call(Id(wr_tag_name),
+				   [(Const (Int v)),Id stream_id])
 	fun read_tag cs =
-	  let
-	    fun mk_clause ({c,v},exp) =  (MatchInt v,exp)
-	  in
-	    Match(Call(Id rd_tag_name,[Id stream_id]),
-		  (List.map mk_clause cs)@[(MatchAny,die "bad tag")])
+	  let fun mk_clause ({c,v},exp) = {const=Int v,body=exp}
+	  in Case{test=Call(Id rd_tag_name,[Id stream_id]),
+		  clauses=(List.map mk_clause cs),
+		  default=(die "bad tag")}
 	  end
 	
 	fun read tid = Call(Id (rd_name tid),[Id stream_id])
@@ -88,51 +69,20 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 	  DeclFun(wr_name name,
 		  [{name=arg_id,ty=arg},
 		   {name=stream_id,ty=outstream_ty}],
-		  body (Id arg_id),wrap unit_ty)
+		  body (Id arg_id),unit_ty)
 	fun read_decl {name,ret,body} =
 	  DeclFun(rd_name name,
-	      [{name=stream_id,ty=instream_ty}],body,wrap ret)
+	      [{name=stream_id,ty=instream_ty}],body,ret)
 	val expSeq = Seq
-	fun getter_decl {name,arg,ret,body} =
-	  DeclFun(mk_name "attrbs" name,[{name=arg_id,ty=arg}],
-		  body (Id arg_id),ret)
-	fun mk_fields get_ty xs  =
-	  List.map (fn {label,label',tid} =>
-		    {name=label',
-		     ty=(case (get_ty tid) of
-			   SOME ty => ty
-			 | NONE => TyId tid)}) xs
-	fun mk_record_exp get_ty xs =
-	  let val (fds,exps) = ListPair.unzip xs
-	  in Record (exps,mk_fields get_ty fds,NONE)
-	  end
-	fun mk_record_typ get_ty fds = TyRecord (mk_fields get_ty fds)
       end
-    (**)
-(**:[[functor mkAlgebraicSpec]] glue code to build utility code:
-The [[structure Arg]] describes an interface from which one can
-automatically construct both pickler generators and attribute accessors
-functions.	
-**)
+
     open Arg
     structure StdPklGen = StdPickler(structure Arg = Arg)
-    structure AttribGetGen = AttribGetter(structure Arg = Arg)
 
-    fun get_aux_decls me env tids =
-      let
-	val pkls = StdPklGen.trans env tids
-	val attrbs =
-	  if get_attribs then
-	    AttribGetGen.trans env tids
-	  else []
-      in attrbs@pkls
-      end
-(**)
-(**:[[functor mkAlgebraicSpec]] definition of type constructor:**)
-    val seq_rep = TyList
-    val opt_rep = TyOption
-    val share_id = TypeId.fromPath{qualifier=["StdPkl"],base="share"}
-    fun share_rep te = TyCon (share_id,[te])
+    fun get_aux_decls me env tids = StdPklGen.trans env tids
+    fun seq_rep te = TyCon(TypeId.fromString "list",[te])
+    fun opt_rep te = TyCon(TypeId.fromString "opt",[te])
+    fun share_rep te = TyCon(TypeId.fromString "share",[te])
 
     fun ty_exp  (Ty.Prim {ty,...}) = ty
       | ty_exp  (Ty.Prod {ty,...}) = ty
@@ -193,8 +143,8 @@ functions.
     val seq_tid =  TypeId.suffixBase "_list" 
     val opt_tid =  TypeId.suffixBase "_option" 
     val share_tid =  TypeId.suffixBase "_share" 
-(**)
-(**:[[functor mkAlgebraicSpec]] definition of primitive types:**)
+
+
     fun addPrim (tinfo,ps) =
       let
 	val tname = Semant.Type.src_name tinfo
@@ -213,7 +163,7 @@ functions.
       {mktid=opt_tid,mkrep=opt_rep,con=opt_con}
       | get_reps me Semant.Shared = 
       {mktid=share_tid,mkrep=share_rep,con=share_con}
-(**)
+
     fun get_info p =
       let
 	val rd =
@@ -250,5 +200,5 @@ functions.
       in {natural_ty=ty,unwrap=unwrap,wrap=wrap}
       end
   end
-(**)
+
 

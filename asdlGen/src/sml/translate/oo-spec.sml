@@ -46,12 +46,13 @@ functor mkOOSpec(structure Ty   : OO_TYPE_DECL
     val mrd_name = mk_name "read"
     val mwr_name = mk_name "write"
 
-    val arg_id     = VarId.fromString "x"
-    val ret_id     = VarId.fromString "r"
-    val stream_id  = VarId.fromString "s"
-
-    val wr_tag_name = VarId.fromString "write_tag"
-    val rd_tag_name = VarId.fromString "read_tag"
+    val arg_id     = VarId.fromString "x_"
+    val ret_id     = VarId.fromString "r_"
+    val stream_id  = VarId.fromString "s_"
+      
+    fun std_pkl s = VarId.fromPath{qualifier=["StdPkl"],base=s}
+    val wr_tag_name = std_pkl "write_tag"
+    val rd_tag_name = std_pkl "read_tag"
     val outstream_ty = TyId (TypeId.fromString (#outs streams_ty))
     val instream_ty = TyId (TypeId.fromString (#ins streams_ty))
 
@@ -150,10 +151,21 @@ functor mkOOSpec(structure Ty   : OO_TYPE_DECL
       | ty_exp  (Ty.Prod {ty,...}) = ty
       | ty_exp  (Ty.Sum {ty,...}) = ty
       | ty_exp  (_) = raise Error.unimplemented
+
+    fun elt_ops (tid,t) =
+      (case t of Ty.Prim{ty,...} =>
+	 let
+	   val rd_elt =  (RET (FunCall(mrd_name tid,[Id stream_id])))
+	   fun wr_elt e =
+	     EVAL(e,ty,(fn v =>
+			STMT (Expr(FunCall(mwr_name tid,[v,Id stream_id])))))
+	 in (rd_elt,wr_elt)
+	 end
+    | _ => (read tid,write tid))
       
     val seq_con =
       let
-	fun ty_con (tid,Ty.Prim{ty,...}) =
+	fun (*ty_con (tid,Ty.Prim{ty,...}) =
 	  let
 	    val tid = (seq_tid tid)
 	    val ty = (TyId tid)
@@ -161,11 +173,11 @@ functor mkOOSpec(structure Ty   : OO_TYPE_DECL
 	    fun wr e =
 	      EVAL(e,ty,(fn v =>
 			 STMT (Expr(FunCall(mwr_name tid,[v,Id stream_id])))))
-	  in
-	    (ty,{wr=SOME wr,rd=SOME rd})
-	  end
-      | ty_con (tid,t) =
+	  in (ty,{wr=SOME wr,rd=SOME rd})
+	  end 
+      | *) ty_con (tid,t) =
 	  let
+	    val (rd_elt,wr_elt) = elt_ops (tid,t)
 	    val elm_ty = (ty_exp t)
 	    val ty = seq_rep elm_ty
 
@@ -175,7 +187,7 @@ functor mkOOSpec(structure Ty   : OO_TYPE_DECL
 	    val seq_var = (VarId.fromString "seq",ty)
 
 	    fun rd_body [len,idx,seq] =
-	      [EVAL(read tid,elm_ty,
+	      [EVAL(rd_elt,elm_ty,
 		    (fn v =>
 		     STMT (While{test=Less(Id idx,Id len),
 			   body=Block
@@ -197,7 +209,7 @@ functor mkOOSpec(structure Ty   : OO_TYPE_DECL
 	      let
 		val {vars,body} = 
 		  get_block NONE
-		  (write tid (RET (SeqGet{elm_ty=elm_ty,seq=seq,idx=Id idx})))
+		  (wr_elt (RET (SeqGet{elm_ty=elm_ty,seq=seq,idx=Id idx})))
 	      in
 		[STMT (Expr(FunCall(wr_tag_name,[Id len,Id stream_id]))),
 		 STMT (While{test=Less(Id idx,Id len),
@@ -212,11 +224,9 @@ functor mkOOSpec(structure Ty   : OO_TYPE_DECL
 			 exps=[RET (SeqLen{elm_ty=elm_ty,seq=seq}),
 			       RET (Const(IntConst 0))],
 			 body=wr_body seq}))
-	  in
-	    (ty,{wr=SOME wr,rd=SOME rd})
+	  in (ty,{wr=SOME wr,rd=SOME rd})
 	  end
-      in
-	ty_con:Ty.ty_con
+      in ty_con:Ty.ty_con
       end
 
     val opt_con =
@@ -224,7 +234,7 @@ functor mkOOSpec(structure Ty   : OO_TYPE_DECL
 	val some_tag = {v=1,c=VarId.fromString "SOME"}
 	val none_tag = {v=0,c=VarId.fromString "NONE"}
 
-	fun ty_con (tid,Ty.Prim{ty,...}) =
+	fun (*ty_con (tid,Ty.Prim{ty,...}) =
 	  let
 	    val tid = (opt_tid tid)
 	    val ty = (TyId tid)
@@ -232,55 +242,54 @@ functor mkOOSpec(structure Ty   : OO_TYPE_DECL
 	    fun wr e =
 	      EVAL(e,ty,(fn v =>
 			 STMT(Expr(FunCall((mwr_name tid),[v,Id stream_id])))))
-	  in
-	    (ty,{wr=SOME wr,rd=SOME rd})
-	  end
-	  | ty_con (tid,t) =
+	  in (ty,{wr=SOME wr,rd=SOME rd})
+	  end 
+	  | *)ty_con (tid,t) =
 	  let
+	    val elm_ty = (ty_exp t)
 	    val ty = opt_rep (ty_exp t)
+	    val (rd_elt,wr_elt) = elt_ops (tid,t)
 	    val rd =
 	      EXPR (fn arg =>
 		    If{test=NotZero(FunCall(rd_tag_name,[Id stream_id])),
-		       then_stmt=get_stmt arg (read tid),
+		       then_stmt=get_stmt arg
+		       (EVAL(rd_elt,elm_ty,
+			(fn x => RET(OptSome (elm_ty, x))))),
 		       else_stmt=
 		       (case arg of
 			 NONE => Nop
-		       | (SOME (ret,_)) => Assign(Id ret,NilPtr))})
+		       | (SOME (ret,_)) =>
+			   Assign(Id ret, OptNone elm_ty))})
 	    fun wr e =
 	      EVAL(e,ty,
 		   (fn v =>
-		    STMT(If{test=NotNil v,
+		    STMT(If{test=OptIsSome(elm_ty,v),
 			    then_stmt=get_stmt NONE 
-			    (expSeq [write_tag some_tag,write tid (RET v)]),
+			    (expSeq [write_tag some_tag,
+				     wr_elt (RET (OptGetVal(elm_ty,v)))]),
 			    else_stmt=get_stmt NONE (write_tag none_tag)})))
-	  in
-	    (ty,{wr=SOME wr,rd=SOME rd})
+	  in (ty,{wr=SOME wr,rd=SOME rd})
 	  end
 
-      in
-	ty_con:Ty.ty_con
+      in ty_con:Ty.ty_con
       end
 
-
-	
-      fun addPrim (s,ps) =
+      fun addPrim (tinfo,ps) =
 	let
-	  val tid = fix_ty (TypeId.fromString s)
+	  val tname = Semant.Type.src_name tinfo
+	  val tid = (TypeId.fromPath o Id.toPath) tname
 	  val rd = RET (FunCall(mk_name "read" tid,[Id stream_id]))
 	  fun wr e = 
 	    EVAL(e,TyId tid,(fn e =>
 			     STMT(Expr(FunCall(mk_name "write" tid,
 					       [e,Id stream_id])))))
 	  val info = {rd=SOME rd,wr=SOME wr}
-	in
-	  (tid,Ty.Prim {ty=TyId tid,info=info,name=s})::
-	  (seq_tid tid,Ty.App(seq_con,tid))::
-	  (opt_tid tid,Ty.App(opt_con,tid))::ps
+	in (tid,Ty.Prim {ty=TyId tid,info=info,name=Id.getBase tname})::
+	   (seq_tid tid,Ty.App(seq_con,tid))::
+	   (opt_tid tid,Ty.App(opt_con,tid))::ps
 	end
-      
-      val prims = addPrim ("int",[])
-      val prims = addPrim ("string",prims)
-      val prims = addPrim ("identifier",prims)
+      fun prims tinfos = List.foldl addPrim [] tinfos
+    
 
       fun call_fn path args = RET (FunCall(VarId.fromPath path,args))
       fun get_info ty p =

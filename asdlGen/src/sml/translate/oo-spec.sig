@@ -33,7 +33,7 @@ signature OO_SPEC =
     val fix_id : Ty.Ast.id -> Ty.Ast.id
     val fix_ty : Ty.Ast.ty_id -> Ty.Ast.ty_id
 
-    val prims : Ty.ty_decl list
+    val prims : Semant.type_info list -> Ty.ty_decl list
 
     val seq_rep : Ty.ty_exp -> Ty.ty_exp
     val seq_con : Ty.ty_con

@@ -12,7 +12,10 @@ the internals have been significantly reworked, and most of the major
 internal interfaces have been documented. Consider it as a work in
 progress. The build system is completely broken, so you'll need to build
 things by hand. For the ML code this isn't any more painful than typing 
-<tt>CM.make()</tt> in <tt>src/sml/</tt>. Major features include
+<tt>CM.make()</tt> in <tt>src/sml/</tt>. To build the <tt/C/ support
+libraries you need to build the <tt>src/cii/</tt> by hand.
+
+Major features include
 <p>
 Only the SML and C backends are working everything else is stuck
 in various different states of disrepair. I'm pushing this relase out mainly

@@ -53,9 +53,9 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 	val grd_name = mk_name "read_generic"
 	val gwr_name = mk_name "write_generic"
 	  
-	val arg_id     = VarId.fromString "_x"
-	val ret_id     = VarId.fromString "_r"
-	val stream_id  = VarId.fromString "_s"
+	val arg_id     = VarId.fromString "x_"
+	val ret_id     = VarId.fromString "r_"
+	val stream_id  = VarId.fromString "s_"
 
 	fun std_pkl s = VarId.fromPath{qualifier=["StdPkl"],base=s}  
 	val wr_tag_name = std_pkl "write_tag"
@@ -66,7 +66,7 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 	val next_id = ref 0
 	fun tmpId () =
 	  (next_id := (!next_id) + 1;
-	   VarId.fromString ("t"^Int.toString (!next_id)))
+	   VarId.fromString ("t"^(Int.toString (!next_id))^"_"))
 	(* conservative check *)
 	fun isPure (Const _) = true
 	  | isPure (NilPtr) = true

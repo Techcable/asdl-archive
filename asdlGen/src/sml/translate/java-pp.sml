@@ -17,11 +17,11 @@ structure JavaPP :  sig
 	structure PP = PPUtil
 	structure Ast = OOAst
 	type code = (Ast.module * Semant.Module.P.props)
-
+	fun dbg f x = ((PP.pp_to_outstream TextIO.stdOut 80 (f x));x)
 	val cfg = Params.empty
 	val (cfg,base_imp) =
 	    Params.declareString cfg
-	    {name="base_import",flag=NONE,default="asdl_base"} 
+	    {name="base_import",flag=NONE,default="asts.StdPrims"} 
 
 	val package_prefix = "asts"
 	fun mkComment s =
@@ -52,19 +52,28 @@ structure JavaPP :  sig
 	    val pp_idb = PP.wrap VarId.getBase
 	    val pp_tidb = PP.wrap TypeId.getBase
 
-	    val semi_sep = PP.cat [PP.s ";",PP.ws]
+	    val semi_sep = PP.cat [PP.s ";",PP.nl]
 	    val comma_sep = PP.cat [PP.s ",",PP.ws]
 
 	    fun pp_str_if s b = (if b then (PP.s s) else PP.empty)
+
+	    fun if_unboxed_int (TyId tid) x y =
+	       (case TypeId.toPath tid of
+		  ({qualifier=[],base="int"}) => x 
+		| ({base,...}) => y)
+	      | if_unboxed_int _ _ y =  y
 
 	    fun pp_ty_exp (TyId tid) = pp_tid tid
 	      | pp_ty_exp (TyArray(te,iopt)) =
 		PP.cat [pp_ty_exp te,
 			PP.s "[",PP.opt {some=PP.d,none=PP.empty} iopt,
 			PP.s "]"]
-	      | pp_ty_exp (TyReference te) = pp_ty_exp te (* ignore *)
-	      | pp_ty_exp (TyOption te) =  
-		PP.cat [pp_ty_exp te,PP.s "/* opt */"] 
+	      | pp_ty_exp (TyReference te) = pp_ty_exp te
+	      | pp_ty_exp (TyOption te) =
+		let val ps =
+		  if_unboxed_int te (PP.s "java.lang.Integer") (pp_ty_exp te)
+		in PP.cat [ps,PP.s "/* opt */"]
+		end
 	      | pp_ty_exp (TySequence te) =
 		PP.cat [PP.s "java.util.Vector"] 
 
@@ -191,16 +200,37 @@ structure JavaPP :  sig
 	      | pp_exp (SeqLen{elm_ty,seq}) =
 		PP.cat [PP.s "((",pp_exp seq,PP.s ").size())"]
 	      | pp_exp (SeqGet{elm_ty,seq,idx}) =
-		PP.cat [PP.s "((",
-			pp_ty_exp elm_ty,
-			PP.s ")((",pp_exp seq,PP.s ").elementAt(",
-			pp_exp idx,
-			PP.s ")))"]
+		let
+		  fun do_int () =
+		    PP.cat [PP.s "(((java.lang.Integer)((",
+			    pp_exp seq,PP.s ").elementAt(",
+			    pp_exp idx,
+			    PP.s "))).intValue())"]
+		    			    
+		  fun do_rest () =
+		    PP.cat [PP.s "((",pp_ty_exp elm_ty,
+			    PP.s ")((",pp_exp seq,PP.s ").elementAt(",
+			    pp_exp idx,
+			    PP.s ")))"]
+		in (if_unboxed_int elm_ty do_int do_rest)()
+		end
 	      | pp_exp (SeqSet{elm_ty,seq,idx,v}) =
 		PP.cat [PP.s "(",pp_exp seq,PP.s ").setElementAt(",
-			pp_exp v,PP.s ", ",pp_exp idx,
+			pp_exp
+			(if_unboxed_int elm_ty
+			 (New(TypeId.fromString "java.lang.Integer",[v]))
+			 v),PP.s ", ",pp_exp idx,
 			PP.s ")"]
-			
+	      | pp_exp (OptNone _) = pp_exp NilPtr
+	      | pp_exp (OptSome (te,e)) =
+		pp_exp (if_unboxed_int te
+			(New(TypeId.fromString "java.lang.Integer",[e]))
+			e)
+	      | pp_exp (OptIsSome (te,e)) = pp_exp (NotNil e)
+	      | pp_exp (OptGetVal (te,e)) =
+		 pp_exp (if_unboxed_int te
+			 (MthCall(FieldSub(e,VarId.fromString "intValue"),[]))
+			 e)
 	    and pp_stmt (Assign(dst,src)) =
 		PP.cat [pp_exp dst, PP.s " = " ,pp_exp src,PP.s ";"]
 	      | pp_stmt (Die s) = PP.s "throw new Error(\"fatal\");"
@@ -255,14 +285,14 @@ structure JavaPP :  sig
 	      | pp_block {vars=[],body} =
 		PP.cat
 		[PP.s "{",
-		 PP.box 4 [PP.nl,PP.seq {fmt=pp_stmt,sep=PP.ws} body],
+		 PP.box 4 [PP.nl,PP.seq {fmt=pp_stmt,sep=PP.nl} body],
 		 PP.nl, PP.s "}"]
 	      | pp_block {vars,body} =
 		 PP.cat
 		 [PP.s "{",
 		  PP.box 4 [PP.nl,
 			    PP.seq_term {fmt=pp_field,sep=semi_sep} vars,
-			    PP.seq {fmt=pp_stmt,sep=PP.ws} body],
+			    PP.seq {fmt=pp_stmt,sep=PP.nl} body],
 		  PP.nl,PP.s "}"]
 
 	    and pp_scope Public = PP.s "public"
@@ -307,7 +337,7 @@ structure JavaPP :  sig
 			PP.cat
 			[PP.s ("package "^package_prefix^"."^mn^";"),
 			 PP.nl,
-			 PP.s ("import "^imp^".*;"),PP.nl,
+			 PP.s ("import "^imp^".*;"),PP.nl, 
 			 pp_ty_decl x]
 
 		    val fname =
@@ -335,11 +365,11 @@ structure JavaPP :  sig
 			PP.cat
 			[PP.s ("package "^package_prefix^"."^mn^";"),
 			 PP.nl,
-			 PP.s ("import "^imp^".*;"),PP.nl,
+			 PP.s ("import "^imp^".*;"),PP.nl, 
 			 body_prologue props, PP.nl,
 			 PP.s "final public class ",
 			 PP.s const_class,
-			 PP.s " extends Prims {", PP.nl,
+			 PP.s " extends asts.StdPrims.g {", PP.nl,
 			 PP.cat x, PP.nl,
 			 body_epilogue props,PP.nl,
 			 PP.s "}"]
