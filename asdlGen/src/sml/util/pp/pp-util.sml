@@ -16,6 +16,7 @@ signature PP_UTIL =
 
 	val empty : pp	    
 	val nl    : pp
+	val br    : pp
 	val ws    : pp
 	val tab   : pp
 	val untab : pp
@@ -51,6 +52,7 @@ structure PPUtil:PP_UTIL =
 	fun empty x = ()
 	val nl = PP.add_newline
 	fun ws pps = PP.add_break pps (1,0)
+	fun br pps = PP.add_break pps (0,0)
 	fun tab pps = PP.add_break pps (0,4)
 	fun untab pps = PP.add_break pps (0,~4)
 	    
