@@ -255,7 +255,7 @@ structure Test =
 				  (!keep_going))
 
 	fun test_all n i =
-	  let val i = ("--pickler=std,sexp"::"-d"::"../asdl/tests/work"::i)
+	  let val i = ("-d"::"../asdl/tests/work"::i)
 	  in
 	    [test (n^"-ocaml",do_ocaml,"--view=OCaml"::i),
 	     test (n^"-ml",do_sml,"--view=SML"::i),

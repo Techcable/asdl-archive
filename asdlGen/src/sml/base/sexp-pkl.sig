@@ -2,7 +2,7 @@ signature SEXP_PKL =
   sig
     type instream = TextIO.instream
     type outstream = TextIO.outstream
-    exception IOError of string
+    val die : unit -> 'a
 
     val rd_lp : instream -> unit
     val rd_rp : instream -> unit

@@ -41,7 +41,6 @@ struct
 
     open Susp
 
-	
     datatype Doc = 
       Nil
     | Text of string * Doc susp
@@ -136,5 +135,4 @@ struct
       in String.concat (List.rev (!str))
       end
 end
-
 

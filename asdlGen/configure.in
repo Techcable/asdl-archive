@@ -1,22 +1,27 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/c/std_prims.c)
 AC_CONFIG_AUX_DIR(src/misc)
-AC_CONFIG_SUBDIRS(src/sml/util/meta-build)
-
-dnl Checks for programs.
+dnl
+dnl define various directory paths
+dnl
+ASDLGEN_ROOT=`pwd`
+ASDLGEN_BINDIR=$ASDLGEN_ROOT/bin
+ASDLGEN_MISCDIR=$ASDLGEN_ROOT/src/misc
+dnl Checks for SML/NJ
 AC_PROG_INSTALL
-AC_CHECK_PROGS(SML_CM,sml-cm sml-cm.bat,
-	AC_MSG_ERROR("Can't find installed sml-cm on PATH"))
+AC_PROG_SMLNJ
 
-dnl how to run an sml heap
-eval `/bin/sh src/misc/sysname`
-AC_CHECK_PROGS(RUN_SML_HEAP,sml sml-cm sml-cm.bat)
-
-case "${RUN_SML_HEAP}" in
-	sml-cm.bat) 
-        RUN_SML_HEAP=`/bin/sh src/misc/find_runtime.sh`
-        ;;
-esac
+dnl
+dnl setup things so that we use the correct version of build-ml
+dnl
+if test x$SMLNJ_USING_NEW_CM = xFALSE ; then
+  ML_BUILD="$ASDLGEN_BINDIR/ml-build"
+  ML_BUILD_REWRITE="bin/ml-build:src/misc/ml-build.in"
+  ML_BUILD_CHMOD="chmod 755 $ML_BUILD" 
+else
+  AC_CHECK_PROGS(ML_BUILD,ml-build)
+fi
+AC_SUBST(ML_BUILD)
 ASDLGEN_VERSION=2.0-beta
 ASDLGEN_HEAP='${top_srcdir}/src/sml/asdlGen.${HEAP_SUFFIX}'
 AC_SUBST(ASDLGEN_VERSION)
@@ -25,9 +30,13 @@ AC_SUBST(HEAP_SUFFIX)
 
 dnl Write out the files
 AC_OUTPUT(Makefile
+	  $ML_BUILD_REWRITE
 	  src/sml/config.sml
           src/misc/sml-batch,
 dnl Set the bits on the shell scripts
-[ chmod 755 src/misc/sml-batch ]
+[ chmod 755 src/misc/sml-batch 
+  $ML_BUILD_CHMOD
+],
+[ ML_BUILD_CHMOD="$ML_BUILD_CHMOD"]
 )
 

@@ -55,9 +55,12 @@ functor SMLBuild(structure Params : SML_BUILD_PARAMS) : SML_BUILD =
 	val heap = Paths.setFileExt name (SOME heap_suffix)
 	val heap_file = Paths.fileToNative heap
 	val root_file = Paths.fileToNative root
-	val inp =
-	  String.concat
-	  ["CM.make'(\"",String.toString root_file,"\");",
+	val mkCmd = (case Compiler.version
+	       of {version_id=[110, 0, _], ...} => "CM.make'"
+		| _ => "CM.make"
+	      (* end case *))
+	val inp = String.concat [
+	   mkCmd, "(\"",String.toString root_file,"\");",
 	   "SMLofNJ.exportFn(\"",String.toString heap_file,"\",",
 	   main,");"]
 	val cmd = B.EXEC_WITH_INPUT(run_cm,[],B.STR inp)

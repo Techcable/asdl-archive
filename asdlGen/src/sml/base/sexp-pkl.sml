@@ -1,6 +1,6 @@
 structure SexpPkl :> SEXP_PKL  =
   struct
-    exception IOError of string
+    fun die () = raise (Fail "Sexp Pickler Error")
     type instream = TextIO.instream
     type outstream = TextIO.outstream
     fun out_tok t s = TextIO.output(s,SexpLex.toString t)
@@ -37,10 +37,10 @@ structure SexpPkl :> SEXP_PKL  =
     fun get_sym s =
       (case (TextIO.scanStream SexpLex.scan s) of
 	 SOME(SexpLex.SYM str) => str
-       | _ => raise (IOError "error reading symbol"))
+       | _ => raise (Fail "error reading symbol"))
 
     fun rd_sym str s = if (get_sym s) = str then ()
-                       else raise (IOError ("expected:"^str))
+                       else raise (Fail ("expected:"^str))
     fun rd_list f s =
       let
 	fun peek_rp () = 

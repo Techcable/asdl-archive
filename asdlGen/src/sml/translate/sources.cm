@@ -1,9 +1,11 @@
 (* TODO break this up into several CM files *)
 Group is
 #if defined(NEW_CM)
-basis.cm
-#endif
+$/basis.cm
+$/smlnj-lib.cm
+#else
 smlnj-lib.cm
+#endif
 ../base/asdl-base.cm
 ../frontend/sources.cm
 ../asts/sources.cm

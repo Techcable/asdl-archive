@@ -31,12 +31,16 @@ Library
   functor BuildUtil
 is
 #if defined(NEW_CM)
-basis.cm
+$/basis.cm
+$/smlnj-lib.cm
+$smlnj/compiler.cm
+#else
+smlnj-lib.cm
 #endif
 
-smlnj-lib.cm
 ../misc/sources.cm
 ../os/sources.cm
+
 meta-build.sig
 build-it.sig
 
@@ -44,7 +48,6 @@ meta-build.sml
 build-run.sml
 build-export.sml
 build-util.sml
-
 
 unix-build.sml
 win32-build.sml

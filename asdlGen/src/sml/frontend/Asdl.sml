@@ -1,10 +1,12 @@
 (*
   Machine generated. Edit at your own risk 
   Reproduce with the following
- --pickler=sexp,std
- --output-dir=frontend
- --no-libs
- --lang=sml
+ --line_width=74
+ --no_action=false
+ --output_directory=frontend
+ --sexp_pickler=true
+ --view=SML
+ --xml_pickler=false
  *)
 structure Asdl : Asdl_SIG =
   struct

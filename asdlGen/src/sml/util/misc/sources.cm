@@ -21,10 +21,12 @@ Library
   functor SCCUtilFun
 is
 #if defined(NEW_CM)
-basis.cm
+$/basis.cm
+$/smlnj-lib.cm
+#else
+smlnj-lib.cm
 #endif
 
-smlnj-lib.cm
 ../../base/asdl-base.cm
 counter.sml
 scc.sml

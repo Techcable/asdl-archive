@@ -11,14 +11,18 @@ Library
   signature ASDL_SEMANT
   structure AsdlSemant
 is
+
 #if defined(NEW_CM)
-basis.cm
-#endif
+$/basis.cm
+$/ml-yacc-lib.cm
+$/smlnj-lib.cm
+#else
 ml-yacc-lib.cm
 smlnj-lib.cm
+#endif
+
 ../util/sources.cm
 ../base/asdl-base.cm
-
 Asdl.sig
 Asdl.sml
 AsdlUtil.sig

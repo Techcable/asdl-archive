@@ -14,7 +14,7 @@ structure Semant :> SEMANT =
     struct
 
 	structure T = Asdl
-	structure TU = AsdlUtil 
+	structure TU = AsdlUtil
 
 	structure TId =
 	  mkSourceId(val namespace = SourceIds.mkNameSpace "ASDL Type"

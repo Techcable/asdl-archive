@@ -3,7 +3,7 @@ Library
   structure SourceMap
 is
 #if defined(NEW_CM)
-basis.cm
+$/basis.cm
 #endif
 sourcemap.sml
 sourcemap.sig

@@ -8,9 +8,12 @@ Library
   functor BuildDTangle 	
 is
 #if defined(NEW_CM)
-basis.cm
-#endif
+$/basis.cm
+$/smlnj-lib.cm
+#else
 smlnj-lib.cm
+#endif
+
 dtangle-lexer.sml
 dtangle.sml
 build-dtangle.sml

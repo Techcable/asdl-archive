@@ -1,8 +1,13 @@
-Group is
+Group (../../sources.cm) is
+#if defined(NEW_CM)
+  $/basis.cm
+  $/smlnj-lib.cm
+#else
+  smlnj-lib.cm
+#endif
 zsuif.sig
 zsuif.sml
 ../../sml/base/asdl-base.cm
-smlnj-lib.cm
 cvt-bits.sml
 program.sml
 hello-zsuif.sml

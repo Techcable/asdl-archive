@@ -20,12 +20,13 @@ Library
   structure AstMisc
 is
 #if defined(NEW_CM)
-basis.cm
+$/basis.cm
+$/smlnj-lib.cm
+#else
+smlnj-lib.cm
 #endif
-
 ../util/sources.cm
 ../base/asdl-base.cm
-smlnj-lib.cm
 (*types.sig
 types.sml
 *)

@@ -4,36 +4,26 @@
 Group
 is
 #if defined(NEW_CM)
-basis.cm
-#endif
+$/basis.cm
+$/smlnj-lib.cm
+#else
 smlnj-lib.cm
+#endif
 
-util/sources.cm
+util/misc/sources.cm
+util/os/sources.cm
+util/pp/sources.cm
+util/sourcemap/sources.cm
+
 base/asdl-base.cm
 frontend/sources.cm
 translate/sources.cm
-(*
- type-pickle/sources.cm
- pp-pickle/sources.cm
- convert/sources.cm
-*)
 
-
-
-(*main/depends.sml*)
 main/main.sml
 main/link.sml
 main/lib-files.sml
 main/export.sml
 
 test/harness.sml
-build/build-c.sml
-build/build-cxx.sml
-build/build-sml.sml
-build/build-install.sml
-build/build-clean.sml
-build/build-doc.sml
-build/build.sml
-
 config.sml 
 

@@ -57,9 +57,9 @@ signature CORE_BUILD =
     type rule
 
     val mkVAR : {name:string option,doc:string list,init:string cmd} -> var
-    val VAR   : var -> string cmd 
-    val STR   : string          -> string cmd
-    val INT   : int             -> int cmd
+    val VAR   : var    -> string cmd 
+    val STR   : string -> string cmd
+    val INT   : int    -> int cmd
 (**:[[signature CORE_BUILD]]:
 \begin{description}     
 \item [{[[WRITE]]}] Output a string for diagnostic purpose.

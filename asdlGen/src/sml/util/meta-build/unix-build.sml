@@ -11,8 +11,7 @@ structure UnixBuildParams =
 	      init=B.STR "sml"}
     (* this is unreliable *)
     val os = String.map Char.toLower (SMLofNJ.SysInfo.getOSName ())
-(*    val heap_suffix = (Compiler.architecture)^"-"^os *)
-    val heap_suffix = "??"^"-"^os 
+    val heap_suffix = (Compiler.architecture)^"-"^os 
     fun heap_arg x = "@SMLload="^x
     val comp  =
       B.mkVAR{name=SOME "CC",
