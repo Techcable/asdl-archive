@@ -90,7 +90,7 @@ class TransStatement {
     zsuif_expression* upper_bound = t->trans(stmts->get_upper_bound());
     zsuif_expression* step = t->trans(stmts->get_step());
     zsuif_binop* comparison_opcode =
-      t->get_cmpop(stmts->get_comparison_opcode());
+      t->get_binop(stmts->get_comparison_opcode());
 
     zsuif_statement* body = t->trans(stmts->get_body());
     zsuif_statement* pre_pad = t->trans(stmts->get_pre_pad());
@@ -102,7 +102,6 @@ class TransStatement {
     zstmt = new zsuif_ForStatement
       (index, lower_bound, upper_bound, step,
        comparison_opcode, body, pre_pad,
-       NULL, // ??? no post_pad
        break_label, continue_label);
   }
 
@@ -149,7 +148,7 @@ class TransStatement {
     while(case_count--) {
       MultiWayBranchStatement::case_pair pair = stmts->get_case(case_count);
 
-      zsuif_constant* case_constant = NULL; // ??? t->trans(pair.first);
+      zsuif_suif_int* case_constant = t->trans(pair.first);
       zsuif_code_label_symbol* case_target = t->trans(pair.second);
 
       zsuif_multi_way_branch_case* arm =

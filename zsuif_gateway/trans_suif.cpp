@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <iokernel/cast.h>
+#include <basicnodes/basic_constants.h>
 #include "trans_suif.h"
 #include "zsuif.hxx"
 #include "useful_macros.h"
@@ -385,28 +386,69 @@ zsuif_definition_block* TransSuif::trans(DefinitionBlock* db) {
   return new zsuif_definition_block(defined_variables,defined_procedures);
 }
 
-// ??? have to provide stubs for these functions for now
-zsuif_statement_list* TransSuif::trans(StatementList*)
-{
-   return NULL;
+zsuif_statement_list* TransSuif::trans(StatementList *sl) {
+  Iter<Statement*> iter = sl->get_statement_iterator();
+  zsuif_statement_list* zstmts = NULL;
+  REV_MAP(Statement*,iter,idx,array) {
+    zstmts = new zsuif_statement_list(this->trans(array[idx]),zstmts);
+  }
+  return zstmts;
+} 
+// HACK for now should do something smarter... 
+#define TRANS_OP(s,lstr,zcon) if(s == k_##lstr) {return zsuif_##zcon;}
+zsuif_binop* TransSuif::get_binop(LString s) {
+  TRANS_OP(s,add,Add)
+  TRANS_OP(s,subtract,Subtract)
+  TRANS_OP(s,multiply,Multiply)
+  TRANS_OP(s,divide,Divide)
+  TRANS_OP(s,remainder,Remainder)
+  TRANS_OP(s,bitwise_and,Bitwise_and)
+  TRANS_OP(s,bitwise_or,Bitwise_or)
+  TRANS_OP(s,bitwise_nand,Bitwise_nand)
+  TRANS_OP(s,bitwise_nor,Bitwise_nor)
+  TRANS_OP(s,bitwise_xor,Bitwise_xor)
+  TRANS_OP(s,left_shift,Left_shift)
+  TRANS_OP(s,right_shift,Right_shift)
+  TRANS_OP(s,rotate,Rotate)
+  TRANS_OP(s,is_equal_to,Is_equal_to)
+  TRANS_OP(s,is_not_equal_to,Is_not_equal_to)
+  TRANS_OP(s,is_less_than,Is_less_than)
+  TRANS_OP(s,is_less_than_or_equal_to,Is_less_than_or_equal_to)
+  TRANS_OP(s,is_greater_than,Is_greater_than)
+  TRANS_OP(s,is_greater_than_or_equal_to,Is_greater_than_or_equal_to)
+  TRANS_OP(s,logical_and,Logical_and)
+  TRANS_OP(s,logical_or,Logical_or)
+  TRANS_OP(s,maximum,Maximum)
+  TRANS_OP(s,minimum,Minimum)
+  ERROR(this,"Unknown binary operator");
+  return NULL; /* NOT REACHED */
 }
 
-zsuif_constant*	TransSuif::trans(Constant*)
-{
-   return NULL;
+zsuif_unop* TransSuif::get_unop(LString s) {
+  TRANS_OP(s,negate,Negate)
+  TRANS_OP(s,invert,Invert)
+  TRANS_OP(s,absolute_value,Absolute_value)
+  TRANS_OP(s,bitwise_not,Bitwise_not)
+  TRANS_OP(s,logical_not,Logical_not)
+  TRANS_OP(s,convert,Convert)
+  TRANS_OP(s,treat_as,Treat_as)
+  ERROR(this,"Unknown unary operator");
+  return NULL; /* NOT REACHED */
 }
 
-zsuif_binop* TransSuif::get_cmpop(LString)
-{
-   return NULL;
+zsuif_constant* TransSuif::trans(Constant *c) {
+  assert(c != NULL);
+  IntConstant* ic = to<IntConstant>(c);
+  if(ic != NULL) {
+    return new zsuif_IntConstant(this->trans(ic->get_value()));
+  }
+  FloatConstant* fc = to<FloatConstant>(c);
+  if(fc != NULL) {
+    return new zsuif_FloatConstant(fc->get_value());
+  }
+  ERROR(this,"Don't know what to do with SUIF Constant");
+  return NULL; /* NOT REACHED */
 }
 
-zsuif_binop* TransSuif::get_binop(LString)
-{
-   return NULL;
-}
 
-zsuif_unop* TransSuif::get_unop(LString)
-{
-   return NULL;
-}
+

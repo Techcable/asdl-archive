@@ -69,11 +69,10 @@ public:
   zsuif_definition_block*     trans(DefinitionBlock*);
   zsuif_procedure_definition* trans(ProcedureDefinition*);
 
-  /* TODO */
   zsuif_statement_list*       trans(StatementList*);
   zsuif_constant*	      trans(Constant*);
-  zsuif_binop* get_binop(LString);
-  zsuif_binop* get_cmpop(LString);
-  zsuif_unop*  get_unop(LString);
+
+  zsuif_binop*                get_binop(LString);
+  zsuif_unop*                 get_unop(LString);
 };
 #endif

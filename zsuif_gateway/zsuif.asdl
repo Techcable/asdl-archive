@@ -114,7 +114,6 @@ statement =
                 binop init_comparison_opcode, 
                 statement body,
                 statement? pre_pad, 
-                statement? post_pad,
                 code_label_symbol? break_label,
                 code_label_symbol? continue_label)
  | ScopeStatement(statement body, definition_block definition_block)
@@ -134,7 +133,7 @@ statement =
  | StoreVariableStatement(variable_symbol destination, expression value)
  | NopStatement
 
-multi_way_branch_case = (constant case_constant,
+multi_way_branch_case = (suif_int case_constant,
                          code_label_symbol case_target)
 binop =
    Add

@@ -237,16 +237,20 @@ class TransExpression {
   }
 
   MATCH(TransExpression,LoadVariableExpression,exp) {
-    zsuif_expression* source_address = NULL; // ??? t->trans(exp->get_source());
+    zsuif_variable_symbol* variable = t->trans(exp->get_source());
     zsuif_type_id* result_type = t->trans(exp->get_result_type());
 
-    zexpr = new zsuif_LoadExpression(result_type, source_address);
+    zexpr = new zsuif_LoadVariableExpression(result_type, variable);
   }
 
   MATCH(TransExpression,IntConstant,cnst) {
+    zsuif_type_id* result_type = t->trans(cnst->get_result_type());
+    zexpr = new zsuif_Constant(result_type,t->trans(cnst));
   }
 
   MATCH(TransExpression,FloatConstant,cnst) {
+    zsuif_type_id* result_type = t->trans(cnst->get_result_type());
+    zexpr = new zsuif_Constant(result_type,t->trans(cnst));
   }
 };
 #endif
