@@ -26,15 +26,13 @@ functor mkSourceFileOutput (structure PP:TRANSLATE_TO_SOURCE) : TRANSLATE =
 	    let
 		val src = PP.translate p arg
 		val wd = width p
-		fun mk_arg (x,y) =
-		    String.concat ["--",x," ",y]
+
 		fun mkpp x =
 		    PPUtil.cat
 		    [PP.mkComment
 		     (" Machine generated. Edit at your own risk "::
 		      " Reproduce with the following"::
-		      (List.map mk_arg
-		       (Params.toList p))), PPUtil.nl,x]
+		      (Params.toArgList p)), PPUtil.nl,x]
 				     
 		fun cvt (x,pp) =
 		    (x,(fn s => PPUtil.pp_to_outstream s wd (mkpp pp)))

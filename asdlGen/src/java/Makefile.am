@@ -10,7 +10,7 @@ endif
 
 
 $(ASDL_OUTPUT): $(ASDL_INPUTS)
-	$(ASDLGEN) --java --output_directory ./ $(ASDL_INPUTS)
+	$(ASDLGEN) --java --output_directory=./ $(ASDL_INPUTS)
 
 asdl.zip: $(ASDL_OUTPUT) asdl_base
 	 $(JAVAC) asts/*/*.java asdl_base/*.java

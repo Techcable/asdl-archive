@@ -8,6 +8,7 @@ counter.sml
 parameters.sml
 properties.sml
 pp-util.sml
+paths.sml
 (* stolen from sml-nj compiler *)
 scc.sml
 (*sourcemap.nw*)

@@ -19,7 +19,7 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 	val cfg = Params.empty
 
 	val (cfg,output_directory) =  Params.declareString cfg
-	    {name="output_directory",flag=NONE,default="doc"}
+	    {name="output_directory",flag=SOME #"d",default="doc"}
 
 	val get_module = (fn x => x)
 	    

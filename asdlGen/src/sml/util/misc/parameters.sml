@@ -1,4 +1,4 @@
-(* 
+(*
  * Copyright (c) 1997 by Daniel C. Wang 
  *)
 signature PARAMETERS =
@@ -15,6 +15,7 @@ signature PARAMETERS =
 	val declareBool   : cfg -> bool   cfg_spec -> bool   param
 	val declareInt    : cfg -> int    cfg_spec -> int    param
 	val declareString : cfg -> string cfg_spec -> string param
+
 (*	val declareConfig : cfg -> cfg    cfg_spec -> params param
 *)
 	val requireBool   : cfg -> string -> bool param
@@ -34,7 +35,7 @@ signature PARAMETERS =
 
 structure Params:PARAMETERS =
     struct
-
+	
 	structure Map =
 	    ListMapFn(struct
 			  type ord_key = String.string
@@ -135,6 +136,9 @@ structure Params:PARAMETERS =
 		val v = case (Map.find(c,#name x)) of
 		    NONE => Dec (g x)
 		  | SOME x' => pickCfg(x',Dec (g x))
+		val v = case (Map.find(c,#name x)) of
+		    NONE => Dec (g x)
+		  | SOME x' => pickCfg(x',Dec (g x))
 	    in
 		(Map.insert(c,#name x, v),f (#name x))
 	    end
@@ -163,7 +167,10 @@ structure Params:PARAMETERS =
 				     (Error.warn
 				      ["Expected integer for option: ",v];x)
 			       | (SOME v) => Map.insert(x,k,I v))
-		      | (SOME(Dec (DecBool _))) => 
+		      | (SOME(Dec (DecBool _))) =>
+				 if(v = "") then
+				     Map.insert(x,k,B true)
+				 else
 				 (case (Bool.fromString v) of
 				      NONE =>
 					  (Error.warn
@@ -197,28 +204,94 @@ structure Params:PARAMETERS =
 	fun fromArgList c x =
 	    let
 		val is_switch = String.isPrefix "--"
+		fun is_short_op x =
+		    (String.isPrefix "-") x
+		    andalso not (is_switch x)
+		fun mk_flag_map (Dec x,xs) =
+		    let
+			val (flag,name,need_arg) =
+			    (case x of
+				 (DecBool{flag,name,...}) =>
+				     (flag,name,false)
+			       | (DecInt{flag,name,...}) =>
+				     (flag,name,true) 
+			       | (DecString{flag,name,...}) =>
+				     (flag,name,true)
+			       | _ => raise Error.internal)
+				 
+		    in
+			case (flag) of
+			    NONE => xs
+			  | SOME f => Map.insert(xs,Char.toString f,
+						 (name,need_arg))
+		    end
+		  | mk_flag_map (_,xs) = xs
+		val fmap = Map.foldl mk_flag_map Map.empty c
+
+		fun get_long_opt x = Map.find(fmap,x)
+			
+		fun expand_short_opts (x::xs) =
+		    if (is_short_op x) then
+			let
+			    val chars = String.explode(x)
+			    fun do_char (flag::rest) =
+				(case (rest,
+				       get_long_opt (Char.toString flag)) of
+				     (_,NONE) =>
+					 (Error.warn
+					  ["Ignoring  switch",
+					   Char.toString flag];([],xs))
+				   | ([],SOME (name,false)) =>
+					 ([("--"^name^"=true")],xs)
+				   | ([],SOME(name,true)) =>
+					 (case (xs) of
+					      [] =>  raise
+						      (Error.error
+						       ["mising argument"])
+					    | (h::t) => 
+						      ([("--"^name^"=")^h],t))
+				   | (rest,SOME(name,true)) =>
+					      ([("--"^name^"=")^
+						(String.implode rest)],xs)
+				   | (rest,SOME(name,false)) =>
+					 let
+					     val (x,xs) = do_char(rest)
+					 in
+					     (("--"^name^"=true")::x,xs)
+					 end)
+			      | do_char _ = ([],xs)
+			    val (x,xs) = do_char(List.tl chars)
+			in
+			    (x@(expand_short_opts xs))
+			end
+		    else (x::(expand_short_opts xs))
+		  | expand_short_opts [] = []	
 		fun get_switch s =
 		    if is_switch s then
-			SOME (String.substring(s,2,String.size(s)-2))
+			let
+			    val sub = Substring.all s
+			    fun not_eq #"=" = false
+			      | not_eq _ = true
+			    val (cmd,arg) = Substring.splitl not_eq sub
+			    val cmd = Substring.string
+				(Substring.triml 2 cmd)
+			    val arg = Substring.string
+				(Substring.triml 1 arg)
+			in
+			    SOME(cmd,arg)
+			end
 		    else NONE
 	
-		fun  do_it ([],(cmds,args)) = (List.rev cmds,List.rev args)
+		fun do_it ([],(cmds,args)) = (List.rev cmds,List.rev args)
 		  | do_it ("--"::rest,(cmds,args)) =
 		    (List.rev cmds,List.revAppend (args,rest))
-		  | do_it (cmd::arg::rest,(cmds,args)) =
-		    (case (get_switch cmd,get_switch arg) of
-			 (SOME c,SOME _) =>
-			     do_it (arg::rest,((c,"")::cmds,args))
-		       | (SOME c, NONE )  =>
-			     do_it (rest,((c,arg)::cmds,args))
-		       | (NONE, SOME _) => 
-			     do_it (arg::rest,(cmds,cmd::args))
-		       | (NONE, NONE) => 
-			     do_it (rest,(cmds,arg::cmd::args)))
-		  | do_it (cmd::nil,(cmds,args)) =
-		     (case (get_switch cmd) of
-			  NONE => do_it (nil,(cmds,cmd::args))
-		       | (SOME c) => do_it (nil,((cmd,"")::cmds,args)))
+		  | do_it (arg::rest,(cmds,args)) =
+		    (case (get_switch arg) of
+			 (SOME (cmd,arg)) =>
+			     do_it (rest,((cmd,arg)::cmds,args))
+		       | NONE => 
+			     do_it (rest,(cmds,arg::args)))
+		val x = expand_short_opts x
 		val (cmds,args) = do_it (x,([],[]))
 		val params = fromList c cmds
 	    in
@@ -228,8 +301,8 @@ structure Params:PARAMETERS =
 	fun toArgList p =
 	    let
 		val args = toList p
-		fun do_it ((x,y),args) =
-		    ("--"^x)::y::args
+		fun do_it ((x,""),args) = ("--"^x)::args
+		  | do_it ((x,y),args) = ("--"^x^"="^y)::args
 	    in
 		List.foldr do_it [] args
 	    end

@@ -26,8 +26,8 @@ pkglib_LIBRARIES = libasdl.a libcii.a
 
 $(ASDL_OUTPUT): $(ASDL_INPUTS)
 	-ln -f -s $(CII_DIST)/include cii
-	$(ASDLGEN) --c --output_directory ./ $(ASDL_INPUTS) \
-  	--base_include "cii_big_base.h"
+	$(ASDLGEN) --c --output_directory=./ $(ASDL_INPUTS) \
+  	--base_include="cii_big_base.h"
 
 libcii.a:
 	(cd $(CII_DIST); \

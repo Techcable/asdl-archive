@@ -89,7 +89,8 @@ functor mkTranslateFromTranslator
 	val cfg = Params.empty
 	    
 	val (cfg',output_directory) = Params.declareString cfg
-	     {name="output_directory",flag=NONE,default=OS.Path.currentArc}
+	    {name="output_directory",flag=SOME #"d",
+	     default=OS.Path.currentArc}
 	val cfg = if T.set_dir then cfg' else cfg
 	val cfg = Params.mergeConfig (G.cfg,cfg)
 	val cfg = Params.mergeConfig (T.cfg,cfg)

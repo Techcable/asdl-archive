@@ -218,11 +218,11 @@ structure Test =
 	fun test (name,f,i) () = (name,f i = OS.Process.success)
 
 	fun test_all n i =
-	    [test (n^"-ml",do_sml,"--view"::"SML"::i),
-	     test (n^"-hs",do_haskell,"--view"::"Haskell"::i),
-	     test (n^"-c",do_c,"--view"::"C"::i),
-	     test (n^"-cxx",do_cxx,"--view"::"Cxx"::i),
-	     test (n^"-java",do_java,"--view"::"Java"::i)]
+	    [test (n^"-ml",do_sml,"--view=SML"::i),
+	     test (n^"-hs",do_haskell,"--view=Haskell"::i),
+	     test (n^"-c",do_c,"--view=C"::i),
+	     test (n^"-cxx",do_cxx,"--view=Cxx"::i),
+	     test (n^"-java",do_java,"--view=Java"::i)]
 
 	    
 	fun run_test s =
@@ -266,15 +266,14 @@ structure Test =
 	    (test_all "views.asdl"  [mk_path ["views.asdl"]])
 
 	val views_test' =
-	    (test_all "views.asdl'"  ["--base_include","foo.h",
+	    (test_all "views.asdl'"  ["--base_include=foo.h",
 				      mk_path ["views.asdl"]])
 
 	val zsuif_test =
 	    (test_all "zsuif.asdl"  [mk_path ["zsuif.asdl"],
 				     mk_path ["..","std-types.asdl"]])
 	val cii_test =
-	    [test ("cii",do_c,["--view","C",
-
+	    [test ("cii",do_c,["--view=C",
 				mk_path ["slp3.asdl"]])]
 	    
 	val tests =

@@ -23,7 +23,7 @@ functor mkFileOutput(type outstream
 	    Params.requireString Params.empty "output_directory"
 	val (cfg,no_action) =
 	    Params.declareBool cfg
-	    {name="no_action",flag=NONE,default=false}
+	    {name="no_action",flag=SOME #"n",default=false}
 
 	fun translate p args =
 	    let

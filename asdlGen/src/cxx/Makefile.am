@@ -17,7 +17,7 @@ pkginclude_HEADERS = asdl_base.hxx \
 pkglib_LIBRARIES = libasdlxx.a
 
 $(ASDL_OUTPUT): $(ASDL_INPUTS)
-	$(ASDLGEN) --cxx --output_directory ./ $(ASDL_INPUTS)
+	$(ASDLGEN) --cxx --output_directory=./ $(ASDL_INPUTS)
 
 %.import.hxx: %.hxx
 	@top_srcdir@/src/misc/id_hack.pl $< > $@

@@ -21,7 +21,7 @@ functor mkMain (structure      M : MODULE
 	    
 	val cfg = Gen.cfg
 	val (cfg,view_name)  =  Params.declareString cfg 
-	    {name="view",flag=NONE,default=dflt_view}
+	    {name="view",flag=SOME #"V",default=dflt_view}
 
 	structure Scc =
 	    SCCUtilFun(structure Node =

@@ -186,7 +186,7 @@ maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 
 
 $(ASDL_OUTPUT): $(ASDL_INPUTS)
-	$(ASDLGEN) --typ --output_directory ./ $(ASDL_INPUTS)
+	$(ASDLGEN) --typ --output_directory=./ $(ASDL_INPUTS)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
