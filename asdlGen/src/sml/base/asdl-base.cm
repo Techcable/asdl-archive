@@ -10,3 +10,4 @@ pkl.sig
 pkl-int.sml
 pkl-real.sml
 std-types.sml
+share.sml

@@ -68,6 +68,7 @@ resynch="--#line"{ws}+[0-9]+({ws}+\"[^\"]*\")?;
 <INITIAL>"*"               => (mkTok yypos Tokens.SEQ);
 <INITIAL>"."               => (mkTok yypos Tokens.DOT);
 <INITIAL>"?"               => (mkTok yypos Tokens.OPT);
+<INITIAL>"!"               => (mkTok yypos Tokens.SHARED);
 <INITIAL>"|"               => (mkTok yypos Tokens.PIPE);
 <INITIAL>"="               => (mkTok yypos Tokens.EQ);
 <INITIAL>"attributes"      => (mkSTok yypos yytext Tokens.ATTRIBUTES);

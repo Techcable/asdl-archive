@@ -13,7 +13,7 @@
 structure Module :> MODULE =
     struct
 	structure Id = ModuleId
-	datatype field_kind = Id | Sequence | Option
+	datatype field_kind = Id | Sequence | Option | Shared
 	    
 	structure Con = ConProps	    
 	structure Typ = TypProps	    
@@ -139,10 +139,12 @@ structure Module :> MODULE =
        fun field_value (Asdl.Id(_,_)) = Id
 	 | field_value (Asdl.Option(_,_)) = Option
 	 | field_value (Asdl.Sequence(_,_)) = Sequence
+	 | field_value (Asdl.Shared(_,_)) = Shared
 
-       fun field_attribs (Asdl.Id x) = x
-	 | field_attribs (Asdl.Option x) = x
-	 | field_attribs (Asdl.Sequence x) = x
+       fun field_attribs x =
+	 let val {identifier_list1,identifier_opt1} = Asdl.attrbs_field x
+	 in (identifier_list1,identifier_opt1)
+	 end
 
        val get_mod_name = (Id.fromString o List.hd o Id.getQualifier)  
 	   
@@ -231,6 +233,7 @@ structure Module :> MODULE =
 			       fun hungarianize (Id,s) = s
 				 | hungarianize (Option,s) = s^"_opt"
 				 | hungarianize (Sequence,s) = s^"_list"
+				 | hungarianize (Shared,s) = s^"_shared"
 				   
 			       fun new_cnt (cnt,x) =
 				   let

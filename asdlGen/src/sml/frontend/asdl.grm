@@ -41,7 +41,7 @@ type view = (T.identifier * view_entry list)
         | QUOTE of string
         | FIELDSEP
         | DOT
-        | SEQ | OPT
+        | SEQ | OPT | SHARED
         | EQ
         | PIPE
         | ATTRIBUTES of string
@@ -136,6 +136,7 @@ constructor_list  : PIPE constructor constructor_list
 field     :  id_list     id_opt (T.Id(id_list,id_opt))
           |  id_list OPT id_opt (T.Option(id_list,id_opt))
           |  id_list SEQ id_opt (T.Sequence(id_list,id_opt))
+          |  id_list SHARED id_opt (T.Shared(id_list,id_opt))
 
 field_list: LPAREN field_list' RPAREN (field_list')
            | (nil)

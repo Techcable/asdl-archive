@@ -27,6 +27,7 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
       struct 
 	open Ty.Ast
 	type decl = Ty.Ast.decl
+	type get_ty = (Ty.ty_id -> Ty.ty_exp)
 	structure Ty = Ty
 	val inits = []
 	val streams_ty = Option.getOpt
@@ -71,21 +72,21 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 		   {name=stream_id,ty=outstream_ty}],
 		  body (Id arg_id),wrap unit_ty)
 	fun read_decl {name,ret,body} =
-      DeclFun(rd_name name,
+	  DeclFun(rd_name name,
 	      [{name=stream_id,ty=instream_ty}],body,wrap ret)
 	val expSeq = Seq
 	fun getter_decl {name,arg,ret,body} =
 	  DeclFun(mk_name "attrbs" name,[{name=arg_id,ty=arg}],
 		  body (Id arg_id),ret)
-	fun mk_fields xs  =
-	  List.map (fn {label,label',tid} =>  {name=label',ty=TyId tid}) xs
-	fun mk_record_exp xs =
+	fun mk_fields get_ty xs  =
+	  List.map (fn {label,label',tid} =>  {name=label',ty=get_ty tid}) xs
+	fun mk_record_exp get_ty xs =
 	  let
 	    val (fds,exps) = ListPair.unzip xs
 	  in
-	    Record (exps,mk_fields fds,NONE)
+	    Record (exps,mk_fields get_ty fds,NONE)
 	  end
-	fun mk_record_typ fds = TyRecord (mk_fields fds)
+	fun mk_record_typ get_ty fds = TyRecord (mk_fields get_ty fds)
       end
     open Arg
     structure StdPklGen = StdPickler(structure Arg = Arg)

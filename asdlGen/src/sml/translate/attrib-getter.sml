@@ -12,12 +12,26 @@ functor AttribGetter(structure Arg : ATTRIB_GETTER_ARG) : AUX_DECLS =
     type decl = Arg.decl
     fun trans env tids =
       let
+	fun get_ty tid =
+	  (case Ty.lookup(env,tid) of
+	    SOME (Ty.Prim{ty,...}) => ty
+	  | SOME (Ty.Prod{ty,...}) => ty 
+	  | SOME (Ty.Sum{ty,...}) => ty 
+	  | SOME (Ty.App(con,tid_arg)) =>
+	      let
+		val ty_arg = Option.valOf (Ty.lookup(env,tid_arg))
+	      in
+		#1 (con (tid_arg,ty_arg))
+	      end
+	  | SOME (Ty.Alias(tid)) => get_ty tid
+	  | NONE => raise Error.internal)
+
 	fun mk_getter ((ty_id,Ty.Sum {ty,num_attrbs,match,cnstrs,...}),xs) =
 	  let
 	    fun do_choice (_,ml) =
-	      Arg.mk_record_exp(List.take(ml,num_attrbs))
+	      Arg.mk_record_exp get_ty (List.take(ml,num_attrbs))
 	    val body = match do_choice
-	    val ret_ty = Arg.mk_record_typ
+	    val ret_ty = Arg.mk_record_typ get_ty
 	      (List.take(#fields (List.hd cnstrs),num_attrbs))
 	  in
 	    if num_attrbs > 0 then
