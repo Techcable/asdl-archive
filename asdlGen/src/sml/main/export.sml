@@ -27,6 +27,11 @@ structure Export =
 	val TypGenFn =
 	    mkExportFn (Main.TypePickler.do_it)
 
+	fun PPPickleFn x =
+	    ((PicklePP.pickle_pp x) handle e =>
+		(print ("Error: "^(exnMessage e)^"\n");
+		 OS.Process.failure))
+
 	fun all_success [] = true
 	  | all_success (x::xs) =
 	    (OS.Process.success = x) andalso (all_success xs)
@@ -39,7 +44,7 @@ structure Export =
 	  | asdlGen (name, ("--doc"::rs)) = HTMLGenFn(name,rs)
 	  | asdlGen (name, ("--typ"::rs)) = TypGenFn(name,rs)
 	  | asdlGen (name, ("--check"::rs)) = CheckFn(name,rs)
-	  | asdlGen (name, ("--pp_pkl"::rs)) = PicklePP.pickle_pp(name,rs)
+	  | asdlGen (name, ("--pp_pkl"::rs)) = PPPickleFn(name,rs)
 	    (* hacks fix this right *)
 	  | asdlGen (name, ("-Ljava"::rs)) = JavaGenFn(name,rs)
 	  | asdlGen (name, ("-Lc"::rs)) = AnsiCGenFn(name,rs)
@@ -49,7 +54,7 @@ structure Export =
 	  | asdlGen (name, ("-Ldoc"::rs)) = HTMLGenFn(name,rs)
 	  | asdlGen (name, ("-Ltyp"::rs)) = TypGenFn(name,rs)
 	  | asdlGen (name, ("-Lcheck"::rs)) = CheckFn(name,rs)
-	  | asdlGen (name, ("-Lpp_pkl"::rs)) = PicklePP.pickle_pp(name,rs)
+	  | asdlGen (name, ("-Lpp_pkl"::rs)) = PPPickleFn(name,rs)
 	    (* hacks fix this right *)
 	  | asdlGen (name, ("-L"::"java"::rs)) = JavaGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"c"::rs)) = AnsiCGenFn(name,rs)
@@ -60,7 +65,7 @@ structure Export =
 	  | asdlGen (name, ("-L"::"typ"::rs)) = TypGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"check"::rs)) = CheckFn(name,rs)
 	  | asdlGen (name, ("-L"::"pp_pkl"::rs)) = PicklePP.pickle_pp(name,rs)
-	  | asdlGen ("pp_pkl", (rs)) = PicklePP.pickle_pp("pp_pkl",rs)
+	  | asdlGen ("pp_pkl", (rs)) = PPPickleFn("pp_pkl",rs)
 	  | asdlGen (name, ("--all"::rs)) =
 	    let
 		val rets =
@@ -79,8 +84,8 @@ structure Export =
 		      (String.concat
 		       ["Usage: ",name,
 			" --{java|c|cxx|sml|haskell|check|typ|doc|all}",
-		       " [options ...]"," files ...","\n"]);
-		      OS.Process.exit OS.Process.failure)
+			" [options ...]"," files ...","\n"]);
+		      OS.Process.failure)
     end
 
 

@@ -113,11 +113,12 @@ structure HTMLTablePP =
 
 	  | pp_cell (Seq{ty,cells}) =
 	    let
+		exception TmpExn
 		fun merge_tbls (Tbl {rows,...},xs) = rows@xs
-		  | merge_tbls _ = raise Error.impossible
+		  | merge_tbls _ = raise TmpExn
 
 	    in
-		case (cells) of
+		(case (cells) of
 		    [] => s "empty list"
 		  | (Tbl{fields,...}::_) =>
 		    let
@@ -130,14 +131,14 @@ structure HTMLTablePP =
 				  seq_term {fmt=pp_rec,sep=nl} rows,
 				  s "</table>"]
 		    end
-		  | _ => 
-		    (seq {fmt=pp_cell,sep=mk_sep "<br>"} cells)
+		  | _ => raise TmpExn)
+		     handle TmpExn =>  (seq {fmt=pp_cell,sep=mk_sep "<br>"} cells)
 	    end
 
 	  | pp_cell (Opt{ty,cell_opt=NONE}) =
-	    cat [pp_type ty,s "option", s "NONE"]
+	    cat [pp_typeo ty, s " NONE"]
 	  | pp_cell (Opt{ty,cell_opt=(SOME cell_opt)}) =
-		 cat [pp_type ty,s "option", s "SOME", pp_cell cell_opt]
+		 cat [pp_typeo ty, s " SOME", pp_cell cell_opt]
 	  | pp_cell (Tbl tbl) = pp_table tbl
 	and pp_row NONE cells =
 	    hblock 1 [s "<tr><td valign=top>",

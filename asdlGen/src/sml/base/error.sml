@@ -3,7 +3,7 @@
  *)
 structure Error : ERROR =
     struct
-	exception Error of string
+	exception Error = Fail
 	fun say s = (TextIO.output(TextIO.stdErr,s))
 	fun error s = Error (String.concat ("Error: "::s))
 	fun warn s = say (String.concat (("Warning: "::s)@["\n"]))
