@@ -49,7 +49,7 @@ identifier_ty read_identifier(instream_ty s);
 void           write_generic_identifier(void *x, outstream_ty s);
 void*          read_generic_identifier(instream_ty s);
 
-void die();
+void die(void);
 
 typedef void *(*generic_reader_ty)(instream_ty s);
 typedef void (*generic_writer_ty)(void *x,outstream_ty s);

@@ -62,5 +62,5 @@ identifier_ty        read_identifier(instream_ty s);
 identifier_option_ty read_identifier_option(instream_ty s);
 identifier_list_ty   read_identifier_list(instream_ty s);
 
-void die() ;
+void die(void) ;
 #endif /* _ASDL_BASE_ */
