@@ -7,16 +7,16 @@
 <author>&author.danwang;
 <date>&asdlGen.release-date;
 <p>
-The installation and build process is under going a major overhall, and
+The installation and build process is under going a major overhaul, and
 isn't complete yet. The only <tt/make/ file of any interest is the toplevel
 one. It calls SML to build the system. The ML code to build various pieces
 of the code are in <tt>src/sml/build/</tt>. The ML code determines certain
-useful pieces of information about the current systesm (i.e. name of the C
+useful pieces of information about the current system (i.e. name of the C
 compiler) using <tt/GNU autoconf/.
 <code>
 % ./configure --prefix=<em/install-prefix/
 % make all
 </code>
  See the internal documentation about the new build system and
-<tt>src/sml/build</tt> for the uggly details.
+<tt>src/sml/build</tt> for the ugly details.
 </article>
