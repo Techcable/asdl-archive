@@ -9,8 +9,10 @@
 structure Link =
     struct
       structure HTMLGen =
-	mkTranslateFromTranslator
-	(structure T = FormatTranslator
+	mkTranslateFromFn
+	(val set_dir = true
+	 val cfg = Params.empty
+	 val do_it = FormatTranslator.do_it
 	 structure G = mkSourceFileOutput(structure PP = HTMLPP))
 	   
       structure HTML =

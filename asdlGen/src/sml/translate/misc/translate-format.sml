@@ -8,146 +8,101 @@
  *)
 
 
-structure FormatTranslator : SEMANT_TRANSLATOR =
-    struct
-	structure S = Semant
-	structure Ast = FormatDoc
-	structure T = FormatDoc
-	structure Id = Ast.VarId
-
-	type input_value    = S.module_info
-	type output_value   = T.format_doc
-	type defined_value  = T.ditem
-	type type_con_value = T.format
-	type con_value      = (T.format * string option)
-	type field_value    = T.format 
-	type module_value   = T.module * T.ditem
-	type output         = T.module list
-	val set_dir = true
-	val ignore_supress = true
-	val fix_fields = false
-	val inits = []
-
-	fun fmt_fields [] = T.RM []
-	  | fmt_fields  f =
-	    let	fun comma_sep (x,[]) = [x,T.STR ")"]
-		  | comma_sep (x,rest) = x::(T.STR ",")::rest
-	    in T.RM ((T.STR "(")::(List.foldr comma_sep [] f))
-	    end
-
-	fun fmt_cons [] r = T.RM []
-	  | fmt_cons c r =
-	    let	fun bar_sep ((x,_),[]) = x::r
-		  | bar_sep ((x,_),rest) = x::(T.STR "|")::rest
-	    in T.RM (T.NBS::(List.foldr bar_sep [] c))
-	    end
-
-	fun fmt_cons_doc [] = []
-	  | fmt_cons_doc c =
-	    let	fun mk_tag (c,d) =
-	      case d of
-		NONE => {tag=c,fmt=T.RM[]}
-	      |	(SOME s) => {tag=c,fmt=T.STR s}
-	    in if (List.exists (Option.isSome o #2) c) then
-	      [T.DL (List.map mk_tag c)] else []
-	    end
-
-	fun trans_field p {finfo,kind,name,tname,tinfo,is_local,props} =
-	    let
-		val toStr = T.STR o S.Field.Id.toString
-		fun toStr' x = T.EM [T.STR (Id.toString  x)]
-		val tid = if is_local then
-			Id.fromString (S.Type.Id.getBase tname)
-		    else Id.fromPath (S.Type.Id.toPath tname)
-		val (ty,q) = case (kind) of
-		    NONE => (T.REF (tid,[toStr' tid]),[])
-		  | SOME S.Option => (T.REF(tid,[toStr' tid]),[T.STR "?"])
-		  | SOME S.Sequence => (T.REF(tid,[toStr' tid]),[T.STR "*"])
-		  | SOME S.Shared => (T.REF(tid,[toStr' tid]),[T.STR "!"])
-	    in
-		case (S.Field.name finfo) of
-		    NONE => T.RM(ty::q)
-		  | (SOME x) => T.RM ((ty::q)@[toStr x])
-	    end
-	  
-	fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} =
-	    let	val doc = S.Con.P.doc_string cprops
-	    in (T.RM ([T.BF [T.STR (S.Con.Id.getBase name)],
-		      (fmt_fields fields),T.BR]),doc)
-	    end
-
-	fun trans_defined p {tinfo,name,cons,fields,props} =
-	    let
-		val f = fmt_fields fields
-		val tid = Id.fromString (S.Type.Id.getBase name)
-		val cdoc = fmt_cons_doc cons
-		val doc =
-		    case (S.Type.P.doc_string props) of
-			NONE => T.RM cdoc
-		      | SOME s => T.P ([T.STR s,T.BR]@cdoc)
-		val name =
-		    T.RM [T.LABEL(tid,[T.EM [T.STR (Id.toString tid)]]),
-			  T.STR " = "]
-		val {tag,fmt} =
-		    (case (cons,fields) of
-			 ([],_) => {tag=T.RM[name,f],fmt=T.RM []}
-		       | (c,[]) => {tag=name,fmt=fmt_cons cons []}
-		       | (c,_) =>
-			     {tag=name,
-			      fmt=fmt_cons cons [T.STR "attributes",f]})
-	    in
-	      {tag=tag,fmt=T.RM[fmt,doc]}
-	    end
-	
-	fun trans_type_con p {props,tinfo,name,kinds} =
-	  let
-	    fun do_kind S.Sequence = T.STR "sequence "
-	      | do_kind S.Option = T.STR "option "
-	      | do_kind S.Shared = T.STR "share "
-	  in T.RM [T.EM[T.STR (S.Type.Id.toString name),
-			T.RM (List.map do_kind kinds)]]
-	  end
-
-	fun trans_module p {module,defines,imports,type_cons,props} =
-	    let
-		val mname = S.Module.Id.toString (S.Module.name module)
-		val doc =
-		    case (S.Module.P.doc_string props) of
-		      NONE => []
-		    | SOME s =>  [T.STR s]
-		val toMid = Ast.ModuleId.fromPath o
-		  S.Module.Id.toPath o S.Module.name
-		val decls =
-		  {title="Description for Module "^mname,
-		   body=[T.SECT(1,[T.STR ("Description of Module "^mname)]),
-			 T.P doc,		
-			 T.SECT(2,[T.STR ("Locally defined types")]),
-			 T.DL (defines),
-			 T.SECT(2,[T.STR ("Qualified types ")]),
-			 T.UL type_cons]}
-		(* todo add import hyper links *)
-		val toc_entry =
-		  {tag=T.REF (Id.fromPath {base="",
-					   qualifier=[mname]},
-			      [T.BF [T.STR "module"],T.TT [T.STR  mname]]),
-		   fmt=T.RM [T.P doc]}
-	    in
-	      (T.Module{name=toMid module,
-		       imports=List.map toMid imports,
-		       decls=decls},toc_entry)
-	    end
-	fun trans p {modules:module_value list,prim_types,prim_modules} =
-	  let
-	    val ms = modules
-	    val toc_id = T.ModuleId.fromString "toc"
-	    val toc_entries = List.map #2 ms
-	    val mods = List.map #1 ms
-	    val toc_decl =
-	      {title="Table of Contentes ",
-	       body=[T.DL toc_entries]}
-	  in T.Module{name=toc_id,imports=[],decls=toc_decl}::mods
-	  end
+structure FormatTranslator :>
+  sig
+    val do_it : Semant.menv_info -> FormatDoc.module list
+  end =
+struct
+  structure S = Semant
+  structure Ast = FormatDoc
+  structure T = FormatDoc
+  structure Id = Ast.VarId
+    
+  fun getdoc f x =
+    (case (f x) of
+       NONE => [T.EM [T.STR "No Documentation"]]
+       | (SOME x) => [T.STR x])
+  open AsdlSemant
+  fun fmt_list i sep f fmt [] = T.RM []
+    | fmt_list i sep f fmt xs =
+    let
+      fun do_sep [] = []
+	| do_sep [x] = (fmt x)::[f]
+	| do_sep (x::xs) = (fmt x)::sep::(do_sep xs)
+    in T.RM (i::(do_sep xs))
     end
+  fun tag {tag,fmt} = tag
+
+  fun do_field (Fd{kind,name,tname,props,...}) =
+    let
+      val sep =
+	case kind of
+	  NONE => ""
+	| SOME S.Option =>  "?"
+	| SOME S.Sequence =>  "*"
+	| SOME S.Shared =>  "!"
+      val tag = T.RM[T.EM [T.STR (S.Type.Id.toString tname)],T.STR sep,
+			   T.NBS,T.STR (S.Field.Id.toString name)]
+      val fmt = T.P (getdoc S.Field.P.doc_string props)
+    in {fmt=fmt,tag=tag}
+    end
+
+  fun do_con (Con{name,fields,cprops,...}) =
+    let
+      val tag = T.RM [T.BF [T.STR (S.Con.Id.toString name)],
+		      fmt_list (T.STR "(") (T.RM[T.STR ",",T.NBS])
+		               (T.STR ")") tag fields]
+      val fmt = T.RM [T.P (getdoc S.Con.P.doc_string cprops),
+		      T.DL fields]
+    in {fmt=fmt,tag=tag}
+    end
+
+  fun do_typ (Sum{name,props,cons,fields,...}) =
+    let
+      val attribs =
+	case fields of
+	  [] => T.RM []
+	|  x => T.RM [T.BF [T.STR "attributes"], T.DL fields]
+      val tag = T.EM [T.STR (S.Type.Id.toString name)]
+      val fmt = T.RM [T.P (getdoc S.Type.P.doc_string props),
+		      attribs,T.DL cons]
+    in {fmt=fmt,tag=tag}
+    end
+    | do_typ (Product{name,props,fields,...}) =
+    let
+      val tag = T.RM [T.EM [T.STR (S.Type.Id.toString name)],
+		      fmt_list (T.STR "= (") (T.RM[T.STR ",",T.NBS])
+		      (T.STR ")") tag fields]
+      val fmt = T.RM [T.P (getdoc S.Type.P.doc_string props),
+		      T.DL fields]
+    in {fmt=fmt,tag=tag}
+    end
+
+  fun do_tycon _ = ()
+
+  fun do_module (Module{module,imports,props,typs,type_cons,...}) =
+    let
+      val mname = S.Module.Id.toString (S.Module.name module)
+      val docs = getdoc S.Module.P.doc_string props
+      val toMid = Ast.ModuleId.fromPath o S.Module.Id.toPath o S.Module.name
+      val decl =
+	{title="Description for Module "^mname,
+	 body=[T.SECT(1,[T.STR ("Description of Module "^mname)]),
+	       T.P docs,		
+	       T.SECT(2,[T.STR ("Locally defined types")]),
+	       T.DL typs]}
+    in  T.Module{name=toMid module,
+		 imports=List.map toMid imports,
+		 decls=decl}
+    end
+  fun do_menv (MEnv{modules,prim_modules,prim_types}) = modules
+  fun do_it x = fold {menv=do_menv,
+		      module=do_module,
+		      typ=do_typ,
+		      con=do_con,
+		      field=do_field,
+		      tycon=do_tycon} x
+end
 
 
 

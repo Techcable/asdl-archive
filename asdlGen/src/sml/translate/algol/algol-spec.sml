@@ -20,11 +20,9 @@ structure AlgolTy : ALGOL_TYPE_DECL =
     open T
   end
 
-functor mkAlgolSpec(structure Ty    : ALGOL_TYPE_DECL
-		    structure IdMap : ID_MAP) : ALGOL_SPEC =
+functor mkAlgolSpec(structure Ty    : ALGOL_TYPE_DECL) : ALGOL_SPEC =
   struct
 (* todo get rid of all the opens *)
-    structure IdMap = IdMap
     structure Arg =
       struct
 	open Ty.Ast

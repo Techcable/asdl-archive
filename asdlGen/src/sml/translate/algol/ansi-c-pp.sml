@@ -36,284 +36,220 @@ signature PP_ANSI_C =
 functor mkPPAnsiC(structure T: ANSI_C) : PP_ANSI_C =
     struct
 	structure T = T
-	structure PP = PPUtil
+	structure PP = mkPPAst(structure Ast = T
+			       structure IdMap = IdMaps.AnsiC
+			       val cap_mod = false
+			       val cap_typ = false
+			       val sep = "_")
 	type pp = PPUtil.pp
-
+	open PP
 	fun toString_ty_prim T.VOID  = "void"
 	  | toString_ty_prim T.INT   = "int"
 	  | toString_ty_prim T.CHAR  = "char"
 
-	val pp_ty_prim = PP.wrap toString_ty_prim
-
-	val pp_ty_id = PP.wrap (fn x => (T.TypeId.toString' "_" x)^"_ty")
-	val pp_id = PP.wrap (T.VarId.toString' "_")
-	val comma_sep = PP.cat [PP.s ",",PP.ws]
-	val semi_sep = PP.cat [PP.s ";",PP.ws]
+	val pp_ty_prim = PP.str o toString_ty_prim
+	val semi_sep = cat [str ";",nl]
+	fun pp_ty_id id = cat [PP.tid id,str "_ty"]
+	val pp_id = PP.vid
 
 	fun pp_ty_exp (T.TyPrim x) = pp_ty_prim x
 	  | pp_ty_exp (T.TyId x) = pp_ty_id  x
-	  | pp_ty_exp (T.TyPointer te) = PP.cat [pp_ty_exp te,PP.s "*"]
+	  | pp_ty_exp (T.TyPointer te) = cat [pp_ty_exp te,str "*"]
 	  | pp_ty_exp (T.TyArray (te,iopt)) =
-	    PP.cat [pp_ty_exp te,PP.s "[",
-		    PP.opt{some=PP.d,none=PP.empty} iopt,
-		    PP.s "]"]
+	    cat [pp_ty_exp te,str "[",opt empty num iopt,str "]"]
 	  | pp_ty_exp (T.TyEnum (i,er)) =
-	    PP.hblock 0
-	    [PP.s "enum ",
-	     PP.s "{",
-	     PP.seq {fmt=pp_enumer, sep=comma_sep} er,
-	     PP.s "}"]
+	    hb 2 (str "enum {") (seq (hsep ",") pp_enumer er) (str "}")
 	  | pp_ty_exp (T.TyFunctionPtr(fl,te)) =
-	    PP.cat[pp_ty_exp te,PP.s "(*)",
-		   PP.hblock 0 [PP.s "(",
-				PP.seq{fmt=pp_field,sep=comma_sep} fl,
-				PP.s ")"]]
+	    hb 2 (cat [pp_ty_exp te,str "(*)("])
+	    (seq (hsep ",") pp_field fl) (str ")")
 	  | pp_ty_exp (T.TyAggregate(aggre,iopt,[])) =
-	    PP.cat [pp_aggregate aggre,PP.s " ",
-	     PP.opt{some=pp_id,none=PP.empty} iopt]
+	    cat [pp_aggregate aggre, str " ", opt empty pp_id iopt]
 	  | pp_ty_exp (T.TyAggregate(aggre,iopt,fl)) =
-	    PP.cat [pp_aggregate aggre,PP.s " ",
-			 PP.opt{some=pp_id,none=PP.empty} iopt,
-			 PP.s " {",
-			 PP.box 4 [PP.nl,
-				   PP.seq {fmt=pp_field,sep=semi_sep} fl,
-				   PP.s ";"],PP.ws,
-			 PP.s "}"]
+	    vb 2 (cat [pp_aggregate aggre, str " ",
+		       opt empty pp_id iopt, str " {"])
+	    (cat [seq semi_sep pp_field fl, str ";"])
+	    (str "}")
 	  | pp_ty_exp (T.TyQualified (q,T.TyPointer te))  =
-	    PP.cat [pp_ty_exp te, PP.s " * ",pp_qualifier q]
+	    cat [pp_ty_exp te, str " * ",pp_qualifier q]
 	  | pp_ty_exp (T.TyQualified (q,te)) =
-	    PP.cat [pp_qualifier q,PP.s " ",pp_ty_exp te]
+	    cat [pp_qualifier q,(str " "),pp_ty_exp te]
 	  | pp_ty_exp (T.TyAnnotate (s,te)) =
-	    PP.hblock 2 [PP.s "/* ",PP.s s,PP.s " */ ",pp_ty_exp te]
+	    hb 2 (str "/*") (str s) (cat [str " */ ",pp_ty_exp te])
 	  | pp_ty_exp (T.TyGroup te) =
-	    PP.hblock 0 [PP.s "(",pp_ty_exp te,PP.s ")"]
+	    hb 2 (str "(") (pp_ty_exp te) (str ")")
 
 	and pp_ty_dec (T.TyDec (tid,te)) =
-	    PP.cat [PP.s "typedef ",pp_ty_exp te,PP.s " ",pp_ty_id tid]
+	   cat [str "typedef ",pp_ty_exp te,(str " "),pp_ty_id tid]
 	  | pp_ty_dec (T.TyAggregateDec(aggre,id,fl)) =
-	    PP.box 4 [pp_aggregate aggre,PP.s " ", pp_id id,
-		      PP.s " {",PP.nl,
-		      PP.seq {fmt=pp_field,sep=semi_sep} fl,
-		      PP.s ";",PP.ws, PP.s "}"]
+	    vb 2 (cat [pp_aggregate aggre,(str " "), pp_id id, str " {"])
+	    (cat [seq semi_sep pp_field fl,str ";"])
+	    (str "}")
+
 	  | pp_ty_dec (T.TyEnumDec (tid,er)) =
-	    PP.hblock 0
-	    [PP.s "enum ",
-	     pp_ty_id tid,
-	     PP.ws,
-	     PP.s "{",
-	     PP.seq {fmt=pp_enumer, sep=comma_sep} er,
-	     PP.s "}"]
+	    vb 2 (cat  [str "enum ",pp_ty_id tid,str " {"])
+	    (seq (hsep ",") pp_enumer er)
+	    (str "}")
 
-	and pp_qualifier T.Const = PP.s "const"
-	  | pp_qualifier T.Voliatile = PP.s "voliatile"
+	and pp_qualifier T.Const = str "const"
+	  | pp_qualifier T.Voliatile = str "voliatile"
 
-	and pp_aggregate T.Union = PP.s "union"
-	  | pp_aggregate T.Struct = PP.s "struct"
+	and pp_aggregate T.Union = str "union"
+	  | pp_aggregate T.Struct = str "struct"
 
-	and pp_storage_class T.Auto = PP.s "auto "
-	  | pp_storage_class T.Registier = PP.s "register "
-	  | pp_storage_class T.Static = PP.s "static "
-	  | pp_storage_class T.Extern = PP.s "extern "
+	and pp_storage_class T.Auto = str "auto "
+	  | pp_storage_class T.Registier = str "register "
+	  | pp_storage_class T.Static = str "static "
+	  | pp_storage_class T.Extern = str "extern "
 
 	and pp_var_dec (T.VarDecs (sc,te,id,ids)) =
-	    PP.cat [PP.opt{some=pp_storage_class,none=PP.empty} sc,
-		    pp_ty_exp te, PP.s " ",
-		    PP.seq {fmt=pp_id,sep=comma_sep} (id::ids)]
+	    cat [opt empty pp_storage_class sc,
+		 pp_ty_exp te, (str " "),
+		 seq (hsep ",") pp_id (id::ids)]
 	  | pp_var_dec (T.VarDecInit(sc,te,id,exp)) =
-	    PP.cat [PP.opt{some=pp_storage_class,none=PP.empty} sc,
-		    pp_ty_exp te, PP.s " ", pp_id id,
-		    PP.s " = ",pp_exp exp]
+	    cat [opt empty pp_storage_class sc,
+		 pp_ty_exp te, (str " "), pp_id id, str " = ",pp_exp exp]
 
 	and pp_fun_dec (T.FunPrototypeDec(id,[],te)) =
-	    PP.cat[pp_ty_exp te,PP.ws,pp_id id,PP.s "(void);"]
+	  cat [pp_ty_exp te, (str " "), pp_id id, str "(void);"]
 	  | pp_fun_dec (T.FunPrototypeDec(id,fl,te)) =
-	    PP.hblock 2 [pp_ty_exp te,PP.ws,
-		   pp_id id,
-		   PP.vblock 1 [PP.s "(",
-				PP.seq{fmt=pp_field,sep=comma_sep} fl,
-				PP.s ");"]]
+	    hb 2 (cat [pp_ty_exp te,str " ", pp_id id, str "("])
+	    (seq (hsep ",") pp_field fl) (str ");")
+
 	  | pp_fun_dec (T.FunDec(id,fl,te,b)) =
-	    PP.hblock 2 [pp_ty_exp te,PP.ws,pp_id id,
-			 if List.null fl then PP.s "(void)"
-			 else (PP.vblock 1
-			       [PP.s "(",PP.seq{fmt=pp_field,sep=comma_sep} fl,
-				PP.s ")"]),
-			 PP.nl,PP.vblock 0 [pp_block b]]
-	  | pp_fun_dec (T.FunStaticDec(id,fl,te,b)) =
-	    PP.hblock 2 [PP.s "static ",
-			 pp_ty_exp te,PP.ws,pp_id id,
-			 if List.null fl then PP.s "(void)"
-			 else (PP.vblock 1
-			       [PP.s "(",PP.seq{fmt=pp_field,sep=comma_sep} fl,
-				PP.s ")"]),
-			 PP.vblock 0 [pp_block b]]
-	    
+	    cat [hb 2 (cat [pp_ty_exp te,(str " "),pp_id id,str "("])
+		 (lst (str "void") (fn x => seq (hsep ",") pp_field x) fl)
+		 (str ") "), pp_block b]
+	  | pp_fun_dec (T.FunStaticDec x) =
+	    cat [str "static ", pp_fun_dec (T.FunDec x)]
 
-	and pp_decl (T.Ty td) =
-	    PP.cat [pp_ty_dec td,PP.s ";"]
+	and pp_decl (T.Ty td) = cat [pp_ty_dec td,str ";"]
 	  | pp_decl (T.Fun fd) = pp_fun_dec fd
-	  | pp_decl (T.Var vd) =
-	    PP.cat [pp_var_dec vd,PP.s ";"]
-	  | pp_decl (T.Com s) =  PP.cat
-	    [PP.s "/*",PP.box 2 [PP.nl,PP.s s],PP.nl,
-	     PP.s "*/"]
+	  | pp_decl (T.Var vd) =  cat [pp_var_dec vd,str ";"]
+	  | pp_decl (T.Com s) =  vb 2 (str "/*") (str s) (str "*/")
 	  | pp_decl (T.TagTable x) =
-	    let
-	      fun pp_pair (s,v) =
-		PP.cat [PP.s "{",
-			pp_const_exp (T.S s),
-			PP.s ", ",
-			pp_const_exp (T.I v),
-			PP.s "}"]
+	    let fun pp_pair (s,v) =
+	      cat [str "{",pp_const_exp (T.S s),str ", ",pp_const_exp (T.I v),
+		   str "}"]
 	    in
-	      PP.hblock 4
-	      [PP.s "struct xml_tag_map_entry_s xml_tag_map[] = {",PP.ws,
-	       PP.seq{fmt=pp_pair,sep=comma_sep} x,
-	       comma_sep,
-	       PP.s "{NULL , -1}};"]
+	      hb 2 (str "struct xml_tag_map_entry_s xml_tag_map[] = {")
+	      (seq' (hsep ",") pp_pair x)
+	      (str "{NULL , -1}};")
 	    end
-	    
 
-
-	and pp_const_exp (T.I i) = PP.d i
+	and pp_const_exp (T.I i) = num i
 	  | pp_const_exp (T.E i) = pp_id i
-	  | pp_const_exp (T.A i) = PP.cat [PP.s "&",pp_id i]
-	  | pp_const_exp (T.C c) = PP.s ("'"^(Char.toString c )^"'" )
-	  | pp_const_exp (T.S s) = PP.s ("\""^(String.toCString s)^"\"" )
-	  | pp_const_exp (T.Void) = PP.s "((void)0)"
-	  | pp_const_exp (T.NULL) = PP.s "NULL"
+	  | pp_const_exp (T.A i) = cat [str "&",pp_id i]
+	  | pp_const_exp (T.C c) = str ("'"^(Char.toString c )^"'" )
+	  | pp_const_exp (T.S s) = str ("\""^(String.toCString s)^"\"" )
+	  | pp_const_exp (T.Void) = str "((void)0)"
+	  | pp_const_exp (T.NULL) = str "NULL"
 
-	and pp_unary_op T.NEG = PP.s "-"
-	  | pp_unary_op T.NOT = PP.s "!"
-	  | pp_unary_op T.DEREF = PP.s "*"
-	  | pp_unary_op T.ADDR = PP.s "&"
+	and pp_unary_op T.NEG = str "-"
+	  | pp_unary_op T.NOT = str "!"
+	  | pp_unary_op T.DEREF = str "*"
+	  | pp_unary_op T.ADDR = str "&"
 
-	and pp_binary_op T.BLSHIFT = PP.s "<<"
-	  | pp_binary_op T.BRSHIFT = PP.s ">>"
-	  | pp_binary_op T.BAND    = PP.s "&"
-	  | pp_binary_op T.BOR     = PP.s "|"
-	  | pp_binary_op T.BXOR    = PP.s "^"
-	  | pp_binary_op T.BNOT    = PP.s "~"
-	  | pp_binary_op T.PLUS    = PP.s "+"
-	  | pp_binary_op T.SUB     = PP.s "-"
-	  | pp_binary_op T.MUL     = PP.s "*"
-	  | pp_binary_op T.DIV     = PP.s "/"
-	  | pp_binary_op T.MOD     = PP.s "%"
-	  | pp_binary_op T.EQ      = PP.s "=="
-	  | pp_binary_op T.GT      = PP.s ">"
-	  | pp_binary_op T.LT      = PP.s "<"
-	  | pp_binary_op T.NEQ     = PP.s "!="
-	  | pp_binary_op T.GEQ     = PP.s ">="
-	  | pp_binary_op T.LEQ     = PP.s "<="
-	  | pp_binary_op T.LAND    = PP.s "&&"
-	  | pp_binary_op T.LOR     = PP.s "||"
+	and pp_binary_op T.BLSHIFT = str "<<"
+	  | pp_binary_op T.BRSHIFT = str ">>"
+	  | pp_binary_op T.BAND    = str "&"
+	  | pp_binary_op T.BOR     = str "|"
+	  | pp_binary_op T.BXOR    = str "^"
+	  | pp_binary_op T.BNOT    = str "~"
+	  | pp_binary_op T.PLUS    = str "+"
+	  | pp_binary_op T.SUB     = str "-"
+	  | pp_binary_op T.MUL     = str "*"
+	  | pp_binary_op T.DIV     = str "/"
+	  | pp_binary_op T.MOD     = str "%"
+	  | pp_binary_op T.EQ      = str "=="
+	  | pp_binary_op T.GT      = str ">"
+	  | pp_binary_op T.LT      = str "<"
+	  | pp_binary_op T.NEQ     = str "!="
+	  | pp_binary_op T.GEQ     = str ">="
+	  | pp_binary_op T.LEQ     = str "<="
+	  | pp_binary_op T.LAND    = str "&&"
+	  | pp_binary_op T.LOR     = str "||"
 
 	and pp_exp (T.Constant cst) = pp_const_exp cst
 	  | pp_exp (T.Variable id) = pp_id id
 	  | pp_exp (T.Call (e,el)) =
-	    PP.cat[pp_exp e, PP.hblock 0
-		   [PP.s "(",PP.seq {fmt=pp_exp,sep=comma_sep} el, PP.s")"]]
+	  cat [pp_exp e, hb 2 (str "(") (seq (hsep ",") pp_exp el) (str ")")]
 	  | pp_exp (T.Assign(src as (T.Variable x),
 			     dst as (T.Binop(bop,T.Variable y,exp)))) =
 	    if T.VarId.eq(x,y) then
 		case (bop,exp) of
 		    (T.PLUS,T.Constant(T.I 1)) =>
-			PP.cat [pp_id x, PP.s "++"]
+			cat [pp_id x, str "++"]
 		  | (T.SUB,T.Constant(T.I 1)) =>
-			PP.cat [pp_id x, PP.s "--"]
-		  | _ => PP.cat [pp_id x,PP.s " ",
-				 pp_binary_op bop, PP.s "= ",pp_exp exp]
-	    else
-		PP.cat [pp_exp dst, PP.s " = ",pp_exp src]
+			cat [pp_id x, str "--"]
+		  | _ => cat [pp_id x,(str " "),
+			      pp_binary_op bop, str "= ",pp_exp exp]
+	    else cat [pp_exp dst, str " = ",pp_exp src]
 	  | pp_exp (T.Assign(dst,src)) =
-	    PP.cat [pp_exp dst, PP.s " = ",pp_exp src]
-
-	  | pp_exp (T.Unop (uop,e)) =
-	    PP.cat [pp_unary_op uop,pp_exp e]
+	    cat [pp_exp dst, str " = ",pp_exp src]
+	  | pp_exp (T.Unop (uop,e)) = cat [pp_unary_op uop,pp_exp e]
 	  | pp_exp (T.Binop (bop,lhs,rhs)) =
-	    PP.cat [pp_exp lhs,PP.s " ",
-		    pp_binary_op bop,PP.s " ",pp_exp rhs]
+	    cat [pp_exp lhs,(str " "), pp_binary_op bop,(str " "),pp_exp rhs]
 	  | pp_exp (T.Cast (te,e)) =
-	    PP.cat [PP.s "(",pp_ty_exp te,PP.s ") ",pp_exp e]
+	    cat [str "(",pp_ty_exp te,str ") ",pp_exp e]
 	  | pp_exp (T.AggarSub(T.Unop(T.DEREF,exp),id)) =
-	    PP.cat [pp_exp exp,PP.s "->",pp_id id]
+	    cat [pp_exp exp,str "->",pp_id id]
 	  | pp_exp (T.AggarSub(exp,id)) =
-	    PP.cat [pp_exp exp,PP.s ".",pp_id id]
+	    cat [pp_exp exp,str ".",pp_id id]
 	  | pp_exp (T.ArraySub(exp,idx)) =
-	    PP.cat [pp_exp exp,PP.s "[",pp_exp idx,PP.s "]"]
+	    cat [pp_exp exp,str "[",pp_exp idx,str "]"]
 	  | pp_exp (T.Comment s) =
-	    PP.cat [PP.s "/* ",PP.s s,PP.s " */"]
+	    cat [str "/* ",str s,str " */"]
 	  | pp_exp (T.Sizeof e) =
-	    PP.cat [PP.s "sizeof(",pp_exp e,PP.s ")"]
+	    cat [str "sizeof(",pp_exp e,str ")"]
 	  | pp_exp (T.SizeofT te) =
-	    PP.cat [PP.s "sizeof(",pp_ty_exp te,PP.s ")"]
+	    cat [str "sizeof(",pp_ty_exp te,str ")"]
 	  | pp_exp (T.ExpSeq el) =
-	    PP.cat[PP.s "(",PP.seq {fmt=pp_exp,sep=comma_sep} el,PP.s ")"]
+	    hb 2 (str "(") (seq (hsep ",") pp_exp el) (str ")")
 	  | pp_exp (T.IfExp {test,then_exp,else_exp}) =
-	    PP.cat[PP.s "(",pp_exp test,PP.s " ? ",
-		   pp_exp then_exp, PP.s " : ",
-		   pp_exp else_exp, PP.s ")"]
+	    cat[str "(",pp_exp test,str " ? ",
+		   pp_exp then_exp, str " : ",
+		   pp_exp else_exp, str ")"]
 	  | pp_exp (T.ExpGroup exp) =
-	    PP.cat[PP.s "(",pp_exp exp,PP.s ")"]
+	    cat[str "(",pp_exp exp,str ")"]
 
-	and pp_stmt (T.Nop) = PP.s ";"
-	  | pp_stmt T.Break = PP.s "break;"
-	  | pp_stmt T.Continue = PP.s "continue;"
-	  | pp_stmt (T.Exp e) = PP.cat[pp_exp e,PP.s ";"]
+	and pp_stmt (T.Nop) = str ";"
+	  | pp_stmt T.Break = str "break;"
+	  | pp_stmt T.Continue = str "continue;"
+	  | pp_stmt (T.Exp e) = cat[pp_exp e,str ";"]
 	  | pp_stmt (T.If{test,then_stmt,else_stmt=T.Nop}) =
-	    PP.vblock 4
-	    [PP.s "if(",pp_exp test,PP.s ")",
-	     PP.nl,pp_stmt then_stmt]
+	  vb 2 (cat [str "if(",pp_exp test,str ")"])
+	  (pp_stmt then_stmt) empty
 	  | pp_stmt (T.If{test,then_stmt,else_stmt}) =
-	    PP.vblock 4
-	    [PP.s "if(",pp_exp test,PP.s ")",
-	     PP.box 4 [PP.nl,pp_stmt then_stmt],PP.nl,
-	     PP.s "else",
-	     PP.box 4 [PP.nl,pp_stmt else_stmt]]
+	    vb 2 (cat [str "if(",pp_exp test,str ")"])
+	    (pp_stmt then_stmt) 
+	    (vb 2 (str "else") (pp_stmt else_stmt) empty)
 	  | pp_stmt (T.For {init,test,step,body}) =
-	    PP.vblock 4 [PP.s "for(",
-		    PP.hblock 4 [pp_exp init,semi_sep,
-				 pp_exp test,semi_sep,
-				 pp_exp step], PP.s ")",
-			 PP.nl,pp_stmt body]
+	    cat [hb 2 (str "for(")
+		 (seq (hsep ";") pp_exp [init,test,step]) (str ")"),
+		 pp_stmt body]
 	  | pp_stmt (T.While {test,body}) =
-	    PP.cat [PP.s "while(",pp_exp test, PP.s ")",
-			 PP.ws,pp_stmt body]
-	  | pp_stmt (T.Label _) = PP.s "/* label */"
-	  | pp_stmt (T.Goto _) = PP.s "/* label */"
-	  | pp_stmt (T.Return e) = PP.cat [PP.s "return ", pp_exp e,PP.s ";"]
+	    cat [str "while(",pp_exp test, str ")", pp_stmt body]
+	  | pp_stmt (T.Label _) = str "/* label */"
+	  | pp_stmt (T.Goto _) = str "/* label */"
+	  | pp_stmt (T.Return e) = cat [str "return ", pp_exp e,str ";"]
 	  | pp_stmt (T.Block b) = pp_block b
 	  | pp_stmt (T.Switch {test,body,default=T.Nop}) =
-	    PP.cat
-	    [PP.s "switch(",pp_exp test,PP.s ") {",
-	     PP.box 4 [PP.nl,
-		       PP.seq {fmt=pp_switch_arm,sep=PP.nl} body],
-	     PP.nl, PP.s "}"]
+	    vb 2 (cat [str "switch(",pp_exp test,str ") {"])
+	    (seq nl pp_switch_arm body) (str "}")
 	  | pp_stmt (T.Switch {test,body,default}) =
-	    PP.cat
-	    [PP.s "switch(",pp_exp test,PP.s ") {",
-	     PP.box 4 [PP.nl,
-		       PP.seq_term {fmt=pp_switch_arm,sep=PP.nl} body,
-		       PP.s "default: ",pp_stmt default],
-	     PP.nl, PP.s "}"]
-
+	    vb 2 (cat [str "switch(",pp_exp test,str ") {"])
+	    (cat [seq' nl pp_switch_arm body,
+		  str "default: ", pp_stmt default])
+	     (str "}")
 	and pp_switch_arm (T.CaseInt(i,sl)) =
-	    PP.vblock (4) [PP.s "case ",PP.d i,PP.s ":",
-			   PP.ws,
-			   PP.seq{fmt=pp_stmt,sep=PP.nl} sl]
+	    vb 2 (cat [str "case ",num i,str ":"])
+	    (seq nl pp_stmt sl) (str "/**/")
 	  | pp_switch_arm (T.CaseEnum(id,sl)) =
-	    PP.vblock (4) [PP.s "case ",pp_id id,PP.s ":",
-			   PP.ws,
-			   PP.seq{fmt=pp_stmt,sep=PP.nl} sl]
-
-	and pp_field {name,ty} =
-	    PP.cat [pp_ty_exp ty,PP.s " ",pp_id name]
-
+	    vb 2 (cat [str "case ",pp_id id,str ":"])
+	    (seq nl pp_stmt sl) (str "/**/")
+	and pp_field {name,ty} = cat [pp_ty_exp ty,(str " "),pp_id name]
 	and pp_enumer {name,value} =
-	    PP.cat [pp_id name,PP.opt{some=(fn x =>
-					    PP.cat[PP.s"=",PP.d x]),
-				      none=PP.empty} value]
-
+	  cat [pp_id name, opt empty (fn x => cat[str "=",num x]) value]
 	and pp_block {ty_decs,var_decs,stmts} =
 	    let
 		fun flatten (T.Block{ty_decs=[],var_decs=[],stmts},xs)  =
@@ -334,19 +270,13 @@ functor mkPPAnsiC(structure T: ANSI_C) : PP_ANSI_C =
 		    end
 		  | flatten (x,xs) = (x::xs)
 		val stmts = List.foldr flatten [] stmts 
-	    in
-		PP.cat
-		[PP.s "{",
-		 PP.vblock 4
-		 [PP.nl,
-		  PP.seq_term {fmt=pp_ty_dec,sep=semi_sep} ty_decs,
-		  PP.seq_term {fmt=pp_var_dec,sep=semi_sep} var_decs,
-		  PP.seq_term {fmt=pp_stmt,sep=PP.nl} stmts],
-		 PP.ws,
-		 PP.s "}"]
+	    in vb 2 (str "{")
+	      (cat [seq' semi_sep pp_ty_dec ty_decs,
+		    seq' semi_sep pp_var_dec var_decs,
+		    seq nl pp_stmt stmts])
+	      (str "}")
 	    end
-	and pp_decls dl =
-	    PP.cat[PP.seq {fmt=pp_decl,sep=PP.nl} dl,PP.nl]		    
+	and pp_decls dl = seq' nl pp_decl dl
     end
 
 structure AnsiCPP : ALGOL_PP =
@@ -399,8 +329,6 @@ structure AnsiCPP : ALGOL_PP =
 	    in
 		(PP.pp_decls header,PP.pp_decls not_ty_decs)
 	    end
-
-
 	end
 	fun mkComment s =
 	    PPUtil.vblock 4 [PPUtil.s "/*",
@@ -449,6 +377,8 @@ structure AnsiCPP : ALGOL_PP =
 		 ([mk_file "c" mn], pp_impl (mk_file "h" mn) body)]
 	    end
     end
+
+
 
 
 

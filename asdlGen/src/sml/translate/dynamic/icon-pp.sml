@@ -10,29 +10,27 @@
 
 structure IconPP : DYNAMIC_PP =
     struct 
-	structure Ast  = DynamicAst
-	structure PP = PPUtil
-	type code =  (Ast.module * Semant.Module.P.props)
-	val cfg = Params.empty
-	fun mkComment l =
-	  let fun pp_line s = PP.cat [PP.s "# ",PP.s s]
-	  in PP.seq_term{fmt=pp_line,sep=PP.nl} l
-	  end
-	  
-	open Ast
-	val pp_id = PP.wrap (VarId.toString' "_")
-	val pp_tid = PP.wrap (TypeId.toString' "_")
-	val semi_sep = PP.cat [PP.s ";",PP.nl]
-	val comma_sep = PP.cat [PP.s ",",PP.ws]
-
+      structure Ast  = DynamicAst
+      structure PP = mkPPAst(structure Ast = Ast
+			     structure IdMap = IdMaps.Icon
+			     val cap_mod = false
+			     val cap_typ = false
+			     val sep = "_")
+      open PP
+      type code =  (Ast.module * Semant.Module.P.props)
+      val cfg = Params.empty
+      fun mkComment l =
+	vb 0 (str "####") (seq nl (fn x => str ("# "^x)) l) (str "####") 
+      
+      open Ast
+      val pp_tid = PP.tid
+      val pp_id = PP.vid
 	fun pp_ty (TyId tid) = pp_tid tid
 	  | pp_ty (TyCon (tid,ts)) =
-	  PP.cat [pp_tid tid,
-		  PP.s "<",
-		  PP.seq {fmt=pp_ty,sep=comma_sep} ts,PP.s ">"]
+	  hb 2 (str "<") (seq (hsep ",") pp_ty ts) (str ">")
 	  | pp_ty (TyFunction(tes,ty)) =
-	  PP.cat [PP.s "proc (",PP.seq {fmt=pp_ty,sep=comma_sep} tes,
-	   PP.s ") rets ",pp_ty ty]
+	  hb 2 (str "proc (") (seq (hsep ",") pp_ty tes) 
+	  (cat [str ") rets",pp_ty ty])
 	   
 	(* code to fix up scope and locals in Icon *)
 	structure OrdKey =
@@ -86,7 +84,6 @@ structure IconPP : DYNAMIC_PP =
 		  val (name',env,xs) = decl_id env (name,xs)
 	      in (env,{name=name',v=v'}::bs,xs)
 	      end
-
 	    val (env,binds',xs) = List.foldr do_bind (env,[],xs) binds
 	    val (body',xs) = fix_bind (new_scope env) (body,xs)
 	  in (Bind{binds=binds',body=body'},xs)
@@ -117,110 +114,83 @@ structure IconPP : DYNAMIC_PP =
 		 end
 	     in List.foldr do_e ([],xs) el
 	     end
-	
-	fun pp_const (Int i) = PP.d i
-	  | pp_const (TypeName t) =
-	   PP.s ("\""^(TypeId.toString' "_" t)^"\"")
-	  | pp_const (String s) = PP.s ("\""^s^"\"")
-	  | pp_const Nil = PP.s "&null"
+	fun pp_const (Int i) = num i
+	  | pp_const (TypeName t) = cat [str "\"",pp_tid t,str "\""]
+	  | pp_const (String s) = cat [str "\"",str s,str "\""]
+	  | pp_const Nil = str "&null"
 	and pp_exp (Const c) = pp_const c
 	  | pp_exp (Id i) = pp_id i
 	  | pp_exp (Call (e,el)) =
-	  PP.cat [pp_exp e,
-		  PP.s "(",PP.seq {fmt=pp_exp,sep=comma_sep} el,PP.s ")"]
+	  hb 2 (cat [pp_exp e,str "("]) (seq (hsep ",") pp_exp el) (str ")")
 	  | pp_exp (Case{test,clauses,default}) =
 	  let fun pp_clause {const,body} =
-	    PP.cat [pp_const const, PP.s " : ",
-		    PP.box 2 [PP.ws,pp_exp body]]
-	  in
-	    PP.box 2 [PP.s "case ",pp_exp test,
-		      PP.s " of {",PP.nl,
-		      PP.seq_term {fmt=pp_clause,sep=PP.nl} clauses,
-		      PP.s "default : ",pp_exp default,PP.nl,
-		      PP.s "}"]
+	    cat [pp_const const, str " : ", pp_exp body]
+	  in vb 2 (cat [str "case ",pp_exp test, str " of {"])
+	    (cat [(seq' nl pp_clause clauses),
+		  str "default :", pp_exp default])
+	    (str "}")
 	  end
 	  | pp_exp (Bind {binds=[],body}) = pp_exp body
 	  | pp_exp (Bind {binds,body}) =
-	  let
-	    fun pp_bind {name,v} =
-	      PP.cat [pp_id name, PP.s " := ",pp_exp v]
-	  in PP.cat [PP.s "{",
-		     PP.box 2 [PP.nl,
-			       PP.seq_term {fmt=pp_bind,sep=PP.nl} binds,
-			       pp_exp body],
-		     PP.nl,PP.s "}"]
+	  let fun pp_bind {name,v} =cat [pp_id name, str " := ",pp_exp v]
+	  in vb 2 (str "{")
+	    (cat [seq' nl pp_bind binds, pp_exp body])
+	    (str "}")
 	  end
 	  | pp_exp (Seq []) = pp_const (Nil)
 	  | pp_exp (Seq [e]) = pp_exp e
 	  | pp_exp (Seq el) =
-	  PP.box 2 [PP.s "{ ",PP.nl,
-		    PP.seq {fmt=pp_exp,sep=semi_sep} el,
-		    PP.nl, PP.s "}"]
+	  vb 2 (str "{") (seq (cat [str ";",nl]) pp_exp el) (str "}")
 	  | pp_exp (MakeStruct(name,el,fd)) =
-	  PP.cat [pp_tid name,
-		  PP.s "(",PP.seq {fmt=pp_exp,sep=comma_sep} el,PP.s ")"]
-	  | pp_exp (GetStructType e) =
-	  PP.cat [PP.s "type(",pp_exp e,PP.s ")"]
-	  | pp_exp (GetField(e,{name,ty})) =
-	  PP.cat [pp_exp e,PP.s ".",pp_id name]
+	  hb 2 (cat [pp_tid name,str "("]) (seq (hsep ",") pp_exp el) (str ")")
+	  | pp_exp (GetStructType e) = cat [str "type(",pp_exp e,str ")"]
+	  | pp_exp (GetField(e,{name,ty})) = cat [pp_exp e,str".",pp_id name]
 	  | pp_exp (Error s) =
-	  PP.cat [PP.s "stop(\"Error:\",&file,\":\",&line,\": \",\"",
-		  PP.s s,PP.s "\")"]
+	  cat[str "stop(\"Error:\",&file,\":\",&line,\": \",\"",
+			       str s,str "\")"]
 	and pp_decl (DeclStruct(tid,fds,ty)) =
-	  PP.grp [PP.s "record ",pp_tid tid, pp_fds fds]
+	     (cat [str  "record ",pp_tid tid,pp_fds fds])
 	  | pp_decl (DeclFun(id,fds,exp,ty)) =
 	  let
 	    val (exp,vars) = fix_bind (Env.empty,0) (exp,Set.empty)
 	    val local_pp =
-	      (case Set.listItems vars of
-		 [] => PP.empty
-	       | vars => 
-		 PP.cat [PP.box 4
-			 [PP.s "local ",
-			  PP.seq {fmt=pp_id,sep=comma_sep} vars],PP.nl])
+	      lst empty
+	      (fn vars => vb 2 (str "local ") (seq (hsep ",")
+					       pp_id vars) empty) 
 	  in
-	    PP.grp [PP.nl,
-		    PP.s "procedure ",pp_id id,
-		    pp_fds fds,PP.nl,
-		    local_pp,
-		    PP.s "return {",PP.nl,
-		    pp_exp exp,PP.nl,
-		    PP.s "}",
-		    PP.nl,PP.s "end"]
+	    vb 2 (cat [str "procedure ",pp_id id,pp_fds fds])
+	      (cat [local_pp (Set.listItems vars),
+		    str "return {",nl,
+		    pp_exp exp,nl,str "}"])
+	      (str "end")
 	  end
 	and  pp_decl_ty (DeclStruct(tid,[],ty)) =
-	  PP.box 4 [PP.s "record ",pp_tid tid,PP.s " isa ",pp_ty ty]
+	      cat [str "record ",pp_tid tid,str " isa ",pp_ty ty]
 	  | pp_decl_ty  (DeclStruct(tid,fds,ty)) =
-	  PP.cat [PP.box 4 [PP.s "record ",pp_tid tid,PP.nl,
-			    PP.seq {fmt=pp_fd_ty,sep=PP.nl} fds],
-		  PP.nl,PP.s "isa ",pp_ty ty,PP.nl]
+	      vb 2 (cat [str "record ",pp_tid tid])
+	      (seq nl pp_fd_ty fds)
+	      (cat [str "isa ",pp_ty ty])
 	  | pp_decl_ty (DeclFun(id,fds,exp,ty)) =
-	  PP.cat [PP.box 4 [PP.s "procedure ",pp_id id,PP.nl,
-			    PP.seq{fmt=pp_fd_ty,sep=PP.nl} fds],
-		  PP.nl,PP.s "returns ",pp_ty ty,PP.nl]
-	and pp_fd_ty {name,ty} =
-	  PP.cat [pp_id name,PP.s " : ",pp_ty ty]
+	      vb 2 (cat [str "procedure ",pp_id id])
+	      (seq nl pp_fd_ty fds)
+	      (cat [str "returns ",pp_ty ty])
+	and pp_fd_ty {name,ty} = cat [pp_id name,str " : ",pp_ty ty]
 	and pp_decls d =
-	  let val ty_pp = PP.seq {fmt=pp_decl_ty,sep=PP.nl} d
-	      val cm = 
-		String.fields (fn x => x = #"\n") (PP.pp_to_string 60 ty_pp)
-	  in
-	    PP.cat [mkComment cm,PP.nl,
-		    PP.seq_term {fmt=pp_decl,sep=PP.nl} d]
+	  let val ty_pp = seq nl pp_decl_ty d
+	    val cm =
+	      String.fields (fn x => x = #"\n") (PPUtil.pp_to_string 60 ty_pp)
+	  in cat [mkComment cm,PP.nl, seq' nl pp_decl d]
 	  end
 	and pp_fd {name,ty} = pp_id name
 	and pp_fds fds =
-	  PP.grp [PP.s "(",PP.seq {fmt=pp_fd,sep=comma_sep} fds, PP.s ")"]
+	  hb 2 (str "(") (seq (hsep ",") pp_fd fds) (str ")")
 	  
-
 	and pp_module (Module{name,imports,decls}) =
-	  PP.cat [PP.s "# module ",PP.wrap ModuleId.toString name,PP.nl,
-		  if (not(List.null imports)) then
-		    PP.cat [PP.s "link ",
-			    PP.seq {fmt=PP.wrap ModuleId.toString,
-				    sep=comma_sep} imports,
-			    PP.nl]
-		  else PP.empty,pp_decls decls]
+	  cat [str "# module ",PP.mid name,nl,
+	       if (not(List.null imports)) then
+		 cat [str "link ",
+		      seq (hsep ",") PP.mid imports,nl]
+	       else PP.empty,pp_decls decls]
 	fun pp_code p (m as Module{name,...},props) =
 	  let
 	    val mn = ModuleId.toString name

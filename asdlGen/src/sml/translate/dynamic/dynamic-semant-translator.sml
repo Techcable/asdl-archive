@@ -15,7 +15,7 @@ functor mkDynamicSemantTranslator
       structure T = Ast
       structure IdCvt =
 	mkIdCvt(structure Ast = Ast
-		structure IdMap = Spec.IdMap)
+		structure IdMap = IdMaps.Empty)
       open IdCvt
 	
       val set_dir = true

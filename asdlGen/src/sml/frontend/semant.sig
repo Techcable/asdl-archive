@@ -149,6 +149,7 @@ Fields have no view modifiable properties.
 **) 
 	structure Field :
 	  sig
+	    structure P  : FIELD_PROPS 
 	    structure Id : SOURCE_ID
 (**:[[signature SEMANT]] [[structure Field]]:
 The function [[kind]] returns any qualifiers (Sequence, Option, or
@@ -157,7 +158,7 @@ qualified. The [[name]] function returns the name of the optional
 label for the field or [[NONE]] if there was no optional label.
 The [[src_name]] function returns a uniqe mangle named for fields
 without explicit labels or the label used in the specification.
-**)
+**)	    val props        : field_info -> P.props
 	    val kind         : field_info -> kind option
 	    val name         : field_info -> Id.id option
 	    val src_name     : field_info -> Id.id

@@ -159,10 +159,8 @@ field_list': field FIELDSEP field_list' (field::field_list')
 
 (* hacked ugly syntax for now *)
 
-
-
-
 view_entity : id DOT id ([id1,id2])
+            | id DOT id DOT id ([id1,id2,id3])
             | MODULE id ([id])
 
 view_prop : LANGLE EQ ID (ID)

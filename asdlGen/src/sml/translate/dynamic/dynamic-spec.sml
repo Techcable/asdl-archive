@@ -18,10 +18,8 @@ structure DynamicTy : DYNAMIC_TYPE_DECL =
     open T
   end
 
-functor mkDynamicSpec(structure Ty : DYNAMIC_TYPE_DECL
-		      structure IdMap : ID_MAP) : DYNAMIC_SPEC =
+functor mkDynamicSpec(structure Ty : DYNAMIC_TYPE_DECL) : DYNAMIC_SPEC =
   struct
-    structure IdMap = IdMap
     structure Arg =
       struct 
 	open Ty.Ast

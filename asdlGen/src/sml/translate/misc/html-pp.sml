@@ -33,14 +33,11 @@ structure HTMLPP : HTML_PP =
 	  open Ast
 	in
 	fun mk_id id =
-	    let
-		val {qualifier,base} = Ast.VarId.toPath id
+	    let	val {qualifier,base} = Ast.VarId.toPath id
 		val path = ListFormat.fmt
-		    {init="",sep="/",final=".html#"^base,
+		  {init="",sep="/",final=".html#"^base,
 		     fmt=(fn x => x)} qualifier
-	    in
-		PP.s(if (List.null qualifier) then base
-		else path)
+	    in PP.s(if (List.null qualifier) then base  else path)
 	    end
 
 	fun pp_format (STR s) = PP.s s
@@ -85,23 +82,19 @@ structure HTMLPP : HTML_PP =
 		     sep=PP.ws} fl)
 
 	fun pp_code p (Module{name,decls={title,body},imports}) =
-	    let
-		val base = ModuleId.toString name
-	    in
-	    [([OS.Path.joinBaseExt{base=base,ext=SOME "html"}],
-	      PP.vblock 0 [PP.s "<HTML>",
-			   PP.nl, 
-			   PP.s "<HEAD>",
-			   PP.nl, 
-			   group "TITLE" (PP.s title),
-			   PP.nl,
-			   PP.s "<BODY>",
-			   PP.nl,
-			   PP.seq_term {fmt=pp_format,sep=PP.nl} body,
-			   PP.s "</BODY>",PP.nl,
-			   PP.s "</HTML>"
-			   ])]
-
+	    let	val base = ModuleId.toString name
+	    in [([OS.Path.joinBaseExt{base=base,ext=SOME "html"}],
+		 PP.vblock 0 [PP.s "<HTML>",
+			      PP.nl, 
+			      PP.s "<HEAD>",
+			      PP.nl, 
+			      group "TITLE" (PP.s title),
+			      PP.nl,
+			      PP.s "<BODY>",
+			      PP.nl,
+			      PP.seq_term {fmt=pp_format,sep=PP.nl} body,
+			      PP.s "</BODY>",PP.nl,
+			      PP.s "</HTML>"])]
 	    end
 	  end
     end

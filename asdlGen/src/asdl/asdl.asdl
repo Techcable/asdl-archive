@@ -28,3 +28,4 @@ type_decl = SumType(field* attribs,constructor c, constructor* cs)
 
 view_decl = (identifier* entity, string prop, string value)
 }
+

@@ -52,10 +52,10 @@ Sets of qualifers.
 (**)
 (**:[[structure Semant]] type declarations:**)
         type field_info =
-	    {kind:kind option,
-  	 src_name:FId.id,
-	     tref:TId.id,
-	     name:FId.id option}     
+	  {kind:kind option,
+	   props:FieldProps.props,
+	    tref:TId.id,
+	    name:FId.id option}     
 
 	type con_info =
 	     {tag:int,
@@ -139,10 +139,16 @@ Sets of qualifers.
 (**:[[structure Semant]] [[structure Field]]:**)
 	structure Field =
 	  struct
+	    structure P = FieldProps
 	    structure Id = FId
 	    val kind = #kind o get_f
 	    val name = #name o get_f
-	    val src_name = #src_name o get_f
+	    val props = #props o get_f
+	    fun src_name x =
+	      case (name x,P.source_name (props x)) of
+		 (SOME x,NONE) => x
+		| (_,SOME x) => (Id.fromPath x)
+		|  _ => raise (Error.internal)
 	  end
 (**)
 (**:[[structure Semant]] [[structure Module]]:
@@ -396,38 +402,30 @@ in the definition of the type.
 (**:[[structure Semant]] [[structure Module]] [[fun declare_module]]:
 Build a [[field_info]] record from a list of fields
 **)
-	       fun mk_field_info fl =
+	       fun mk_field_info c q fl =
 		   let
-		     val str_eq = (op =): string * string -> bool;
-		     fun do_field ({typ,tycon_opt,label_opt,...}:T.field,
-				   (cnt,fi)) =
+		     fun do_field({typ,tycon_opt,label_opt,...}:T.field,
+				  (i,fi)) =
 		       let
-			 val label_opt = Option.map (FId.fromString o Identifier.toString) label_opt
+			 val label_opt =
+			   Option.map
+			   (FId.fromString o Identifier.toString) label_opt
+			 val fdname =
+			   Option.getOpt(label_opt,
+					 FId.fromString ("f"^(Int.toString i)))
 			 val tref = fix_typ typ
-			 fun hungarianize (NONE,s) = s
-			   | hungarianize (SOME T.Option,s) = s^"_opt"
-			   | hungarianize (SOME T.Sequence,s) = s^"_list"
-			   | hungarianize (SOME T.Shared,s) = s^"_shared"
-			   
-			 fun new_cnt (cnt,x) =
-			   let
-			     val s = hungarianize(tycon_opt,FId.toString x)
-			     val (cnt,i) = Counter.add(cnt,s)
-			   in
-			     (cnt,FId.fromString
-			      (s^(Int.toString i)))
-			   end
-			 
-			 val (cnt,src_name) =
-			   case label_opt of
-			     SOME i => (cnt,i)
-			   | NONE => new_cnt(cnt,(FId.fromString (Identifier.toString (#base typ))))
+			 fun mk_sid id =
+			   FId.toSid (FId.fromPath{base=FId.getBase id,
+						   qualifier=q})
+			 val init = FieldProps.init_source_name
+			   (SOME (FId.toPath fdname))
+			 val inits = FieldProps.parse (view (mk_sid fdname))
+			 val props = FieldProps.new (init::inits)
 		       in
-			 (cnt,{kind=tycon_opt,src_name=src_name,
+			 (i+1,{kind=tycon_opt,props=props,
 			       name=label_opt,tref=tref}::fi)
 		       end
-		     val (_,fls) = List.foldl do_field
-		       (Counter.mkcounter (str_eq),[]) fl
+		     val (_,fls) = List.foldl do_field (c,[]) fl
 		   in List.rev fls
 		   end
 		 
@@ -435,20 +433,21 @@ Build a [[field_info]] record from a list of fields
 Build a list of [[con_info]] records and return a boolean as to
 whether the constructors can be represented as a simple enumeration.
 **)
-	       fun mk_con_info tref cons =
+	       fun mk_con_info c tref cons =
 		   let
 		     fun do_con ({name,fs},(tag,box,cs)) =
 		       let
 			 val tag = tag + 1
+			 val basename = Identifier.toString name
 			 val name =
 			   CId.fromPath{qualifier=[mname],
-				       base=Identifier.toString name}
+					base=basename}
 			 val box = box orelse not (List.null fs)
 			 val inits = ConProps.parse (view (CId.toSid name))
 			 val props = ConProps.new inits
 		       in
 			 (tag,box,{tag=tag,name=name,
-				   fields=mk_field_info fs,
+				   fields=mk_field_info c [mname,basename] fs,
 				   props=props,
 				   tref=tref}::cs)
 		       end
@@ -466,12 +465,12 @@ Declare a type and update all the necessary book keeping.
 			    T.SumType{name,attribs,c,cs} =>
 			      (name,attribs,c::cs)
 			  | T.ProductType{name,f,fs} => (name,f::fs,[]))
-				
+		       val basename = Identifier.toString tid
 		       val tname =
-			 TId.fromPath{base=Identifier.toString tid,
-				     qualifier=[mname]}
-		       val fields = mk_field_info fields
-		       val (box_cons,cons) = mk_con_info tname cons
+			 TId.fromPath{base=basename,qualifier=[mname]}
+		       val fields = mk_field_info 0 [mname,basename] fields
+		       val c = List.length fields
+		       val (box_cons,cons) = mk_con_info c tname cons
 		       val is_enum = box_cons orelse (not (List.null fields))
 		       val ty_uses = types_used t
 		       val inits = TypProps.parse (view (TId.toSid tname))
@@ -590,10 +589,19 @@ Build a new module info and add it to the current module environment.
 			val (qualifier,base) =
 			  (List.take (x,len-1),List.drop (x,len - 1))
 		      in case (qualifier,List.hd base) of
-			([],base) => (MId.toSid (MId.fromString (Identifier.toString base)))
-		      | (q,base) => (TId.toSid (TId.fromPath
-						{base=Identifier.toString base,
-						 qualifier=List.map Identifier.toString q}))
+			([],base) => (MId.toSid (MId.fromString
+						(Identifier.toString base)))
+		      | ([q],base) =>
+			  (TId.toSid (TId.fromPath
+				      {base=Identifier.toString base,
+				       qualifier=[Identifier.toString q]}))
+		      | ([q1,q2],base) =>
+			  (FId.toSid (FId.fromPath
+				      {base=Identifier.toString base,
+				       qualifier=
+				       List.map Identifier.toString
+				       [q1,q2]}))
+		      | _ => raise (Error.error ["bad view entity"])
 		      end
 		    fun insert ({entity,prop,value},e) =
 		      let val entity = toId entity
@@ -603,12 +611,10 @@ Build a new module info and add it to the current module environment.
 		      in Env.insert(e,entity,v)
 		      end
 		  in List.foldl insert env entries
-	       end
-		val env = (case (Env.find(venv,id)) of
-			     NONE => Env.empty | SOME e => e)
+	       end val env = (case (Env.find(venv,id)) of
+				NONE => Env.empty | SOME e => e)
 		val env = mk_view (decls,env)
-	      in
-		Env.insert(venv,id,env)
+	      in Env.insert(venv,id,env)
 	      end
 	      | mk_view_env (_,venv) = venv
 	    (* reorder declarations *)

@@ -6,6 +6,14 @@
  * Author: Daniel C. Wang
  *
  *)
+(**::
+[[signature PICKLER_ARG]] describes the argument taken by
+the [[functor <X>Pickler]] to build a pickler generator. The
+interface describe by the signature are the primitive functions
+needed in order to generate code for pickling. The interface is
+designed to hide the details of the namming convetions and the
+underlying target language from the pickler generator.
+**)
 signature PICKLER_ARG =
   sig
     structure Ty : TYPE_DECL
@@ -26,5 +34,4 @@ signature PICKLER_ARG =
 		       ret:Ty.ty_exp,
 		      body:Ty.exp} -> decl
   end
-
-
+(**)

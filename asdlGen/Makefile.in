@@ -8,6 +8,7 @@ install: all
 	echo 'CM.make();Build.Config.install();' | @SML_CM@
 
 clean: cii-clean
+	echo 'CM.make();Build.Config.clean();' | @SML_CM@
 	-rm -rf	@top_srcdir@/src/c/cii/
 
 cii-all:

@@ -28,7 +28,6 @@ signature DYNAMIC_TYPE_DECL =
 signature DYNAMIC_SPEC =
   sig
     structure Ty    : DYNAMIC_TYPE_DECL
-    structure IdMap : ID_MAP
     val inits : Semant.MEnv.P.init list
     val prims : Semant.type_info list -> Ty.ty_decl list
 

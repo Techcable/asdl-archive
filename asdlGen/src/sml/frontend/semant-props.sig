@@ -44,6 +44,14 @@ signature COMMON_PROPS =
     val doc_string          :  props -> string option
   end
 (**)
+(**:[[signature FIELD_PROPS]]:
+Properties for fields.
+**)
+signature FIELD_PROPS =
+  sig	include COMMON_PROPS
+    val init_source_name : Properties.path option -> init
+  end
+(**)
 (**:[[signature TYP_PROPS]]: 
 Some properties for types.
 **)

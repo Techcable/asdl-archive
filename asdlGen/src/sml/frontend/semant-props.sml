@@ -25,11 +25,18 @@ functor CommonProps(val name : string) =
 		val p = make_desc name
 		val new = from_inits p
 		val parse = parse_inits p
-		val (source_name,_) =
+		val (source_name,init_source_name) =
 		    decl_path_opt p {name="source_name",default=NONE}
-		val (doc_string,_) =
+		val (doc_string,int_doc_string) =
 		    decl_string_opt p {name="doc_string",default=NONE}
 	    end
+(**)
+(**:[[structure FieldProps]]:**)
+structure FieldProps :> FIELD_PROPS =
+    struct
+	structure P = CommonProps(val name = "field props")
+	open P
+    end
 (**)
 (**:[[structure ConProps]]:**)
 structure ConProps :> CON_PROPS =

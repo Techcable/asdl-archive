@@ -131,8 +131,7 @@ structure Properties :> PROPERTIES =
 		    case (Map.find(p,k)) of
 			NONE => (Error.warn ["Unknown prop ",k];NONE)
 		      | (SOME {key,default}) =>  SOME(k,parse_prop k (default,v))
-	    in
-		List.mapPartial parse args
+	    in	List.mapPartial parse args
 	    end
 
 	fun from_inits {id,map} args =
@@ -145,8 +144,7 @@ structure Properties :> PROPERTIES =
 		val props = Vector.fromList
 		    (Map.listItems (List.foldl insert (!map) args))
 		fun fix_key (i,{key,default}) = (key:=i;default)
-	    in
-		{id=id,v=Vector.mapi fix_key (props,0,NONE)}
+	    in {id=id,v=Vector.mapi fix_key (props,0,NONE)}
 	    end
 
 end

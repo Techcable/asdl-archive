@@ -28,7 +28,6 @@ signature ALGOL_TYPE_DECL =
 signature ALGOL_SPEC =
   sig
     structure Ty    : ALGOL_TYPE_DECL
-    structure IdMap : ID_MAP
 
     val inits : Semant.MEnv.P.init list
 
