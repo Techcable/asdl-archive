@@ -45,17 +45,20 @@ structure Test =
                 "["^(listify' (disp,l))
             end
 
+        val header = "Usage: foobar [OPTION...] files..."
+            
         fun test' order cmdline = 
-            let val header = "Usage: foobar [OPTION...] files..."
+            let 
+                val (o',n) = G.getOpt order options cmdline
             in
-                case (G.getOpt order options cmdline) 
-                  of (o',n,[]) => concat ["options=",listify (show,o'),
-                                          "  args=",listify (fn x=>concat["\"",x,"\""],n),
-                                          "\n"]
-                   | (_,_,errs) => concat [concat errs,G.usageInfo header options]
+                concat ["options=",listify (show,o'),
+                        "  args=",listify (fn x=>concat["\"",x,"\""],n),
+                        "\n"]
             end
         
         fun test order cmdline = print (test' order cmdline)
+                                    handle G.Error (s) => (print (concat [s,G.usageInfo header options]))
+
 
     end
 
@@ -89,6 +92,3 @@ Usage: foobar [OPTION...] files...
 val it = () : unit
 
 *)
-
-
- 

@@ -2,214 +2,217 @@
  *
  * COPYRIGHT (c) 1998 Bell Labs, Lucent Technologies.
  * 
- * see comments in getopt-sig.sml
+ * See comments in getopt-sig.sml
  * 
  *)
 
 
 structure GetOpt :> GETOPT = 
-    struct
+  struct
 
-        datatype 'a arg_order = RequireOrder
-                              | Permute
-                              | ReturnInOrder of string -> 'a
-
-        datatype 'a arg_descr = NoArg of 'a
-                              | ReqArg of (string -> 'a) * string
-                              | OptArg of (string option -> 'a) * string
-
-        type 'a opt_descr = {short : string,
-                             long : string list,
-                             desc : 'a arg_descr,
-                             help : string}
+      exception Error of string
+        
+      datatype 'a arg_order
+        = RequireOrder		
+        | Permute
+        | ReturnInOrder of string -> 'a
+          
+      datatype 'a arg_descr
+        = NoArg of 'a
+        | ReqArg of (string -> 'a) * string
+        | OptArg of (string option -> 'a) * string
+          
+      type 'a opt_descr = {
+          short : string,		
+          long : string list,	
+          desc : 'a arg_descr,	
+          help : string		
+        }
             
-        datatype 'a opt_kind = Opt of 'a
-                             | NonOpt of string
-                             | EndOfOpts
-                             | OptErr of string
-
-
-        (* Some helper functions to help the transition from the Haskell code
-         *)
-
-        fun unlines [] = ""
-          | unlines (x::xs) = concat [x,"\n",(unlines xs)]
-
-        fun unzip3 [] = ([],[],[])
-          | unzip3 ((a,b,c)::xs) = let val (as',bs,cs) = unzip3 xs
-                                   in
-                                       (a::as',b::bs,c::cs)
-                                   end
-        fun zipWith3 (_,[],[],[]) = []
-          | zipWith3 (f,a::as',b::bs,c::cs) = 
-                          (f(a,b,c))::(zipWith3 (f,as',bs,cs))
-                          
-        fun sepBy (_,[]) = ""
-          | sepBy (_,[x]) = x
-          | sepBy (sep,x::xs) = concat [x,sep,sepBy (sep,xs)]
-
-        fun breakeq str = let val (x::xs) = String.tokens (fn x => x = #"=") str
-                            in
-                                case xs 
-                                  of [] => (x,"")
-                                   | _ => (x,concat ("="::xs))
-                            end
-
-
-        (* formatting of options
-         *)
+      datatype 'a opt_kind 
+        = Opt of 'a
+        | NonOpt of string
+        | EndOfOpts
+          
+      structure Ss = Substring
+      structure S = String
+          
+          
+      (* helper functions *)
+      fun sepBy (sep,[]) = ""
+        | sepBy (sep,x::xs) = concat (x::foldr (fn (elem,l) => sep::elem::l) 
+                                      [] xs)
+          
+      val breakeq = Ss.splitl (fn #"=" => false | _ => true)
             
-        fun fmtShort (NoArg _) so = concat ["-",Char.toString so]
-          | fmtShort (ReqArg (_,ad)) so = concat ["-",Char.toString so," ",ad]
-          | fmtShort (OptArg (_,ad)) so = concat ["-",Char.toString so,"[",ad,"]"]
-
-        fun fmtLong (NoArg _) lo = concat ["--",lo]
-          | fmtLong (ReqArg (_,ad)) lo = concat ["--",lo,"=",ad]
-          | fmtLong (OptArg (_,ad)) lo = concat ["--",lo,"[=",ad,"]"]
-
-        fun fmtOpt {short=sos, long=los, desc=ad, help=descr} = 
-               (sepBy (", ",map (fmtShort ad) (String.explode sos)),
-                sepBy (", ",map (fmtLong ad) los),
-                descr)
-
-
-        (* Usage information
-         *)
-
-        fun paste (x,y,z) = concat ["  ",x,"  ",y,"  ",z]
-
-        fun repeat (0,str) = ""
-          | repeat (n,str) = str^(repeat(n-1,str))
-
-        fun flushLeft (n,[]) = []
-          | flushLeft (n,x::xs) = (String.extract (x^(repeat (n," ")),0,
-                                                   SOME n))::
-                                       (flushLeft (n,xs))
-
-        fun maximum l = let fun max ([],l) = l
-                              | max (x::xs,l) = if (l > x)
-                                                    then max(xs,l)
-                                                else max (xs,x)
-                        in
-                            max (l,0)
-                        end
-
-        fun sameLen xs = flushLeft ((maximum o (map size)) xs,xs)
-
-        fun usageInfo header optDescr = 
-            let val (ss,ls,ds) = (unzip3 o (map fmtOpt)) optDescr
-                val table = zipWith3 (paste,sameLen ss,sameLen ls,sameLen ds)
-            in
-                unlines (header::table)
-            end
+          
+      (* formatting of options *)
+          
+      fun fmtShort (NoArg _) so = concat ["-",Char.toString so]
+        | fmtShort (ReqArg (_,ad)) so = concat ["-",Char.toString so," ",ad]
+        | fmtShort (OptArg (_,ad)) so = concat ["-",Char.toString so,"[",ad,"]"]
+          
+      fun fmtLong (NoArg _) lo = concat ["--",lo]
+        | fmtLong (ReqArg (_,ad)) lo = concat ["--",lo,"=",ad]
+        | fmtLong (OptArg (_,ad)) lo = concat ["--",lo,"[=",ad,"]"]
+          
+      fun fmtOpt {short=sos, long=los, desc=ad, help=descr} = (
+            sepBy (", ",map (fmtShort ad) (S.explode sos)),
+            sepBy (", ",map (fmtLong ad) los),
+            descr)
 
 
-        (* Some error handling functions
-         *)
+      (* Usage information *)
+          
+      fun usageInfo header optDescr = let
+            fun unlines l = sepBy ("\n",l)
+            val fmtOptions = map fmtOpt optDescr
+            val (ms1,ms2,ms3) = foldl (fn ((elem1,elem2,elem3),
+                                           (currMax1,currMax2,currMax3)) =>
+                                                let val s1 = size elem1
+                                                    val s2 = size elem2
+                                                    val s3 = size elem3
+                                                in
+                                                    (Int.max (s1,currMax1), 
+                                                     Int.max (s2,currMax2),
+                                                     Int.max (s3,currMax3))
+                                                end) (0,0,0) fmtOptions
+            val table = foldr (fn ((elem1,elem2,elem3),l) =>
+                               concat ["  ", StringCvt.padRight #" " ms1 elem1,
+                                       "  ", StringCvt.padRight #" " ms2 elem2,
+                                       "  ", StringCvt.padRight #" " ms3 elem3]::l) [] fmtOptions
+          in
+              unlines (header::table)
+          end
+    
 
-        fun errAmbig ods optStr =
-            let val header = concat ["option `",optStr,"' is ambiguous; could be one of:"]
-            in
-                OptErr (usageInfo header ods)
-            end
+      (* Some error handling functions *)
 
-        fun errReq d optStr = OptErr (concat ["option `",optStr,"' requires an argument ",d,"\n"])
+      fun errAmbig ods optStr = let
+              val header = concat ["option `",optStr,"' is ambiguous; could be one of:"]
+          in
+              raise Error (usageInfo header ods)
+          end
+                            
+      fun errReq d optStr =
+	  raise Error (concat ["option `",optStr,"' requires an argument ",d])
+          
+      fun errUnrec optStr =
+	  raise Error (concat ["unrecognized option `",optStr,"'"])
+          
+      fun errNoArg optStr =
+	  raise Error (concat ["option `",optStr,"' doesn't allow an argument"])
+          
 
-        fun errUnrec optStr = OptErr (concat ["unrecognized option `",optStr,"'\n"])
+    (* handle long option
+     * 
+     * this is messy because you cannot pattern-match on substrings
+     *)
 
-        fun errNoArg optStr = OptErr (concat ["option `",optStr,"' doesn't allow an argument\n"])
-
-
-        (* handle long option
-         *)
-
-        fun longOpt xs rest optDescr = 
-            let val (opt,arg) = breakeq xs
-                val options = List.filter (fn {long,...} =>
-                                                List.exists (fn x => String.isPrefix opt x) long)
-                                          optDescr
-                val ads = map (fn {desc,...} => desc) options
-                val optStr = "--"^opt
-                fun long (_::(_::_)) _ rest1 = (errAmbig options optStr, rest1)
-                  | long [NoArg a] "" rest1 = (Opt a,rest1)
-                  | long [NoArg _] x rest1 = if (String.isPrefix "=" x)
-                                                 then (errNoArg optStr,rest1)
-                                             else raise Fail "long: impossible"
-                  | long [ReqArg (_,d)] "" [] = (errReq d optStr,[])
-                  | long [ReqArg (f,_)] "" (r::rest1) = (Opt (f r),rest1)
-                  | long [ReqArg (f,_)] x rest1 = if (String.isPrefix "=" x)
-                                                      then (Opt (f (String.extract (x,1,NONE))),
-                                                            rest1)
-                                                  else raise Fail "long: impossible"
-                  | long [OptArg (f,_)] "" rest1 = (Opt (f NONE),rest1)
-                  | long [OptArg (f,_)] x rest1 = if (String.isPrefix "=" x)
-                                                      then (Opt (f (SOME (String.extract (x,1,NONE)))),
-                                                            rest1)
-                                                  else raise Fail "long: impossible"
-(*                   | long [_] _ _ = raise Fail "long: impossible"*)
-                  | long [] _ rest1 = (errUnrec optStr,rest1)
+    fun longOpt subs rest optDescr = let val (opt,arg) = breakeq subs
+            val opt' = Ss.string opt
+            val options = List.filter (fn {long,...} =>
+                                       List.exists (S.isPrefix opt') long) optDescr
+            val ads = map (fn {desc,...} => desc) options
+            val optStr = "--"^opt'
+            fun long (_::(_::_)) _ rest' = (errAmbig options optStr, rest')
+              | long [NoArg a] x rest' = 
+                   if (Ss.isEmpty x)
+                     then (Opt a,rest')
+                   else if (Ss.isPrefix "=" x) 
+                     then (errNoArg optStr,rest')
+                   else raise Fail "long: impossible"
+              | long [ReqArg (f,d)] x [] = 
+                   if (Ss.isEmpty x)
+                     then (errReq d optStr,[])
+                   else if (Ss.isPrefix "=" x)
+                     then (Opt (f (Ss.string (Ss.triml 1 x))), [])
+                   else raise Fail "long: impossible"
+              | long [ReqArg (f,d)] x (rest' as (r::rs)) = 
+                   if (Ss.isEmpty x)
+                     then (Opt (f r), rs)
+                   else if (Ss.isPrefix "=" x)
+                     then (Opt (f (Ss.string (Ss.triml 1 x))), rest')
+                   else raise Fail "long: impossible"
+              | long [OptArg (f,_)] x rest' = 
+                   if (Ss.isEmpty x)
+                     then (Opt (f NONE), rest')
+                   else if (Ss.isPrefix "=" x)
+                     then (Opt (f (SOME (Ss.string (Ss.triml 1 x)))), rest')
+                   else raise Fail "long: impossible"
+              | long [] _ rest' = (errUnrec optStr,rest')
             in
                 long ads arg rest
             end
 
 
-
-        (* handle short option
-         *)
-
-        fun shortOpt x xs rest optDescr = 
-            let val options = List.filter (fn {short,...} => 
-                                                 List.exists (fn s => s = x) (String.explode short)) 
-                                          optDescr
-                val ads = map (fn {desc,...} => desc) options
-                val optStr = "-"^(Char.toString x)
-                fun short (_::_::_) _ rest1 = (errAmbig options optStr,rest1)
-                  | short ((NoArg a)::_) "" rest1 = (Opt a,rest1)
-                  | short ((NoArg a)::_) ys rest1 = (Opt a,("-"^ys)::rest1)
-                  | short ((ReqArg (_,d))::_) "" [] = (errReq d optStr,[])
-                  | short ((ReqArg (f,_))::_) "" (r::rest1) = (Opt (f r), rest1)
-                  | short ((ReqArg (f,_))::_) ys rest1 = (Opt (f ys), rest1)
-                  | short ((OptArg (f,_))::_) "" rest1 = (Opt (f NONE),rest1)
-                  | short ((OptArg (f,_))::_) ys rest1 = (Opt (f (SOME ys)),rest1)
-                  | short [] "" rest1 = (errUnrec optStr,rest1)
-                  | short [] ys rest1 = (errUnrec optStr,("-"^ys)::rest1)
-            in
-                short ads xs rest
-            end
-
-
-        (* take a look at the next command line argument and decide what to
-         * do with it
-         *)
-
-        fun getNext [] _ = raise Fail "getNext: impossible"
-          | getNext (x::rest) optDescr = 
-            if (x="--")
-                then (EndOfOpts,rest)
-            else if (String.isPrefix "--" x)
-                     then longOpt (String.extract (x,2,NONE)) rest optDescr
-                 else if (String.isPrefix "-" x)
-                          then shortOpt (String.sub (x,1)) (String.extract (x,2,NONE)) rest optDescr
-                      else (NonOpt x,rest)
+        
+    (* handle short option
+     *)
+ 
+    fun shortOpt x subs rest optDescr = let 
+            val options = List.filter (fn {short,...} => 
+                                       List.exists (fn s => s = x) (S.explode short)) optDescr
+            val ads = map (fn {desc,...} => desc) options
+            val optStr = "-"^(Char.toString x)
+            fun short (_::_::_) _ rest1 = (errAmbig options optStr,rest1)
+              | short ((NoArg a)::_) y rest' = 
+                   if (Ss.isEmpty y)
+                     then (Opt a, rest')
+                   else (Opt a, ("-"^(Ss.string y))::rest')
+              | short ((ReqArg (f,d))::_) y [] = 
+                   if (Ss.isEmpty y) 
+                     then (errReq d optStr, [])
+                   else (Opt (f (Ss.string y)), [])
+              | short ((ReqArg (f,_))::_) y (rest' as (r::rs)) = 
+                   if (Ss.isEmpty y)
+                     then (Opt (f r), rs)
+                   else (Opt (f (Ss.string y)), rest')
+              | short ((OptArg (f,_))::_) y rest' = 
+                   if (Ss.isEmpty y)
+                     then (Opt (f NONE), rest')
+                   else (Opt (f (SOME (Ss.string y))), rest')
+              | short [] y rest' =
+                   if (Ss.isEmpty y)
+                     then (errUnrec optStr, rest')
+                   else (errUnrec optStr, ("-"^(Ss.string y))::rest')
+        in
+            short ads subs rest
+        end
 
 
-        (* entry point of the library
-         *)
+    (* take a look at the next command line argument and decide what to
+     * do with it
+     *)
 
-        fun getOpt _ _ [] = ([],[],[])
-          | getOpt ordering optDescr args = 
-            let val (opt,rest) = getNext args optDescr
-                val (os,xs,es) = getOpt ordering optDescr rest
-                fun procNextOpt (Opt o') _ = (o'::os,xs,es)
-                  | procNextOpt (NonOpt x) RequireOrder = ([],x::rest,[])
-                  | procNextOpt (NonOpt x) Permute = (os,x::xs,es)
-                  | procNextOpt (NonOpt x) (ReturnInOrder f) = ((f x)::os,xs,es)
-                  | procNextOpt EndOfOpts RequireOrder = ([],rest,[])
-                  | procNextOpt EndOfOpts Permute = ([],rest,[])
-                  | procNextOpt EndOfOpts (ReturnInOrder f) = (map f rest,[],[])
-                  | procNextOpt (OptErr e) _ = (os,xs,e::es)
-            in
-                procNextOpt opt ordering
-            end
+    fun getNext [] _ = raise Fail "getNext: impossible"
+      | getNext ("--" :: rest) _ = (EndOfOpts,rest)
+      | getNext (x::rest) optDescr =  let
+	  val x' = Ss.all x
+	  in
+	    if (Ss.isPrefix "--" x')
+	      then longOpt (Ss.triml 2 x') rest optDescr
+            else if (Ss.isPrefix "-" x')
+	      then shortOpt (Ss.sub(x',1)) (Ss.triml 2 x') rest optDescr
+            else (NonOpt x,rest)
+	  end
 
-    end
+    (* entry point of the library
+     *)
+ 
+    fun getOpt _ _ [] = ([],[])
+      | getOpt ordering optDescr args = let 
+            val (opt,rest) = getNext args optDescr
+            val (os,xs) = getOpt ordering optDescr rest
+            fun procNextOpt (Opt o') _ = (o'::os,xs)
+              | procNextOpt (NonOpt x) RequireOrder = ([],x::rest)
+              | procNextOpt (NonOpt x) Permute = (os,x::xs)
+              | procNextOpt (NonOpt x) (ReturnInOrder f) = ((f x)::os,xs)
+              | procNextOpt EndOfOpts RequireOrder = ([],rest)
+              | procNextOpt EndOfOpts Permute = ([],rest)
+              | procNextOpt EndOfOpts (ReturnInOrder f) = (map f rest,[])
+        in
+            procNextOpt opt ordering
+        end
+    
+  end

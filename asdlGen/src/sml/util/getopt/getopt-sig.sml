@@ -3,57 +3,78 @@
  * COPYRIGHT (c) 1998 Bell Labs, Lucent Technologies.
  * 
  * A SML port of GNU's getopt library.
- * This port is derived from Sven Panne's <Sven.Panne@informatik.uni-muenchen.de>
+ *
+ * This port is derived from Sven Panne's 
+ * <Sven.Panne@informatik.uni-muenchen.de>
  * implementation of the getopt library in Haskell <http://www.haskell.org>
  * 
  * The following comments are lifted from Sven's code:
- * -- Two rather obscure features are missing: The Bash 2.0 non-option hack (if you don't
- * -- already know it, you probably don't want to hear about it...) and the recognition of
- * -- long options with a single dash (e.g. '-help' is recognised as '--help', as long as
- * -- there is no short option 'h').
+ *
+ *   Two rather obscure features are missing: The Bash 2.0 non-option hack (if
+ *   you don't already know it, you probably don't want to hear about it...) 
+ *   and the recognition of long options with a single dash (e.g. '-help' is
+ *   recognised as '--help', as long as there is no short option 'h').
  * 
- * -- Other differences between GNU's getopt and this implementation:
- * --    * To enforce a coherent description of options and arguments, there are explanation
- * --      fields in the option/argument descriptor.
- * --    * Error messages are now more informative, but no longer POSIX compliant... :-(
+ *   Other differences between GNU's getopt and this implementation:
+ *     * To enforce a coherent description of options and arguments, there are
+ *       explanation fields in the option/argument descriptor.
+ *     * Error messages are now more informative, but no longer POSIX
+ *       compliant... :-(
  * 
+ * 
+ * 
+ * A difference with Sven's port: errors now raise exceptions, rather
+ * than returning error strings while continuing processing options.
+ * The full generality of the latter does not seem justified.
  *)
 
 
 signature GETOPT = 
-    sig
-        datatype 'a arg_order =    (* What to do with options following non-options *)
-            RequireOrder           (*  no option processing after first non-option *)
-          | Permute                (*  freely intersperse options and non-options *)
-          | ReturnInOrder of string -> 'a  (* wrap non-options into options *)
+  sig
 
-            
-        datatype 'a arg_descr =        (* Description of an argument option: *)
-            NoArg of 'a                              (*  no argument required *)
-          | ReqArg of (string -> 'a) * string        (*  option requires an argument *)
-          | OptArg of (string option -> 'a) * string (*  optional argument *)
+      exception Error of string
 
-            
-        type 'a opt_descr = {     (* Description of a single option *)
-            short : string,       (*  short options *)
-            long : string list,   (*  list of long options strings (without "--") *)
-            desc : 'a arg_descr,  (*  argument descriptor *)
-            help : string         (*  explanation of option for user *)
-          }
-
-            
-        val usageInfo : string -> 'a opt_descr list -> string
-        (* takes a header string and a list of option descriptions and
-         * returns a string explaining the usage information
-         *)
-
-
-        val getOpt : 'a arg_order -> 'a opt_descr list -> string list ->
-                        ('a list * string list * string list)
-        (* takes as argument an arg_order to specify the non-options
-         * handling, a list of option descriptions and a command line
-         * containing the options and arguments, and returns a list of 
-         * (options, non-options, error messages)
-         *)
-    end
+      datatype 'a arg_order
+        = RequireOrder
+        | Permute
+        | ReturnInOrder of string -> 'a
+      (* What to do with options following non-options:
+       * RequireOrder: no option processing after first non-option
+       * Permute: freely intersperse options and non-options
+       * ReturnInOrder: wrap non-options into options
+       *)
+          
+      datatype 'a arg_descr
+        =  NoArg of 'a
+        | ReqArg of (string -> 'a) * string
+        | OptArg of (string option -> 'a) * string
+      (* Description of an argument option:
+       * NoArg: no argument required
+       * ReqArg: option requires an argument
+       * OptArg: optional argument
+       *)
+          
+      type 'a opt_descr = {
+          short : string,
+          long : string list,
+          desc : 'a arg_descr,
+          help : string
+        }
+      (* Description of a single option *)
+          
+      val usageInfo : string -> 'a opt_descr list -> string
+      (* takes a header string and a list of option descriptions and
+       * returns a string explaining the usage information
+       *)
+          
+      val getOpt : 'a arg_order -> 'a opt_descr list -> string list
+	                  -> ('a list * string list)
+      (* takes as argument an arg_order to specify the non-options
+       * handling, a list of option descriptions and a command line
+       * containing the options and arguments, and returns a list of 
+       * (options, non-options)
+       *)      
+          
+          
+  end
 
