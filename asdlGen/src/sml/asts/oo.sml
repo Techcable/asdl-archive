@@ -66,6 +66,7 @@ structure OOTypes: OO_TYPES =
 
 	and exp =
 	    NilPtr
+	  | This
 	  | Id         of (id)
 	  | Const      of (const)
 	  | ThisId     of (id)

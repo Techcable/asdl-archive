@@ -49,7 +49,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 			        cnstr:T.ty_decl,
 			           wr:T.exp -> T.clause,
 			           rd:T.clause,
-				  app:T.clause,
+				  accept:T.clause,
 				visit:T.mth}
 	    
 	type field_value    = {fd:T.field,
@@ -62,22 +62,20 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 
 	val void_ty  = T.TyId (T.TypeId.fromString "void")
 	val visit_arg  =  (T.VarId.fromString "x")
-	val app_arg  = (T.VarId.fromString "x")
-	val app_visitor  =  (T.VarId.fromString "v")
+	val accept_visitor  =  (T.VarId.fromString "v")
 
 	fun visitor_tid tid =
 	    T.TypeId.fromPath
 	    {qualifier=T.TypeId.getQualifier tid, base="Visitor"}
 
-	fun mk_app_mth tid ty body  =
-	    T.Mth{name=T.VarId.fromString "apply",
+	fun mk_accept_mth tid body  =
+	    T.Mth{name=T.VarId.fromString "accept",
 		  inline=false,
-		  mods={scope=T.Public,static=true,final=true},
+		  mods={scope=T.Public,static=false,final=true},
 		  ret=void_ty,
-		  args=[{name=app_visitor,
+		  args=[{name=accept_visitor,
 			 ty=T.TyReference
-			 (T.TyId (visitor_tid tid))},
-			{name=app_arg,ty=ty}],
+			 (T.TyId (visitor_tid tid))}],
 		  body={vars=[],body=body}}
 
 	val cfg = Params.empty
@@ -300,7 +298,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 			  body={vars=[],
 				body=[T.Return tag_c]}}
 
-		val {cnstr,visit,app} =
+		val {cnstr,visit,accept} =
 		    if is_boxed then
 			let
 			    val cnstr =
@@ -322,16 +320,16 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 				      args=[{name=visit_arg,ty=con_ty}],
 				      ret=void_ty,
 				      body={vars=[],body=[]}}
-			    val app =
+			    val accept =
 				{tag=T.EnumConst(tid,tag_n),
 				 body=
 				 T.Expr
 				 (T.MthCall
 				  (T.FieldSub
-				   (T.DeRef(T.Id app_visitor),visit_name),
-				   [T.Cast(con_ty,T.Id visit_arg)]))}
+				   (T.DeRef(T.Id accept_visitor),visit_name),
+				   [T.Cast(con_ty,T.This)]))}
 			in
-			    {visit=visit,app=app,cnstr=cnstr}
+			    {visit=visit,accept=accept,cnstr=cnstr}
 			end
 		    else
 			let
@@ -350,19 +348,20 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 				 args=[{name=visit_arg,ty=ty}],
 				 ret=void_ty,
 				 body={vars=[],body=[]}}
-			    val app =
+			    val accept =
 				{tag=T.EnumConst(tid,tag_n),
 				 body=T.Expr
 				 (T.MthCall
 				  (T.FieldSub
-				   (T.DeRef(T.Id app_visitor),visit_name),
-				   [T.Id visit_arg]))}
+				   (T.DeRef(T.Id accept_visitor),visit_name),
+				   [T.This]))}
 			in
-			    {visit=visit,app=app,cnstr=cnstr}
+			    {visit=visit,accept=accept,cnstr=cnstr}
 			end
 				   
 	    in
-		{enumer=enumer,wr=wr,rd=rd,cnstr=cnstr,visit=visit,app=app}
+		{enumer=enumer,wr=wr,rd=rd,cnstr=cnstr,visit=visit,
+		 accept=accept}
 	    end
 
 	fun null2none [] v  = NONE
@@ -427,7 +426,6 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 		    {name=pkl_name,tag=tag,ret_ty=natural_ty,
 		     body=[T.Assign(T.Id Pkl.ret_id,Pkl.read pkl_name)]}
 
-
 (* TODO chop of qualifier appropriately *)
 		val base_class =
 		    Option.map
@@ -440,13 +438,13 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 		     inline=false,
 		     body={vars=[],body=[]},
 		     mods={scope=T.Public,static=false, final=false},
-		     args=[{name=visit_arg,ty=natural_ty}],ret=void_ty}
-
-		val app_mth = mk_app_mth tid natural_ty
+		     args=[{name=visit_arg,ty=ty}],ret=void_ty}
+		    
+		val accept_mth = mk_accept_mth tid
 		    [T.Expr
 		    (T.MthCall
-		     (T.FieldSub(T.DeRef(T.Id app_visitor),visit_name),
-		      [T.Id visit_arg]))]
+		     (T.FieldSub(T.DeRef(T.Id accept_visitor),visit_name),
+		      [T.This]))]
 
 		val ty_dec =
 		    T.DeclClass{name=tid,
@@ -455,7 +453,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 				scope=T.Public,
 				inherits=base_class,
 				cnstrs=[mk_cnstr(fd_fields,init_fields)],
-				mths=[app_mth,rd,wr,rd_tagged,wr_tagged],
+				mths=[accept_mth,rd,wr,rd_tagged,wr_tagged],
 				fields=List.map tomfield fd_fields}
 	    in
 		{ty_dec=ty_dec,cnstrs=[],visits=[visit]}
@@ -471,7 +469,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 
 		val cnstrs      = List.map #cnstr  cons
 		val rd_clauses  = List.map #rd     cons
-		val app_clauses = List.map #app    cons
+		val accept_clauses = List.map #accept    cons
 
 		fun do_wr_clause ({wr,...}:con_value) = wr (T.Id temp_id)
 		val wr_clauses = List.map do_wr_clause     cons
@@ -558,20 +556,20 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 		    {name=pkl_name,tag=tag,ret_ty=natural_ty,
 		     body=[T.Assign(T.Id Pkl.ret_id,Pkl.read pkl_name)]}
 
-		val app_test =
+		val accept_test =
 		    T.MthCall
-		    (T.FieldSub(T.DeRef (T.Id app_arg),kind_id),[])
+		    (T.FieldSub(T.DeRef (T.This),kind_id),[])
 
-		val app_body =
-		    T.Case{test=app_test,
-			     clauses=app_clauses,
+		val accept_body =
+		    T.Case{test=accept_test,
+			     clauses=accept_clauses,
 			     default=Pkl.die ""}
 
-		val app_mth = mk_app_mth tid natural_ty [app_body]
+		val accept_mth = mk_accept_mth tid [accept_body]
 		    
 		val idecls = [T.IDeclEnum{name=tag_n,enums=enumers}]
 
-		val mths = [kind_mth,app_mth,rd,wr,rd_tagged,wr_tagged]
+		val mths = [kind_mth,accept_mth,rd,wr,rd_tagged,wr_tagged]
 		val ty_dec =
 		    if is_boxed then
 			T.DeclAbstractClass
@@ -690,11 +688,11 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 		     mods={scope=T.Public,static=false, final=false},
 		     args=[{name=visit_arg,ty=ty_seq}],ret=void_ty}
 
-		val app_mth = mk_app_mth tid_seq ty_seq
+		val accept_mth = mk_accept_mth tid_seq
 		    [T.Expr
 		    (T.MthCall
-		     (T.FieldSub(T.DeRef(T.Id app_visitor),visit_name),
-		      [T.Id visit_arg]))]
+		     (T.FieldSub(T.DeRef(T.Id accept_visitor),visit_name),
+		      [T.This]))]
 		    
 		val ty_dec = T.DeclClass
 		    {name=tid_seq,
@@ -704,7 +702,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 		     inherits=NONE,
 		     cnstrs=[cnstr],
 		     fields=mfields,
-		     mths=[app_mth,rd,wr]}
+		     mths=[accept_mth,rd,wr]}
 	    in
 		{ty_dec=ty_dec,cnstrs=[],visits=[visit]}
 	    end

@@ -213,6 +213,7 @@ structure CPlusPlusPP : C_PLUS_PLUS_PP =
 	      | pp_exp (Id id) = pp_id id
 	      | pp_exp (ThisId (id)) =
 		PP.cat [PP.s "this->",pp_id id]
+	      | pp_exp (This) =	PP.cat [PP.s "this"]
 	      | pp_exp (Const c) = pp_const c
 	      | pp_exp (FieldSub (DeRef e,id)) =
 		PP.cat [pp_exp e, PP.s "->",pp_id id]

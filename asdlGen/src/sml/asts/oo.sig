@@ -67,6 +67,7 @@ signature OO_TYPES = (* really more Java than anything else *)
 
 	and exp =
 	    NilPtr
+	  | This
 	  | Id         of (id)
 	  | Const      of (const)
 	  | ThisId     of (id)
