@@ -185,8 +185,8 @@ public  class Prims {
   public static void write_tag(int x, OutputStream s) { write_java_int(x,s); }
   public static int read_tag(InputStream s) {  return read_java_int(s); }
 
-  public static void write_int(int x, OutputStream s) { write_int(x,s); }
-  public static int read_int(InputStream s) {  return read_int(s); }
+  public static void write_int(int x, OutputStream s) { write_java_int(x,s); }
+  public static int read_int(InputStream s) {  return read_java_int(s); }
 
   public static void write_String(String x,OutputStream s) {
     int sz = x.length();
