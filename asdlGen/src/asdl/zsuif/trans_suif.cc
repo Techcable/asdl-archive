@@ -438,6 +438,22 @@ zsuif_int_or_source_op* trans_suif::trans(int_or_source_op* op){
     return new zsuif_SrcOp(s);
   }
 }
+
+/*****************************************/
+zsuif_int_or_source_op* trans_suif::trans_opt(int_or_source_op* op){ 
+  if(op->is_integer()) {
+    i_integer i = op->get_integer();
+    if(i.is_finite()) {
+      return new zsuif_Int(i.c_int());
+    } else {
+      return NULL;
+    }
+  } else {
+    zsuif_source_op *s = trans(&(op->get_source_op()));
+    return new zsuif_SrcOp(s);
+  }
+}
+
 /*****************************************/
 zsuif_source_op* trans_suif::trans(source_op* src){ 
   if(src->is_variable()) {

@@ -179,10 +179,10 @@ public:
 	    trans->trans(&(x->bit_alignment_const_or_op()));
 
        zsuif_int_or_source_op* lower_bound =
-	    trans->trans(&(x->lower_bound_const_or_op()));
+	    trans->trans_opt(&(x->lower_bound_const_or_op()));
 
        zsuif_int_or_source_op* upper_bound =
-	    trans->trans(&(x->upper_bound_const_or_op()));
+	    trans->trans_opt(&(x->upper_bound_const_or_op()));
 
        trans_type et(trans,x->element_type());
        zsuif_type *element_type = et.get_type();

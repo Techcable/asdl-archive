@@ -57,6 +57,7 @@ public:
     zsuif_type_id*	        trans(type*);
 
     zsuif_int_or_source_op*     trans(int_or_source_op*);
+    zsuif_int_or_source_op*     trans_opt(int_or_source_op*);
     zsuif_source_op*	        trans(source_op*);
     zsuif_destination_op*       trans(destination_op*);
 

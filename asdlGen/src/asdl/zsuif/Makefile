@@ -21,11 +21,11 @@ include $(SUIFHOME)/Makefile.std
 
 zsuif.cxx zsuif.hxx zsuif.typ: zsuif.asdl ../std-types.asdl 
 		$(ASDLGEN) --cxx zsuif.asdl ../std-types.asdl \
-	        --base_include "suif_base.hxx" --output_directory ./
+	        --base_include="suif_base.hxx" --output_directory=./
 		$(ASDLGEN) --sml zsuif.asdl ../std-types.asdl \
-	        --output_directory ./
+	        --output_directory=./
 		$(ASDLGEN) --typ zsuif.asdl ../std-types.asdl \
-	        --output_file zsuif.typ --output_directory ./
+	        --output_file=zsuif.typ --output_directory=./
 
 
 

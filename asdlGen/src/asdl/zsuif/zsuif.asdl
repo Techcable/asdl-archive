@@ -53,8 +53,8 @@ data_type =
    | Pointer_type(type_id reference_type)
    | Array_type 
      (type element_type, 
-      int_or_source_op lower_bound,
-      int_or_source_op upper_bound)
+      int_or_source_op? lower_bound,
+      int_or_source_op? upper_bound)
    | Group_type(string name, group_field* fields)
 
    attributes(int_or_source_op bit_size, 
