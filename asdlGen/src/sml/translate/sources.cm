@@ -6,6 +6,7 @@ smlnj-lib.cm
 type-decl.sig
 type-decl.sml
 std-pickler.sml
+std-pickler.sig
 
 translate.sig
 translate.sml
