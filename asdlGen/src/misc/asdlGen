@@ -1,8 +1,11 @@
-#!/bin/ksh
+#!/bin/sh
 # the path of the directory in which executables (like this file) are kept.
 
 if [ -z "$ASDL_HOME" ] ; then
- PRG=`whence $0`
+ PRG=`/bin/ksh whence $0`
+ if [ "$?" != "0" ]; then
+    echo "Unable to determine ASDL_HOME automatically please set it"
+ fi
  PRG_DIR=`dirname $0`
  ASDL_HOME=`cd $PRG_DIR ; cd ..;/bin/pwd`
  export ASDL_HOME
