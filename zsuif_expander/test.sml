@@ -29,8 +29,8 @@ val go =
  "p6",
  "p7"
 ]
-val file = "lq"
-val dir  = "test/go/"
+val file = "t"
+val dir  = "../test/"
 (*
 val files = ["bnode", "canon", "cover", "duple", "hash", "merge", "misc",
              "nt", "prexpr", "preprocess", "procargs", "pterm", "pterm_ops",
@@ -45,7 +45,7 @@ val files = ["unixstuff", "xleval", "xlio", "xlobj", "xlsym", "xlbfun",
 *)
  (* "e" ,"ex1","ex2","ex3","f","g","j","p","p8","t","tttt"] *)
 
-fun test1 file = (Ztv.main("", [dir ^ file ^ ".zsuif"]); ())
+fun test1 () = (Ztv.main("", [dir ^ file ^ ".zsuif"]); ())
 (*     let
         val command = "cmp test/" ^ file ^ ".dec \
                           \test/original/" ^ file ^ ".dec"
@@ -58,7 +58,7 @@ fun test1 file = (Ztv.main("", [dir ^ file ^ ".zsuif"]); ())
          print "\n\n"
      end)
 *)
-(*val _ = app test1 go *)
-val _ = app test1 ["g2"]
+val _ = test1 ()
+(* val _ = app test1 ["g2"] *)
 
 end

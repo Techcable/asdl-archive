@@ -10,6 +10,8 @@ sig
                      | UInt16Bit
                      | Int32Bit
                      | UInt32Bit
+                     | Int64Bit
+                     | UInt64Bit
                      | Fp32Bit
                      | Fp64Bit
 
@@ -30,7 +32,6 @@ sig
    val isUnsigned             : regtype -> bool
    val getRType               : operand -> regtype
    val regTytoString          : regtype -> string
-   val regTytoName            : regtype -> string
    val regTytoSize            : regtype -> int
    val isGroup                : zsuif.type' -> bool
    val LAB                    : operand -> Format.fmt_item

@@ -8,12 +8,15 @@ struct
 
     exception Can'tDoItYet
 
+    (* CHANGED *)
     datatype regtype = Int8Bit
                      | UInt8Bit
                      | Int16Bit
                      | UInt16Bit
                      | Int32Bit
                      | UInt32Bit
+                     | Int64Bit
+                     | UInt64Bit
                      | Fp32Bit
                      | Fp64Bit
 
@@ -56,11 +59,14 @@ struct
       | isInt UInt16Bit = true
       | isInt Int32Bit  = true
       | isInt UInt32Bit = true
+      | isInt Int64Bit  = true
+      | isInt UInt64Bit = true
       | isInt _         = false
 
     fun isUnsigned UInt8Bit  = true
       | isUnsigned UInt16Bit = true
       | isUnsigned UInt32Bit = true
+      | isUnsigned UInt64Bit = true
       | isUnsigned _         = false
 
     fun getRType (Reg (r, _)) = r
@@ -69,21 +75,14 @@ struct
     fun regTytoString (Int8Bit  | UInt8Bit)  = "0"
       | regTytoString (Int16Bit | UInt16Bit) = "1"
       | regTytoString (Int32Bit | UInt32Bit) = "2"
+      | regTytoString (Int64Bit | UInt64Bit) = "5"
       | regTytoString Fp32Bit                = "3"
       | regTytoString Fp64Bit                = "4"
-
-    fun regTytoName Int8Bit   = "Int8Bit"
-      | regTytoName UInt8Bit  = "UInt8Bit"
-      | regTytoName Int16Bit  = "Int16Bit"
-      | regTytoName UInt16Bit = "UInt16Bit"
-      | regTytoName Int32Bit  = "Int32Bit"
-      | regTytoName UInt32Bit = "UInt32Bit"
-      | regTytoName Fp32Bit   = "Fp32Bit"
-      | regTytoName Fp64Bit   = "Fp64Bit"
 
     fun regTytoSize (Int8Bit  | UInt8Bit)  = 1
       | regTytoSize (Int16Bit | UInt16Bit) = 2
       | regTytoSize (Int32Bit | UInt32Bit) = 4
+      | regTytoSize (Int64Bit | UInt64Bit) = 8
       | regTytoSize Fp32Bit                = 4
       | regTytoSize Fp64Bit                = 8
 
@@ -105,102 +104,104 @@ struct
     val paramLevel  = "1"
     val localLevel  = "2"
 
-    fun getRegType (Z.Data (Z.Boolean_type _)) = (Int32Bit, 4)
-      | getRegType (Z.Data (Z.Integer_type {bit_size = Z.Int 8, ...}))   =
-                             (Int8Bit, 1)
-      | getRegType (Z.Data (Z.Integer_type {bit_size = Z.Int 16, ...}))  =
-                             (Int16Bit, 2)
-      | getRegType (Z.Data (Z.Integer_type {bit_size = Z.Int 32, ...}))  =
-                             (Int32Bit, 4)
-      | getRegType (Z.Data (Z.Integer_type {bit_size = Z.Int n, ...}))   =
-        raise (Fail ("Unknown bit size for integer in getRegType " ^
-                     (I.toString n)))
-      | getRegType (Z.Data (Z.Integer_type {bit_size = Z.SrcOp _, ...}))   =
-        raise (Fail ("Unknown bit size for integer in getRegType.  " ^
-                     "SourceOp supplied instead of integer"))
+    fun getRegType (Z.Data (Z.BooleanType _)) = (Int32Bit, 4)
+      | getRegType (Z.Data (Z.IntegerType {bit_size=Z.Finite bs, ...}))   =
+	let
+	    val size = IntInf.toInt(bs)
+	in
+	    case size of
+		8  => (Int8Bit, 1)
+	      | 16 => (Int16Bit, 2)
+	      | 32 => (Int32Bit, 4)
+	      | 64 => (Int64Bit, 8)
+	      | n  =>
+		    raise (Fail ("Unknown bit size for integer in getRegType "
+				 ^ (I.toString n)))
+	end
+      | getRegType (Z.Data (Z.UIntegerType {bit_size=Z.Finite bs, ...}))   =
+	let
+	    val size = IntInf.toInt(bs)
+	in
+	    case size of
+		8  => (UInt8Bit, 1)
+	      | 16 => (UInt16Bit, 2)
+	      | 32 => (UInt32Bit, 4)
+	      | 64 => (UInt64Bit, 8)
+	      | n  =>
+		    raise (Fail ("Unknown bit size for uinteger in getRegType "
+				 ^ (I.toString n)))
+	end
 
-      | getRegType (Z.Data (Z.UInteger_type {bit_size = Z.Int 8, ...}))  =
-                             (UInt8Bit, 1)
-      | getRegType (Z.Data (Z.UInteger_type {bit_size = Z.Int 16, ...})) =
-                             (UInt16Bit, 2)
-      | getRegType (Z.Data (Z.UInteger_type {bit_size = Z.Int 32, ...})) =
-                             (UInt32Bit, 4)
-      | getRegType (Z.Data (Z.UInteger_type {bit_size = Z.Int n, ...}))  =
-        raise (Fail ("Unknown bit size for uinteger in getRegType " ^
-                     (I.toString n)))
-      | getRegType (Z.Data (Z.UInteger_type {bit_size = Z.SrcOp _, ...}))  =
-        raise (Fail ("Unknown bit size for uinteger in getRegType.  " ^
-                     "SourceOp supplied instead of integer"))
-
-      | getRegType (Z.Data (Z.Floating_point_type {bit_size = Z.Int 32,...})) =
-                             (Fp32Bit, 4)
-      | getRegType (Z.Data (Z.Floating_point_type {bit_size = Z.Int 64,...})) =
-                             (Fp64Bit, 8)
-      | getRegType (Z.Data (Z.Floating_point_type {bit_size = Z.Int n, ...})) =
-        raise (Fail ("Unknown bit size for floating point number \
+      | getRegType (Z.Data (Z.FloatingPointType {bit_size=Z.Finite bs, ...})) =
+	let
+	    val size = IntInf.toInt(bs)
+	in
+	    case size of
+		32 => (Fp32Bit, 4)
+	      | 64 => (Fp64Bit, 8)
+	      | n  =>
+		    raise (Fail ("Unknown bit size for floating point number \
                      \in getRegType " ^ (I.toString n)))
-      | getRegType (Z.Data (Z.Floating_point_type {bit_size= Z.SrcOp _,...})) =
-        raise (Fail ("Unknown bit size for floating point number in " ^
-                     "getRegType.  SourceOp supplied instead of integer"))
-
-      | getRegType (Z.Data (Z.Enumerated_type _)) = (Int8Bit, 1)
-      | getRegType (Z.Data (Z.Pointer_type _))    = (UInt32Bit, 4)
-      | getRegType (Z.Data (Z.Array_type _))      = (UInt32Bit, 4)
-      | getRegType (Z.Data (Z.Group_type _))      = (UInt32Bit, 4)
+	end
+      | getRegType (Z.Data (Z.EnumeratedType _)) = (Int8Bit, 1)
+      | getRegType (Z.Data (Z.PointerType _))    = (UInt32Bit, 4)
+      | getRegType (Z.Data (Z.ArrayType _))      = (UInt32Bit, 4)
+      | getRegType (Z.Data (Z.GroupType _))      = (UInt32Bit, 4)
 
       | getRegType (Z.Procedure _) = (UInt32Bit, 4)
       | getRegType (Z.Qualified {type' = typ, ...}) = getRegType typ
       | getRegType (Z.Void) =
         raise (Fail ("Type specified as void in function getRegType"))
 
-    fun atomicType (Z.Data (Z.Boolean_type _))        = true
-      | atomicType (Z.Data (Z.Integer_type _))        = true
-      | atomicType (Z.Data (Z.UInteger_type _))       = true
-      | atomicType (Z.Data (Z.Floating_point_type _)) = true
-      | atomicType (Z.Data (Z.Enumerated_type _))     = true
-      | atomicType (Z.Data (Z.Pointer_type _))        = true
-      | atomicType (Z.Data (Z.Array_type _))          = false
-      | atomicType (Z.Data (Z.Group_type _))          = false
+    fun atomicType (Z.Data (Z.BooleanType _))        = true
+      | atomicType (Z.Data (Z.IntegerType _))        = true
+      | atomicType (Z.Data (Z.UIntegerType _))       = true
+      | atomicType (Z.Data (Z.FloatingPointType _)) = true
+      | atomicType (Z.Data (Z.EnumeratedType _))     = true
+      | atomicType (Z.Data (Z.PointerType _))        = true
+      | atomicType (Z.Data (Z.ArrayType _))          = false
+      | atomicType (Z.Data (Z.GroupType _))          = false
       | atomicType (Z.Procedure _)                    = false
       | atomicType (Z.Qualified {type' = typ, ...})   = atomicType typ
       | atomicType (Z.Void)                           =
         raise (Fail ("Type specified as void in function atomicType"))
 
-    fun getAllignment (Z.Data (Z.Boolean_type
-                               {bit_alignment = Z.Int n, ...})) = n
-      | getAllignment (Z.Data (Z.Integer_type
-                               {bit_alignment = Z.Int n, ...})) = n
-      | getAllignment (Z.Data (Z.UInteger_type
-                               {bit_alignment = Z.Int n, ...})) = n
-      | getAllignment (Z.Data (Z.Floating_point_type
-                               {bit_alignment = Z.Int n, ...})) = n
-      | getAllignment (Z.Data (Z.Enumerated_type
-                               {bit_alignment = Z.Int n, ...})) = n
-      | getAllignment (Z.Data (Z.Pointer_type
-                               {bit_alignment = Z.Int n, ...})) = n
-      | getAllignment (Z.Data (Z.Array_type _))                 = 64
-      | getAllignment (Z.Data (Z.Group_type _))                 = 64
-      | getAllignment (Z.Data _) = raise
-                                    (Fail "Bad allignment in getAllignment")
+    fun getAllignment (Z.Data (Z.BooleanType
+			       {bit_alignment = n, ...})) = n
+      | getAllignment (Z.Data (Z.IntegerType
+			       {bit_alignment = n, ...})) = n
+      | getAllignment (Z.Data (Z.UIntegerType
+			       {bit_alignment = n, ...})) = n
+      | getAllignment (Z.Data (Z.FloatingPointType
+			       {bit_alignment = n, ...})) = n
+      | getAllignment (Z.Data (Z.EnumeratedType
+                               {bit_alignment = n, ...})) = n
+      | getAllignment (Z.Data (Z.PointerType
+                               {bit_alignment = n, ...})) = n
+      | getAllignment (Z.Data (Z.ArrayType _))                 = 64
+      | getAllignment (Z.Data (Z.GroupType _))                 = 64
       | getAllignment (Z.Procedure procedureType)               = 32
       | getAllignment (Z.Qualified qualifications)              = 32
       | getAllignment (Z.Void) = raise (Fail "Bad allignment in getAlignment")
 
-    fun getTypeSize (Z.Data (Z.Boolean_type _)) = 4
-      | getTypeSize (Z.Data (Z.Integer_type
-                             {bit_size = Z.Int n, ...})) = n div 8
-      | getTypeSize (Z.Data (Z.UInteger_type
-                             {bit_size = Z.Int n, ...})) = n div 8
-      | getTypeSize (Z.Data (Z.Floating_point_type
-                             {bit_size = Z.Int n, ...})) = n div 8
-      | getTypeSize (Z.Data (Z.Enumerated_type
-                             {bit_size = Z.Int n, ...})) = n div 8
-      | getTypeSize (Z.Data (Z.Pointer_type
-                             {bit_size = Z.Int n, ...})) = 4
-      | getTypeSize (Z.Data (Z.Array_type
-                             {bit_size = Z.Int n, ...})) = n div 8
-      | getTypeSize (Z.Data (Z.Array_type
-                             {bit_size = Z.SrcOp x, ...})) = 4
+    fun getTypeSize (Z.Data (Z.BooleanType _)) = 4
+      | getTypeSize (Z.Data (Z.IntegerType
+                             {bit_size = Z.Finite n, ...}))
+	= IntInf.toInt(n) div 8
+      | getTypeSize (Z.Data (Z.UIntegerType
+                             {bit_size = Z.Finite n, ...}))
+	= IntInf.toInt(n) div 8
+      | getTypeSize (Z.Data (Z.FloatingPointType
+                             {bit_size = Z.Finite n, ...}))
+	= IntInf.toInt(n) div 8
+      | getTypeSize (Z.Data (Z.EnumeratedType
+                             {bit_size = Z.Finite n, ...}))
+	= IntInf.toInt(n) div 8
+      | getTypeSize (Z.Data (Z.PointerType
+                             {bit_size = Z.Finite n, ...})) = 4
+      | getTypeSize (Z.Data (Z.ArrayType
+                             {bit_size = Z.Finite n, ...}))
+	= IntInf.toInt(n) div 8
 (*
         (case x of
              Z.SrcVar _ => print "\nI am a SrcVar.\n\n"
@@ -209,28 +210,32 @@ struct
            | Z.SrcZero  => print "\nI am a SrcZero.\n\n";
         raise (Fail "bizarre"))
 *)
-      | getTypeSize (Z.Data (Z.Group_type
-                             {bit_size = Z.Int n, ...})) = n div 8
+      | getTypeSize (Z.Data (Z.GroupType {bit_size = Z.Finite n, ...}))
+	= IntInf.toInt(n) div 8
       | getTypeSize (Z.Data _) =
         raise (Fail "Bad size for Data in getTypeSize")
       | getTypeSize (Z.Procedure _) = 4
       | getTypeSize (Z.Qualified {type' = type', ...})   = getTypeSize type'
       | getTypeSize (Z.Void) = raise (Fail "Void has no size in getTypeSize")
 
-    fun getAtomicTypeSize (Z.Data (Z.Boolean_type _)) = 4
-      | getAtomicTypeSize (Z.Data (Z.Integer_type
-                                   {bit_size = Z.Int n, ...})) = n div 8
-      | getAtomicTypeSize (Z.Data (Z.UInteger_type
-                                   {bit_size = Z.Int n, ...})) = n div 8
-      | getAtomicTypeSize (Z.Data (Z.Floating_point_type
-                                   {bit_size = Z.Int n, ...})) = n div 8
-      | getAtomicTypeSize (Z.Data (Z.Enumerated_type
-                                   {bit_size = Z.Int n, ...})) = n div 8
-      | getAtomicTypeSize (Z.Data (Z.Pointer_type
-                                   {bit_size = Z.Int n, ...})) = 4
-      | getAtomicTypeSize (Z.Data (Z.Array_type _))            = 4
-      | getAtomicTypeSize (Z.Data (Z.Group_type
-                                   {bit_size = Z.Int n, ...})) = 4
+    fun getAtomicTypeSize (Z.Data (Z.BooleanType _)) = 4
+      | getAtomicTypeSize (Z.Data
+			   (Z.IntegerType {bit_size = Z.Finite n, ...}))
+	= IntInf.toInt(n) div 8
+      | getAtomicTypeSize (Z.Data
+			   (Z.UIntegerType {bit_size = Z.Finite n, ...}))
+	= IntInf.toInt(n) div 8
+      | getAtomicTypeSize (Z.Data
+			   (Z.FloatingPointType {bit_size = Z.Finite n, ...}))
+	= IntInf.toInt(n) div 8
+      | getAtomicTypeSize (Z.Data
+			   (Z.EnumeratedType {bit_size = Z.Finite n, ...}))
+	= IntInf.toInt(n) div 8
+      | getAtomicTypeSize (Z.Data (Z.PointerType
+                                   {bit_size = Z.Finite n, ...})) = 4
+      | getAtomicTypeSize (Z.Data (Z.ArrayType _))            = 4
+      | getAtomicTypeSize (Z.Data (Z.GroupType
+                                   {bit_size = Z.Finite n, ...})) = 4
       | getAtomicTypeSize (Z.Data _) =
         raise (Fail "Bad size for Data in getAtomicTypeSize")
       | getAtomicTypeSize (Z.Procedure _) = 4
@@ -239,27 +244,27 @@ struct
       | getAtomicTypeSize (Z.Void) =
         raise (Fail "Void has no size in getAtomicTypeSize")
 
-   fun getTypeName (Z.Data (Z.Boolean_type _))        = "Boolean"
-     | getTypeName (Z.Data (Z.Integer_type _))        = "Integer"
-     | getTypeName (Z.Data (Z.UInteger_type _))       = "UInteger"
-     | getTypeName (Z.Data (Z.Floating_point_type _)) = "Float"
-     | getTypeName (Z.Data (Z.Enumerated_type _))     = "Enum"
-     | getTypeName (Z.Data (Z.Pointer_type _))        = "Pointer"
-     | getTypeName (Z.Data (Z.Array_type _))          = "Array"
-     | getTypeName (Z.Data (Z.Group_type _))          = "Group"
+   fun getTypeName (Z.Data (Z.BooleanType _))         = "Boolean"
+     | getTypeName (Z.Data (Z.IntegerType _))         = "Integer"
+     | getTypeName (Z.Data (Z.UIntegerType _))        = "UInteger"
+     | getTypeName (Z.Data (Z.FloatingPointType _))   = "Float"
+     | getTypeName (Z.Data (Z.EnumeratedType _))      = "Enum"
+     | getTypeName (Z.Data (Z.PointerType _))         = "Pointer"
+     | getTypeName (Z.Data (Z.ArrayType _))           = "Array"
+     | getTypeName (Z.Data (Z.GroupType _))           = "Group"
      | getTypeName (Z.Procedure _)                    = "Procedure"
      | getTypeName (Z.Qualified {type' = type', ...}) = getTypeName type'
      | getTypeName (Z.Void)                           = "Void"
-       
-   fun isGroup (Z.Data (Z.Array_type _))          = (print "I was an array"; true)
-     | isGroup (Z.Data (Z.Group_type _))          = (print "I was an group"; true)
+
+   fun isGroup (Z.Data (Z.ArrayType _))           = true
+     | isGroup (Z.Data (Z.GroupType _))           = true
      | isGroup (Z.Qualified {type' = type', ...}) = isGroup type'
      | isGroup _                                  = false
 
-   fun getGroupSize (Z.Data (Z.Group_type {bit_size = Z.Int bit_size,
-                                          ...})) = bit_size
-     | getGroupSize (Z.Data (Z.Array_type {bit_size = Z.Int bit_size,
-                                          ...})) = bit_size
+   fun getGroupSize (Z.Data (Z.GroupType {bit_size = Z.Finite bit_size,
+                                          ...})) = IntInf.toInt(bit_size)
+     | getGroupSize (Z.Data (Z.ArrayType {bit_size = Z.Finite bit_size,
+                                          ...})) = IntInf.toInt(bit_size)
      | getGroupSize (Z.Qualified {type' = type', ...}) = getGroupSize type'
      | getGroupSize x = raise (Fail "Not a group in getGroupSize")
 end

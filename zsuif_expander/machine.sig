@@ -29,7 +29,8 @@ sig
   val beginTextSection       : emtTyp -> unit
   val alignData              : emtTyp * int -> unit
 
-  val getFloatAllignment     : B.regtype -> int
+  val getFloatAlignment      : B.regtype -> int
+  val getGroupAlignment      : unit -> int
   val emitFloat              : emtTyp * string * B.operand * B.regtype -> unit
   val emitProcedureDecl      : emtTyp * string -> unit
 
@@ -109,16 +110,21 @@ sig
                                B.operand list -> unit
   val compileBuiltinOper     : emtTyp * B.operand * B.operand * string *
                                B.operand * B.operand list -> unit
+  val compileComparisonOp    : emtTyp * B.operand * B.operand * Z.binop *
+                               B.operand * B.operand list -> unit
   val cUnaryOperator         : emtTyp * Z.unop * B.operand * B.operand *
                                B.operand list *
                                ((unit -> B.operand) * int) -> unit
   val cSwitchSt              : emtTyp * B.operand * B.operand * B.operand *
-                               B.operand * Z.multi_way_branch_case list * 
+                               B.operand * Z.multi_way_branch_case list *
                                (Z.variable_symbol -> B.operand) -> unit
   val compReturn             : emtTyp *
                                (B.operand * B.operand * B.regtype) option ->
                                unit
-                               
+
   val killRegs               : emtTyp * B.operand list -> unit
   val emitComment            : emtTyp * string -> unit
+
+  (* CHANGED *)
+  val emitRegisterTypeMap    : emtTyp -> unit
 end

@@ -1,4 +1,4 @@
-structure Sparc :> MACHINE = 
+structure Sparc :> MACHINE =
 struct
   structure Z   = zsuif
   structure F   = Format
@@ -93,7 +93,7 @@ struct
           (multi := NONE; divid := NONE; remen := NONE; xfer := NONE)
   end
 
-  local 
+  local
       val starg = ref 0
   in
       fun getStArg  () = !starg
@@ -139,12 +139,12 @@ struct
   fun beginTextSection emt = emt "%s\n" [F.STR "-\t.seg\t\"text\""]
   fun alignData (emt, n) = emt "-\t.align\t%d\n" [F.INT n]
 
-  fun getFloatAllignment Fp32Bit = 4
-    | getFloatAllignment Fp64Bit = 8
-    | getFloatAllignment _       =
-      raise (Fail "Bad Float in getFloatAllignment")
+  fun getFloatAlignment Fp32Bit = 4
+    | getFloatAlignment Fp64Bit = 8
+    | getFloatAlignment _       =
+      raise (Fail "Bad Float in getFloatAlignment")
 
-  local 
+  local
       fun emitSingleFloat (emt, str, lab) =
           emt "-.%s:\t.single\t0r%s\n" [B.LAB lab, F.STR str]
       fun emitDoubleFloat (emt, str, lab) =
@@ -156,6 +156,8 @@ struct
           emitDoubleFloat (emt, str, lab)
         | emitFloat _ = raise (Fail "Bad Float in emitFloat")
   end
+
+  fun getGroupAlignment () = 8
 
   fun emitProcedureDecl (emt, name) = emt "f%s\n" [F.STR name]
 
@@ -177,7 +179,7 @@ struct
 
   fun compileFloatConstant (emt, B.Fp32Bit, str) =
       emt "-\t.single 0r%s\n" [F.STR str]
-    | compileFloatConstant (emt, B.Fp64Bit, str) = 
+    | compileFloatConstant (emt, B.Fp64Bit, str) =
       emt "-\t.double 0r%s\n" [F.STR str]
     | compileFloatConstant _ = raise (Fail "Bad floating point constant")
 
@@ -204,10 +206,10 @@ struct
     | emitVariableDecl (emt, name, false, _) =
       (emitGlobalDecl (emt, name); emt "-%s:\n" [F.STR name])
 
-  fun emitGroupVarDecl (emt, name, siz, algn, true) =
-      emt "-\t.common\t.%s,%d,%d\n" [F.STR name, F.INT siz, F.INT algn]
-    | emitGroupVarDecl (emt, name, siz, algn, false) =
-      emt "-\t.common\t%s,%d,%d\n" [F.STR name, F.INT siz, F.INT algn]
+  fun emitGroupVarDecl (emt, name, siz, align, true) =
+      emt "-\t.common\t.%s,%d,%d\n" [F.STR name, F.INT siz, F.INT align]
+    | emitGroupVarDecl (emt, name, siz, align, false) =
+      emt "-\t.common\t%s,%d,%d\n" [F.STR name, F.INT siz, F.INT align]
 
   fun emitLocVariableDef (emt, procNum, name, loc, regTyp, size) =
       let
@@ -569,7 +571,7 @@ struct
               let
                   val rg = REG r
               in
-                  emt "+F[%s+%d]=HP[%s]\n+F[%s+%d]=LP[%s]\t%s\n" 
+                  emt "+F[%s+%d]=HP[%s]\n+F[%s+%d]=LP[%s]\t%s\n"
                   [REG sp, F.INT offset, rg, REG sp,
                    F.INT (offset + 4), rg, rg]
               end
@@ -722,9 +724,9 @@ struct
       end
 
     | cUnaryOperator (emt, Z.Convert, regfrom, regto, kr,
-                      ctx as (nextLocal, pNum)) = 
+                      ctx as (nextLocal, pNum)) =
       let
-          fun convAssign (to, from, oper1, oper2, kr) = 
+          fun convAssign (to, from, oper1, oper2, kr) =
               (emt "+%s=%s%s%s"
                [REG to, F.STR oper1, REG from, F.STR oper2];
                doKilledRegs (emt, [], kr))
@@ -732,100 +734,100 @@ struct
           fun same() = convAssign (regto, regfrom, "", "", kr)
       in
           case (regfrom, regto) of
-              (Reg (Fp32Bit, _),  Reg (Fp64Bit, _)) =>
-                  convAssign (regto, regfrom, "DC[", "]", kr)
-            | (Reg (Fp64Bit, _),  Reg (Fp32Bit, _)) =>
-                  convAssign (regto, regfrom, "SC[", "]", kr)
-            | (Reg (from, _), Reg (to, _)) =>
-                  let
-                      val cond1    = not (B.isReal from) andalso B.isReal to
-                      val cond2    = B.isReal from andalso not (B.isReal to)
-                      val regfromt = REG regfrom
-                      val regtot   = REG regto
-                  in
-                      if cond1 orelse cond2 then
-                          let
-                              val (loc, seenBefore) =
-                                  case (!xfer) of
-                                      NONE =>
-                                          let
-                                              val g = nextLocal ()
-                                          in
-                                              xfer := SOME g; (g, false)
-                                          end
-                                    | SOME x => (x, true)
-                              val procNum = F.INT pNum
-                          in
-                              if not seenBefore then
-                                  emt "dxfer_%d\t%s\t2\t3\t4\t1\n"
-                                        [procNum, B.LOC loc]
-                              else ();
-                              if cond1 then
-                                  let
-                                      val newIReg  =
-                                          newReg (if B.isUnsigned from
-                                                  then UInt32Bit
-                                                  else Int32Bit)
-                                      val newIRegt = REG newIReg
-                                      val newFReg  = newReg Fp32Bit
-                                      val newFRegt = REG newFReg
-                                  in
-                                      cUnaryOperator(emt, Z.Convert, regfrom,
-                                                     newIReg, [regfrom], ctx);
-                                      emt "+R[%s+%s]=%s\t%s\n"
-                                      [REG sp, B.LOC loc, newIRegt, newIRegt];
-                                      emt "t%s\n" [B.LOC loc];
-                                      emt "+%s=F[%s+%s]\n"
-                                      [REG newFReg, REG sp, B.LOC loc];
-                                      emt "+%s=FI[%s]\t%s\n"
-                                      [regtot, REG newFReg, REG newFReg]
-                                  end
-                              else (* cond2 is true *)
-                                  let
-                                      val newFReg  = newReg Fp32Bit
-                                      val newFRegt = REG newFReg
-                                      val newIReg  =
-                                          newReg (if B.isUnsigned to
-                                                  then UInt32Bit
-                                                  else Int32Bit)
-                                      val newIRegt = REG newIReg
-                                  in
-                                      emt "+%s=RZ[%s]\t%s\n"
-                                          [newFRegt, regfromt, regfromt];
-                                      emt "+F[%s+%s]=%s\t%s\n"
-                                          [REG sp, B.LOC loc, newFRegt,
-                                           newFRegt];
-                                      emt "t%s\n" [B.LOC loc];
-                                      emt "+%s=R[%s+%s]\n"
-                                          [newIRegt, REG sp, B.LOC loc];
-                                      cUnaryOperator(emt, Z.Convert, newIReg,
-                                                     regto, [newIReg], ctx)
-                                  end
-                          end
-                      else if B.isSChar from andalso not (B.isChar to) then
-                          (emt "+%s=%s{24\t%s\n"
-                                 [regtot, regfromt, regfromt];
-                           emt "+%s=%s}24\n" [regtot, regtot])
-                      else if from <> to andalso
-                              (B.isChar to orelse B.isChar from) then
-                              (emt "+%s=%s\t%s\n"
-                                     [regtot, regfromt, regfromt];
-                               if B.isUChar from
-                               then emt "+%s=%s&255\n" [regtot, regtot]
-                               else ())
-                      else if B.isSShort from andalso not (B.isShort to) then
-                          (emt "+%s=%s{16\t%s\n"
-                                 [regtot, regfromt, regfromt];
-                           emt "+%s=%s}16\n" [regtot, regtot])
-                      else if from <> to andalso
-                          (B.isShort to orelse B.isShort from) then
-                          (emt "+%s=%s\t%s\n" [regtot, regfromt, regfromt];
-                           if B.isUShort from then
-                               (emt "+%s=%s{16\n" [regtot, regtot];
-                                emt "+%s=%s\"16\n" [regtot, regtot])
-                           else ())
-                      else same()
-                  end
+	     (Reg (Fp32Bit, _),  Reg (Fp64Bit, _)) =>
+		convAssign (regto, regfrom, "DC[", "]", kr)
+	   | (Reg (Fp64Bit, _),  Reg (Fp32Bit, _)) =>
+		convAssign (regto, regfrom, "SC[", "]", kr)
+	   | (Reg (from, _), Reg (to, _)) =>
+		let
+		   val cond1    = not (B.isReal from) andalso B.isReal to
+		   val cond2    = B.isReal from andalso not (B.isReal to)
+		   val regfromt = REG regfrom
+		   val regtot   = REG regto
+		in
+		   if cond1 orelse cond2 then
+		      let
+			 val (loc, seenBefore) =
+			    case (!xfer) of
+			       NONE =>
+				  let
+				     val g = nextLocal ()
+				  in
+				     xfer := SOME g; (g, false)
+				  end
+			     | SOME x => (x, true)
+			 val procNum = F.INT pNum
+		      in
+			 if not seenBefore then
+			    emt "dxfer_%d\t%s\t2\t3\t4\t1\n"
+			    [procNum, B.LOC loc]
+			 else ();
+			 if cond1 then
+			    let
+			       val newIReg  =
+				  newReg (if B.isUnsigned from
+					     then UInt32Bit
+					  else Int32Bit)
+			       val newIRegt = REG newIReg
+			       val newFReg  = newReg Fp32Bit
+			       val newFRegt = REG newFReg
+			    in
+			       cUnaryOperator(emt, Z.Convert, regfrom,
+					      newIReg, [regfrom], ctx);
+			       emt "+R[%s+%s]=%s\t%s\n"
+			       [REG sp, B.LOC loc, newIRegt, newIRegt];
+			       emt "t%s\n" [B.LOC loc];
+			       emt "+%s=F[%s+%s]\n"
+			       [REG newFReg, REG sp, B.LOC loc];
+			       emt "+%s=FI[%s]\t%s\n"
+			       [regtot, REG newFReg, REG newFReg]
+			    end
+			 else (* cond2 is true *)
+			    let
+			       val newFReg  = newReg Fp32Bit
+			       val newFRegt = REG newFReg
+			       val newIReg  =
+				  newReg (if B.isUnsigned to
+					     then UInt32Bit
+					  else Int32Bit)
+			       val newIRegt = REG newIReg
+			    in
+			       emt "+%s=RZ[%s]\t%s\n"
+			       [newFRegt, regfromt, regfromt];
+			       emt "+F[%s+%s]=%s\t%s\n"
+			       [REG sp, B.LOC loc, newFRegt,
+				newFRegt];
+			       emt "t%s\n" [B.LOC loc];
+			       emt "+%s=R[%s+%s]\n"
+			       [newIRegt, REG sp, B.LOC loc];
+			       cUnaryOperator(emt, Z.Convert, newIReg,
+					      regto, [newIReg], ctx)
+			    end
+		      end
+		   else if B.isSChar from andalso not (B.isChar to) then
+		      (emt "+%s=%s{24\t%s\n"
+		       [regtot, regfromt, regfromt];
+		       emt "+%s=%s}24\n" [regtot, regtot])
+		   else if from <> to andalso
+		      (B.isChar to orelse B.isChar from) then
+		      (emt "+%s=%s\t%s\n"
+		       [regtot, regfromt, regfromt];
+		       if B.isUChar from
+			  then emt "+%s=%s&255\n" [regtot, regtot]
+		       else ())
+		  else if B.isSShort from andalso not (B.isShort to) then
+		     (emt "+%s=%s{16\t%s\n"
+		      [regtot, regfromt, regfromt];
+		      emt "+%s=%s}16\n" [regtot, regtot])
+		  else if from <> to andalso
+		     (B.isShort to orelse B.isShort from) then
+		     (emt "+%s=%s\t%s\n" [regtot, regfromt, regfromt];
+		      if B.isUShort from then
+			 (emt "+%s=%s{16\n" [regtot, regtot];
+			  emt "+%s=%s\"16\n" [regtot, regtot])
+		      else ())
+		       else same()
+		end
       end
                                        (* Needs more work *)
     | cUnaryOperator (emt, Z.Treat_as, reg, res, kr, _) =
@@ -859,7 +861,7 @@ struct
               emt "d.%s\t%s\t0\t2\n" [F.STR name, B.GLO global]
           else ();
           emt "+%s=UC[%s" [REG r8, B.GLO global];
-          app (fn r => emt ",%s" [REG r]) realRegs; 
+          app (fn r => emt ",%s" [REG r]) realRegs;
           emt "]" [];
           doKilledRegs (emt, ["IC"], [r9]);
           emitU emt;
@@ -871,10 +873,10 @@ struct
                  tabLab, cases, findAndSetLabel) =
       let
             val {case_constant = c, ...} = hd cases
-            val n = case c of Z.ConstInt (Z.Finite k) => k
+            val n = case c of Z.Finite k => k
                             | _ => raise (Fail "Bad Const in cSwitchSt")
             val first = newIntReg ()
-            fun doCase {case_constant = Z.ConstInt (Z.Finite n),
+            fun doCase {case_constant = Z.Finite n,
                         case_target = target} =
                 let
                     val lab   = findAndSetLabel target
@@ -911,8 +913,9 @@ struct
           emitReturnStatement emt
       end
 
-  fun emitComment (emt, comment) =
-      emt "#%s\n" [F.STR comment]
+  fun emitComment (emt, comment) = emt "#%s\n" [F.STR comment]
+
+  fun emitRegisterTypeMap (emt) = emt "Mbwrfd\n" [];
 
   fun machineInit () =
       (initStArg ();

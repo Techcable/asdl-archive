@@ -1,10 +1,10 @@
-signature SUIF_SYM_TABS = 
+signature SUIF_SYM_TABS =
   sig
    type findType = zsuif.type_id -> zsuif.type_table_entry
 
    type 'a findSymbol = zsuif.variable_symbol -> ('a * bool)
 
-   val symTabs : (zsuif.symbol_table_entry -> 'a) -> zsuif.file_set_block -> 
+   val symTabs : (zsuif.symbol_table_entry -> 'a) -> zsuif.file_set_block ->
                    {findType : findType, findSymbol: 'a findSymbol}
 
    exception MissingSymbolDefinition
@@ -28,7 +28,6 @@ struct
         #uid (case symte of
                   Z.CodeLabelEntry {key, ...} => key
                 | Z.ProcedureEntry {key, ...} => key
-                | Z.RegisterEntry  {key, ...} => key
                 | Z.VariableEntry  {key, ...} => key
                 | Z.ParameterEntry {key, ...} => key
                 | Z.FieldEntry     {key, ...} => key
@@ -41,8 +40,8 @@ struct
                                val hashVal = Word.fromInt
                                val sameKey = op=)
 
-   fun symTabs (processSymbol : Z.symbol_table_entry -> 'a) 
-               (fsb: Z.file_set_block) : 
+   fun symTabs (processSymbol : Z.symbol_table_entry -> 'a)
+               (fsb: Z.file_set_block) :
                {findType : Z.type_id -> Z.type_table_entry,
                 findSymbol: Z.variable_symbol -> ('a * bool)} =
     let
@@ -67,7 +66,12 @@ struct
         val _ = app (fn elem => H.insert externSymbolTab (prSkey elem))
                     externSymbolEntries
 
-      fun findType key = H.lookup typeTab key
+	val hack_type = {key=0,value=
+			 Z.Data(Z.UIntegerType
+				{bit_size=Z.Finite(IntInf.fromInt 32),
+				 bit_alignment=0})}
+      fun findType 0  = hack_type
+        | findType key = H.lookup typeTab key
 
       fun findSymbol {uid, name} =
           (H.lookup externSymbolTab uid, false)
