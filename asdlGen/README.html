@@ -1,0 +1,155 @@
+<html>
+<head>
+<title>README</title>
+</head>
+<body BGCOLOR=#ffffff>
+<h1>asdlGen 0.9a Release</h1>
+<p>
+This is an alpha release of <tt>asdlGen</tt>. It is missing a few important
+features and has not been heavily tested yet. There is scant
+documentation. This README is all there really is right now. For describing
+simple compiler IR and ASTs seen in your average introductory compiler
+course this version of <tt>asdlGen</tt> should be up to the task, and save
+you quite a bit of time if you're programming in a language with out
+algebraic data types.
+
+<p>
+However, for more advanced work, it's very likely that this alpha version of
+<tt>asdlGen</tt> will not do exactly what you wanted. You'll probably be
+forced to modify the outputed source. The long term goals are to add enough
+features to <tt>asdlGen</tt> so that you will not have to modify the output
+of <tt>asdlGen</tt> in anyway. For this magical event to happen, the authors
+of <tt>asdlGen</tt> would like as much feed back as possible. Please take
+the time to send us a note as to what you found good or bad about
+<tt>asdlGen</tt>.
+
+<p> An official non alpha release is going to happen sometime in late January
+of 1998. The final release will have some real user level
+documentation, and a few critical features left out of this release. 
+<h1>Questions Comments?</h1>
+
+Questions and comments should be directed to <a
+href=mailto:zephyr-discussion@virginia.edu>
+<tt>zephyr-discussion@virginia.edu</tt></a> For more information about the
+Zephyr Project see <a href=http://www.cs.virginia.edu/zephyr>
+<tt>http://www.cs.virginia.edu/zephyr</tt></a>. For the latest information
+about ASDL see <a href=http://www.cs.princeton.edu/zephyr/ASDL><tt>
+http://www.cs.princeton.edu/zephyr/ASDL</tt></a>.
+
+
+<h1>Invocation</h1> 
+<em>See <a href=INSTALL.html> <tt>INSTALL</tt></a> for installation 
+instructions.</em>
+
+Invoke asdlGen like
+<pre>
+    asdlGen --lang [options] mod1.asdl mod2.asdl ... modn.asdl
+</pre>
+
+Where <tt>lang</tt> is one of 
+<table>
+<tr><td>--c     <td>Ansi C 
+<tr><td>--cxx   <td>C++  
+<tr><td>--ml    <td>Standard ML  
+<tr><td>--java  <td>Java (1.02 or 1.1.4) 
+<tr><td>--html  <td>A ./doc directory with crude HTML descriptions
+<tr><td>--typ   <td>Machine readable description of the type environment
+<tr><td>--check <td>Just check correctness of inputs
+<tr><td>--all   <td>all of the above
+</table>
+
+<p>
+The <tt>options</tt> are specific to each output language. To find out about
+them examine the output files produced by <tt>asdlGen</tt>. It will list the
+default values of the options available that were used to produce the
+output, options which you can change. By default the output will be placed
+in the same directory as the input file that caused it to be
+generated. Some translators like the Java will create their own subdirectory
+to place the output. The directory where output files goes can be
+overridden with the <tt>--output_directory</tt> option.
+
+<p>
+<tt>mod1.asdl mod2.asdl ... modn.asdl</tt> describe the type environment
+your application expects to build against. A type environment is the set of
+<em>all</em> ASDL types which your programs wishes to use. The
+<tt>--typ</tt> option produces a machine readable description of the type
+environment.
+
+<p>
+For applications that wish to manipulate generic ASDL values there are
+various language specific libraries that take the type environment produced
+by the <tt>--typ</tt> option and are able to manipulate the generic values.
+An example of this can be found in <a href=src/c/><tt>src/c/xlate.c</tt></a>, 
+and <a href=src/sml/pp-pickle><tt>src/sml/pp-pickle.sml</tt></a>,
+which depend on the ASDL descriptions found in src/asdl/generic.asdl.
+
+<p>
+The directories <tt>share/{<a href=share/include>include</a>, <a
+href=share/classes>classes</a>}</tt> contain the necessary platform
+independent include and class files need to compile the output of
+<tt>asdlGen</tt>.  The directory <tt><a href=src/sml/base>
+src/sml/base</a></tt> contians the support code need for building the sml
+output of <tt>asdlGen</tt>. I should move this someplace else.
+
+<p>
+<a href=lib/><tt>lib/</tt></a> contains platform dependent libraries
+generated from the <tt>src/{<a href=src/c>c</a>, <a href=src/cxx>cxx</a>, <a
+href=src/java/>java</a>}</tt> directories. These also contains some very
+simple test code and Makefiles to build them automatically.
+<p>
+The core syntax is described in <a
+href=http://www.cs.princeton.edu/zephyr/ASDL/docs/dsl97/dsl97-abstract.html>The
+Zephyr Abstract Syntax Description Language</a>.  See <tt><a
+href=src/asdl>src/asdl</a></tt> for examples of the modules in ASDL that
+aren't described in the paper.
+<p>
+The directory <tt><a href=src/sml>src/sml</a></tt> contains the sources for
+<tt>asdlGen</tt>. The Perl5 script <a href=src/misc/id_hack.pl><tt>
+src/misc/id_hack.pl</tt></a> generates #defines so you can program with
+sorter names. See the <a href=src/c/Makefile><tt>Makefile</tt></a> in
+<tt>src/c</tt> for an example 
+
+<h1>BUGS/TODO</h1>
+<ul>
+<li> Need to provide hooks for user defined representation of types see ....
+<a href=http://www.cs.princeton.edu/zephyr/ASDL/docs/design/user_types.html>
+<tt>http://www.cs.princeton.edu/zephyr/ASDL/docs/design/user_types.html</tt>
+</a>
+<li> In the not too distant future, pickle files will come stamped with a
+magic number that identifies the type environment from which it was
+generated. If the type environments are not exactly the same. The code will
+complain. Right now the pickle code generates untyped pickles. So if you
+feed it a pickle that is of the wrong type it will break.  
+
+<li> No real internal/external documentation.  
+
+<li> Haskell backend provided by Fermin Reig <tt>reig@dcs.gla.ac.uk</tt>
+integrated into the main source base. Hasn't been tested so it isn't
+directly accessible yet.
+
+<li> None of the translators warn you when it has to mangle and
+identifier to avoid using a reserved keyword.
+
+<li> Not all of the "reserved" words for all the languages are. For instance
+Identifiers defined in the standard headers such as stdio.h and stdlib.h are
+not mangled in the C backend. An ASDL definition like
+<pre>	
+  malloc = (int size)
+  strcpy = (string dsr, string src)
+</pre>
+  will cause all sorts of problems.  
+<li> There are likely to be some subtle naming conflicts. I've been trying to
+keep name mangling to a minimum, which means I've probably been too
+conservative.
+<li> The pretty printing rules could be tweaked. 
+<li> The handling of primitive types is more ad hoc than I'd like. 
+</ul>
+
+</body>
+</html>
+
+
+
+
+
+

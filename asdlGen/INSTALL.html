@@ -1,0 +1,50 @@
+<html>
+<head>
+<title>INSTALL Notes</title>
+</head>
+<body BGCOLOR=#ffffff>
+<h1>The Binary Distribution</h1>
+<p>
+Since installing the distribution from sources requires the SML/NJ compiler,
+I'm providing a binary distribution for those who just want to use asdlGen
+in a development environment that does not have SML/NJ installed. Fetch the
+right binary version from <a
+href=http://www.cs.princeton.edu/zephyr/ASDL/#software>
+<tt>http://www.cs.princeton.edu/zephyr/ASDL/#software</tt></a>.
+
+<h2>Unix</h2> On a Unix system with ksh all you should have to do is unpack
+the archive and put the shell script <a href=bin/asdlGen>
+<tt>bin/asdlGen</tt></a> in your path. If your stuck on a Unix system
+without ksh you'll have to hack the script so it can locate the directory
+where you unpacked the sources.
+
+<h2>Windows NT/95</h2>
+In a Windows environment you need to set the environment variable 
+ASDL_HOME to the location of where you unpacked the distribution. 
+Also set your path to include <a href=bin/asdlGen.bat><tt>bin/asdlGen.bat</tt>
+</a>. 
+
+<h1>Installing from Sources</h1> 
+To install from sources, you need to install the version 109.32 of the
+SML/NJ compiler available as well as the SML/NJ Library. See <a
+href=http://cm.bell-labs.com/cm/cs/what/smlnj/install.html>
+<tt>http://cm.bell-labs.com/cm/cs/what/smlnj/install.html</tt></a>for
+details.
+
+<h2>Unix</h2>
+On a Unix machine cd into src/sml and run src/sml/build.sh to build a
+working asdlGen from the sources. 
+<h2>Windows NT/95</h2>
+On a Windows machine cd into sing the Windows version invoke
+src/sml/build.bat and type the following after <tt>sml-cm</tt> starts up.
+<pre>
+- CM.make();
+... watch and wait while things compile
+-  Export.export_it();
+</pre>
+<h2>Misc</h2>
+In src/{c,cxx,java} there are example Makefiles that build some
+applications and libraries using asdlGen. Doing a make install moves
+the output into the appropriate directories.
+</body>
+</html>

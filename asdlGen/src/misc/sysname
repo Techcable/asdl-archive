@@ -1,0 +1,4 @@
+#!/bin/sh
+eval `../../runtimes/arch-n-opsys`
+echo $ARCH-$OPSYS
+

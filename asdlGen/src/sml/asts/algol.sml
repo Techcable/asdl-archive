@@ -1,0 +1,65 @@
+(* 
+ * Copyright (c) 1997 by Daniel C. Wang 
+ *)
+structure AlgolTypes :  ALGOL_TYPES =
+    struct
+	open LT
+	datatype ty_exp =
+	    TyId         of ty_id
+	  | TyArray      of (ty_exp * int option)
+	  | TyRecord     of {fixed:field list,
+			     variant:variant option}
+	  | TyReference  of ty_exp
+	  | TyEnum       of enumer list
+	  | TyFunction   of field list * ty_exp
+	  | TyOption   of ty_exp
+	  | TySequence of ty_exp
+
+	and const =
+	    IntConst of (int)
+	  | EnumConst of (id)
+
+	and exp =
+	    Const of const
+	  | NilPtr
+	  | FnCall of (exp * exp list)
+	  | Id  of (id)
+	  | RecSub of (exp * id)
+	  | VarRecSub of (exp * id * id)
+	  | ArraySub of (exp * exp)
+	  | DeRef of (exp)
+	  | PlusOne of (exp)
+	  | MinusOne of (exp)
+	  | NotNil of (exp)
+	  | NotZero of (exp)
+
+	and stmt =
+	   Nop
+	  | Assign      of (exp * exp)
+	  | AllocateRec of {dst:id,ty:ty_id,field_inits: field_init list,
+			    variant_init: variant_init option}
+	  | If          of {test:exp,then_stmt:stmt,else_stmt:stmt}
+	  | While       of {test:exp,body:stmt}
+	  | Case        of {test:exp,clauses:clause list,default:stmt}
+	  | Block       of (block)
+	  | ProcCall    of (exp * exp list)
+	  | Return      of (exp)
+
+	
+	and decl =
+	    DeclTy of (ty_id * ty_exp)
+	  | DeclFun of (id * field list * block * ty_exp)
+	  | DeclProc of (id * field list * block)
+	  | DeclConst of (id * const * ty_exp)
+	  
+	withtype field        = {name:id,ty:ty_exp}
+	     and choice       = {name:id,fields:field list}
+             and enumer       = {name:id,value:int option}
+	     and variant      = {tag:id,tag_ty:enumer list,choices:choice list}
+             and field_init   = {name:id,init:exp}
+             and variant_init = {tag:id,name:id,fields:field_init list}
+             and clause       = {tag:const,body:stmt}
+             and block        = {vars:field list,body:stmt list}
+
+	type decls = {name:mod_id,imports:mod_id list,decls:decl list}
+    end

@@ -1,0 +1,131 @@
+structure T = T
+fun check_first p f msg s =
+    if p (String.sub(s,0)) then s
+    else
+	let 
+	    val fixed = f s
+	in
+	    Error.warn [msg, "changing ",s," to ",fixed];
+	    fixed
+	end
+
+val mkconid = 
+	  Identifier.fromString o
+	  (check_first Char.isUpper
+	   (String.translate (Char.toString o Char.toUpper))
+	   "Constructor must begin with an uppercase letter ")
+val mktyid =
+	  Identifier.fromString  o (check_first
+	  Char.isLower
+	  (String.translate (Char.toString o Char.toLower))
+	  "Type must begin with a lowercase letter ")
+
+%%
+%header (functor AsdlLrValsFun(structure Token : TOKEN
+   			       structure T     : ASDL))
+    
+%eop EOF 
+
+(* %pos declares the type of positions for terminals.
+   Each symbol has an associated left and right position. *)
+
+%pos int
+
+%term     LBRACK | RBRACK
+	| LBRACE | RBRACE
+        | LANGLE | RANGLE
+        | LPAREN | RPAREN
+        | FIELDSEP
+        | DOT
+        | SEQ | OPT
+        | EQ
+        | PIPE
+        | ATTRIBUTES of string
+        | MODULE  of string
+	| ID of string
+	| IMPORTS of string
+	| EOF	
+
+%nonterm  
+	  asdl_type of T.asdl_type
+	| asdl_type_list of T.asdl_type list 
+	| constructor of T.constructor
+	| constructor_list of T.constructor list 
+	| field of T.field
+        | field_list' of T.field list
+	| field_list of T.field list 
+	| id_list of T.identifier list
+	| import_list of T.identifier list
+        | id_opt of T.identifier option
+        | id of T.identifier
+        | con_id of T.identifier
+        | ty_id of T.identifier
+	| module of T.asdl_module	
+	| module_list of T.asdl_module	list
+	| start of (T.asdl_module list)
+	  
+%name Asdl
+%noshift EOF
+%verbose
+%%
+(* the parser returns the value associated with the expression *)
+start: module_list (module_list)
+
+module_list: module module_list (module::module_list)
+           | (nil)
+
+module    : MODULE id LBRACE asdl_type_list RBRACE
+               ({name=id,imports=[],defs=asdl_type_list}) 
+	     | MODULE id LPAREN import_list RPAREN LBRACE
+	        asdl_type_list RBRACE
+		({name=id,
+		  imports=import_list,defs=asdl_type_list}) 
+
+import_list : IMPORTS id import_list (id::import_list)
+             | ([])
+		
+ty_id     : ID      (mktyid ID)
+          | MODULE  (mktyid MODULE)
+	  | IMPORTS (mktyid IMPORTS)
+
+con_id    : ID      (mkconid ID)
+          | MODULE  (mkconid MODULE)
+	  | IMPORTS (mkconid IMPORTS)
+		
+id        : ID         (Identifier.fromString ID)
+          | MODULE (Identifier.fromString MODULE)
+          | IMPORTS (Identifier.fromString IMPORTS)
+          
+id_opt    : id (SOME id)
+          | (NONE)
+
+id_list   : id    ([id])
+          | id DOT id_list (id::id_list)
+
+asdl_type : ty_id EQ constructor constructor_list 
+               ATTRIBUTES LPAREN field_list' RPAREN
+             (T.SumType (ty_id,field_list',constructor,constructor_list))
+           | ty_id EQ constructor constructor_list
+             (T.SumType (ty_id,[],constructor,constructor_list))
+           | ty_id EQ LPAREN field_list'  RPAREN
+	     (T.ProductType(ty_id,hd field_list', tl field_list'))
+
+asdl_type_list: asdl_type asdl_type_list (asdl_type::asdl_type_list)
+              | (nil)
+ 
+constructor       : con_id field_list (T.Con (con_id,field_list))
+constructor_list  : PIPE constructor constructor_list
+                         (constructor::constructor_list)
+                  | (nil)
+
+field     :  id_list     id_opt (T.Id(id_list,id_opt))
+          |  id_list OPT id_opt (T.Option(id_list,id_opt))
+          |  id_list SEQ id_opt (T.Sequence(id_list,id_opt))
+
+field_list: LPAREN field_list' RPAREN (field_list')
+           | (nil)
+
+field_list': field FIELDSEP field_list' (field::field_list')
+           | field                        ([field])
+
+
