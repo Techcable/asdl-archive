@@ -3,8 +3,8 @@ ASDL_INPUTS = @top_srcdir@/src/asdl/generic.asdl
 ASDL_OUTPUT = asts/AsdlValue/g.java asts/TypePickle/g.java
 
 if HAVE_JAVA
-pkgdata_DATA = asdl.zip
-CLEANFILES = asdl.zip asts/*/* asdl_base/*.class
+ pkgdata_DATA = asdl.zip
+ CLEANFILES = asdl.zip asts/*/* asdl_base/*.class
 endif
 
 

@@ -2,12 +2,18 @@
  * Copyright (c) 1997 by Daniel C. Wang 
  *)
 functor mkAlgebraicTranslator(structure IdFix : ID_FIX
+			      structure Pkl : FUN_PKL_GEN
+			      structure T : ALGEBRAIC_TYPES
+			      sharing type Pkl.ty = T.ty_exp
+				      and type Pkl.exp = T.exp
+				      and type Pkl.id = T.id
+				      and type Pkl.decl = T.decl
 			      val fix_fields  : bool) : MODULE_TRANSLATOR =
     struct
 	structure M = Module
-	structure T = AlgebraicTypes
+	structure T = T
 	structure IdFix = IdFix
-	structure Pkl = AlgebraicPklGen
+	structure Pkl = Pkl
 
 	val set_dir = true
 	val fix_fields = fix_fields
@@ -102,7 +108,7 @@ functor mkAlgebraicTranslator(structure IdFix : ID_FIX
 		{fd=fd,ulabel=ulabel,rd=rd,wr=wr}
 	    end
 
-	fun trans_fields (fields:field_value list) =
+	fun trans_fields topt (fields:field_value list) =
 	    let
 		val no_labels =  List.all #ulabel fields
 		fun f2m ({fd={name,ty},...}:field_value) = T.MatchId(name,ty)
@@ -118,14 +124,14 @@ functor mkAlgebraicTranslator(structure IdFix : ID_FIX
 		    if no_labels then
 			let val tys =  (List.map (#ty o #fd) fields)
 			in (T.TyTuple tys,
-			    T.MatchTuple (match_fields,tys),
-			    T.Tuple(bind_vars))
+			    T.MatchTuple (match_fields,tys,topt),
+			    T.Tuple(bind_vars,topt))
 			end
 		    else
 			let val fields =  (List.map #fd fields)
 			in  (T.TyRecord fields,
-			     T.MatchRecord (match_fields,fields),
-			     T.Record (bind_vars,fields))
+			     T.MatchRecord (match_fields,fields,topt),
+			     T.Record (bind_vars,fields, topt))
 			end
 	    in
 		(ty,match,exp,wr_exp,bind_clauses)
@@ -138,12 +144,9 @@ functor mkAlgebraicTranslator(structure IdFix : ID_FIX
 		val name = trans_cid name
 
 		val (ty_arg,match,exp,wr_exp,bind_clauses)
-		    = trans_fields (attrbs @ fields)
+		    = trans_fields NONE (attrbs @ fields)
 		val cnstr= {name=name,ty_arg=ty_arg}
 		val rd =
-		    if (List.null bind_clauses) then
-		    (T.MatchInt tag_v,T.Cnstr(name,exp))
-		    else
 		    (T.MatchInt tag_v,
 		     T.LetBind(bind_clauses,T.Cnstr(name,exp)))
 		val wr = 
@@ -155,9 +158,10 @@ functor mkAlgebraicTranslator(structure IdFix : ID_FIX
 
 	fun trans_defined p {tinfo,name,fields,cons=[],props} =
 	    let
-		val (ty_decl,match,exp,wr_exp,bind_clauses)
-		    = trans_fields fields
 		val name = trans_tid true name
+		val (ty_decl,match,exp,wr_exp,bind_clauses)
+		    = trans_fields (SOME name) fields
+
 		val tag = M.type_tag tinfo
 		val ty = (T.TyId name)
 		val {natural_ty,pkl_name,unwrap,wrap} = wrappers props ty
@@ -166,8 +170,8 @@ functor mkAlgebraicTranslator(structure IdFix : ID_FIX
 		     T.LetBind(bind_clauses,
 			       unwrap exp),
 		     wr_body=
-		     T.LetBind([(match,wrap (T.Id Pkl.arg_id))],
-			       T.Seq wr_exp)}
+		     T.Match(wrap (T.Id Pkl.arg_id),
+			     [(match,T.Seq wr_exp)])}
 
 		val wr = Pkl.write_decl
 		    {name=pkl_name,arg_ty=natural_ty,

@@ -21,6 +21,10 @@ signature EXTERNAL_PROGRAMS =
 		       inputs: string list,
 		         rest: string list} -> OS.Process.status
 
+	val haskell: {haskell_path: string list,
+		        inputs: string list} -> OS.Process.status
+
+
 	val rm: string list -> OS.Process.status
 
     end
@@ -34,8 +38,8 @@ signature SUPPORT_FILES =
 	val cxx_libs       : string list
 
 	val java_classes   : string list
-
 	val cm_path        : string list
+	val haskell_path        : string list
     end
 
 structure SupportFiles: SUPPORT_FILES =
@@ -56,6 +60,8 @@ structure SupportFiles: SUPPORT_FILES =
 	val java_classes = mk_path ["java"]
 
 	val cm_path = mk_path ["sml","base"]
+
+	val haskell_path = (mk_path ["haskell"])@["/usr/local/share/hugs/lib"]
     end
 
 structure UnixExternalProgs:EXTERNAL_PROGRAMS =
@@ -63,11 +69,12 @@ structure UnixExternalProgs:EXTERNAL_PROGRAMS =
 	val cc_prg  = "gcc"
 	val cxx_prg = "g++"
 	val javac_prg = "javac"
+	val haskell_prg = "hugs"
 	val sml_prg = "../misc/sml-batch"
 
 	fun prefix x s = x^s
 
-	fun run cmd = OS.Process.system cmd
+	fun run cmd = OS.Process.system (cmd ^ "</dev/null")
 
 	val shpath = ListFormat.fmt
 	    {init="",final="",sep=":",fmt=(fn x => x)} 
@@ -93,6 +100,15 @@ structure UnixExternalProgs:EXTERNAL_PROGRAMS =
 	    let
 		val cm_path = (shpath cm_path)
 		val cmd = (join (sml_prg::cm_path::inputs))
+	    in
+		run cmd
+	    end
+
+	fun haskell {haskell_path,inputs} =
+	    let
+		val haskell_path = "-P"^(shpath haskell_path)
+		    
+		val cmd = (join (haskell_prg::"+."::haskell_path::inputs))
 	    in
 		run cmd
 	    end
@@ -169,7 +185,14 @@ structure Test =
 	    in
 		P.sml_batch{cm_path=cm_path,inputs="asdl-base.cm"::outs}
 	    end
-	
+
+	fun haskell_comp i =
+	    let
+		val (srcs,outs) = get_files "" i
+		val haskell_path = S.haskell_path
+	    in
+		P.haskell{haskell_path=haskell_path,inputs=outs}
+	    end
 	fun c_comp i =
 	    P.cc{include_path=S.c_includes,
 		 library_path=S.c_libs,
@@ -190,11 +213,13 @@ structure Test =
 	val do_c =    c_comp o Main.AnsiC.do_it 
 	val do_cxx =  cxx_comp o Main.CPlusPlus.do_it 
 	val do_sml =  sml_comp o Main.ML.do_it 
+	val do_haskell =  haskell_comp o Main.Haskell.do_it 
 	    
 	fun test (name,f,i) () = (name,f i = OS.Process.success)
 
 	fun test_all n i =
 	    [test (n^"-ml",do_sml,"--view"::"SML"::i),
+	     test (n^"-hs",do_haskell,"--view"::"Haskell"::i),
 	     test (n^"-c",do_c,"--view"::"C"::i),
 	     test (n^"-cxx",do_cxx,"--view"::"Cxx"::i),
 	     test (n^"-java",do_java,"--view"::"Java"::i)]

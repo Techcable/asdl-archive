@@ -410,10 +410,8 @@ structure Module :> MODULE =
 
        fun src_name (name,NONE) = name
 	 | src_name (name,SOME x) =
-	   (print x;
-	    print "\n";
-	    Id.fromPath
-	    {qualifier=Id.getQualifier name, base=x})
+	   Id.fromPath
+	    {qualifier=Id.getQualifier name, base=x}
 
        fun get_t (x:type_info) =  x
        val type_tag = #tag o get_t 

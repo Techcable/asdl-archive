@@ -267,7 +267,6 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 		val wr_fields  = List.map #wr    fields
 		val fields     = List.map #fd    fields
 
-
 		val enumers    = List.map #enumer (cons:con_value list)
 		val mk_cnstrs  = List.map #mk_cnstr cons
 		val wr_clauses = List.map #wr cons
@@ -285,7 +284,6 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 		      | SOME x =>
 			    [{name=user_field_name,
 			      ty=T.TyId (T.TypeId.fromPath x)}]
-
 
 		val variant_opt =
 		    null2none choices

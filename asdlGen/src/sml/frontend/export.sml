@@ -16,6 +16,8 @@ structure Export =
 
 	val JavaGenFn =  mkExportFn Main.Java.do_it
 
+	val HaskellGenFn =  mkExportFn Main.Haskell.do_it
+
 	val CPlusPlusGenFn =
 	    mkExportFn Main.CPlusPlus.do_it
 
@@ -33,6 +35,7 @@ structure Export =
 	  | asdlGen (name, ("--c"::rs)) = AnsiCGenFn(name,rs)
 	  | asdlGen (name, ("--cxx"::rs)) = CPlusPlusGenFn(name,rs)
 	  | asdlGen (name, ("--sml"::rs)) = MLGenFn(name,rs)
+	  | asdlGen (name, ("--haskell"::rs)) = HaskellGenFn(name,rs)
 	  | asdlGen (name, ("--html"::rs)) = HTMLGenFn(name,rs)
 	  | asdlGen (name, ("--check"::rs)) = CheckFn(name,rs)
 	  | asdlGen (name, ("--typ"::rs)) = TypGenFn(name,rs)
@@ -43,7 +46,8 @@ structure Export =
 		val rets =
 		    List.map (fn x => (x (name,rs)))
 		    [CheckFn,TypGenFn,HTMLGenFn,
-		     JavaGenFn,AnsiCGenFn,CPlusPlusGenFn,MLGenFn]
+		     JavaGenFn,AnsiCGenFn,CPlusPlusGenFn,
+		     MLGenFn,HaskellGenFn]
 	    in
 		     if (all_success rets) then
 			 OS.Process.success
@@ -54,7 +58,7 @@ structure Export =
 		     (Error.say
 		      (String.concat
 		       ["Usage: ",name,
-			" --{java|c|cxx|sml|check|typ|html|all}",
+			" --{java|c|cxx|sml|haskell|check|typ|html|all}",
 		       " [options ...]"," files ...","\n"]);
 		      OS.Process.exit OS.Process.failure)
     end

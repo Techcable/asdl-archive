@@ -1,5 +1,13 @@
 (* 
- * Copyright (c) 1997 by Daniel C. Wang 
+ * Copyright (c) 1997 
+ *
+ * Author: Daniel C. Wang
+ * 
+ * Originally ml-pp.sml 
+ * Modified for Haskell output by
+ * Fermin Reig Galilea
+ * University of Glasgow
+ * http://www.dcs.gla.ac.uk/~reig/
  * 
  *)
  signature HASKELL_PP =
@@ -24,15 +32,34 @@ structure HaskellPP : HASKELL_PP =
 	   ( PP.vblock 2 [PP.s "(*",
 			 PP.seq_term {fmt=PP.s,sep=PP.nl} s,
 			 PP.s "*)"];PP.empty)
-	    
+	   
         (* val capitalize = fn : string -> string *)
-	fun capitalize s = str(Char.toUpper(hd(explode s))) (* reig *)
-			   ^implode(tl(explode s))
+	fun capitalize s =
+	    let
+		val size = String.size s
+		val first = Char.toUpper(String.sub(s,0))
+		val rest = if size > 1 then
+		    String.extract(s,1,NONE)
+			   else ""
+	    in
+		String.concat [String.str first,rest]
+	    end
+
+
+
 	(* is there a better definition for capitalize in SML? *)	
+	fun cap_path {base,qualifier} =
+	    SOME {base=capitalize base,
+		  qualifier=List.map capitalize qualifier}
+
+	val rec_con =
+	    T.VarId.fromPath o T.TypeId.toPath o
+	    (T.TypeId.prefixBase "Make") o (T.TypeId.subst cap_path) 
+
 
 	val pp_id = PP.wrap T.VarId.toString
 	(* val pp_ty_id = fn : Identifier.identifier -> PPUtil.pp *)
-	val pp_ty_id = PP.wrap capitalize o T.TypeId.toString (* reig *)
+	val pp_ty_id = PP.wrap (T.TypeId.toString o (T.TypeId.subst cap_path))
 	val tup_sep =  PP.cat [PP.s ",",PP.ws] (* reig *)
 	val semi_sep = PP.cat [PP.s ";",PP.ws]
 	val comma_sep = PP.cat [PP.s ",",PP.ws]
@@ -66,7 +93,8 @@ structure HaskellPP : HASKELL_PP =
 			raise Error.internal
 			
 		fun pp_one (NONE,y) = pp_id y
-		  | pp_one (SOME x,y) = PP.cat [pp_id y,PP.s " <- ", fmt x] (* reig*)
+		  | pp_one (SOME x,y) =
+		    PP.cat [pp_id y,PP.s " <- ", fmt x] (* reig*)
 		val seq = zip_fields (x,y)
 	    in
 		[PP.s lbracket,PP.seq{fmt=pp_one,sep=separator} seq, (*reig *)
@@ -76,13 +104,18 @@ structure HaskellPP : HASKELL_PP =
 	(* val pp_ty_exp = fn : HaskellTypes.ty_exp -> PPUtil.pp *)
 	fun pp_ty_exp (T.TyId tid) = pp_ty_id tid
 	  | pp_ty_exp (T.TyList te) =
-	    PP.cat [PP.s "[", pp_ty_exp te,PP.s "]"] (* reig *)
+	    PP.cat [PP.s "[", pp_ty_exp te,PP.s "]"] (*` reig *)
 	  | pp_ty_exp (T.TyOption te) =
 	    PP.cat [PP.s "(Maybe ", pp_ty_exp te,PP.s ")"] (* reig *)
 	  | pp_ty_exp (T.TySequence te) =
 	    PP.cat [pp_ty_exp te,PP.s " Seq.seq"]
 	  | pp_ty_exp (T.TyVector te) =
 	    PP.cat [pp_ty_exp te,PP.s " vector"]
+	  | pp_ty_exp (T.TyCon (tid,[te])) =
+	    PP.cat [pp_ty_id tid,PP.s " ",pp_ty_exp te]
+	  | pp_ty_exp (T.TyCon (tid,tes)) =
+	    PP.cat [PP.s "(", PP.s " " , pp_ty_id tid,
+		    PP.seq{fmt=pp_ty_exp,sep=PP.s " "} tes, PP.s")"]
 	  | pp_ty_exp (T.TyTuple []) = unit_pp
 	  | pp_ty_exp (T.TyTuple tes) =
 	    PP.hblock 1 [PP.s "(" ,
@@ -94,30 +127,39 @@ structure HaskellPP : HASKELL_PP =
 			 PP.seq{fmt=pp_field,sep=comma_sep} fes,
 			 PP.s "}"]
 	  | pp_ty_exp (T.TyFunction (args,res)) =
-		    PP.hblock 4 [PP.seq'{fmt=pp_ty_exp,
-					 sep=fun_sep,
-					 empty=unit_pp} args,
-					 fun_sep, PP.s "IO ", pp_ty_exp res] (* reig *)
-
+	    PP.hblock 4
+	    [PP.seq'{fmt=pp_ty_exp,
+		     sep=fun_sep,
+		     empty=unit_pp} args,
+	     fun_sep, pp_ty_exp res] (* reig *)
+	    
 	(* val pp_exp = fn : HaskellTypes.exp -> PPUtil.pp *)
 	and pp_exp (T.Id id) = pp_id id
 	  | pp_exp (T.Int i) = PP.d i
 	  | pp_exp (T.Call (e,el)) =
 	    PP.hblock 0 [PP.seq {fmt=pp_exp,sep=PP.ws}  (e::el)]
-	  | pp_exp (T.Cnstr(id,T.Tuple([]))) = pp_id id
-	  | pp_exp (T.Cnstr(id,T.Record([],[]))) = pp_id id
+	  | pp_exp (T.Cnstr(id,T.Tuple([],_))) = pp_id id
+	  | pp_exp (T.Cnstr(id,T.Record([],[],_))) = pp_id id
+
+ (* TODO: add option for tuppled vs curried constructors *)
+	  | pp_exp (T.Cnstr(id,T.Tuple (es,_))) =
+	    PP.hblock 1 [pp_id id,
+			 PP.ws, 
+			 PP.seq{fmt=pp_exp,sep=PP.ws} es]
 	  | pp_exp (T.Cnstr(id,e)) =
 	    PP.hblock 0 [pp_id id,pp_exp e]
-	  | pp_exp (T.Tuple el) =
+	  | pp_exp (T.Tuple (el,_)) =
 	    PP.hblock 1
-	    [PP.s "(" ,PP.seq{fmt=pp_exp,sep=comma_sep}el, PP.s")"]
-	  | pp_exp (T.Record (el,fl)) =
+	    [PP.s "(" ,PP.seq{fmt=pp_exp,sep=comma_sep} el, PP.s")"]
+	  | pp_exp (T.Record (el,fl,opt_ty)) =
 	    let
 		fun eq (T.Id x,y)  = T.VarId.eq (x,y)
 		  | eq _ = false
 	    in
-		PP.vblock 2
-		(pp_rec_seq eq "{" "}" semi_sep pp_exp el fl)
+
+		PP.cat [PP.opt{some=pp_id o rec_con,none=PP.empty} opt_ty,
+			PP.vblock 2
+			(pp_rec_seq eq "{" "}" comma_sep pp_exp el fl)]
 	    end
 	  | pp_exp (T.Match(c as T.Call(e,el),cl)) = (* reig *)
 	    PP.vblock 1 [PP.s "do", PP.nl,
@@ -126,7 +168,7 @@ structure HaskellPP : HASKELL_PP =
 			 PP.s "let x = (case i of", PP.nl,
 			 PP.seq {fmt=pp_clause,sep=PP.ws} cl, PP.s ")", 
 			 PP.nl ], PP.nl,
-			 PP.s "x", PP.nl]	
+			 PP.s "x", PP.nl]
 	  | pp_exp (T.Match(e,cl)) =
 	    PP.vblock 4 [PP.s "case (",pp_exp e,PP.s ") of ",PP.nl,
 			 PP.s "  ",
@@ -140,40 +182,44 @@ structure HaskellPP : HASKELL_PP =
 	    in
 		PP.vblock 1  		
 		[PP.s "do", PP.nl,
-		 PP.vblock 0 [PP.seq {fmt=pp_exp,sep=PP.nl} el],
-		 PP.nl] 		
+		 PP.vblock 0
+		 [PP.seq {fmt=pp_exp,sep=PP.nl}	el,PP.nl]]
 	    end
+	  | pp_exp (T.LetBind([],e)) =
+	    PP.cat [PP.s "return (", pp_exp e, PP.s ")"]
 	  | pp_exp (T.LetBind(cl,e)) =
 	    PP.vblock 4 [PP.s "do ",PP.nl,
 			 PP.seq {fmt=pp_let_clause,sep=PP.nl} cl,
-			 PP.untab,
+			 PP.nl,
 			 PP.s "return (",
 			 pp_exp e,
 			 PP.s ")",PP.nl]
 	(* val pp_match = fn : HaskellTypes.match -> PPUtil.pp *)
-	and pp_match (T.MatchRecord(ml,fl)) = 
+	and pp_match (T.MatchRecord(ml,fl,opt_ty)) = 
 	    let
 		fun eq (T.MatchId (x,_),y)  = T.VarId.eq (x,y)
 		  | eq _ = false
 	    in
-		PP.hblock 2
-		(pp_rec_seq eq "{" "}" comma_sep pp_match ml fl) (* reig *)
+		PP.cat
+		[PP.opt{some=pp_id o rec_con,none=PP.empty} opt_ty,
+		PP.hblock 2 (pp_rec_seq eq "{" "}" comma_sep pp_match ml fl)]
 	    end
-	  | pp_match (T.MatchTuple(ml,_)) = 
+	  | pp_match (T.MatchTuple(ml,_,_)) = 
 	    PP.hblock 0 [PP.s "(",
 			 PP.seq {fmt=pp_match,sep=comma_sep} ml,
 			 PP.s ")"]
 	  | pp_match (T.MatchId(id,_)) = pp_id id
-	  | pp_match (T.MatchCnstr(T.MatchTuple([],_),{name,...})) =
+	  | pp_match (T.MatchCnstr(T.MatchTuple([],_,_),{name,...})) =
 	    pp_id name
-	  | pp_match (T.MatchCnstr(T.MatchTuple(ml,_),{name,...})) =(*reig*)
-	    PP.hblock 0 [pp_id name, PP.ws, 
-			 PP.seq {fmt=pp_match,sep=PP.ws} ml]
-	  | pp_match (T.MatchCnstr(T.MatchRecord([],_),{name,...})) =
+	  | pp_match (T.MatchCnstr(T.MatchTuple(ml,_,_),{name,...})) =(*reig*)
+	    (* N.B. must use PP.s " " rather than PP.ws because nl are
+			signficant in haskell *)
+	    PP.hblock 0 [pp_id name, PP.s " ", 
+			 PP.seq {fmt=pp_match,sep=PP.s " "} ml]
+	  | pp_match (T.MatchCnstr(T.MatchRecord([],_,_),{name,...})) =
 	    pp_id name
-	  | pp_match (T.MatchCnstr(r as T.MatchRecord(ml,fl),{name,...})) =(*reig ????*)
-	    	PP.hblock 0 [pp_id name, PP.ws,
-			     pp_match r]
+	  | pp_match (T.MatchCnstr(r as  T.MatchRecord(ml,fl,_),{name,...})) =
+	    PP.cat [pp_id name,pp_match (T.MatchRecord(ml,fl,NONE))]
 	  | pp_match (T.MatchCnstr(m,{name,...})) =
 	    PP.cat [pp_id name,pp_match m]
 	  | pp_match (T.MatchInt i) = PP.d i
@@ -195,9 +241,11 @@ structure HaskellPP : HASKELL_PP =
 	   val isFun = fn : HaskellTypes.decl -> bool *)
 
 	fun isSum (T.DeclSum _) = true
+	  | isSum (T.DeclTy (_,T.TyRecord _ )) = true
 	  | isSum _ = false
 
-	fun isTy (T.DeclTy _ ) = true
+	fun isTy (T.DeclTy (_,T.TyRecord _)) = false
+	  | isTy (T.DeclTy _ ) = true
 	  | isTy _ = false
 
 	fun isFun (T.DeclFun _ ) = true
@@ -218,9 +266,12 @@ structure HaskellPP : HASKELL_PP =
 		    PP.cat
 		    [pp_ty_id i,PP.s " =",
 		     PP.vblock (~1)
-		     [PP.s " ",PP.seq {sep=bar_sep,fmt=pp_cnstr} cnstrs]]
+		     [PP.s " ",PP.seq {sep=bar_sep,fmt=pp_cnstr}   cnstrs]]
+		  | pp_sdec (T.DeclTy(i, arg as (T.TyRecord _))) =
+		    pp_sdec (T.DeclSum(i,[{name=rec_con i,ty_arg=arg}]))
 		  | pp_sdec _ = raise Error.impossible
 
+(* TODO: add option for tuppled vs curried constructors *)
 		and pp_cnstr{name,ty_arg=T.TyTuple([])} = pp_id name
 		  | pp_cnstr{name,ty_arg=T.TyTuple tes} = (* reig *)
 		    PP.hblock 1 [pp_id name,
@@ -274,7 +325,6 @@ structure HaskellPP : HASKELL_PP =
 		    PP.cat [PP.nl,
 			    PP.seq{fmt=pp_fun_sig,sep=PP.nl} fdecs,
 			    PP.nl]
-
 		fun pp_fun_name (T.DeclFun (id,_,_,_)) =
 		    pp_id id
 		  | pp_fun_name _ = raise Error.impossible 
@@ -283,9 +333,12 @@ structure HaskellPP : HASKELL_PP =
 
 		fun pp_sum_name (T.DeclSum (i,_)) =
 		    PP.cat [pp_ty_id i,PP.s "(..)"]
+		  | pp_sum_name (T.DeclTy (i,T.TyRecord _)) =
+		    PP.cat [pp_ty_id i,PP.s "(..)"]
 		  | pp_sum_name _ = raise Error.impossible 
 
-		val pp_sum_names = PP.seq_term {fmt=pp_sum_name,sep=comma_sep} sdecs 
+		val pp_sum_names =
+		    PP.seq_term {fmt=pp_sum_name,sep=comma_sep} sdecs 
 
 		fun pp_tup_name (T.DeclTy(i,_)) =
 		    pp_ty_id i
@@ -293,7 +346,15 @@ structure HaskellPP : HASKELL_PP =
 
 		val pp_tup_names = PP.seq_term {fmt=pp_tup_name,sep=comma_sep} decs 
 
-
+		fun pp_imports imports =
+		    let
+			fun pp_import x =
+			    PP.cat [PP.s "import qualified ",
+				    PP.wrap T.ModuleId.toString x]
+		    in
+			PP.seq_term{fmt=pp_import,sep=PP.nl} imports
+		    end
+		
 		fun pp_sig name body incs =
 			PP.cat
 			[PP.hblock 0
@@ -303,18 +364,15 @@ structure HaskellPP : HASKELL_PP =
 			 pp_fnames, 
 			 PP.s ") where", PP.nl, PP.nl],
 			 PP.vblock 0
-			 [PP.seq{fmt=PP.s,sep=PP.nl} incs,PP.nl, PP.nl,
-			 body,
-			 PP.nl]
+			 [PP.seq_term {fmt=PP.s,sep=PP.nl} incs, 
+			  pp_imports imports,
+			  PP.nl, body,
+			  PP.nl]
 			 ]
-
-			
-			
 	    in
 		[([mn^".hs"], 
 		  pp_sig mn (PP.cat [pp_ty_decs,pp_fsigs,pp_fdecs]) 
-		  ["import qualified Prelude", "import AsdlHaskell", 
-		   "import IO"])]
+		  ["import qualified Prelude", "import HaskellBase"])]
 	    end
     end
 

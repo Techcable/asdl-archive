@@ -19,15 +19,15 @@ signature ALGEBRAIC_TYPES =
 	  | Int     of (int)
 	  | Call    of (exp * exp list)
 	  | Cnstr   of (id * exp)
-	  | Tuple   of (exp list)
-	  | Record  of (exp list * field list)
+	  | Tuple   of (exp list * ty_id option)
+	  | Record  of (exp list * field list * ty_id option)
 	  | Match   of (exp * clause list)
 	  | LetBind of (clause list * exp)
 	  | Seq     of (exp list)
 
 	and match =
-	    MatchRecord of match list * field list
-	  | MatchTuple  of match list * ty_exp list 
+	    MatchRecord of match list * field list  * ty_id option
+	  | MatchTuple  of match list * ty_exp list * ty_id option
 	  | MatchCnstr  of match      * cnstr	    
 	  | MatchId     of id         * ty_exp 
 	  | MatchInt    of int

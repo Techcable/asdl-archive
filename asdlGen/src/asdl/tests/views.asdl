@@ -1,0 +1,76 @@
+
+module Slp {
+
+-- Straight Line Programs from MC
+-- With user defined field names
+-- With sequence
+-- With raw products, atributes and options
+
+pos = (string? file,int line, int offset)
+
+stm = Compound(stm head,stm next)
+    | Assign(identifier id,exp exp) 
+    | Print(exp*)
+     attributes (pos p,int? value)
+
+-- Values are optional so that a parser can ignore them
+-- but an evaluator can use them to record the value of each
+-- sub-expression
+
+exp = Id(identifier id)
+    | Num(int v)
+    | Op(exp lexp,binop?,exp rexp)
+     attributes (pos p,int? value)	
+
+binop = Plus | Minus | Times | Div
+
+}
+
+view C {
+Slp.pos <= natural_type : int
+Slp.pos <= unwrapper : User.pos2int
+Slp.pos <= user_reader : User.pos_reader
+Slp.pos <= user_writer : User.pos_writer
+Slp.pos <= user_init   : User.pos_init
+
+Slp.exp <= user_init   : User.exp_init
+Slp.exp <= user_reader : User.exp_reader
+Slp.exp <= user_writer : User.exp_writer
+
+
+module Slp <= interface_epilogue %%
+int User_pos2int(Slp_pos_ty s);
+int_ty User_pos_reader(instream_ty);
+Slp_pos_ty User_pos_init(Slp_pos_ty);
+void User_pos_writer(int ,outstream_ty);
+
+Slp_exp_ty User_exp_reader(instream_ty);
+Slp_exp_ty User_exp_init(Slp_exp_ty);
+void User_exp_writer(Slp_exp_ty,outstream_ty);
+%%
+
+
+}
+
+view Java {
+Slp.exp <= source_name : Expression
+}
+
+view SML {
+module Slp <= implementation_prologue %%
+structure User =
+struct
+	fun pos_reader x = raise Fail ""
+	fun pos_writer x s = raise Fail ""
+	fun exp_reader x = raise  Fail ""
+	fun exp_writer x s = raise Fail ""
+end	
+%%
+
+Slp.pos <= user_reader : User.pos_reader
+Slp.pos <= user_writer : User.pos_writer
+
+Slp.exp <= user_reader : User.exp_reader
+Slp.exp <= user_writer : User.exp_writer
+
+}

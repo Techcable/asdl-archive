@@ -11,10 +11,12 @@ structure Main =
 	structure HTML =  mkMain(structure M = Module
 				structure Parser = AsdlParser
 				structure Gen = HTMLGen
-				val dflt_view = "Html")
+				val dflt_view = "HTML")
 
         structure MLTranslator =
 	    mkAlgebraicTranslator(structure IdFix = IdFix.ML
+				  structure T = AlgebraicTypes
+				  structure Pkl = MLPklGen
 				  val fix_fields = false)
        structure MLGen =
 	   mkTranslateFromTranslator
@@ -28,6 +30,8 @@ structure Main =
 
        structure HaskellTranslator =
 	   mkAlgebraicTranslator(structure IdFix = IdFix.Haskell
+				 structure T = AlgebraicTypes
+				 structure Pkl = HaskellPklGen
 				 val fix_fields = true)
        structure HaskellGen =
 	   mkTranslateFromTranslator

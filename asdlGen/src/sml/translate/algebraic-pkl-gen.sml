@@ -1,7 +1,10 @@
 (* 
  * Copyright (c) 1997 by Daniel C. Wang 
  *)
-structure AlgebraicPklGen : FUN_PKL_GEN =
+functor AlgebraicPklGen (val instream_ty  : AlgebraicTypes.ty_exp
+			 val outstream_ty : AlgebraicTypes.ty_exp
+			 val monad        : AlgebraicTypes.ty_id  option)
+    : FUN_PKL_GEN =
     struct
 	structure T = AlgebraicTypes
 	structure VarId = T.VarId
@@ -14,10 +17,13 @@ structure AlgebraicPklGen : FUN_PKL_GEN =
 	val arg_id     = VarId.fromString "x"
 	val stream_id  = VarId.fromString "s"
 	fun temp_id  x = VarId.fromString ("t"^(Int.toString x)^"'")
-
-	val outstream_ty = T.TyId (T.TypeId.fromString "outstream")
-	val instream_ty  = T.TyId (T.TypeId.fromString "instream")
 	val tag_ty       = T.TyId (T.TypeId.fromString "int")
+
+	val outstream_ty = outstream_ty
+	val instream_ty  = instream_ty
+	val wrap = case monad of
+	    NONE => (fn x => x)
+	  | (SOME i) => (fn x => T.TyCon(i,[x]))
 
 	local
 	    open T
@@ -57,30 +63,46 @@ structure AlgebraicPklGen : FUN_PKL_GEN =
 		Call(Id (VarId.fromString "read_tag"),[Id stream_id])
 
 	fun write_decl {name,arg_ty,body} =
-(*	    DeclLocal*)
 	    (DeclFun(mk_name "write" name,
 			      [{name=arg_id,ty=arg_ty},
 			       {name=stream_id,ty=outstream_ty}],
-			      body,write_ret_ty))
+			      body,(wrap write_ret_ty)))
 
 	fun read_decl {name,ret_ty,body} =
-(*	    DeclLocal*)
 	    (DeclFun(mk_name "read" name,
-		     [{name=stream_id,ty=instream_ty}],body,ret_ty))
+		     [{name=stream_id,ty=instream_ty}],body,(wrap ret_ty)))
 	fun die _ =
-	    (Call(Id (VarId.fromString "die"),[Tuple[]]))
+	    (Call(Id (VarId.fromString "die"),[Tuple([],NONE)]))
 
 	fun write_tagged_decl {name,tag,arg_ty,body} =
 	    DeclFun(mk_name "pkl_write" name,
 		    [{name=arg_id,ty=arg_ty},{name=stream_id,ty=outstream_ty}],
-		    Seq[write_tag tag,body],write_ret_ty)
+		    Seq[write_tag tag,body],(wrap write_ret_ty))
 
 	fun read_tagged_decl {name,tag,ret_ty,body} =
 	    DeclFun(mk_name "pkl_read" name,
 		    [{name=stream_id,ty=instream_ty}],
 		    Match(read_tag,[(MatchInt tag,body),
-				    (MatchAny ,die "bad tag")]),ret_ty)
+				    (MatchAny ,die "bad tag")]),(wrap ret_ty))
 	end
 
 
     end
+structure MLPklGen =
+    AlgebraicPklGen(val outstream_ty =
+			AlgebraicTypes.TyId
+			(AlgebraicTypes.TypeId.fromString "outstream")
+		    val instream_ty =
+			AlgebraicTypes.TyId
+			(AlgebraicTypes.TypeId.fromString "instream")
+		    val monad = NONE)
+
+structure HaskellPklGen =
+    AlgebraicPklGen(val outstream_ty =
+			AlgebraicTypes.TyId
+			(AlgebraicTypes.TypeId.fromString "Handle")
+		    val instream_ty =
+			AlgebraicTypes.TyId
+			(AlgebraicTypes.TypeId.fromString "Handle")
+		    val monad =
+			SOME (AlgebraicTypes.TypeId.fromString "IO"))

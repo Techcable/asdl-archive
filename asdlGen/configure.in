@@ -29,7 +29,7 @@ AC_PATH_PROGS(KSH,ksh)
 AC_PATH_PROGS(PERL5,perl5 perl)
 
 dnl how to run an sml heap
-eval `src/misc/sysname`
+eval `/bin/sh src/misc/sysname`
 AC_CHECK_PROGS(RUN_SML_HEAP, 
 	sml sml-cm \
 	runtime/run.${HEAP_SUFFIX} \

@@ -59,6 +59,10 @@ structure MLPP : ML_PP =
 		[PP.s "{",PP.seq{fmt=pp_one,sep=comma_sep} seq,
 		 PP.s "}"]
 	    end
+
+	val pp_opt_ty =
+	    PP.opt {some = (fn x => PP.cat [PP.s " : ",pp_ty_id x]),
+		    none = PP.empty}
 	    
 	fun pp_ty_exp (T.TyId tid) = pp_ty_id tid
 	  | pp_ty_exp (T.TyList te) =
@@ -97,25 +101,28 @@ structure MLPP : ML_PP =
 	    PP.hblock 0 [PP.s "(",
 			 PP.seq {fmt=pp_exp,sep=PP.ws}  (e::el),
 			 PP.s ")"]
-	  | pp_exp (T.Cnstr(id,T.Tuple([]))) = pp_id id
-	  | pp_exp (T.Cnstr(id,T.Record([],[]))) = pp_id id
+	  | pp_exp (T.Cnstr(id,T.Tuple([],_))) = pp_id id
+	  | pp_exp (T.Cnstr(id,T.Record([],[],_))) = pp_id id
 	  | pp_exp (T.Cnstr(id,e)) =
 	    PP.hblock 0 [pp_id id,pp_exp e]
-	  | pp_exp (T.Tuple el) =
+	  | pp_exp (T.Tuple (el,opt_ty)) =
 	    PP.hblock 1
-	    [PP.s "(" ,PP.seq{fmt=pp_exp,sep=comma_sep}el, PP.s")"]
-	  | pp_exp (T.Record (el,fl)) =
+	    [PP.s "(" ,PP.seq{fmt=pp_exp,sep=comma_sep} el, PP.s")",
+	     pp_opt_ty opt_ty]
+	  | pp_exp (T.Record (el,fl,opt_ty)) =
 	    let
 		fun  eq _ = false
 	    in
-		PP.vblock 2
-		(pp_rec_seq eq pp_exp el fl)
+		PP.cat [PP.vblock 2
+			(pp_rec_seq eq pp_exp el fl),
+			pp_opt_ty opt_ty]
 	    end
 	  | pp_exp (T.Match(e,cl)) =
 	    PP.vblock 4 [PP.s "(case (",pp_exp e,PP.s ") of ",PP.nl,
 			 PP.s "  ",
 			 PP.seq {fmt=pp_match_clause,sep=bar_sep} cl,
 			 PP.s ")"]
+	  | pp_exp (T.LetBind([],e)) =  pp_exp e
 	  | pp_exp (T.LetBind(cl,e)) =
 	    PP.vblock 4 [PP.s "let ",PP.nl,
 			 PP.seq {fmt=pp_let_clause,sep=PP.nl} cl,
@@ -136,22 +143,23 @@ structure MLPP : ML_PP =
 		 PP.s ")"]
 	    end
 
-	and pp_match (T.MatchRecord(ml,fl)) = 
+	and pp_match (T.MatchRecord(ml,fl,opt_ty)) = 
 	    let
 		fun eq (T.MatchId (x,_),y)  = T.VarId.eq (x,y)
 		  | eq _ = false
 	    in
-		PP.hblock 2
-		(pp_rec_seq eq pp_match ml fl)
+		PP.cat [PP.hblock 2
+			(pp_rec_seq eq pp_match ml fl),
+			pp_opt_ty opt_ty]
 	    end
-	  | pp_match (T.MatchTuple(ml,_)) = 
+	  | pp_match (T.MatchTuple(ml,_,opt_ty)) = 
 	    PP.hblock 0 [PP.s "(",
 			 PP.seq {fmt=pp_match,sep=comma_sep} ml,
-			 PP.s ")"]
+			 PP.s ")", pp_opt_ty opt_ty]
 	  | pp_match (T.MatchId(id,_)) = pp_id id
-	  | pp_match (T.MatchCnstr(T.MatchTuple([],_),{name,...})) =
+	  | pp_match (T.MatchCnstr(T.MatchTuple([],_,_),{name,...})) =
 	    pp_id name
-	  | pp_match (T.MatchCnstr(T.MatchRecord([],_),{name,...})) =
+	  | pp_match (T.MatchCnstr(T.MatchRecord([],_,_),{name,...})) =
 	    pp_id name
 	  | pp_match (T.MatchCnstr(m,{name,...})) =
 	    PP.cat [PP.s "(",pp_id name,pp_match m,PP.s ")"]
