@@ -3,8 +3,8 @@
 <!entity asdlGen.release-date "May 4, 1998" >
 
 <!entity author.danwang "Daniel C. Wang" >
-<!entity doc.version "1.2" >
-<!entity doc.date "May 4, 1998" >
+<!entity doc.version "1.21" >
+<!entity doc.date "May 12, 1998" >
 <!entity doc.copyright system "copyright.ldoc">
 
 <!entity asdlGen.supported-languages 
