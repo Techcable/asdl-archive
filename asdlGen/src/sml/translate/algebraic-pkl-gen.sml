@@ -72,15 +72,18 @@ functor AlgebraicPklGen (val instream_ty  : AlgebraicTypes.ty_exp
 	    (DeclFun(mk_name "read" name,
 		     [{name=stream_id,ty=instream_ty}],body,(wrap ret_ty)))
 	fun die _ =
-	    (Call(Id (VarId.fromString "die"),[Tuple([],NONE)]))
+	    if Option.isSome monad then
+		(Id (VarId.fromString "die"))
+	    else
+		(Call(Id (VarId.fromString "die"),[Tuple([],NONE)]))
 
 	fun write_tagged_decl {name,tag,arg_ty,body} =
-	    DeclFun(mk_name "pkl_write" name,
+	    DeclFun(mk_name "write_tagged" name,
 		    [{name=arg_id,ty=arg_ty},{name=stream_id,ty=outstream_ty}],
 		    Seq[write_tag tag,body],(wrap write_ret_ty))
 
 	fun read_tagged_decl {name,tag,ret_ty,body} =
-	    DeclFun(mk_name "pkl_read" name,
+	    DeclFun(mk_name "read_tagged" name,
 		    [{name=stream_id,ty=instream_ty}],
 		    Match(read_tag,[(MatchInt tag,body),
 				    (MatchAny ,die "bad tag")]),(wrap ret_ty))

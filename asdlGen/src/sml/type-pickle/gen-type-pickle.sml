@@ -160,7 +160,7 @@ structure GenPickleTranslator:TRANSLATE =
 		and mk_module (key,m) =
 		    let
 			val name =
-			    mk_qid (Id.fromString (M.module_name  m))
+			    mk_qid (M.module_name  m)
 			val file = M.module_file m
 			val v =	{name=name,file=file}
 		    in

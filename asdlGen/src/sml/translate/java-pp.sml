@@ -129,6 +129,12 @@ structure JavaPP : JAVA_PP =
 		 PP.s "(",
 		 PP.seq {fmt=pp_exp,sep=comma_sep} es,
 		 PP.s ")"]
+	      | pp_exp (FunCall(id,es)) =
+		PP.hblock 1
+		[pp_id (VarId.prefixBase "g." id),
+		 PP.s "(",
+		 PP.seq {fmt=pp_exp,sep=comma_sep} es,
+		 PP.s ")"]
 	      | pp_exp (Id id) = pp_id id
 	      | pp_exp (ThisId (id)) =
 		PP.cat [PP.s "this.",pp_id id]
@@ -140,6 +146,8 @@ structure JavaPP : JAVA_PP =
 		PP.cat [pp_exp e, PP.s " != null"]
 	      | pp_exp (NotZero e) = 
 		PP.cat [pp_exp e, PP.s " != 0"]
+	      | pp_exp (NotEqConst (e,c)) = 
+		PP.cat [pp_exp e, PP.s " != ",pp_const c]
 	      | pp_exp (Cast(t,e)) =
 		PP.cat [PP.s "(",pp_ty_exp t,PP.s ")",pp_exp e]
 	      | pp_exp (New(t,es)) =
@@ -194,7 +202,6 @@ structure JavaPP : JAVA_PP =
 	      | need_break (If{then_stmt,else_stmt,...}) =
 		(need_break then_stmt) orelse (need_break else_stmt)
 	      | need_break x = true
-
 		
 	    and pp_clause {tag,body} =
 		PP.vblock 0 [PP.s "case ",pp_const tag,PP.s ":",
@@ -267,36 +274,46 @@ structure JavaPP : JAVA_PP =
 		in
 		    ([package_prefix,mn,fname],pp)
 		end
-	    fun do_const (DeclConst {field,value},(cs,ds)) =
+	    fun do_const (DeclConst {field,public,value},(cs,ds)) =
 		    ((PP.cat
-		      [PP.s "   public final static ",
+		      [pp_str_if  " public" public,
+		       PP.s " final static ",
 		       pp_field field,PP.s " = ",pp_exp value,
 		       PP.s ";",PP.nl])::cs,ds)
 	      | do_const (x,(cs,ds)) = (cs,x::ds)
-	    fun pp_consts mn imp x=
+
+	val body_prologue =
+	    PPUtil.wrap Module.Mod.implementation_prologue 
+	val body_epilogue =
+	    PPUtil.wrap Module.Mod.implementation_epilogue
+
+	    fun pp_consts mn imp x props =
 		let
 		    val pp =
 			PP.cat
 			[PP.s ("package "^package_prefix^"."^mn^";"),
 			 PP.nl,
 			 PP.s ("import "^imp^".*;"),PP.nl,
+			 body_prologue props, PP.nl,
 			 PP.s "final public class ",
 			 PP.s const_class,
-			 PP.s " {",PP.nl,PP.cat x,PP.s "}"]
+			 PP.s " extends Prims {", PP.nl,
+			 PP.cat x, PP.nl,
+			 body_epilogue props,PP.nl,
+			 PP.s "}"]
 		    val fname =
 			OS.Path.joinBaseExt
 			{base=const_class,ext=SOME "java"}
 		in
 		    ([package_prefix,mn,fname],pp)
 		end
-		    
 	end
-	fun translate p  ({name,imports,decls},_) =
+	fun translate p  ({name,imports,decls},props) =
 	    let
 		val (cs,ds) = List.foldr do_const ([],[]) decls
 		val mn = T.ModuleId.toString name
 	    in
-		(pp_consts  mn (base_imp p) cs)::
+		(pp_consts  mn (base_imp p) cs props)::
 		(List.map (pp_cls  mn (base_imp p)) ds)
 	    end
     end

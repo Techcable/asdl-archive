@@ -1,5 +1,5 @@
 (* 
- * Copyright (c) 1997 
+ * Copyright (c) 1997 Princeton University and Daniel C. Wang
  *
  * Author: Daniel C. Wang
  * 
@@ -32,9 +32,9 @@ structure HaskellPP : HASKELL_PP =
 	    {name="base_import",flag=NONE,default="HaskellBase"} 
 
 	fun mkComment s =
-	   ( PP.vblock 2 [PP.s "(*",
+	   ( PP.vblock 2 [PP.s "{-",
 			 PP.seq_term {fmt=PP.s,sep=PP.nl} s,
-			 PP.s "*)"];PP.empty)
+			 PP.s "-}"])
 	   
         (* val capitalize = fn : string -> string *)
 	fun capitalize s =
@@ -256,7 +256,16 @@ structure HaskellPP : HASKELL_PP =
 
 	(* val translate = fn : Params.params -> HaskellTypes.decl list -> (string list * PPUtil.pp) list *)
     
-	fun translate p ({name,decls,imports},_) =
+	val import_prologue =
+	    PPUtil.wrap Module.Mod.interface_prologue 
+	val import_epilogue =
+	    PPUtil.wrap Module.Mod.interface_epilogue
+	val module_prologue =
+	    PPUtil.wrap Module.Mod.implementation_prologue 
+	val module_epilogue =
+	    PPUtil.wrap Module.Mod.implementation_epilogue
+
+	fun translate p ({name,decls,imports},props) =
 	    let
 		val ast = decls
 		val mn = T.ModuleId.toString name
@@ -362,16 +371,19 @@ structure HaskellPP : HASKELL_PP =
 		fun pp_sig name body incs =
 			PP.cat
 			[PP.hblock 0
-			 [PP.s ("module "^capitalize name^" ("), 
+			 [PP.s ("module "^capitalize name^" ("),
+			 import_prologue props,
 			 pp_sum_names,
 			 pp_tup_names,
 			 pp_fnames, 
+			 import_epilogue props,
 			 PP.s ") where", PP.nl, PP.nl],
 			 PP.vblock 0
 			 [PP.seq_term {fmt=PP.s,sep=PP.nl} incs, 
-			  pp_imports imports,
-			  PP.nl, body,
-			  PP.nl]
+			  pp_imports imports,PP.nl,
+			  module_prologue props, PP.nl,
+			  body,PP.nl,
+			  module_epilogue props,PP.nl]
 			 ]
 		val base_import = base_imp p
 	    in

@@ -92,22 +92,29 @@ signature OO_PKL_GEN =
 	type decl
 	type stmt
 
-	val len_ty       : ty
-    
-	val write_tag  : int -> stmt
-	val read_tag   : exp
+	val len_ty     : ty
+    	val ret_id     : id
 
 	val write_len : exp -> stmt
 	val read_len  : exp
 
-	val write_decl: ty -> stmt list -> decl
-	val read_decl : ty -> stmt list -> decl
-	    
-	val write     : ty -> exp -> stmt
-	val read      : ty -> exp
+	val write_tag : int -> stmt
+	val read_tag  : exp
 
-	val write_prim: ty -> exp -> stmt
-	val read_prim : ty -> exp
+	val write     : name -> exp -> stmt
+	val read      : name -> exp
+
+	val write_prim: name -> exp -> stmt
+	val read_prim : name -> exp
+
+	val write_decl   : {name:name,arg_ty:ty,body:stmt list} -> decl
+	val read_decl    : {name:name,ret_ty:ty,body:stmt list} -> decl
+
+	val write_tagged_decl:
+	    {name:name,tag:int,arg_ty:ty,body:stmt list} -> decl
+
+	val read_tagged_decl:
+	    {name:name,tag:int,ret_ty:ty,body:stmt list} -> decl
 
 	val die       : string -> stmt
     end

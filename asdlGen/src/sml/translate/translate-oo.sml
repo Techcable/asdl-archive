@@ -48,7 +48,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 
 	type con_value      = {enumer:T.enumer,
 			        cnstr:T.ty_decl,
-			           wr:T.clause,
+			           wr:T.exp -> T.clause,
 			           rd:T.clause}
 
 	    
@@ -63,9 +63,6 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 	val cfg = Params.empty
 
 	val kind_id = (T.VarId.fromString "kind")
-	val ret_id = fix_id (Pkl.temp_id 0)
-
-		    
 	val get_module = (fn x => x)
 
 	val head_id = fix_id (T.VarId.fromString "head")
@@ -98,6 +95,53 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 	val listify_id = (Id.suffixBase "_list")
 	val optify_id =  (Id.suffixBase "_option")
 
+	fun wrappers p ty =
+	    let
+		val ret =
+		    case Option.map (fix_id o T.VarId.fromPath)
+			(M.Typ.user_init p) of
+			NONE => (fn x => x)
+		      | SOME f =>
+			(fn x => T.MthCall(T.Id f,[x]))
+		val name = Pkl.type_name ty
+		val ty =
+		    case (M.Typ.natural_type p) of
+			(SOME t) =>  T.TyId (T.TypeId.fromPath t)
+		      | NONE => ty
+
+		val unwrap = case (M.Typ.unwrapper p) of
+		    (SOME x) =>
+			(fn e =>
+			 T.FunCall(T.VarId.fromPath x,[ret e]))
+		  | NONE => ret
+
+		val wrap = case (M.Typ.wrapper p) of
+		    (SOME y) =>
+			(fn e =>
+			 T.FunCall(T.VarId.fromPath y,[ret e]))
+		  | NONE => ret
+	    in
+		{natural_ty=ty,pkl_name=name,unwrap=unwrap,wrap=wrap}
+	    end
+
+	fun get_bodies p {wr_body,rd_body} =
+	    let
+		val rd_body = case (M.Typ.reader p) of
+		    (SOME x) =>
+			[T.Assign(T.Id Pkl.ret_id,
+				  T.FunCall(T.VarId.fromPath x,
+					    [T.Id Pkl.stream_id]))]
+		  | NONE => rd_body
+		val wr_body = case (M.Typ.writer p) of
+		    (SOME x) =>
+			[T.Expr
+			 (T.FunCall(T.VarId.fromPath x,
+				    [T.Id Pkl.arg_id,T.Id Pkl.stream_id]))]
+		  | NONE => wr_body
+	    in
+		{wr_body=wr_body,rd_body=rd_body}
+	    end
+
 	fun mk_tag_ty tinfo =
 	    if int_kind then fix_ty (T.TypeId.fromString "int")
 	    else (trans_tid (Id.suffixBase "_enum") true tinfo)
@@ -110,24 +154,27 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 		val is_prim = M.type_is_prim tinfo
 		val is_boxed = M.type_is_boxed tinfo
 
-		val (mangle_ty,mangle_pkl) =  case (kind) of
-			M.Id => (fn x => x,fn x => x)
-		  | M.Option => (fn x => x,optify_id)
-		  | M.Sequence => (listify_id,listify_id)
+		val mangle_ty =  case (kind) of
+			M.Id => (fn x => x)
+		  | M.Option =>  (fn x => x)
+		  | M.Sequence => listify_id
 
-		val tid = trans_tid mangle_ty is_local tinfo
+		val tid = (trans_tid mangle_ty is_local tinfo)
 		val ty = if is_prim andalso (not (M.Sequence = kind))
 			     then (T.TyId tid)
 			 else (T.TyReference (T.TyId tid))
+
+		val {pkl_name,natural_ty,unwrap,wrap} =
+		    wrappers props ty
 		val name = toId name
 		val (rf,wf) =
 		    if is_prim then (Pkl.read_prim,Pkl.write_prim)
 		    else (Pkl.read,Pkl.write)
-		val rd = T.Assign(T.Id name,rf ty)
-		fun wr x = wf ty (T.FieldSub(T.DeRef x,name))
+		val rd = T.Assign(T.Id name,rf pkl_name)
+		fun wr x = wf pkl_name (T.FieldSub(T.DeRef x,name))
 		val init = T.Assign(T.ThisId name,T.Id name)
 	    in
-		{fd={name=name,ty=ty},rd=rd,wr=wr,init=init}
+		{fd={name=name,ty=natural_ty},rd=rd,wr=wr,init=init}
 	    end
 
 	fun tomfield x =
@@ -169,20 +216,27 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 		val fd_attrbs    = List.map #fd  (attrbs)
 		val fd_all       = fd_attrbs @ fd_fields
 
+		val {pkl_name,natural_ty,unwrap,wrap} =
+		    wrappers tprops ty
+    
 		val enumer       = {name=tag_n,value=tag_enum}
 
  		val call_cnstr =
 		    T.Block{vars=fd_all,
 			    body=rd_fields@
-			    [T.Assign(T.Id ret_id,
-			     T.New(con_tid,List.map (T.Id o #name) fd_all))]}
-		    
-		val rd = {tag=T.IntConst tag_v,body=
-			  if is_boxed then call_cnstr
-			  else T.Assign(T.Id ret_id,
-					T.Const (T.VarConst con))}
+			    [T.Assign
+			     (T.Id Pkl.ret_id,
+			      unwrap
+			      (T.New(con_tid,List.map (T.Id o #name)  fd_all)
+			       ))]}
 
-		val wr_body =
+		val rd = {tag=T.IntConst tag_v,
+			  body =
+			  if is_boxed then call_cnstr
+			  else T.Assign(T.Id Pkl.ret_id,
+					unwrap(T.Const (T.VarConst con)))}
+
+		fun wr_body arg =
 		    if List.null wr_fields then (Pkl.write_tag tag_v)
 		    else
 			T.Block
@@ -191,7 +245,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 			 (T.Assign(T.Id tmp_id,T.Cast(con_ty,arg)))::
 			 (Pkl.write_tag tag_v)::wr_fields}
 			
-		val wr = {tag=T.EnumConst(tid,tag_n),body=wr_body}
+		fun wr arg = {tag=T.EnumConst(tid,tag_n),body=wr_body arg}
 
 		fun mk_cnstr (fl,sl) =
 		    {inline=true,scope=T.Public,
@@ -226,6 +280,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 				fields=List.map tomfield  fd_fields}
 		    else
 			T.DeclConst{field={name=con,ty=ty},
+				    public=true,
 				    value=T.New (tid,[tag_c])}
 	    in
 		{enumer=enumer,wr=wr,rd=rd,cnstr=cnstr}
@@ -236,36 +291,77 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 
 	fun trans_defined  p {tinfo,name,cons=[],fields,props} =
 	    let
-		fun do_field ({wr,...}:field_value) = wr (T.Id Pkl.arg_id)
+		val temp_id = Pkl.temp_id 0
+		fun do_field ({wr,...}:field_value) = wr (T.Id temp_id)
 		val wr_fields    = List.map do_field fields
 		val rd_fields    = List.map #rd fields
 		val fd_fields    = List.map #fd fields
 		val init_fields  = List.map #init fields
 
-		val tid          = trans_tid (fn x=> x) true tinfo
+		val tid  = trans_tid (fn x=> x) true tinfo
 		val ty = (T.TyReference (T.TyId tid))
 
 		fun mk_cnstr (fl,sl) =
 		    {inline=true,scope=T.Public,
 		     args=fl,body={vars=[],body=sl}}
-		   
-		val rd = Pkl.read_decl ty
+		
+		val {pkl_name,natural_ty,unwrap,wrap} =
+		    wrappers props ty
+
+		val rd_body =
 		    [T.Block
 		     {vars=fd_fields,
 		      body=rd_fields@
 		      [T.Assign
-		       (T.Id ret_id,
-			T.New(tid,List.map (T.Id o #name) fd_fields))]}]
+		       (T.Id Pkl.ret_id,
+			unwrap(T.New(tid,List.map (T.Id o #name) fd_fields)))
+		       ]}]
 
-		val wr = Pkl.write_decl ty wr_fields
+		val wr_body =
+		    [T.Block
+		     {vars=[{name=temp_id,ty=ty}],
+		      body=
+		      (T.Assign(T.Id temp_id,wrap (T.Id Pkl.arg_id)))::
+		      wr_fields}]
+
+		val {rd_body,wr_body} = get_bodies props
+		    {rd_body=rd_body, wr_body=wr_body}
+    
+		val rd = Pkl.read_decl
+		    {name=pkl_name,
+		     ret_ty=natural_ty,
+		     body=rd_body}
+
+		val wr =
+		    Pkl.write_decl
+		    {name=pkl_name,
+		     arg_ty=natural_ty,
+		     body=wr_body}
+
+		val tag = M.type_tag tinfo
+		val wr_tagged =
+		    Pkl.write_tagged_decl
+		    {name=pkl_name,tag=tag,arg_ty=natural_ty,
+		     body=[Pkl.write pkl_name (T.Id Pkl.arg_id)]}
+
+		val rd_tagged = Pkl.read_tagged_decl
+		    {name=pkl_name,tag=tag,ret_ty=natural_ty,
+		     body=[T.Assign(T.Id Pkl.ret_id,Pkl.read pkl_name)]}
+
+
+(* TODO chop of qualifier appropriately *)
+		val base_class =
+		    Option.map
+		    (T.TypeId.fromPath) (M.Typ.base_class props)
+
 		val ty_dec =
 		    T.DeclClass{name=tid,
 				final=true,
 				idecls=[],
 				scope=T.Public,
-				inherits=NONE,
+				inherits=base_class,
 				cnstrs=[mk_cnstr(fd_fields,init_fields)],
-				mths=[rd,wr],
+				mths=[rd,wr,rd_tagged,wr_tagged],
 				fields=List.map tomfield fd_fields}
 	    in
 		{ty_dec=ty_dec,cnstrs=[]}
@@ -273,13 +369,15 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 	  | trans_defined p {tinfo,name,cons,fields,props} =
 	    let
 		(* rewrite as unzipper *)
-	
+		val temp_id    = Pkl.temp_id 0
 		val fields     = List.map #fd     (fields:field_value list)
 		val enumers    = List.map #enumer (cons:con_value list)
 
 		val cnstrs     = List.map #cnstr  cons
-		val wr_clauses = List.map #wr     cons
 		val rd_clauses = List.map #rd     cons
+
+		fun do_wr_clause ({wr,...}:con_value) = wr (T.Id temp_id)
+		val wr_clauses = List.map do_wr_clause     cons
 
 		val is_boxed   = (M.type_is_boxed tinfo)
 		val tid        = trans_tid (fn x=> x) true tinfo
@@ -318,24 +416,54 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 			      ret=tag_ty}
 			
 		val rd_test = Pkl.read_tag
-		val rd = Pkl.read_decl ty_name
+		val wr_test =
+		    T.MthCall
+		    (T.FieldSub(T.DeRef (T.Id temp_id),kind_id),[])
+		val {pkl_name,natural_ty,unwrap,wrap} =
+		    wrappers props ty_name
+
+		val rd_body =
 		    [T.Case{test=rd_test,
 			    clauses=rd_clauses,
 			    default=mk_block
-			    [T.Assign(T.Id ret_id,T.NilPtr),
+			    [T.Assign(T.Id Pkl.ret_id,unwrap(T.NilPtr)),
 			     Pkl.die ""]}]
-		     
-		val wr_test =
-		    T.MthCall
-		    (T.FieldSub(T.DeRef (T.Id Pkl.arg_id),kind_id),[])
-		val wr = Pkl.write_decl ty_name
-		    [T.Case{test=wr_test,
-			    clauses=wr_clauses,
-			    default=Pkl.die ""}]
+
+		val wr_body =
+		    [T.Block
+		    {vars=[{name=temp_id,ty=ty_name}],
+		     body=
+		     [T.Assign(T.Id temp_id,wrap (T.Id Pkl.arg_id)),
+		      T.Case{test=wr_test,
+			     clauses=wr_clauses,
+			     default=Pkl.die ""}]}]
+
+		val {rd_body,wr_body} = get_bodies props
+		    {rd_body=rd_body, wr_body=wr_body}
+    
+		val rd = Pkl.read_decl
+		    {name=pkl_name,
+		     ret_ty=natural_ty,
+		     body=rd_body}
+		    
+		val wr = Pkl.write_decl
+		    {name=pkl_name,
+		     arg_ty=natural_ty,
+		     body=wr_body}
+		val tag = M.type_tag tinfo
+		val wr_tagged =
+		    Pkl.write_tagged_decl
+		    {name=pkl_name,tag=tag,arg_ty=natural_ty,
+		     body=[Pkl.write pkl_name (T.Id Pkl.arg_id)]}
+
+		val rd_tagged = Pkl.read_tagged_decl
+		    {name=pkl_name,tag=tag,ret_ty=natural_ty,
+		     body=[T.Assign(T.Id Pkl.ret_id,Pkl.read pkl_name)]}
+
 
 		val idecls = [T.IDeclEnum{name=tag_n,enums=enumers}]
 
-
+		val mths = [kind_mth,rd,wr,rd_tagged,wr_tagged]
 		val ty_dec =
 		    if is_boxed then
 			T.DeclAbstractClass
@@ -344,7 +472,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 			 scope=T.Public,
 			 inherits=NONE,
 			 fields=List.map tomfield fields,
-			 mths=[kind_mth,rd,wr]}
+			 mths=mths}
 		    else
 			let
 			    val cnstr =
@@ -364,7 +492,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 			     inherits=NONE,
 			     cnstrs=[cnstr],
 			     fields=[kind_mfield],
-			     mths=[kind_mth,rd,wr]}
+			     mths=mths}
 			end
 
 
@@ -374,15 +502,18 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 	
 	fun trans_sequence p {tinfo,name,props,also_opt} =
 	    let
+
+		val ty = T.TyId (trans_tid (fn x => x) true tinfo)
+		val {pkl_name,natural_ty,unwrap,wrap} =
+		    wrappers props ty
 		val tid_seq = trans_tid listify_id true tinfo
-		val tid = trans_tid (fn x => x) true tinfo
 		val ty_seq = (T.TyReference (T.TyId tid_seq))
 		val is_prim = M.type_is_prim tinfo
-
+		val head_name = pkl_name
 		val head_ty =
-		    if is_prim then (T.TyId tid)
-		    else (T.TyReference (T.TyId tid))
-
+		    if is_prim then natural_ty
+		    else (T.TyReference (natural_ty))
+		val seq_name = Pkl.type_name ty_seq
 		val tail_ty = ty_seq
 		val fields = [{name=head_id,ty=head_ty},
 			      {name=tail_id,ty=tail_ty}]
@@ -396,30 +527,35 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 		val len = T.Id (Pkl.temp_id 1)
 		val tmp = T.Id (Pkl.temp_id 2)
 		val arg = T.Id Pkl.arg_id
-		val ret = T.Id ret_id
+		val ret = T.Id Pkl.ret_id
 
 		fun snoc (x,y) =
 		    T.Assign(x,T.New(tid_seq,[y,T.NilPtr]))
-		    
 		val rd =
-		    Pkl.read_decl ty_seq
-		    [T.Block
+		    Pkl.read_decl
+		    {name=seq_name,
+		     ret_ty=ty_seq,
+		     body=
+		     [T.Block
 		     {vars=[{name=Pkl.temp_id 1,ty=Pkl.len_ty},
 			   {name=Pkl.temp_id 2,ty=ty_seq}],
 		      body=
 		      [T.Assign(len,Pkl.read_tag),
 		       T.If{test=T.NotZero len,
-			    then_stmt=snoc(ret,Pkl.read head_ty),
+			    then_stmt=snoc(ret,Pkl.read head_name),
 			    else_stmt=T.Return(T.NilPtr)},
 		       T.Assign(len, T.MinusOne len),
 		       T.Assign(tmp, ret),
 		       T.While{test=T.NotZero(len),
 			       body=mk_block
-			       [snoc(get_tail tmp,Pkl.read head_ty),
+			       [snoc(get_tail tmp,Pkl.read head_name),
 				T.Assign(tmp,get_tail tmp),
-				T.Assign(len, T.MinusOne len)]}]}]
+				T.Assign(len, T.MinusOne len)]}]}]}
 		val wr =
-		     Pkl.write_decl ty_seq
+		    Pkl.write_decl
+		    {name=seq_name,
+		     arg_ty=ty_seq,
+		     body=
 		     [T.Block
 		     {vars=[{name=Pkl.temp_id 1,ty=Pkl.len_ty},
 			    {name=Pkl.temp_id 2,ty=ty_seq}],
@@ -434,9 +570,9 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 		       T.Assign(tmp,arg),
 		       T.While{test=T.NotZero(len),
 			       body=mk_block
-			       [Pkl.write head_ty (get_head tmp),
+			       [Pkl.write head_name (get_head tmp),
 				T.Assign(tmp,get_tail tmp),
-				T.Assign(len, T.MinusOne len)]}]}]
+				T.Assign(len, T.MinusOne len)]}]}]}
 
 		val ty_dec = T.DeclClass
 		    {name=tid_seq,
@@ -453,7 +589,6 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 	  
 
 	fun trans_option p {tinfo,name,props,also_seq} = ()
-
 
 	fun trans_all p {module,defines,options,sequences,props} =
 	    let

@@ -17,9 +17,9 @@
 #define READ_BYTES(x,sz,s) (fread(x,sizeof(char),sz,s))
 #endif
 
-void Prims::write_tag(int x,outstream s) { write_int(x,s); }
-int Prims::read_tag(instream s) { return read_int(s); }
-void Prims::write_int(int x,outstream s) {
+void write_tag(int x,outstream s) { write_int(x,s); }
+int read_tag(instream s) { return read_int(s); }
+void write_int(int x,outstream s) {
   int set_neg_bit =  (x < 0);
   int v;
   if(set_neg_bit) { x = -x; }
@@ -34,14 +34,14 @@ void Prims::write_int(int x,outstream s) {
   WRITE_BYTE(x,s);
 }
 
-void Prims::write_string(string x,outstream s) {
+void write_string(string x,outstream s) {
   int sz = strlen(x);
   
-  Prims::write_int(sz,s); 
+  write_int(sz,s); 
   WRITE_BYTES(x,sz,s);
 }
 
-int Prims::read_int(instream s) {
+int read_int(instream s) {
   int acc = 0;
   int shift = 0;
   unsigned char ch;
@@ -62,8 +62,8 @@ int Prims::read_int(instream s) {
   return acc;
 }
 
-string Prims::read_string(instream s) {
-  int sz = Prims::read_int(s);
+string read_string(instream s) {
+  int sz = read_int(s);
   char *ret = new char[sz+1];
   
   READ_BYTES(ret,sz,s);
@@ -71,14 +71,14 @@ string Prims::read_string(instream s) {
   return ret;
 }
 
-void Prims::write_identifier(identifier x,outstream s) {
-  Prims::write_string(x,s);
+void write_identifier(identifier x,outstream s) {
+  write_string(x,s);
 }
 
 static char* uniquify(char *x);
 
-identifier Prims::read_identifier(instream s) {
-  char *x = Prims::read_string(s);
+identifier read_identifier(instream s) {
+  char *x = read_string(s);
   char *y = uniquify(x);
   
   if(x != y) { 
@@ -88,7 +88,7 @@ identifier Prims::read_identifier(instream s) {
 }
 
 
-void Prims::write_int_option(int_option x,outstream s) {
+void write_int_option(int_option x,outstream s) {
     if(x!=NULL) {
       write_int(1,s);
       write_int(*x,s);
@@ -97,7 +97,7 @@ void Prims::write_int_option(int_option x,outstream s) {
     }
 }
 
-int_option Prims::read_int_option(instream s) {
+int_option read_int_option(instream s) {
 
     if(read_int(s)!=0) {
      int *ret = new int; 
@@ -108,7 +108,7 @@ int_option Prims::read_int_option(instream s) {
     }
 }
 
-void Prims::write_string_option(string_option x,outstream s) {
+void write_string_option(string_option x,outstream s) {
     if(x!=NULL) {
       write_int(1,s);
       write_string(x,s);
@@ -117,7 +117,7 @@ void Prims::write_string_option(string_option x,outstream s) {
     }
 }
 
-string_option Prims::read_string_option(instream s) {
+string_option read_string_option(instream s) {
     if(read_int(s)!=0) {
       return (read_string(s));
     } else {
@@ -125,7 +125,7 @@ string_option Prims::read_string_option(instream s) {
     }
 }
 
-void Prims::write_identifier_option(identifier_option x,outstream s) {
+void write_identifier_option(identifier_option x,outstream s) {
     if(x!=NULL) {
       write_int(1,s);
       write_identifier(x,s);
@@ -133,16 +133,16 @@ void Prims::write_identifier_option(identifier_option x,outstream s) {
       write_int(0,s);
     }
 }
-int_list* Prims::read_int_list(instream s)
+int_list* read_int_list(instream s)
 {
      int_list* t;
      
      {
           int t1;
           int_list* t2;
-          t1 = Prims::read_tag(s);
+          t1 = read_tag(s);
           if(t1 != 0)
-              t = new int_list(Prims::read_int(s),
+              t = new int_list(read_int(s),
                    NULL);
           else
               return NULL;
@@ -150,7 +150,7 @@ int_list* Prims::read_int_list(instream s)
           t2 = t;
           while(t1 != 0)
           {
-               t2->tail = new int_list(Prims::read_int(s),
+               t2->tail = new int_list(read_int(s),
                            NULL);
                t2 = t2->tail;
                t1 = t1 - 1;
@@ -159,7 +159,7 @@ int_list* Prims::read_int_list(instream s)
      return t;
 }
 
-void Prims::write_int_list(int_list* x, outstream s)
+void write_int_list(int_list* x, outstream s)
 {
      int t1;
      int_list* t2;
@@ -170,17 +170,17 @@ void Prims::write_int_list(int_list* x, outstream s)
           t2 = t2->tail;
           t1 = t1 + 1;
      }
-     Prims::write_tag(t1, s);
+     write_tag(t1, s);
      t2 = x;
      while(t1 != 0)
      {
-          Prims::write_int(t2->head, s);
+          write_int(t2->head, s);
           t2 = t2->tail;
           t1 = t1 - 1;
      }
 }
 
-void Prims::write_string_list(string_list* x, outstream s)
+void write_string_list(string_list* x, outstream s)
 {
      int t1;
      string_list* t2;
@@ -191,25 +191,25 @@ void Prims::write_string_list(string_list* x, outstream s)
           t2 = t2->tail;
           t1 = t1 + 1;
      }
-     Prims::write_tag(t1, s);
+     write_tag(t1, s);
      t2 = x;
      while(t1 != 0)
      {
-          Prims::write_string(t2->head, s);
+          write_string(t2->head, s);
           t2 = t2->tail;
           t1 = t1 - 1;
      }
 }
-string_list* Prims::read_string_list(instream s)
+string_list* read_string_list(instream s)
 {
      string_list* t;
      
      {
           int t1;
           string_list* t2;
-          t1 = Prims::read_tag(s);
+          t1 = read_tag(s);
           if(t1 != 0)
-              t = new string_list(Prims::read_string(s),
+              t = new string_list(read_string(s),
                    NULL);
           else
               return NULL;
@@ -217,7 +217,7 @@ string_list* Prims::read_string_list(instream s)
           t2 = t;
           while(t1 != 0)
           {
-               t2->tail = new string_list(Prims::read_string(s),
+               t2->tail = new string_list(read_string(s),
                            NULL);
                t2 = t2->tail;
                t1 = t1 - 1;
@@ -225,7 +225,7 @@ string_list* Prims::read_string_list(instream s)
      }
      return t;
 }
-void Prims::write_identifier_list(identifier_list* x, outstream s)
+void write_identifier_list(identifier_list* x, outstream s)
 {
      int t1;
      identifier_list* t2;
@@ -236,25 +236,25 @@ void Prims::write_identifier_list(identifier_list* x, outstream s)
           t2 = t2->tail;
           t1 = t1 + 1;
      }
-     Prims::write_tag(t1, s);
+     write_tag(t1, s);
      t2 = x;
      while(t1 != 0)
      {
-          Prims::write_identifier(t2->head, s);
+          write_identifier(t2->head, s);
           t2 = t2->tail;
           t1 = t1 - 1;
      }
 }
-identifier_list* Prims::read_identifier_list(instream s)
+identifier_list* read_identifier_list(instream s)
 {
      identifier_list* t;
      
      {
           int t1;
           identifier_list* t2;
-          t1 = Prims::read_tag(s);
+          t1 = read_tag(s);
           if(t1 != 0)
-              t = new identifier_list(Prims::read_identifier(s),
+              t = new identifier_list(read_identifier(s),
                    NULL);
           else
               return NULL;
@@ -262,7 +262,7 @@ identifier_list* Prims::read_identifier_list(instream s)
           t2 = t;
           while(t1 != 0)
           {
-               t2->tail = new identifier_list(Prims::read_identifier(s),
+               t2->tail = new identifier_list(read_identifier(s),
                            NULL);
                t2 = t2->tail;
                t1 = t1 - 1;
@@ -272,7 +272,7 @@ identifier_list* Prims::read_identifier_list(instream s)
 }
 
 
-identifier_option Prims::read_identifier_option(instream s) {
+identifier_option read_identifier_option(instream s) {
     if(read_int(s)!=0) {
       return (read_identifier(s));
     } else {
@@ -281,7 +281,7 @@ identifier_option Prims::read_identifier_option(instream s) {
 }
 
 
-void Prims::die() { 
+void die() { 
 #ifdef USE_IO_STREAM
   cerr<<"Pickler error\n";
 #else

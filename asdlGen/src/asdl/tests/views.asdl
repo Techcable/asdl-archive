@@ -27,50 +27,138 @@ binop = Plus | Minus | Times | Div
 }
 
 view C {
-Slp.pos <= natural_type : int
-Slp.pos <= unwrapper : User.pos2int
-Slp.pos <= user_reader : User.pos_reader
-Slp.pos <= user_writer : User.pos_writer
-Slp.pos <= user_init   : User.pos_init
 
-Slp.exp <= user_init   : User.exp_init
-Slp.exp <= user_reader : User.exp_reader
-Slp.exp <= user_writer : User.exp_writer
+  Slp.pos <= {
+    natural_type : int
+    unwrapper    : User.pos2int
+    reader       : User.pos_reader
+    writer       : User.pos_writer
+    user_init    : User.pos_init
+  }
 
+  Slp.exp <= {
+   reader    : User.exp_reader
+   writer    : User.exp_writer
+   user_init : User.exp_init
+  }
 
-module Slp <= interface_epilogue %%
-int User_pos2int(Slp_pos_ty s);
-int_ty User_pos_reader(instream_ty);
-Slp_pos_ty User_pos_init(Slp_pos_ty);
-void User_pos_writer(int ,outstream_ty);
+  module Slp <= interface_epilogue 
+%%
+  int User_pos2int(Slp_pos_ty s);
+  int_ty User_pos_reader(instream_ty);
+  Slp_pos_ty User_pos_init(Slp_pos_ty);
+  void User_pos_writer(int ,outstream_ty);
 
-Slp_exp_ty User_exp_reader(instream_ty);
-Slp_exp_ty User_exp_init(Slp_exp_ty);
-void User_exp_writer(Slp_exp_ty,outstream_ty);
+  Slp_exp_ty User_exp_reader(instream_ty);
+  Slp_exp_ty User_exp_init(Slp_exp_ty);
+  void User_exp_writer(Slp_exp_ty,outstream_ty);
 %%
 
+}
+
+
+view Cxx {
+
+  Slp.pos <= {
+    natural_type : int
+    unwrapper    : User.pos2int
+    wrapper      : User.int2pos
+    reader       : User.pos_reader
+    writer       : User.pos_writer
+    user_init    : User.pos_init
+  }
+
+  Slp.exp <= {
+   reader    : User.exp_reader
+   writer    : User.exp_writer
+   user_init : User.exp_init
+  }
+
+  module Slp <= interface_epilogue 
+%%
+  int User_pos2int(Slp_pos* s);
+  Slp_pos* User_int2pos(int s);
+
+  Slp_pos* User_pos_init(Slp_pos);
+  int User_pos_reader(instream);
+  void User_pos_writer(int, outstream);
+
+  Slp_exp* User_exp_reader(instream);
+  Slp_exp* User_exp_init(Slp_exp*);
+  void User_exp_writer(Slp_exp*,outstream);
+%%
 
 }
 
 view Java {
-Slp.exp <= source_name : Expression
+	Slp.exp <= source_name : Expression
+
+  Slp.pos <= {
+    natural_type : int
+    unwrapper    : pos2int
+    wrapper      : int2pos
+    reader       : pos_reader
+    writer       : pos_writer
+    user_init    : pos_init
+  }
+
+  Slp.exp <= {
+   reader    : exp_reader
+   writer    : exp_writer
+   user_init : exp_init
+  }
+
+  module Slp <= implementation_prologue 
+%%
+import java.io.*;
+%%
+
+  module Slp <= implementation_epilogue
+%%
+ static  int pos2int(pos s){ return 0; }
+ static  pos int2pos(int s){ return null; }
+
+ static  pos pos_init(pos x) { return x; }
+ static  int pos_reader(InputStream x) { return 0; }
+ static  void pos_writer(int x, OutputStream s) { }
+
+ static  Expression exp_reader(InputStream x){ return null; }
+ static  Expression exp_init(OutputStream x){ return null; }
+ static  void exp_writer(Expression x,OutputStream s) { }
+%%
 }
 
 view SML {
-module Slp <= implementation_prologue %%
+
+    Slp.pos <= {
+       reader : User.pos_reader
+       writer : User.pos_writer
+    }
+
+    Slp.exp <= {
+       reader : User.exp_reader
+       writer : User.exp_writer
+    }
+
+module Slp <= implementation_prologue 
+%%
 structure User =
-struct
-	fun pos_reader x = raise Fail ""
-	fun pos_writer x s = raise Fail ""
-	fun exp_reader x = raise  Fail ""
-	fun exp_writer x s = raise Fail ""
-end	
+   struct
+    fun pos_reader x = raise Fail ""
+    fun pos_writer x s = raise Fail ""
+    fun exp_reader x = raise  Fail ""
+    fun exp_writer x s = raise Fail ""
+end 
 %%
 
-Slp.pos <= user_reader : User.pos_reader
-Slp.pos <= user_writer : User.pos_writer
 
-Slp.exp <= user_reader : User.exp_reader
-Slp.exp <= user_writer : User.exp_writer
 
 }
+
+
+
+
+
+
+
+

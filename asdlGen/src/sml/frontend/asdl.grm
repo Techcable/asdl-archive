@@ -70,7 +70,12 @@ type view = (T.identifier * view_entry list)
         | start of (T.asdl_module list * view list)
         | view_list of view list
 	| view of view
-	| view_entries of view_entry list
+        | view_entity of T.identifier list
+        | view_attrib of string
+        | view_entity_list of T.identifier list list
+        | view_av_list of (string * string) list
+        | view_ev_list of (T.identifier list * string)  list
+        | view_entries of view_entry list
 	  
 %name Asdl
 %noshift EOF
@@ -140,12 +145,43 @@ field_list': field FIELDSEP field_list' (field::field_list')
 
 
 (* hacked ugly syntax for now *)
-view     : VIEW id LBRACE view_entries RBRACE ((id,view_entries))
-view_entries: id DOT id_list LANGLE EQ ID QUOTE view_entries
-                          ((id::id_list,ID,QUOTE)::view_entries)
-         | MODULE id LANGLE EQ ID QUOTE view_entries
-                          (([id],ID,QUOTE)::view_entries)
-         |                (nil)
 
+
+
+view     : VIEW id LBRACE view_entries RBRACE ((id,view_entries))
+view_entity : id DOT id_list (id::id_list)
+            | MODULE id      ([id])
+
+view_attrib : LANGLE EQ ID (ID)
+
+view_entity_list : view_entity view_entity_list (view_entity::view_entity_list)
+                 | (nil)
+
+view_av_list : ID QUOTE view_av_list 
+                 ((ID,QUOTE)::view_av_list)
+             | (nil)
+
+view_ev_list : view_entity QUOTE view_ev_list
+		 ((view_entity,QUOTE)::view_ev_list)
+             | (nil)
+
+view_entries: view_entity view_attrib QUOTE view_entries
+                          ((view_entity,view_attrib,QUOTE)::view_entries)
+
+	    | LBRACE view_entity_list RBRACE view_attrib QUOTE view_entries
+	      (List.foldr (fn (x,xs) => (x,view_attrib,QUOTE)::xs)
+	       view_entries view_entity_list)
+
+	    | view_attrib LBRACE view_ev_list RBRACE view_entries
+	      (List.foldr (fn ((e,v),xs) => (e,view_attrib,v)::xs)
+	       view_entries view_ev_list)
+
+	    | view_entity LANGLE EQ LBRACE view_av_list RBRACE view_entries
+	      (List.foldr (fn ((a,v),xs) => (view_entity,a,v)::xs)
+	       view_entries view_av_list)
+	    | (nil)
+
+	      
 view_list: view view_list (view::view_list)
          | (nil)
+

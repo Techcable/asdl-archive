@@ -64,13 +64,13 @@ functor mkAlgebraicTranslator(structure IdFix : ID_FIX
 	fun get_bodies p {wr_body,rd_body} =
 	    let
 		val rd_body =
-		    case (M.Typ.user_reader p) of
+		    case (M.Typ.reader p) of
 			(SOME x) =>
 			    T.Call(T.Id(T.VarId.fromPath x),
 				   [T.Id Pkl.stream_id])
 		      | NONE => rd_body
 		val wr_body =
-		    case (M.Typ.user_writer p) of
+		    case (M.Typ.writer p) of
 			(SOME x) =>
 			    T.Call(T.Id(T.VarId.fromPath x),
 				   [T.Id Pkl.arg_id,T.Id Pkl.stream_id])

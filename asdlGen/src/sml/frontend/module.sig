@@ -32,7 +32,8 @@ signature MODULE =
 	val module_env_modules : module_env -> module list
 	val validate_env       : module_env -> string list
 
-	val module_name        : module -> string
+	val module_name        : module -> Id.mid
+	val module_src_name    : module -> Id.mid
 	val module_file        : module -> string
 
 	val defined_types      : module_env -> module -> Id.mid list

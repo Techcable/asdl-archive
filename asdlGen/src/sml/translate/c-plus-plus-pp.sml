@@ -136,8 +136,28 @@ structure CPlusPlusPP : C_PLUS_PLUS_PP =
 		     PP.untab,
 		     PP.s "}"]
 		end
-	      | pp_ty_decl (DeclConst{field,value}) = 
-		PP.cat [PP.s "extern ",pp_field field]
+	      | pp_ty_decl (DeclConst{field,public,value}) = 
+		PP.cat [PP.s (if public then "extern " else "static"),
+			pp_field field]
+	      | pp_ty_decl (DeclFun{name,inline=true,
+				    public=true,args,ret,body}) = 
+		PP.vblock 0
+		[PP.s "inline ",
+		 pp_ty_exp ret,PP.s " ",
+		 pp_id name,
+		 PP.hblock 1
+		 [PP.s "(",
+		  PP.seq {fmt=pp_field,sep=comma_sep} args,
+		  PP.s ")"],pp_block body]
+	      | pp_ty_decl (DeclFun{name,inline,public,args,ret,body}) = 
+		PP.vblock 0
+		[PP.s (if public then "extern " else "static"),
+		 pp_ty_exp ret,PP.s " ",
+		 pp_id name,
+		 PP.hblock 1
+		 [PP.s "(",
+		  PP.seq {fmt=pp_field,sep=comma_sep} args,
+		  PP.s ");"],pp_block body]
 
 	    and pp_ty_idecl (IDeclEnum{name,enums}) =
 		PP.hblock 1
@@ -185,6 +205,11 @@ structure CPlusPlusPP : C_PLUS_PLUS_PP =
 		 PP.s "(",
 		 PP.seq {fmt=pp_exp,sep=comma_sep} es,
 		 PP.s ")"]
+	      | pp_exp (FunCall(id,es)) =
+		PP.hblock 1
+		[pp_id id, PP.s "(",
+		 PP.seq {fmt=pp_exp,sep=comma_sep} es,
+		 PP.s ")"]
 	      | pp_exp (Id id) = pp_id id
 	      | pp_exp (ThisId (id)) =
 		PP.cat [PP.s "this->",pp_id id]
@@ -199,6 +224,8 @@ structure CPlusPlusPP : C_PLUS_PLUS_PP =
 		PP.cat [pp_exp e, PP.s " != NULL"]
 	      | pp_exp (NotZero e) = 
 		PP.cat [pp_exp e, PP.s " != 0"]
+	      | pp_exp (NotEqConst (e,c)) = 
+		PP.cat [pp_exp e, PP.s " != ",pp_const c]
 	      | pp_exp (Cast(t,e)) =
 		PP.cat [PP.s "(",pp_ty_exp t,PP.s ")",pp_exp e]
 	      | pp_exp (New(t,es)) =
@@ -387,15 +414,17 @@ structure CPlusPlusPP : C_PLUS_PLUS_PP =
 			       (xs,ys)) =
 			((PP.s "class ")::(pp_tid name)::
 			 (PP.s ";")::(PP.nl)::xs,x::ys)
-		      | do_it (x as (DeclConst{field,value}),
+		      | do_it (x as (DeclConst{field,public=true,value}),
 			       (xs,ys)) =
 			((pp_ty_decl x)::(PP.s ";")::(PP.nl)::xs,ys)
+		      | do_it (x as (DeclFun{public=true,...}),
+			       (xs,ys)) =
+			((pp_ty_decl x)::(PP.nl)::xs,ys)
 		      | do_it (x,(xs,ys)) = (xs,x::ys)
 
-
-
-		    fun pp_const (DeclConst {field,value}) =
-			SOME (PP.cat [pp_field field ,PP.s " = ",pp_exp value,
+		    fun pp_const (DeclConst {field,public,value}) =
+			SOME (PP.cat [pp_str_if "static " (not public),
+				      pp_field field ,PP.s " = ",pp_exp value,
 				      PP.s ";",PP.nl])
 		      | pp_const _ = NONE
 
@@ -406,15 +435,12 @@ structure CPlusPlusPP : C_PLUS_PLUS_PP =
 
 		    fun get f g (tid,cs,ms) =
 			(tid,List.filter f cs,List.filter g ms)
-
-
 			
 		    val iv = List.map (get #inline #inline) acc
 		    val ov = List.map (get (not o #inline)
 				       (not o #inline)) acc
 
 		    fun pp_mdec  tid {name,mods,args,ret,body,inline} =
-
 			PP.vblock 0
 			[pp_str_if "inline " inline,
 			 pp_ty_exp ret,PP.s " ",
@@ -435,7 +461,6 @@ structure CPlusPlusPP : C_PLUS_PLUS_PP =
 			  PP.s ")"],
 			 pp_block body]
 
-		
 		    fun pp_acc (tid,cs,ms) =
 			PP.cat
 			[PP.seq_term {fmt=pp_cdec tid,sep=PP.nl} cs,
@@ -452,7 +477,16 @@ structure CPlusPlusPP : C_PLUS_PLUS_PP =
 		end
 	end
 
-	fun translate p ({name,imports,decls},_) =
+	val header_prologue =
+	    PPUtil.wrap Module.Mod.interface_prologue 
+	val header_epilogue =
+	    PPUtil.wrap Module.Mod.interface_epilogue
+	val body_prologue =
+	    PPUtil.wrap Module.Mod.implementation_prologue 
+	val body_epilogue =
+	    PPUtil.wrap Module.Mod.implementation_epilogue
+
+	fun translate p ({name,imports,decls},props) =
 	    let
 		val mn = T.ModuleId.toString name
 		val x = List.map T.ModuleId.toString imports
@@ -464,16 +498,20 @@ structure CPlusPlusPP : C_PLUS_PLUS_PP =
 		    PPUtil.seq_term {fmt=pp_inc,sep=PPUtil.nl}
 
 		fun pp_impl name body =
-		    PPUtil.cat [pp_inc name,PPUtil.nl,body,PPUtil.nl]
+		    PPUtil.cat [pp_inc name,
+				body_prologue props,PPUtil.nl,
+				body,PPUtil.nl,
+				body_epilogue props,PPUtil.nl]
 
-
-		fun pp_interface name body incs =
+		fun pp_interface name header incs =
 		    PPUtil.cat
 		    [PPUtil.s ("#ifndef _"^name^"_"), PPUtil.nl,
 		     PPUtil.s ("#define _"^name^"_"), PPUtil.nl,
 		     pp_incs incs,
-		     body,
+		     header_prologue props,PPUtil.nl,
+		     header,
 		     PPUtil.nl,
+		     header_epilogue props,PPUtil.nl,
 		     PPUtil.s ("#endif /* _"^name^"_ */"), PPUtil.nl]
 
 		val (header,body) = fix_decs_pp decls

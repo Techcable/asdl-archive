@@ -11,7 +11,7 @@ structure Main =
 	structure HTML =  mkMain(structure M = Module
 				structure Parser = AsdlParser
 				structure Gen = HTMLGen
-				val dflt_view = "HTML")
+				val dflt_view = "Doc")
 
         structure MLTranslator =
 	    mkAlgebraicTranslator(structure IdFix = IdFix.ML
@@ -91,17 +91,7 @@ structure Main =
 				     structure Gen = CPlusPlusGen
 				     val dflt_view = "Cxx")	   
 
-       structure Check =
-		mkMain(structure M = Module
-		       structure Parser = AsdlParser
-		       structure Gen = 
-			   struct
-			       type input = Module.module_env
-			       type output = (Params.params * input)
-			       val cfg = Params.empty
-			       fun translate p x =  (p,x)
-			   end
-		       val dflt_view = "Check")	   
+
 
        structure TypePickler =
 	   mkMain(structure M = Module
@@ -109,4 +99,15 @@ structure Main =
 		  structure Gen = GenPickleTranslator
 		  val dflt_view = "Typ")	   
 
+       structure Check =
+		mkMain(structure M = Module
+		       structure Parser = AsdlParser
+		       structure Gen = 
+			   struct
+			       type input = Module.module_env
+			       type output = (Params.params * input)
+			       val cfg = GenPickleTranslator.cfg
+			       fun translate p x =  (p,x)
+			   end
+		       val dflt_view = "Check")	   
     end

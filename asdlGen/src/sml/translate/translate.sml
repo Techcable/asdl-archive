@@ -22,12 +22,14 @@ functor mkFileOutput(type outstream
 
 	val (cfg,output_dir) =
 	    Params.requireString Params.empty "output_directory"
+	val (cfg,no_action) =
+	    Params.declareBool cfg
+	    {name="no_action",flag=NONE,default=false}
 
 	fun translate p args =
 	    let
 		fun do_file (arcl,f) =
 		    let
-
 			val dir = output_dir p
 			val {isAbs,vol,arcs} = OS.Path.fromString dir
 	
@@ -54,13 +56,20 @@ functor mkFileOutput(type outstream
 			  | ensure_path _ = ()
 
 			val path = arcs@arcl
-			val _ = ensure_path (path,[])
 			val outname = mkPath path
-			val outs = openOut outname
 		    in
-			(f outs) before	(closeOut outs);
+			(if (no_action p) then
+			     TextIO.print(outname^"\n")
+			else
+			    let
+				val outs =
+				    (ensure_path (path,[]); openOut outname)
+			    in
+				(f outs) before (closeOut outs)
+			    end);
 			outname
 		    end
+
 	    in
 		List.map do_file args
 	    end
@@ -292,7 +301,8 @@ functor mkTranslateFromTranslator
 			    {module=m,defines=defines,props=props,
 			     options=options,sequences=sequences}
 
-			val get_mid = (AST.ModuleId.fromString o M.module_name)
+			val get_mid = (AST.ModuleId.fromPath o
+				       Id.toPath o M.module_src_name)
 			val imports =
 			    List.map get_mid (M.module_imports m)
 			val name = get_mid m

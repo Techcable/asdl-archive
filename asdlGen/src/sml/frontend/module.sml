@@ -92,7 +92,7 @@ structure Module :> MODULE =
        fun module_env_prims (ME{penv,...}) = Env.listItems penv
        fun get_m (M x) = x
 
-       val module_name = Id.toString o #name o get_m
+       val module_name =  #name o get_m
        val module_props = #props o get_m
        val module_file = ModProps.file o module_props
 
@@ -412,6 +412,8 @@ structure Module :> MODULE =
 	 | src_name (name,SOME x) =
 	   Id.fromPath
 	    {qualifier=Id.getQualifier name, base=x}
+       fun module_src_name x =
+	   src_name (#name (get_m x),Mod.source_name (module_props x))
 
        fun get_t (x:type_info) =  x
        val type_tag = #tag o get_t 

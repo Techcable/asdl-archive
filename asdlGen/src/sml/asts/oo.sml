@@ -32,11 +32,18 @@ structure OOTypes: OO_TYPES =
            fields: mfield list, 
              mths: mth list}
 
-	  | DeclConst of {field:field,value:exp}
+	  | DeclFun of
+	    {name:id,
+	     inline:bool,
+	     public:bool,
+	     args:field list,
+	     ret:ty_exp,
+	     body:block}
+
+	  | DeclConst of {field:field,public:bool,value:exp}
 
 	and inner_decl =
 	    IDeclEnum of {name:ty_id,enums:enumer list}
-
 
 	and mth = 
 	    MthAbstract of
@@ -59,20 +66,22 @@ structure OOTypes: OO_TYPES =
 
 	and exp =
 	    NilPtr
-	  | Id        of (id)
-	  | Const     of (const)
-	  | ThisId    of (id)
-	  | MthCall   of (exp * exp list)
-	  | SMthCall  of (ty_id * id * exp list)
-	  | FieldSub  of (exp * id)
-	  | ArraySub  of (exp * exp) 
-	  | DeRef     of (exp)
-	  | PlusOne   of (exp)
-	  | MinusOne  of (exp)
-	  | NotNil    of (exp)
-	  | NotZero   of (exp)
-	  | Cast      of (ty_exp * exp)
-	  | New       of (ty_id * exp list)
+	  | Id         of (id)
+	  | Const      of (const)
+	  | ThisId     of (id)
+	  | MthCall    of (exp * exp list)
+	  | SMthCall   of (ty_id * id * exp list)
+	  | FunCall    of (id * exp list)
+	  | FieldSub   of (exp * id)
+	  | ArraySub   of (exp * exp) 
+	  | DeRef      of (exp)
+	  | PlusOne    of (exp)
+	  | MinusOne   of (exp)
+	  | NotEqConst of (exp * const)
+	  | NotNil     of (exp)
+	  | NotZero    of (exp)
+	  | Cast       of (ty_exp * exp)
+	  | New        of (ty_id * exp list)
 
 	and stmt =
 	    Nop
@@ -94,7 +103,6 @@ structure OOTypes: OO_TYPES =
 	   and modifiers = {scope:scope,static:bool,final:bool}
 	   and mfield    = {mods:modifiers,field:field}
 	   and clause    = {tag:const,body:stmt}
-
 
 	type decls = {name:mod_id,imports:mod_id list,decls:ty_decl list}
     end

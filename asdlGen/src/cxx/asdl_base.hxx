@@ -43,36 +43,32 @@ public:
     { this->head = head; this->tail = tail; }
 };
 
-class Prims {
-public:
- static void   write_tag(int x,outstream s);
- static int    read_tag(instream s);
+extern void   write_tag(int x,outstream s);
+extern int    read_tag(instream s);
 
- static void          write_int(int x,outstream s);
- static void          write_int_option(int_option x,outstream s);
- static void          write_int_list(int_list* x, outstream s);
+extern void          write_int(int x,outstream s);
+extern void          write_int_option(int_option x,outstream s);
+extern void          write_int_list(int_list* x, outstream s);
 
- static int           read_int(instream s);
- static int_option    read_int_option(instream s);
- static int_list*     read_int_list(instream s);
+extern int           read_int(instream s);
+extern int_option    read_int_option(instream s);
+extern int_list*     read_int_list(instream s);
 
- static void          write_string(string x,outstream s);
- static void          write_string_option(string_option x,outstream s);
- static void          write_string_list(string_list* x, outstream s);
+extern void          write_string(string x,outstream s);
+extern void          write_string_option(string_option x,outstream s);
+extern void          write_string_list(string_list* x, outstream s);
 
- static string        read_string(instream s);
- static string_option read_string_option(instream s);
- static string_list*  read_string_list(instream s);
+extern string        read_string(instream s);
+extern string_option read_string_option(instream s);
+extern string_list*  read_string_list(instream s);
 
- static void          write_identifier(identifier x,outstream s);
- static void          write_identifier_option(identifier_option x,outstream s);
- static void          write_identifier_list(identifier_list* x, outstream s);
+extern void          write_identifier(identifier x,outstream s);
+extern void          write_identifier_option(identifier_option x,outstream s);
+extern void          write_identifier_list(identifier_list* x, outstream s);
 
- static identifier        read_identifier(instream s);
- static identifier_option read_identifier_option(instream s);
- static identifier_list*  read_identifier_list(instream s);
- static void die();
-  
-};
+extern identifier        read_identifier(instream s);
+extern identifier_option read_identifier_option(instream s);
+extern identifier_list*  read_identifier_list(instream s);
+extern void die();
 
 #endif

@@ -177,8 +177,10 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 	    let
 		fun  do_choice ({name,fields=[]}) =  NONE
 		  | do_choice ({name,fields}) =
-		    SOME {name=trans_id name,
-		     ty=(TyAggregate(Struct,NONE,trans_fields fields))}
+		    SOME
+		    {name=trans_id name,
+		     ty=(TyAggregate(Struct,SOME (trans_id'  name),
+				     trans_fields fields))}
 		val choices = List.mapPartial do_choice cs
 	    in
 		if (List.null choices) then

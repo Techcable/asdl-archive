@@ -36,7 +36,7 @@ structure Export =
 	  | asdlGen (name, ("--cxx"::rs)) = CPlusPlusGenFn(name,rs)
 	  | asdlGen (name, ("--sml"::rs)) = MLGenFn(name,rs)
 	  | asdlGen (name, ("--haskell"::rs)) = HaskellGenFn(name,rs)
-	  | asdlGen (name, ("--html"::rs)) = HTMLGenFn(name,rs)
+	  | asdlGen (name, ("--doc"::rs)) = HTMLGenFn(name,rs)
 	  | asdlGen (name, ("--check"::rs)) = CheckFn(name,rs)
 	  | asdlGen (name, ("--typ"::rs)) = TypGenFn(name,rs)
 	  | asdlGen (name, ("--pp_pkl"::rs)) = PicklePP.pickle_pp(name,rs)
@@ -58,7 +58,7 @@ structure Export =
 		     (Error.say
 		      (String.concat
 		       ["Usage: ",name,
-			" --{java|c|cxx|sml|haskell|check|typ|html|all}",
+			" --{java|c|cxx|sml|haskell|check|typ|doc|all}",
 		       " [options ...]"," files ...","\n"]);
 		      OS.Process.exit OS.Process.failure)
     end

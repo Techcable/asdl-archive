@@ -138,8 +138,12 @@ read_option f s = do
 		      1 -> do { o <- f s ; return (Just o)}
 		      _ -> die
 
-die :: a
-die = error "Pickler error"
+picklerError :: IOError
+picklerError = userError "Pickler error"
+ 
+die :: IO a
+die = fail picklerError
+
 
 
 

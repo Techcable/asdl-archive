@@ -90,14 +90,14 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 	fun get_bodies p {wr_body,rd_body} =
 	    let
 		val rd_body =
-		    case (M.Typ.user_reader p) of
+		    case (M.Typ.reader p) of
 			(SOME x) =>
 			    [T.Assign(T.Id Pkl.ret_id,
 				      T.FnCall(T.VarId.fromPath x,
 				   [T.Id Pkl.stream_id]))]
 		      | NONE => rd_body
 		val wr_body =
-		    case (M.Typ.user_writer p) of
+		    case (M.Typ.writer p) of
 			(SOME x) =>
 			    [T.ProcCall(T.VarId.fromPath x,
 				   [T.Id Pkl.arg_id,T.Id Pkl.stream_id])]
@@ -370,7 +370,6 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 	
 	fun trans_mono_sequence p {tinfo,name,props,also_opt} =
 	    let
-		val tid_seq = trans_tid listify_tid tinfo
 		val ty = T.TyId (trans_tid ident_tid tinfo)
 		val {pkl_name,natural_ty,unwrap,wrap} =
 		    wrappers props ty

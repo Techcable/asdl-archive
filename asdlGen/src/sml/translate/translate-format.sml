@@ -10,7 +10,7 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 	type defined_value  = T.ditem
 	type option_value   = T.format
 	type sequence_value = T.format
-	type con_value      = T.format 
+	type con_value      = (T.format * string option)
 	type field_value    = T.format 
 
 	val set_dir = false
@@ -37,10 +37,24 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 	fun fmt_cons [] r = T.RM []
 	  | fmt_cons c r =
 	    let
-		fun bar_sep (x,[]) = x::r
-		 | bar_sep (x,rest) = x::(T.STR "|")::rest
+		fun bar_sep ((x,_),[]) = x::r
+		 | bar_sep ((x,_),rest) = x::(T.STR "|")::rest
 	    in
 		T.RM (T.NBS::(List.foldr bar_sep [] c))
+	    end
+
+	fun fmt_cons_doc [] = []
+	  | fmt_cons_doc c =
+	    let
+		fun mk_tag (c,d) =
+		    case d of
+			NONE => {tag=c,fmt=T.RM[]}
+		      |	(SOME s) => {tag=c,fmt=T.STR s}
+			    
+	    in
+		if (List.exists (Option.isSome o #2) c) then
+		    [T.DL (List.map mk_tag c)]
+		else []
 	    end
 
 	fun trans_field p {finfo,kind,name,tname,tinfo,is_local,props} =
@@ -62,20 +76,33 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 	    end
 	val id2STR = T.STR o Id.toString 
 	fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} =
-	    T.RM [T.BF [id2STR (trans_short_id name)],(fmt_fields fields),T.BR]
-
+	    let
+		val doc = M.Con.doc_string cprops
+	    in
+		(T.RM ([T.BF [id2STR (trans_short_id name)],
+		      (fmt_fields fields),T.BR]),doc)
+	    end
 	fun trans_defined p {tinfo,name,cons,fields,props} =
 	    let
 		val f = fmt_fields fields
 		val tid = trans_short_id name
-		val name = T.LABEL(tid,[T.EM [T.STR (Id.toString tid)],
-					T.STR " = "])
+		val cdoc = fmt_cons_doc cons
+		val doc =
+		    case (M.Typ.doc_string props) of
+			NONE => T.RM cdoc
+		      | SOME s => T.P ([T.STR s,T.BR]@cdoc)
+		val name =
+		    T.RM [T.LABEL(tid,[T.EM [T.STR (Id.toString tid)]]),
+			  T.STR " = "]
+		val {tag,fmt} =
+		    (case (cons,fields) of
+			 ([],_) => {tag=name,fmt=f}
+		       | (c,[]) => {tag=name,fmt=fmt_cons cons []}
+		       | (c,_) =>
+			     {tag=name,
+			      fmt=fmt_cons cons [T.STR "attributes",f]})
 	    in
-		(case (cons,fields) of
-		    ([],_) => {tag=name,fmt=f}
-		  | (c,[]) => {tag=name,fmt=fmt_cons cons []}
-		  | (c,_) =>  {tag=name,
-			       fmt=fmt_cons cons [T.STR "attributes",f]})
+	      {tag=tag,fmt=T.RM[fmt,doc]}
 	    end
 	
 	fun trans_sequence p {props,tinfo,name,also_opt} =
@@ -85,10 +112,15 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 
 	fun trans_all p {module,defines,options,sequences,props} =
 	    let
-		val mname = M.module_name module
+		val mname = Id.toString (M.module_name module)
+		val doc =
+		    case (M.Mod.doc_string props) of
+			NONE => []
+		      | SOME s =>  [T.STR s]
 	    in
 		{title="Description for Module "^mname,
-		 body=[T.SECT(1,[T.STR ("Description for Module "^mname)]),
+		 body=[T.SECT(1,[T.STR ("Description of Module "^mname)]),
+  		       T.P doc,		
 		       T.SECT(2,[T.STR ("Locally defined types")]),
 		       T.DL (defines),
 		       T.SECT(2,[T.STR ("Types used as options")]),
