@@ -25,4 +25,3 @@ module Pos {
 module Ops {
 	binop = Plus | Minus | Times | Div	
 }
-

@@ -27,6 +27,9 @@ structure HaskellPP : HASKELL_PP =
 	type output = (string list * PPUtil.pp) list
 
 	val cfg = Params.empty
+	val (cfg,base_imp) =
+	    Params.declareString cfg
+	    {name="base_import",flag=NONE,default="HaskellBase"} 
 
 	fun mkComment s =
 	   ( PP.vblock 2 [PP.s "(*",
@@ -344,7 +347,8 @@ structure HaskellPP : HASKELL_PP =
 		    pp_ty_id i
 		  | pp_tup_name _ = raise Error.impossible 
 
-		val pp_tup_names = PP.seq_term {fmt=pp_tup_name,sep=comma_sep} decs 
+		val pp_tup_names =
+		    PP.seq_term {fmt=pp_tup_name,sep=comma_sep} decs 
 
 		fun pp_imports imports =
 		    let
@@ -369,10 +373,11 @@ structure HaskellPP : HASKELL_PP =
 			  PP.nl, body,
 			  PP.nl]
 			 ]
+		val base_import = base_imp p
 	    in
 		[([mn^".hs"], 
 		  pp_sig mn (PP.cat [pp_ty_decs,pp_fsigs,pp_fdecs]) 
-		  ["import qualified Prelude", "import HaskellBase"])]
+		  ["import qualified Prelude", "import "^base_import])]
 	    end
     end
 
