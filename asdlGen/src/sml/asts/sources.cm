@@ -14,3 +14,5 @@ ansi-c.sig
 ansi-c.sml
 format.sig
 format.sml
+xml-dtd.sig
+xml-dtd.sml
