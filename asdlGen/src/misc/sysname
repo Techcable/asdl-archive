@@ -110,6 +110,10 @@ case `uname -s` in
       486) ARCH=x86;;
       586) ARCH=x86;;
       686) ARCH=x86;;
+      i386) ARCH=x86;;
+      i486) ARCH=x86;;
+      i586) ARCH=x86;;
+      i686) ARCH=x86;;
       *) exit 1;;
     esac
     ;;

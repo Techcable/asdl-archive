@@ -22,11 +22,13 @@ esac
 TMPDIR=/usr/tmp/
 
 if [ -z $tarball ] ; then 
+    cd ${TMPDIR}
     distname=${PACKAGE}-${VERSION}
     tarball=${distname}-${RELEASE}.src.tar
     DISTDIR=${TMPDIR}/${distname}
-    cd ${TMPDIR}
+
     # build the source dist first
+    rm -rf ${distname}
     cvs  -d ${CVSROOT} export -d ${distname} ${REV} ${PACKAGE}
 
     # build the documentation
