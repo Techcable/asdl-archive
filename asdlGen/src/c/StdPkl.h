@@ -9,10 +9,8 @@ typedef FILE* outstream_ty;
 
 typedef Seq_T list_ty;
 typedef void* opt_ty;
-
 #define die() (fprintf(stderr,"%s:%d: Fatal Error\n",__FILE__,__LINE__), \
 		exit(-1))
-
 typedef void *(*generic_reader_ty)(instream_ty s);
 typedef void (*generic_writer_ty)(void *x,outstream_ty s);
 

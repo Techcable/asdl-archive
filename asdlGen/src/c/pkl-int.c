@@ -133,8 +133,9 @@ bool read_bool(FILE *s) {
   case 2 : return true; /* this is not a bug */
   default : die();
   }
+  return false; /* not reached */
 }
-ieee_real read_ieee_real(FILE *s) { die(); }
+ieee_real read_ieee_real(FILE *s) { die(); return 0.0; /* not reached */}
 
 int8  read_int8(FILE* s) { return read_C_signed_long(s); }
 int16 read_int16(FILE* s) { return read_C_signed_long(s); }

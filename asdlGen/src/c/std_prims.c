@@ -2,6 +2,8 @@
 #include "StdPrims.h"
 #define WRITE_BYTES(x,sz,s) (fwrite(x,sizeof(char),sz,s))
 #define READ_BYTES(x,sz,s) (fread(x,sizeof(char),sz,s))
+#define WRITE_TAG(x,s) (StdPkl_write_tag(x,s))
+#define READ_TAG(s) (StdPkl_read_tag(s))
 int StdPkl_read_tag(instream_ty s) {
   return read_int32(s);
 }
@@ -87,7 +89,7 @@ StdPrims_int_ty StdPrims_read_int(instream_ty s) {
 }
 
 StdPrims_big_int_ty StdPrims_read_big_int(instream_ty s) {
-     return read_cii_MP_T(s);
+     return read_big_int(s);
 }
 
 Text_T StdPrims_read_string(instream_ty s) {
@@ -110,7 +112,7 @@ void StdPrims_write_int(StdPrims_int_ty x, outstream_ty s) {
 }
 
 void StdPrims_write_big_int(StdPrims_big_int_ty x, outstream_ty s) {
-     write_cii_MP_T(x,s);
+     write_big_int(x,s);
 }
 
 void StdPrims_write_string(StdPrims_string_ty x,outstream_ty s) {

@@ -1,7 +1,7 @@
 #ifndef _Pkl_int_
 #define _Pkl_int_
 #include <stdio.h>
-#include "cii/mp.h"
+#include <cii/mp.h>
 /* typdefs based on minimum ANSI C guarantees */
 /* note this is a mess need to find a better way to do this */
 typedef unsigned int nat;

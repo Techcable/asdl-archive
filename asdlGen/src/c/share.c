@@ -1,7 +1,10 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include "share.h"
-#include "cii/table.h"
-#include "cii/atom.h"
+#include <cii/table.h>
+#include <cii/atom.h>
+#define die() (fprintf(stderr,"%s:%d: Fatal Error\n",__FILE__,__LINE__), \
+		exit(-1))
 static Table_T ptr2key_tbl = NULL;
 static Table_T key2ptr_tbl = NULL;
 static int cmp_ptr(const void *x, const void *y) {

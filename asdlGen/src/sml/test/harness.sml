@@ -66,18 +66,19 @@ structure SupportFiles: SUPPORT_FILES =
 			      vol="",
 			      arcs=OS.Path.parentArc::x}]
 
-	val c_includes = (mk_path ["c"])@["/usr/local/include"]
-	val c_libs = mk_path ["c"]@["/usr/local/lib"]
+	val c_includes =  (mk_path ["c"])@   ["/usr/local/include"]
+	val c_libs =  mk_path ["c"]@ ["/usr/local/lib"]
 
-	val cxx_includes = mk_path ["cxx"]@(mk_path ["c"])
+	val cxx_includes = mk_path ["c"]
 	val cxx_libs = mk_path ["cxx"]
 
-	val java_classes = mk_path ["java"]
+	val java_classes = [] (*mk_path ["java"]*)
 
-	val cm_path = mk_path ["sml","base"]
-	val icon_ucode = mk_path ["icon"]
-	val haskell_path = (mk_path ["haskell"])@["/usr/local/share/hugs/lib"]
-	val ocaml_path = (mk_path ["ocaml"])
+	val cm_path = [] (* mk_path ["sml","base"]*)
+	val icon_ucode = [] (* mk_path ["icon"] *)
+	val haskell_path = (* (mk_path ["haskell"])@*)
+	  ["/usr/local/share/hugs/lib"]
+	val ocaml_path = [] (* (mk_path ["ocaml"]) *)
     end
 
 structure UnixExternalProgs : EXTERNAL_PROGRAMS =
@@ -116,7 +117,7 @@ structure UnixExternalProgs : EXTERNAL_PROGRAMS =
 	fun sml_batch {cm_path,inputs} =
 	    let
 		val cm_path = (shpath cm_path)
-		val cmd = (join (sml_prg::cm_path::inputs))
+		val cmd = (join (sml_prg::inputs))
 	    in run cmd
 	    end
 
@@ -203,9 +204,11 @@ structure Test =
 
 	fun sml_comp i =
 	    let
-		val outs = get_files "" i
+		val strs = get_files "sig" i
+		val sigs = (get_files "sml" i)
+		val outs = strs@sigs
 		val cm_path = S.cm_path
-	    in P.sml_batch{cm_path=cm_path,inputs="asdl-base.cm"::outs}
+	    in P.sml_batch{cm_path=cm_path,inputs="smlnj-lib.cm"::outs}
 	    end
 
 	fun ocaml_comp i =
@@ -333,7 +336,7 @@ structure Test =
 	    modTest2@
 	    pattern_test@
 	    rcc_test@
-	    views_test@zsuif_test
+	    views_test(*@zsuif_test*)
 
 	fun do_it () = run_test tests
 (*    	val _ = do_it()*)
