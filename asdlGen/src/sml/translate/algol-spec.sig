@@ -27,17 +27,17 @@ signature ALGOL_TYPE_DECL =
 signature ALGOL_SPEC =
   sig
     structure Ty : ALGOL_TYPE_DECL
-    val cfg : Params.cfg
-    val prims : Ty.ty_decl list
+    val inits : Module.ME.init list
 
-    val seq_rep : Ty.ty_exp -> Ty.ty_exp
-    val seq_con : Ty.ty_con
-
-    val opt_rep : Ty.ty_exp -> Ty.ty_exp
-    val opt_con : Ty.ty_con
-
-    val seq_tid : Ty.ty_id -> Ty.ty_id
-    val opt_tid : Ty.ty_id -> Ty.ty_id
+    val get_prims : Module.ME.props -> Ty.ty_decl list
+      
+    val get_reps: Module.ME.props ->
+      {seq_rep : Ty.ty_exp -> Ty.ty_exp,
+       seq_con : Ty.ty_con,
+       opt_rep : Ty.ty_exp -> Ty.ty_exp,
+       opt_con : Ty.ty_con,
+       seq_tid : Ty.ty_id -> Ty.ty_id,
+       opt_tid : Ty.ty_id -> Ty.ty_id}
 
     val generic_fns : Ty.ty_id -> Ty.Ast.decl list
 

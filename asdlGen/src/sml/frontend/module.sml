@@ -8,6 +8,7 @@
  *)
 
 
+
 (* could clean this ups a bit *)
 structure Module :> MODULE =
     struct
@@ -17,7 +18,7 @@ structure Module :> MODULE =
 	structure Con = ConProps	    
 	structure Typ = TypProps	    
 	structure Mod = ModProps	    
-
+	structure ME = ModEnvProps
         type field_info =
 	    {kind:field_kind,
   	 src_name:Identifier.identifier,
@@ -64,6 +65,7 @@ structure Module :> MODULE =
 		   menv:module Env.map,
 		   penv:type_info Env.map,
 		   errs:string list,
+		  props:ME.props,
 		  count:int}
 
         val prim_identifier = Id.fromString "identifier"
@@ -73,11 +75,12 @@ structure Module :> MODULE =
 	    val prims = [(prim_int,false),
 			 (prim_string,true),
 			 (prim_identifier,true)]
-	    val prim_env =
+	    fun prim_env inits =
 		ME{menv=Env.empty,penv=Env.empty,minfo=Env.empty,count=0,
+		   props=ME.new inits,
 		   errs=[]}
 		
-	    fun declare_prim ((name,b),ME{menv,penv,minfo,count,errs}) =
+	    fun declare_prim ((name,b),ME{menv,penv,minfo,count,errs,props}) =
 		let
 		    val count = count + 1
 		    val tinfo =
@@ -88,15 +91,17 @@ structure Module :> MODULE =
 		in
 		    ME{menv=menv,minfo=minfo,
 		       errs=errs,
+		       props=props,
 		       penv=Env.insert(penv, name,tinfo),count=count}
 		end
 	in
-	    val prim_env =
-		List.foldl declare_prim prim_env prims
+	  val prim_env =
+	    (fn i => List.foldl declare_prim (prim_env i) prims)
 	end
 
        fun module_env_modules (ME{menv,...}) = Env.listItems menv
        fun module_env_prims (ME{penv,...}) = Env.listItems penv
+       fun module_env_props (ME{props,...}) = props
        fun get_m (M x) = x
 
        val module_name =  #name o get_m
@@ -164,7 +169,8 @@ structure Module :> MODULE =
 	     | (SOME (T t)) => (SOME t)
 	     | _ => NONE
 		   
-       fun declare_module (ME{menv,minfo,penv,count,errs}) {file,decl,view} =
+       fun declare_module (ME{menv,minfo,penv,count,errs,props})
+	 {file,decl,view} =
 	   let
 	       val {name,imports,defs} = decl
 	       val toMid = Id.fromString o Identifier.toString
@@ -367,14 +373,15 @@ structure Module :> MODULE =
 	       val minfo =
 		   S.foldl (update_info update_opts) minfo (extern_opts)
 	       val inits = ModProps.parse (view name_id)
-	       val props = ModProps.new ((ModProps.mk_file file)::(inits))
+	       val mprops = ModProps.new ((ModProps.mk_file file)::(inits))
 	       val m =
-		   M{name=name_id,props=props,
+		   M{name=name_id,props=mprops,
 		     penv=penv,env=env,imports=imports}
 	       val menv = Env.insert(menv,name_id,m)
 
 	   in
-	       ME{minfo=minfo,penv=penv,menv=menv,count=count,errs=errs}
+	     ME{minfo=minfo,penv=penv,menv=menv,count=count,errs=errs,
+		props=props}
 	   end
 
        fun get_minfo f (ME{minfo,...}) (M{name,...}) =

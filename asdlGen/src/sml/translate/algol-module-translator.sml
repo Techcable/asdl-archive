@@ -41,21 +41,22 @@ functor mkAlgolModuleTranslator
       type module_value   = Ty.ty_decl list * (T.module * M.Mod.props)
       type output         = (T.module * M.Mod.props) list
 
-      val cfg = Spec.cfg
+      val inits = Spec.inits
 
       open StmtExp
       fun trans_field p {finfo,kind,name,tname,tinfo,is_local,props} =
 	let
 	  val tid = (trans_tid tname)
 	  val ty = (T.TyId tid)
+	  val {seq_rep,opt_rep,seq_tid,opt_tid,...} =  Spec.get_reps p
 	  val {natural_ty,...} = Spec.get_wrappers ty props 
 	  val (ty,tid) =
 	    case kind of
 	      M.Id => (natural_ty,tid)
 	    | M.Sequence =>
-		(Spec.seq_rep natural_ty,Spec.seq_tid tid)
+		(seq_rep natural_ty,seq_tid tid)
 	    | M.Option =>
-		(Spec.opt_rep natural_ty,Spec.opt_tid tid)
+		(opt_rep natural_ty,opt_tid tid)
 	  val trans_fid =
 	    (fix_id o T.VarId.fromString o Identifier.toString)
 	  val name = trans_fid name
@@ -67,7 +68,7 @@ functor mkAlgolModuleTranslator
 
       fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} = 
 	let
-	  val tname = trans_tid (M.type_name tinfo)
+	  val tname = trans_tid (M.type_src_name tinfo)
 	  val is_boxed = M.type_is_boxed tinfo
 	  val name = trans_id name
 
@@ -217,6 +218,7 @@ functor mkAlgolModuleTranslator
 	  val ty_decl =
 	    (name,Ty.Sum {ty=natural_ty,
 			  info=Spec.get_info natural_ty props,
+			  num_attrbs=List.length fields,
 			  cnstrs=List.map (mk_cnstr o #con) cons,
 			  match=match})
 
@@ -246,21 +248,23 @@ functor mkAlgolModuleTranslator
 
       fun trans_sequence p {tinfo,name,props,also_opt} =
 	let
+	  val {seq_tid,seq_con,...} = Spec.get_reps p
 	  val name = trans_tid name
-	  val name_seq = Spec.seq_tid name
+	  val name_seq = seq_tid name
 	  val decls = Spec.generic_fns name
 	in
-	  {ty_decl=(name_seq,Ty.App(Spec.seq_con,name)),decls=decls}
+	  {ty_decl=(name_seq,Ty.App(seq_con,name)),decls=decls}
 	end
       fun trans_option p {tinfo,name,props,also_seq} = 
 	let
 	  val name = trans_tid name
-	  val name_opt = Spec.opt_tid name
+	  val {opt_tid,opt_con,...} = Spec.get_reps p
+	  val name_opt = opt_tid name
 	  val decls =
 	    if also_seq then []
 	    else Spec.generic_fns name
 	in
-	  {ty_decl=(name_opt,Ty.App(Spec.opt_con,name)),
+	  {ty_decl=(name_opt,Ty.App(opt_con,name)),
 	   decls=decls}
 	end
       fun trans_module p {module,imports,defines,options,sequences,props} =
@@ -277,14 +281,16 @@ functor mkAlgolModuleTranslator
 	end
       fun trans p (ms:module_value list) =
 	let
-	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs) [] ms
+	  val prims = Spec.get_prims p
+	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs) prims ms
 	  val new_decls = (aux_decls ty_decls)
 	  fun add_decls (ty_decls,(T.Module{name,imports,decls},mp)) =
 	    (T.Module{name=name,
 		     imports=imports,
 		     decls=decls@(new_decls ty_decls)},mp)
+	  val out = List.map add_decls ms 
 	in
-	  List.map add_decls ms 
+	  List.filter (not o M.Mod.suppress o #2) out
 	end
     end
 

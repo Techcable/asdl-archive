@@ -28,6 +28,7 @@ signature ALGEBRAIC_SPEC =
   sig
     structure Ty : ALGEBRAIC_TYPE_DECL
 
+    val inits : Module.ME.init list
     val prims : Ty.ty_decl list
 
     val seq_rep : Ty.ty_exp -> Ty.ty_exp

@@ -19,32 +19,40 @@ structure OOTy : OO_TYPE_DECL =
     open T
   end
 
-functor mkOOSpec(structure Ty : OO_TYPE_DECL) =
+functor mkOOSpec(structure Ty   : OO_TYPE_DECL
+		 structure IdFix  : ID_FIX
+		 val streams_ty :  {outs:string,ins:string} option
+		 val int_kind   : bool) =
   struct
     type decl = (Ty.ty_id * Ty.Ast.mth)
     structure Ty = Ty
     open Ty.Ast
     open StmtExp
-
+    val inits = []
+    val int_kind = int_kind
+    val fix_id = VarId.subst IdFix.id_fix
+    val fix_ty = TypeId.subst IdFix.ty_fix      
     fun mk_name s  =
       (VarId.prefixBase (s^"_")) o VarId.fromPath o TypeId.toPath
-      
+    val streams_ty = Option.getOpt
+      (streams_ty,{ins="instream",outs="outstream"})
     val rd_name = VarId.fromString "read"
     val wr_name = VarId.fromString "write"
 
-    fun die _ =  Expr(FunCall((VarId.fromString "die"),[]))
+    val die = Die
 
     (* should be determined by functor parmeters *)
-    val grd_name = mk_name "read_generic"
-    val gwr_name = mk_name "write_generic"
+    val mrd_name = mk_name "read"
+    val mwr_name = mk_name "write"
 
     val arg_id     = VarId.fromString "x"
     val ret_id     = VarId.fromString "r"
     val stream_id  = VarId.fromString "s"
+
     val wr_tag_name = VarId.fromString "write_tag"
     val rd_tag_name = VarId.fromString "read_tag"
-    val outstream_ty = TyId (TypeId.fromString "outstream")
-    val instream_ty = TyId (TypeId.fromString "instream")
+    val outstream_ty = TyId (TypeId.fromString (#outs streams_ty))
+    val instream_ty = TyId (TypeId.fromString (#ins streams_ty))
 
     val next_id = ref 0
     fun tmpId () =
@@ -80,6 +88,17 @@ functor mkOOSpec(structure Ty : OO_TYPE_DECL) =
       (next_id := 0;
        get_block NONE (EVAL (e,ty,(fn v => STMT (Return v)))))
 
+(*   fun get_fun_body (e,ty)  =
+      (next_id := 0;
+       let
+	 val {vars,body} =
+	   get_block NONE (BIND{vars=[(ret_id,ty)],exps=[e],
+				body=(fn [v] => [STMT (Return (Id v))]
+			        | _ => raise Error.impossible)})
+       in
+	 {vars=vars,body=(Assign (Id ret_id,NilPtr))::body}
+       end)
+*)
 
     fun write_tag {c,v} =
       STMT (Expr(FunCall(wr_tag_name,[Const(IntConst v),Id stream_id])))
@@ -98,8 +117,8 @@ functor mkOOSpec(structure Ty : OO_TYPE_DECL) =
 
     fun read tid = RET (SMthCall(tid,rd_name,[Id stream_id]))
     fun write tid e =   
-      EVAL(e,TyId tid,(fn e =>
-		       STMT(Expr(SMthCall(tid,wr_name,[e,Id stream_id])))))
+      EVAL(e,TyReference(TyId tid),(fn v =>
+		       STMT(Expr(SMthCall(tid,wr_name,[v,Id stream_id])))))
       
     val void_ty  = TyId (TypeId.fromString "void")
     fun write_decl {name,arg,body} =
@@ -121,6 +140,8 @@ functor mkOOSpec(structure Ty : OO_TYPE_DECL) =
 
     fun expSeq exps = BIND {vars=[],exps=[],body=(fn _ => exps)}
       
+    val seq_tid =  TypeId.suffixBase "_list" 
+    val opt_tid =  TypeId.suffixBase "_option" 
     val seq_rep = TySequence
     val opt_rep = TyOption
       
@@ -131,17 +152,65 @@ functor mkOOSpec(structure Ty : OO_TYPE_DECL) =
       
     val seq_con =
       let
-	val rd_list_name = VarId.fromString "read_list"
-	val wr_list_name = VarId.fromString "write_list"
-	fun ty_con (tid,t) =
+	fun ty_con (tid,Ty.Prim{ty,...}) =
 	  let
-	    val ty = seq_rep (ty_exp t)
-	    val rd =
-	      RET (FunCall(rd_list_name,[Id (grd_name tid),Id stream_id]))
+	    val tid = (seq_tid tid)
+	    val ty = (TyId tid)
+	    val rd = RET (FunCall(mrd_name tid,[Id stream_id]))
 	    fun wr e =
-	      EVAL(e,ty,(fn e =>
-			 STMT (Expr(FunCall(wr_list_name,
-					[Id (gwr_name tid),e,Id stream_id])))))
+	      EVAL(e,ty,(fn v =>
+			 STMT (Expr(FunCall(mwr_name tid,[v,Id stream_id])))))
+	  in
+	    (ty,{wr=SOME wr,rd=SOME rd})
+	  end
+      | ty_con (tid,t) =
+	  let
+	    val elm_ty = (ty_exp t)
+	    val ty = seq_rep elm_ty
+
+	    val int_ty = TyId(TypeId.fromString "int")
+	    val len_var = (VarId.fromString "len",int_ty)
+	    val idx_var = (VarId.fromString "idx",int_ty)
+	    val seq_var = (VarId.fromString "seq",ty)
+
+	    fun rd_body [len,idx,seq] =
+	      [EVAL(read tid,elm_ty,
+		    (fn v =>
+		     STMT (While{test=Less(Id idx,Id len),
+			   body=Block
+			   {vars=[],body=
+			    [Expr (SeqSet{elm_ty=elm_ty,seq=Id seq,idx=Id idx,
+					  v=v}),
+			     Assign(Id idx,PlusOne (Id idx))]}}))),
+	       EXPR (fn (SOME (id,_)) => Assign(Id id,Id seq)
+	                   |     NONE => Nop)]
+	      | rd_body _ = raise Error.impossible
+	    val rd =
+	      BIND{vars=[len_var,idx_var,seq_var],
+		   exps=[RET (FunCall(rd_tag_name,[Id stream_id])),
+			 RET (Const(IntConst 0)),
+			 RET (SeqNew{elm_ty=elm_ty,len=Id (#1 len_var)})],
+		   body=rd_body}
+
+	    fun wr_body seq [len,idx] =
+	      let
+		val {vars,body} = 
+		  get_block NONE
+		  (write tid (RET (SeqGet{elm_ty=elm_ty,seq=seq,idx=Id idx})))
+	      in
+		[STMT (Expr(FunCall(wr_tag_name,[Id len,Id stream_id]))),
+		 STMT (While{test=Less(Id idx,Id len),
+			     body=Block{vars=vars,body=body@
+					[Assign(Id idx,PlusOne (Id idx))]}})]
+	      end
+	      | wr_body _ _ = raise Error.impossible
+	    fun wr e =
+	      EVAL(e,ty,
+		   (fn seq =>
+		    BIND{vars=[len_var,idx_var],
+			 exps=[RET (SeqLen{elm_ty=elm_ty,seq=seq}),
+			       RET (Const(IntConst 0))],
+			 body=wr_body seq}))
 	  in
 	    (ty,{wr=SOME wr,rd=SOME rd})
 	  end
@@ -151,30 +220,51 @@ functor mkOOSpec(structure Ty : OO_TYPE_DECL) =
 
     val opt_con =
       let
-	val rd_option_name = VarId.fromString "read_option"
-	val wr_option_name = VarId.fromString "write_option"
-	fun ty_con (tid,t) =
+	val some_tag = {v=1,c=VarId.fromString "SOME"}
+	val none_tag = {v=0,c=VarId.fromString "NONE"}
+
+	fun ty_con (tid,Ty.Prim{ty,...}) =
 	  let
-	    val ty = opt_rep (ty_exp t)
-	    val rd =
-	      RET (FunCall(rd_option_name,[Id (grd_name tid),Id stream_id]))
+	    val tid = (opt_tid tid)
+	    val ty = (TyId tid)
+	    val rd = RET (FunCall((mrd_name tid),[Id stream_id]))
 	    fun wr e =
-	      EVAL(e,ty,(fn e =>
-			 STMT (Expr(FunCall(wr_option_name,
-					[Id (gwr_name tid),e,Id stream_id])))))
+	      EVAL(e,ty,(fn v =>
+			 STMT(Expr(FunCall((mwr_name tid),[v,Id stream_id])))))
 	  in
 	    (ty,{wr=SOME wr,rd=SOME rd})
 	  end
+	  | ty_con (tid,t) =
+	  let
+	    val ty = opt_rep (ty_exp t)
+	    val rd =
+	      EXPR (fn arg =>
+		    If{test=NotZero(FunCall(rd_tag_name,[Id stream_id])),
+		       then_stmt=get_stmt arg (read tid),
+		       else_stmt=
+		       (case arg of
+			 NONE => Nop
+		       | (SOME (ret,_)) => Assign(Id ret,NilPtr))})
+	    fun wr e =
+	      EVAL(e,ty,
+		   (fn v =>
+		    STMT(If{test=NotNil v,
+			    then_stmt=get_stmt NONE 
+			    (expSeq [write_tag some_tag,write tid (RET v)]),
+			    else_stmt=get_stmt NONE (write_tag none_tag)})))
+	  in
+	    (ty,{wr=SOME wr,rd=SOME rd})
+	  end
+
       in
 	ty_con:Ty.ty_con
       end
 
-      val seq_tid =  TypeId.suffixBase "_list" 
-      val opt_tid =  TypeId.suffixBase "_option" 
+
 	
       fun addPrim (s,ps) =
 	let
-	  val tid = TypeId.fromString s
+	  val tid = fix_ty (TypeId.fromString s)
 	  val rd = RET (FunCall(mk_name "read" tid,[Id stream_id]))
 	  fun wr e = 
 	    EVAL(e,TyId tid,(fn e =>
@@ -235,22 +325,6 @@ functor mkOOSpec(structure Ty : OO_TYPE_DECL) =
 	in
 	  {natural_ty=natural_ty,unwrap=unwrap,wrap=wrap,init=init}
 	end
-(*      fun generic_fns ty_id =
-	let
-	  val top_ty = TyRefAny
-	  val rd_decl =
-	    DeclFun(grd_name ty_id,[{name=stream_id,ty=instream_ty}],
-		     get_fun_body (read ty_id,TyRefAny),
-		     TyRefAny)
-	  val wr_decl =
-	    DeclProc(gwr_name ty_id,
-		     [{name=arg_id,ty=TyRefAny},
-		      {name=stream_id,ty=outstream_ty}],
-		     get_proc_body (write ty_id (RET (Id arg_id))))
-	in
-	  [rd_decl,wr_decl]
-	end
-  *)
     val user_field_name = VarId.fromString "client_data"
 
       fun get_user_fields p =
@@ -261,3 +335,5 @@ functor mkOOSpec(structure Ty : OO_TYPE_DECL) =
 
 
   end
+
+

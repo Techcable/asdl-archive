@@ -39,7 +39,11 @@ structure Main =
 				structure Gen = YaccGrammarGen
 				val dflt_view = "Yacc")
 
-	structure MLAlgebraicSpec = mkAlgebraicSpec(structure Ty = AlgebraicTy)
+	structure MLAlgebraicSpec =
+	  mkAlgebraicSpec(structure Ty = AlgebraicTy
+			  val streams_ty = NONE
+			  val monad_name = NONE)
+
 	structure MLPklGen = StdPickler(structure Arg = MLAlgebraicSpec)
 	structure MLTranslator =
 	  mkAlgebraicModuleTranslator
@@ -57,7 +61,11 @@ structure Main =
 			      val dflt_view = "SML")
 
        structure HaskellAlgebraicSpec =
-	 mkAlgebraicSpec(structure Ty = AlgebraicTy)
+	 mkAlgebraicSpec(structure Ty = AlgebraicTy
+			 val streams_ty = SOME {ins="Handle",outs="Handle"}
+			 val monad_name = SOME "IO")
+
+	 
 	structure HaskellPklGen =
 	  StdPickler(structure Arg = HaskellAlgebraicSpec)
 	structure HaskellTranslator =
@@ -79,7 +87,10 @@ structure Main =
 
 
        structure AnsiCAlgolSpec = mkAlgolSpec(structure Ty = AlgolTy)
-       structure AnsiCPklGen = StdPickler(structure Arg = AnsiCAlgolSpec)
+       (*       structure AnsiCPklGen =
+	StdPickler(structure Arg = AnsiCAlgolSpec)
+	*)
+       structure AnsiCPklGen = XMLPickler(structure Arg = AnsiCAlgolSpec)
        structure AnsiCTranslator =
 	 mkAlgolModuleTranslator(structure IdFix = IdFix.AnsiC
 				 structure Spec = AnsiCAlgolSpec
@@ -94,20 +105,20 @@ structure Main =
 				 structure Gen = AnsiCGen
 				 val dflt_view = "C")
 
-       structure JavaOOSpec = mkOOSpec(structure Ty = OOTy)
+
+
+       structure JavaOOSpec =
+	 mkOOSpec(structure Ty = OOTy
+		  structure IdFix = IdFix.Java
+		  val streams_ty =
+		    SOME {ins="java.io.InputStream",
+			  outs="java.io.OutputStream"}
+		  val int_kind = true)
        structure JavaPklGen = StdPickler(structure Arg = JavaOOSpec)
 
        structure JavaTranslator =
-	 mkOOModuleTranslator(structure IdFix = IdFix.Java
-			      structure Spec = JavaOOSpec
+	 mkOOModuleTranslator(structure Spec = JavaOOSpec
 			      val aux_decls = JavaPklGen.trans)
-(*	   mkOOTranslator(structure IdFix = IdFix.Java
-			  structure T = OOAst
-			  structure Pkl = JavaPklGen
-			  val prefix_ids = SOME (JavaPP.package_prefix)
-			  val int_kind = true
-			  val short_names = true)
-*)
        structure JavaGen =
 	   mkTranslateFromTranslator
 	   (structure T = JavaTranslator
@@ -119,12 +130,17 @@ structure Main =
 				structure Gen = JavaGen
 				val dflt_view = "Java")
   
-       structure CPlusPlusOOSpec = mkOOSpec(structure Ty = OOTy)
+
+       structure CPlusPlusOOSpec = 
+	 mkOOSpec(structure Ty = OOTy
+		  structure IdFix = IdFix.CPlusPlus
+		  val streams_ty = NONE
+		  val int_kind = false)
+
        structure CPlusPlusPklGen = StdPickler(structure Arg = CPlusPlusOOSpec)
 
        structure CPlusPlusTranslator =
-	 mkOOModuleTranslator(structure IdFix = IdFix.CPlusPlus
-			      structure Spec = CPlusPlusOOSpec
+	 mkOOModuleTranslator(structure Spec = CPlusPlusOOSpec
 			      val aux_decls = CPlusPlusPklGen.trans)
 (*       structure CPlusPlusTranslator =
 	   mkOOTranslator(structure IdFix = IdFix.CPlusPlus

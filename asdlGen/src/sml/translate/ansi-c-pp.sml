@@ -163,6 +163,7 @@ functor mkPPAnsiC(structure T: ANSI_C) : PP_ANSI_C =
 	  | pp_const_exp (T.E i) = pp_id i
 	  | pp_const_exp (T.A i) = PP.cat [PP.s "&",pp_id i]
 	  | pp_const_exp (T.C c) = PP.s ("'"^(Char.toString c )^"'" )
+	  | pp_const_exp (T.S s) = PP.s ("\""^(String.toCString s)^"\"" )
 	  | pp_const_exp (T.Void) = PP.s "((void)0)"
 	  | pp_const_exp (T.NULL) = PP.s "NULL"
 

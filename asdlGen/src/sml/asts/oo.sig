@@ -106,6 +106,7 @@ signature OO_AST = (* really more Java than anything else *)
 	  | Case    of {test:exp,clauses:clause list,default:stmt}
 	  | Block   of (block)
 	  | Return  of (exp)
+	  | Die     of (string)
 
 	and scope = Public | Private | Protected
 

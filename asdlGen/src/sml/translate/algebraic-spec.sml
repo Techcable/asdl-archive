@@ -18,12 +18,17 @@ structure AlgebraicTy : ALGEBRAIC_TYPE_DECL =
     open T
   end
 
-functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL) =
+functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
+		      val streams_ty : {outs:string,ins:string} option
+		      val monad_name : string option) =
   struct
     type decl = Ty.Ast.decl
     structure Ty = Ty
     open Ty.Ast
-    val monad = NONE
+    val inits = []
+    val streams_ty = Option.getOpt
+      (streams_ty,{ins="instream",outs="outstream"})
+    val monad = Option.map TypeId.fromString  monad_name
     fun die _ =
       if Option.isSome monad then
 	(Id (VarId.fromString "die"))
@@ -40,8 +45,11 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL) =
     val wr_tag_name = VarId.fromString "write_tag"
     val rd_tag_name = VarId.fromString "read_tag"
     val unit_ty = (TyTuple [])
-    val outstream_ty = TyId (TypeId.fromString "outstream")
-    val instream_ty = TyId (TypeId.fromString "instream")
+    val outstream_ty = TyId (TypeId.fromString (#outs streams_ty))
+    val instream_ty = TyId (TypeId.fromString (#ins streams_ty))
+    val wrap = case monad of
+	    NONE => (fn x => x)
+	  | (SOME i) => (fn x => TyCon(i,[x]))
       
     fun write_tag {c,v} = Call(Id(wr_tag_name),[Int v,Id stream_id])
     fun read_tag cs =
@@ -58,10 +66,10 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL) =
       DeclFun(wr_name name,
 	      [{name=arg_id,ty=arg},
 	       {name=stream_id,ty=outstream_ty}],
-	      body (Id arg_id),unit_ty)
+	      body (Id arg_id),wrap unit_ty)
     fun read_decl {name,ret,body} =
       DeclFun(rd_name name,
-	      [{name=stream_id,ty=instream_ty}],body,ret)
+	      [{name=stream_id,ty=instream_ty}],body,wrap ret)
     val expSeq = Seq
       
     val seq_rep = TyList

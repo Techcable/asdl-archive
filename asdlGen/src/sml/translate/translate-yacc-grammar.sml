@@ -24,7 +24,7 @@ structure YaccGrammarTranslator : MODULE_TRANSLATOR =
 	type output         = T.grammar list
 	val set_dir = true
 	val fix_fields = false
-	val cfg = Params.empty
+	val inits = []
 
 	val get_module = (fn x => x)
 	    

@@ -25,7 +25,7 @@ structure XMLDTDTranslator : MODULE_TRANSLATOR =
 	val set_dir = true
 	val ignore_supress = true
 	val fix_fields = false
-	val cfg = Params.empty
+	val inits = []
 	    
 	val trans_tid = T.TypeId.fromPath o Id.toPath
 	val trans_id = T.VarId.fromPath o Id.toPath
@@ -61,13 +61,17 @@ structure XMLDTDTranslator : MODULE_TRANSLATOR =
 	  let
 	    val name = trans_tid name
 	    val tag_v = M.con_tag cinfo
-	    val tag = {element=name,content=T.EMPTY,att_defs=[tag_att tag_v]}
-	    val children =
+	    val content =
 	      case (attrbs,fields) of
-		([],[]) => T.Child name
-	      | (_,_) => T.Seq (T.Child name,attrbs@fields)
+		([],[]) => T.EMPTY
+	      | ([],y::ys) => T.Children (T.Seq (y,ys))
+	      | (x::xs,ys) => T.Children (T.Seq (x,xs@ys))
+		  
+	    val con = {element=name,
+		       content=content,
+		       att_defs=[tag_att tag_v]}
 	  in
-	    (children:T.children,tag:T.element_decl)
+	    (T.Child name,con)
 	  end
 	fun trans_defined p {tinfo,name,cons=[],fields,props} =
 	    let

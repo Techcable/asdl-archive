@@ -6,7 +6,6 @@
  *
  *)
 
-
 functor mkAlgebraicModuleTranslator
   (structure IdFix  : ID_FIX
    structure Spec   : ALGEBRAIC_SPEC
@@ -37,7 +36,7 @@ functor mkAlgebraicModuleTranslator
       type sequence_value = Ty.ty_decl
       type module_value   = Ty.ty_decl list * (T.module * M.Mod.props)
       type output         = (T.module * M.Mod.props) list
-      val cfg = Params.empty
+      val inits = Spec.inits
       
       fun trans_field p {finfo,kind,name,tname,tinfo,is_local,props} =
 	let
@@ -117,7 +116,8 @@ functor mkAlgebraicModuleTranslator
 	  val name = trans_tid true name
 	  val {ty,fields,match_exp,bvars,mk_cnstr} =
 	    trans_fields (SOME name) fields
-	  val {natural_ty,unwrap,wrap,...} = Spec.get_wrappers ty props 
+	  val {natural_ty,unwrap,wrap,...} =
+	    Spec.get_wrappers (T.TyId name) props 
 	  val info = Spec.get_info props
 	  fun match f e = T.Match(unwrap e,[(match_exp,f bvars)])
 	  val product =
@@ -142,6 +142,7 @@ functor mkAlgebraicModuleTranslator
 	in
 	  {decl=T.DeclSum(name,cons),
 	   ty_decl=(name,Ty.Sum{ty=natural_ty,info=info,
+				num_attrbs=List.length fields,
 			     cnstrs=cnstrs,match=match})}
 	end
       
@@ -180,8 +181,9 @@ functor mkAlgebraicModuleTranslator
 	    (T.Module{name=name,
 		     imports=imports,
 		     decls=decls@(new_decls ty_decls)},mp)
+	  val out = List.map add_decls ms 
 	in
-	  List.map add_decls ms 
+	  List.filter (not o M.Mod.suppress o #2) out
 	end
     end
 

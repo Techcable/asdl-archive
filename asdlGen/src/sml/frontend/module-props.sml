@@ -7,8 +7,6 @@
  *
  *)
 
-
-
 (* TODO write a tool to take a property description and compile it
  * to code
  *)
@@ -40,7 +38,6 @@ signature TYP_PROPS =
 
 	val wrapper             : props -> Id.path option
 	val unwrapper           : props -> Id.path option
-
     end
 
 signature CON_PROPS =
@@ -50,8 +47,8 @@ signature CON_PROPS =
 
 signature MOD_PROPS =
      sig include COMMON_PROPS
-	val file: props -> string
-	val mk_file: string -> init
+	val file                   : props -> string
+	val mk_file                : string -> init
 	val custom_allocator       : props -> string option
 	val interface_prologue     : props -> string
 	val interface_epilogue     : props -> string
@@ -61,7 +58,13 @@ signature MOD_PROPS =
 	val is_library             : props -> bool
      end 
 
-
+signature MOD_ENV_PROPS =
+  sig include COMMON_PROPS
+    val mono_types   : props -> bool
+    val init_mono_types : bool -> init
+    val pickler_kind : props -> string option
+    val init_pickler_kind : string option -> init
+  end
 functor CommonProps(val name : string) =
 	    struct
 		open Properties
@@ -130,7 +133,17 @@ structure ModProps :> MOD_PROPS =
 	val (is_library,_) =
 	    decl_bool p {name="is_library",default=false}
     end 
+structure ModEnvProps :> MOD_ENV_PROPS =
+    struct
+	structure P = CommonProps(val name = "mod props")
+	open P
+	val (mono_types,init_mono_types) =
+	  decl_bool p {name="mono_types",default=false}
+	val (pickler_kind,init_pickler_kind) =
+	  decl_string_opt p {name="pickler_kind",
+			     default=SOME "standard"}
 
+    end 
 
 
 

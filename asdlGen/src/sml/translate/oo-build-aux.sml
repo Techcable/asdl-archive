@@ -1,6 +1,6 @@
 
 functor mkOOBuildAux(structure T : OO_AST
-		     val mk_tid : (Id.mid * string) -> T.ty_id
+		     val mk_tid : (T.mod_id * string) -> T.ty_id
 		     val visit_id : T.ty_id -> T.id) =
     struct
 	open T
@@ -35,44 +35,7 @@ functor mkOOBuildAux(structure T : OO_AST
 			   type ord_key = T.TypeId.mid
 			   val compare = T.TypeId.compare
 		       end)
-	fun add_methods x d =
-	    let
-		val env =
-		    List.foldl (fn ((tid,mth),env)   =>
-				case (Env.find(env,tid)) of
-				    NONE => Env.insert(env,tid,[mth])
-				  | SOME mths => 
-					Env.insert(env,tid,mth::mths))
-		    Env.empty x
 
-		fun add_mths
-		    (c as  (T.DeclAbstractClass
-			    {name,idecls,scope,inherits,fields,mths}),rest) =
-		    (case (Env.find (env,name)) of
-			 NONE => c
-		       | SOME m =>
-			     (T.DeclAbstractClass
-			      {name=name,idecls=idecls,
-			       scope=scope,inherits=inherits,
-			       fields=fields,mths=m@mths}))::rest
-		  | add_mths
-			 (c as (T.DeclClass
-				{name,final,idecls,scope,inherits,
-				 cnstrs,fields,mths}),rest) =
-			 (case (Env.find (env,name)) of
-			      NONE => c
-			    | SOME m =>
-				  (T.DeclClass
-				   {final=final,
-				    cnstrs=cnstrs,
-				    name=name,idecls=idecls,
-				    scope=scope,inherits=inherits,
-				    fields=fields,mths=m@mths}))::rest
-		  | add_mths (x,rest) = x::rest
-	    in
-		(fn init => List.foldr add_mths
-		 (List.foldr add_mths [] init) d)
-	    end
 	val totid = (T.TypeId.fromPath o T.VarId.toPath)
 	fun do_decls f (DeclAbstractClass{name,scope=Public,
 					    inherits,fields,...},rest) =
@@ -154,8 +117,6 @@ functor mkOOBuildAux(structure T : OO_AST
 	    (visit_tid,mk_visit (visit_id name) name NONE)::rest
 	  | visit_aux visit_tid (Class{name,inherits,vars,...},rest) =
 	    (visit_tid,mk_visit (visit_id name) name inherits)::rest
-	  | visit_aux visit_tid (Const{name,inherits=SOME tid},rest) =
-	    (visit_tid,mk_visit (visit_id name) tid (SOME tid))::rest
 	  | visit_aux _ (_,rest) = rest
 
 	val v_default_mth =
@@ -353,10 +314,8 @@ functor mkOOBuildAux(structure T : OO_AST
 		    else aux_fn
 
 		val new_mths = fold_decls_inherit aux_fn [] decls
-		val new_decls = add_methods new_mths decls
-		    aux_classes
 	    in
-		new_decls
+	      T.add_methods new_mths (decls@aux_classes)
 	    end
 	    
     end

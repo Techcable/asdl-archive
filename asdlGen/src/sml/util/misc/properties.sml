@@ -33,7 +33,6 @@ structure Properties :> PROPERTIES =
 			  type ord_key = String.string
 			  val compare = String.compare
 		      end)
-	    
 
 	type key = int ref
 	datatype prop_value =

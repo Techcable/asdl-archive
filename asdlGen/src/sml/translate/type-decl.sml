@@ -29,6 +29,7 @@ functor mkTypeDecl(structure TypeId : MODULE_ID
 	    match : (match list -> exp) -> exp -> exp}
     | Sum  of {ty : ty_exp,
 	     info : ty_info,
+       num_attrbs : int,
 	   cnstrs : con list,
 	   match  : (choice -> exp) -> exp -> exp}
     | App   of (ty_con * ty_id)

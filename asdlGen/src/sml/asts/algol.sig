@@ -27,7 +27,7 @@ signature ALGOL_AST =
 	    IntConst of (int)
 	  | EnumConst of (id)
 	  | AddrConst of (id)
-
+	  | StrConst of (string)
 	and exp =
 	    Const of const
 	  | NilPtr

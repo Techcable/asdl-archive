@@ -8,6 +8,10 @@ type-decl.sml
 std-pickler.sml
 std-pickler.sig
 
+xml-pickler.sml
+xml-pickler.sig
+
+
 translate.sig
 translate.sml
 module-translate.sml

@@ -28,6 +28,10 @@ signature OO_SPEC =
   sig
     structure Ty : OO_TYPE_DECL
 
+    val inits  : Module.ME.init list
+    val fix_id : Ty.Ast.id -> Ty.Ast.id
+    val fix_ty : Ty.Ast.ty_id -> Ty.Ast.ty_id
+
     val prims : Ty.ty_decl list
 
     val seq_rep : Ty.ty_exp -> Ty.ty_exp
@@ -39,9 +43,7 @@ signature OO_SPEC =
     val seq_tid : Ty.ty_id -> Ty.ty_id
     val opt_tid : Ty.ty_id -> Ty.ty_id
 
-(*    val generic_fns : Ty.ty_id -> Ty.Ast.ty_decl list*)
-
-    val get_fun_body : (Ty.exp * Ty.ty_exp) -> Ty.Ast.block
+    val int_kind : bool
 
     val get_stmt  : (Ty.Ast.id * Ty.Ast.ty_exp) option ->
                                                 Ty.exp -> Ty.Ast.stmt

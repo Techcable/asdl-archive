@@ -25,10 +25,7 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 	val set_dir = false
 	val ignore_supress = true
 	val fix_fields = false
-	val cfg = Params.empty
-
-	val (cfg,output_directory) =  Params.declareString cfg
-	    {name="output_directory",flag=SOME #"d",default="doc"}
+	val inits = []
 
 	    
 	fun trans_long_id id =  id

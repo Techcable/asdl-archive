@@ -6,7 +6,7 @@
  * Author: Daniel C. Wang
  *
  *)
-signature STD_PICKLER_AUX_FUNS =
+signature STD_PICKLER_PRIMS =
   sig
     structure Ty : TYPE_DECL
     type decl
@@ -26,3 +26,4 @@ signature STD_PICKLER_AUX_FUNS =
     val expSeq     : Ty.exp list -> Ty.exp
     val prims      : Ty.ty_decl list
   end
+

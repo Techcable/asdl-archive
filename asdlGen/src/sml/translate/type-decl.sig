@@ -28,8 +28,9 @@ signature TYPE_DECL =
 	    match : (match list -> exp) -> exp -> exp}
     | Sum  of {ty : ty_exp,
 	     info : ty_info,
+       num_attrbs : int,
 	   cnstrs : con list,
-	   match  : (choice -> exp) -> exp -> exp}
+	    match : (choice -> exp) -> exp -> exp}
     | App   of (ty_con * ty_id)
     | Alias of  ty_id
     withtype field   = {label : id option,tid : ty_id}

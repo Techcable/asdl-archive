@@ -258,6 +258,7 @@ structure CPlusPlusPP : OO_PP =
 			PP.s "))"]
 	    and pp_stmt (Assign(dst,src)) =
 		PP.cat [pp_exp dst, PP.s " = " ,pp_exp src,PP.s ";"]
+	      | pp_stmt (Die s) = PP.s "throw Error(\"fatal\");"
 	      | pp_stmt (Return e) =
 		PP.cat [PP.s "return ", pp_exp e,PP.s ";"]
 	      | pp_stmt Nop = PP.s ";"
@@ -290,8 +291,8 @@ structure CPlusPlusPP : OO_PP =
 		[PP.s "if(",pp_exp test,PP.s ")",
 		 PP.ws, pp_stmt then_stmt,PP.untab,
 		 PP.s "else",PP.ws,pp_stmt else_stmt]
-	      | pp_stmt (Block {vars=[],body}) = 
-		PP.seq {fmt=pp_stmt,sep=PP.nl} body
+	      | pp_stmt (Block {vars=[],body=[]}) = PP.empty
+	      | pp_stmt (Block {vars=[],body=[x]}) = pp_stmt x
 	      | pp_stmt (Block b) = pp_block b
 	      | pp_stmt (While {test,body=Block b}) =
 		PP.cat [PP.s "while(",pp_exp test, PP.s ")",pp_block b]

@@ -19,16 +19,18 @@ signature MODULE =
 	structure Typ : TYP_PROPS
 	structure Con : CON_PROPS
 	structure Mod : MOD_PROPS
+	structure ME  : MOD_ENV_PROPS
 	    
-	val type_props         : type_info -> Typ.props
-	val con_props          : con_info  -> Con.props
-	val module_props       : module    -> Mod.props
+	val type_props         : type_info  -> Typ.props
+	val con_props          : con_info   -> Con.props
+	val module_props       : module     -> Mod.props
+	val module_env_props   : module_env -> ME.props
 
 	val prim_int           : Id.mid
 	val prim_string        : Id.mid
 	val prim_identifier    : Id.mid
 
-	val prim_env           : module_env
+	val prim_env           : ME.init list -> module_env
 	val module_env_prims   : module_env -> type_info list
 
 	val declare_module     : module_env ->  

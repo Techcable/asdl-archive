@@ -212,13 +212,14 @@ structure Test =
 	val do_cxx =  cxx_comp o Main.CPlusPlus.do_it 
 	val do_sml =  sml_comp o Main.ML.do_it 
 	val do_haskell =  haskell_comp o Main.Haskell.do_it 
-	    
-	fun test (name,f,i) () = (name,f i = OS.Process.success)
+	val keep_going = ref false
+	fun test (name,f,i) () = (name,((f i) = OS.Process.success) orelse
+				  (!keep_going))
 
 	fun test_all n i =
 	    [test (n^"-ml",do_sml,"--view=SML"::i),
 	     test (n^"-hs",do_haskell,"--view=Haskell"::i),
-	     test (n^"-c",do_c,"--view=C"::i),
+	     test (n^"-c",do_c,"--view=C"::"--xml_pickler"::i),
 	     test (n^"-cxx",do_cxx,"--view=Cxx"::i),
 	     test (n^"-java",do_java,"--view=Java"::i)]
 

@@ -52,7 +52,7 @@ signature ANSI_C =
 	  | Com of (string)
 
 	and const_exp = I of (int) | C of (char) | E of (id)
-	  | Void | NULL  | A of id
+	  | Void | NULL  | A of id | S of (string)
 
 	and unary_op  = NEG | NOT | DEREF  | ADDR
 

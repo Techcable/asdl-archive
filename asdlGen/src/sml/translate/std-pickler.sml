@@ -7,7 +7,7 @@
  *
  *)
 
-functor StdPickler (structure Arg : STD_PICKLER_AUX_FUNS) : AUX_DECLS =
+functor StdPickler (structure Arg : STD_PICKLER_PRIMS) : AUX_DECLS =
   struct
     structure Ty = Arg.Ty
     type decl = Arg.decl
@@ -27,7 +27,8 @@ functor StdPickler (structure Arg : STD_PICKLER_AUX_FUNS) : AUX_DECLS =
 	fun defaultOrElse (i:Ty.ty_info) f x =
 	  Option.getOpt ((f i),x)
 
-	fun rd_decl (ty_id,Ty.Prim _) = raise Error.internal
+	fun rd_decl (ty_id,Ty.Prim {ty,info={rd=SOME rd,...},...}) =
+ 	  Arg.read_decl{name=ty_id,ret=ty,body=rd}
 	  | rd_decl (ty_id,Ty.Prod{ty,fields,cnstr,info,match}) =
 	    let
 	      val body = defaultOrElse info #rd
@@ -35,7 +36,7 @@ functor StdPickler (structure Arg : STD_PICKLER_AUX_FUNS) : AUX_DECLS =
 	    in
 	      Arg.read_decl{name=ty_id,ret=ty,body=body}
 	    end
-	  | rd_decl (ty_id,Ty.Sum{ty,cnstrs,match,info}) =
+	  | rd_decl (ty_id,Ty.Sum{ty,cnstrs,match,info,...}) =
 	    let
 	      val body = defaultOrElse info #rd
 		(Arg.read_tag (List.map rd_con cnstrs))
@@ -53,6 +54,7 @@ functor StdPickler (structure Arg : STD_PICKLER_AUX_FUNS) : AUX_DECLS =
 	    let val (_,ty) =  get_ty ty_id'
 	    in rd_decl(ty_id,ty)
 	    end
+	  | rd_decl _ = raise Error.internal
 	and rd_con {tag,fields,cnstr} =
 	  (tag,cnstr (List.map rd_field fields))
 
@@ -62,7 +64,8 @@ functor StdPickler (structure Arg : STD_PICKLER_AUX_FUNS) : AUX_DECLS =
 	  | SOME (Ty.Prim{info={rd=SOME rd,...},...}) => rd 
 	  |  _ => Arg.read tid
 		 
-	fun wr_decl (ty_id,Ty.Prim _) = raise Error.internal
+	fun wr_decl (ty_id,Ty.Prim {ty,info={wr=SOME wr,...},...}) =
+ 	  Arg.write_decl{name=ty_id,arg=ty,body=wr}
 	  | wr_decl (ty_id,Ty.Prod{ty,fields,cnstr,match,info}) =
 	    let
 	      val body = defaultOrElse info #wr
@@ -70,8 +73,7 @@ functor StdPickler (structure Arg : STD_PICKLER_AUX_FUNS) : AUX_DECLS =
 	    in
 	      Arg.write_decl{name=ty_id,arg=ty,body=body}
 	    end
-	  
-	  | wr_decl (ty_id,Ty.Sum{ty,cnstrs,match,info}) =
+	  | wr_decl (ty_id,Ty.Sum{ty,cnstrs,match,info,...}) =
 	    let
 	      val body = defaultOrElse info #wr	(match wr_con)
 	    in  Arg.write_decl{name=ty_id,arg=ty,body=body}
@@ -87,6 +89,7 @@ functor StdPickler (structure Arg : STD_PICKLER_AUX_FUNS) : AUX_DECLS =
 	    let val (_,ty) =  get_ty ty_id'
 	    in wr_decl(ty_id,ty)
 	    end
+	 | wr_decl _ = raise Error.internal
 	and wr_match ({label,tid},exp) =
 	  case Env.find(env,tid) of
 	    SOME (Ty.App(f,ty)) =>

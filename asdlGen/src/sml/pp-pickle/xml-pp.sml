@@ -53,8 +53,8 @@ structure XMLPP =
 		val lvs = f (SOME typename,SOME con) (attrbs@vs)
 	      in
 		pp_element (typename,l)
-		(SOME (vblock 2 [pp_element (con,NONE) NONE,
-				 seq{fmt=pp_lv,sep=br} lvs]))
+		(SOME (vblock 2 [pp_element (con,NONE)
+				 (SOME (seq{fmt=pp_lv,sep=br} lvs))]))
 	      end
 	      | pp_asdl_value l (V.ProductValue{typename,v,vs}) =
 	      let

@@ -6,9 +6,9 @@
  * Author: Daniel C. Wang
  *
  *)
+
 signature STMT_EXP =
   sig
-  
     datatype ('ty,'id,'exp,'stmt) stmt_exp =
       RET  of 'exp
     | STMT of 'stmt
@@ -32,3 +32,4 @@ signature STMT_EXP =
       (('id * 'ty) list * 'stmt list)
 
 end
+

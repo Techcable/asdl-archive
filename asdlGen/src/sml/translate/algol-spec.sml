@@ -22,13 +22,13 @@ structure AlgolTy : ALGOL_TYPE_DECL =
 functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
   struct
     type decl = Ty.Ast.decl
+    type attrb_cvt =  {toString:Ty.exp -> Ty.exp,fromString:Ty.exp -> Ty.exp}
+    type attrib = {name:string,cvt:attrb_cvt}
     structure Ty = Ty
     open Ty.Ast
     open StmtExp
-    val cfg = Params.empty
-    val (cfg,mono_types)  =  Params.declareBool cfg
-      {name="mono_types",flag=NONE,default=false}
-      
+    val inits = [Module.ME.init_mono_types false]
+
     fun mk_name s  =
       (VarId.prefixBase (s^"_")) o VarId.fromPath o TypeId.toPath
       
@@ -114,74 +114,160 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
 	      ret)
 
     fun expSeq exps = BIND {vars=[],exps=[],body=(fn _ => exps)}
-      
-    val seq_rep = TySequence
-    val opt_rep = TyOption
-      
-    fun ty_exp  (Ty.Prim {ty,...}) = ty
-      | ty_exp  (Ty.Prod {ty,...}) = ty
-      | ty_exp  (Ty.Sum {ty,...}) = ty
-      | ty_exp  (_) = raise Error.unimplemented
-      
-    val seq_con =
+
+    fun xml_con_name {c,v} = VarId.toString c
+    fun xml_decl_tags _ = []
+    fun xml_write_elem {name,attribs,content} =
       let
-	val rd_list_name = VarId.fromString "read_list"
-	val wr_list_name = VarId.fromString "write_list"
-	fun ty_con (tid,t) =
-	  let
-	    val ty = seq_rep (ty_exp t)
-	    val rd =
-	      RET (FnCall(rd_list_name,[Id (grd_name tid),Id stream_id]))
-	    fun wr e =
-	      EVAL(e,ty,(fn e =>
-			 STMT (ProcCall(wr_list_name,
-					[Id (gwr_name tid),e,Id stream_id]))))
-	  in
-	    (ty,{wr=SOME wr,rd=SOME rd})
-	  end
+	val beg_e =
+	  STMT (ProcCall(VarId.fromString "xml_write_element_begin",
+			  [Const(StrConst name),Id stream_id]))
+	val end_e =
+	  STMT (ProcCall(VarId.fromString "xml_write_element_end",
+			  [Const(StrConst name),Id stream_id]))
       in
-	ty_con:Ty.ty_con
+	(expSeq ([beg_e]@content@[end_e]))
+      end
+    fun xml_read_elem {name,attribs,content} =
+      let
+	val beg_e =
+	  [ProcCall(VarId.fromString "xml_read_element_begin",
+			  [Const(StrConst name),Id stream_id])]
+	val end_e =
+	  [ProcCall(VarId.fromString "xml_read_element_end",
+			  [Const(StrConst name),Id stream_id])]
+      in
+	EXPR (fn res =>
+	      let
+		val {vars,body} = get_block res (content[])
+	      in
+		Block{vars=vars,body=(beg_e@body@end_e)}
+	      end)
       end
 
-    val opt_con =
+    fun xml_read_tagged_elems elems =
       let
-	val rd_option_name = VarId.fromString "read_option"
-	val wr_option_name = VarId.fromString "write_option"
-	fun ty_con (tid,t) =
+	val test =
+	  (FnCall(VarId.fromString "xml_read_tagged_element",[Id stream_id]))
+	fun read_elem res ({tag=tag as {c,v},attribs,content}) =
 	  let
-	    val ty = opt_rep (ty_exp t)
-	    val rd =
-	      RET (FnCall(rd_option_name,[Id (grd_name tid),Id stream_id]))
-	    fun wr e =
-	      EVAL(e,ty,(fn e =>
-			 STMT (ProcCall(wr_option_name,
-					[Id (gwr_name tid),e,Id stream_id]))))
+	    val name = xml_con_name tag
+	    val end_e =
+	      [ProcCall(VarId.fromString "xml_read_element_end",
+			[Const(StrConst name),Id stream_id])]
+	    val {vars,body} = get_block res (content []) 
 	  in
-	    (ty,{wr=SOME wr,rd=SOME rd})
+	    {tag=IntConst v,body=Block{vars=vars,body=body@end_e}}
 	  end
       in
-	ty_con:Ty.ty_con
+	EXPR (fn res =>
+	      Case{clauses=List.map (read_elem res) elems,
+		   test=test,
+		   default=die "bad tag"})
       end
 
-      val seq_tid =  TypeId.suffixBase "_list" 
-      val opt_tid =  TypeId.suffixBase "_option" 
+    fun get_reps m =
+      let
+	val seq_rep = TySequence
+	val opt_rep = TyOption
+	  
+	fun ty_exp  (Ty.Prim {ty,...}) = ty
+	  | ty_exp  (Ty.Prod {ty,...}) = ty
+	  | ty_exp  (Ty.Sum {ty,...}) = ty
+	  | ty_exp  (Ty.Alias(tid)) = TyId tid
+	  | ty_exp  (_) = raise Error.unimplemented
+
+	fun mk_std_rd f tid = RET (FnCall(f,[Id (grd_name tid),Id stream_id]))
+	fun mk_std_wr f (tid,ty) e =
+	  EVAL(e,ty,(fn e =>
+		     STMT (ProcCall(f,[Id (gwr_name tid),e,Id stream_id]))))
+
+	fun mk_xml_rd f tid =
+	  RET (FnCall(f,[Const(StrConst (TypeId.toString tid)),
+			 Id (grd_name tid),Id stream_id]))
+	fun mk_xml_wr f (tid,ty) e =
+	  EVAL(e,ty,(fn e =>
+		     STMT (ProcCall(f,
+				    [Const(StrConst (TypeId.toString tid)),
+				       Id (gwr_name tid),e,Id stream_id]))))
+
+	val (mk_rd,mk_wr,prefix) =
+	  case (Module.ME.pickler_kind m) of
+	    (SOME "xml") => (mk_xml_rd,mk_xml_wr,"xml_")
+	  | _ => (mk_std_rd,mk_std_wr,"")
+	  
+	val rd_list_name = VarId.fromString (prefix^"read_list")
+	val wr_list_name = VarId.fromString (prefix^"write_list")
+	  
+	val rd_option_name = VarId.fromString (prefix^"read_option")
+	val wr_option_name = VarId.fromString (prefix^"write_option")
+	  
+
+	val seq_con =
+	  let
+	    fun ty_con (tid,t) =
+	      let
+		val ty = seq_rep (ty_exp t)
+		val rd = mk_rd rd_list_name tid
+		val wr = mk_wr wr_list_name (tid,ty)
+	      in
+		(ty,{wr=SOME wr,rd=SOME rd})
+	      end
+	  in
+	    ty_con:Ty.ty_con
+	  end
 	
-      fun addPrim (s,ps) =
-	let
-	  val tid = TypeId.fromString s
-	  val info = {rd=SOME(read tid),
-		      wr=SOME(write tid)}
-	in
-	  (tid,Ty.Prim {ty=TyId tid,info=info,name=s})::
-	  (seq_tid tid,Ty.App(seq_con,tid))::
-	  (opt_tid tid,Ty.App(opt_con,tid))::ps
-	end
-      
-      val prims = addPrim ("int",[])
-      val prims = addPrim ("string",prims)
-      val prims = addPrim ("identifier",prims)
+	val opt_con =
+	  let
+	    fun ty_con (tid,t) =
+	      let
+		val ty = opt_rep (ty_exp t)
+		val rd = mk_rd rd_option_name tid
+		val wr = mk_wr wr_option_name (tid,ty)
+	      in
+		(ty,{wr=SOME wr,rd=SOME rd})
+	      end
+	  in
+	    ty_con:Ty.ty_con
+	  end
+	
+	val seq_tid = TypeId.suffixBase "_list" 
+	val opt_tid = TypeId.suffixBase "_option" 
+      in
+	{seq_rep=seq_rep,opt_rep=opt_rep,seq_tid=seq_tid,opt_tid=opt_tid,
+	 opt_con=opt_con,seq_con=seq_con}
+      end
 
-      fun call_fn path args = RET (FnCall(VarId.fromPath path,args))
+    fun get_prims me =
+      let
+	val {seq_con,opt_con,seq_tid,opt_tid,...} = get_reps me
+	val (prefix) =
+	  case (Module.ME.pickler_kind me) of
+	    (SOME "xml") => ("xml_")
+	  | _ => ("")
+	fun read tid = RET (FnCall(mk_name (prefix^"read") tid,[Id stream_id]))
+	fun write tid e =   
+	  EVAL(e,TyId tid,
+	       (fn e => STMT(ProcCall(mk_name (prefix^"write") tid,
+				      [e,Id stream_id]))))
+
+	fun addPrim (s,ps) =
+	  let
+	    val tid = TypeId.fromString s
+	    val info = {rd=SOME(read tid),wr=SOME(write tid)}
+	  in
+	    (tid,Ty.Prim {ty=TyId tid,info=info,name=s})::
+	    (seq_tid tid,Ty.App(seq_con,tid))::
+	    (opt_tid tid,Ty.App(opt_con,tid))::ps
+	  end
+	val prims = addPrim ("int",[])
+	val prims = addPrim ("string",prims)
+	val prims = addPrim ("identifier",prims)
+      in
+	prims
+      end
+
+    fun call_fn path args = RET (FnCall(VarId.fromPath path,args))
       fun get_info ty p =
 	let
 	  val rd =

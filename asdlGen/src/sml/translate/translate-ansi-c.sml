@@ -87,6 +87,7 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 	and trans_const (T.IntConst i) = I i
 	  | trans_const (T.EnumConst id) = E (trans_eid id)
           | trans_const (T.AddrConst id) = A(trans_id id)
+	  | trans_const (T.StrConst s) = S s
 
 	and trans_exp (T.Const c) = Constant (trans_const c)
 	  | trans_exp (T.NilPtr) = Constant (NULL)

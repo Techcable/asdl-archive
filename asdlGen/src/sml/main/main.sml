@@ -29,6 +29,8 @@ functor mkMain (structure      M : MODULE
 	val cfg = Gen.cfg
 	val (cfg,view_name)  =  Params.declareString cfg 
 	    {name="view",flag=SOME #"V",default=dflt_view}
+	val (cfg,xml_pkl)  =  Params.declareBool cfg 
+	    {name="xml_pickler",flag=NONE,default=false}
 
 	structure Scc =
 	    SCCUtilFun(structure Node =
@@ -70,6 +72,10 @@ functor mkMain (structure      M : MODULE
 	fun do_it args =
 	    let
 		val (params,files) = Params.fromArgList cfg args
+		val inits =
+		  if (xml_pkl params) then
+		    [M.ME.init_pickler_kind (SOME "xml")]
+		  else []
 		val (modules,views) = Parser.parse files
 		val modules = build_scc modules
 		val view = views (Id.fromString (view_name params))
@@ -81,7 +87,7 @@ functor mkMain (structure      M : MODULE
 			{file=input,decl=module,view=view}
 		    end
 
-		val menv = List.foldl do_module  M.prim_env modules
+		val menv = List.foldl do_module  (M.prim_env inits) modules
 		val msgs = M.validate_env menv
 	    in
 		if (List.null msgs) then
