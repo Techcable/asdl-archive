@@ -5,3 +5,4 @@ structure ConfigPaths =
    val top_srcdir = "@top_srcdir@"
    val prefix = "@prefix@"
  end	
+(*EOF*)
