@@ -1,2 +1,3 @@
 CM.make();
-Export.export_it();
+SMLofNJ.exportFn("asdlGen",Export.asdlGen);
+

@@ -159,9 +159,9 @@ functor mkTranslateFromTranslator
 			and check_field finfo =
 			    let
 				val finfo = finfo
-				val name = M.field_name finfo
+				val src_name = M.field_src_name finfo
 			    in
-				Set.singleton name
+				Set.singleton src_name
 			    end
 			and check_all () =
 			    let
@@ -185,7 +185,7 @@ functor mkTranslateFromTranslator
 				    if (Set.member(bad,id)) then 
 					let
 					    val base = Id.getBase
-						(M.type_name tinfo)
+						(M.type_src_name tinfo)
 						
 					in
 					    Identifier.fromString
@@ -204,7 +204,7 @@ functor mkTranslateFromTranslator
 			    let
 				val tinfo = M.lookup_type m id
 				val props = M.type_props tinfo 
-				val name = M.type_name tinfo
+				val name = M.type_src_name tinfo
 				val cons =
 				    List.map do_con (M.type_cons tinfo)
 				val fields =
@@ -222,7 +222,7 @@ functor mkTranslateFromTranslator
 				val cprops = M.con_props cinfo
 				val tinfo = M.con_type m cinfo
 				val tprops = M.type_props tinfo 
-				val name = M.con_name cinfo
+				val name = M.con_src_name cinfo
 				val attrbs =
 				    List.map
 				    (do_field tinfo) (M.type_fields tinfo)
@@ -242,8 +242,8 @@ functor mkTranslateFromTranslator
 				val tinfo = M.field_type m finfo
 				val props = M.type_props tinfo 
 				val is_local = M.type_is_local m tinfo
-				val name = fixer (srct,M.field_name finfo)
-				val tname = M.type_name tinfo
+				val name = fixer (srct,M.field_src_name finfo)
+				val tname = M.type_src_name tinfo
 			    in
 				(T.trans_field p)
 				{finfo=finfo,kind=kind,
@@ -255,7 +255,7 @@ functor mkTranslateFromTranslator
 			    let
 				val tinfo = M.lookup_type m id
 				val props = M.type_props tinfo 
-				val name = M.type_name tinfo
+				val name = M.type_src_name tinfo
 				val also_opt = M.is_opt_type menv m id
 			    in
 				(T.trans_sequence p)
@@ -268,7 +268,7 @@ functor mkTranslateFromTranslator
 			    let
 				val tinfo = M.lookup_type m id
 				val props = M.type_props tinfo 
-				val name = M.type_name tinfo
+				val name = M.type_src_name tinfo
 				val also_seq = M.is_seq_type menv m id
 			    in
 				(T.trans_option p)
@@ -285,7 +285,6 @@ functor mkTranslateFromTranslator
 			    List.map do_option (M.option_types menv m)
 			val sequences =
 			    List.map do_sequence (M.sequence_types menv m)
-
 
 			val props = M.module_props m 
 			val decls =

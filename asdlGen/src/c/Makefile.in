@@ -1,0 +1,371 @@
+# Makefile.in generated automatically by automake 1.2 from Makefile.am
+
+# Copyright (C) 1994, 1995, 1996, 1997 Free Software Foundation, Inc.
+# This Makefile.in is free software; the Free Software Foundation
+# gives unlimited permission to copy, distribute and modify it.
+
+
+SHELL = /bin/sh
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+oldincludedir = /usr/include
+
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
+
+top_builddir = ../..
+
+ACLOCAL = @ACLOCAL@
+AUTOCONF = @AUTOCONF@
+AUTOMAKE = @AUTOMAKE@
+AUTOHEADER = @AUTOHEADER@
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+transform = @program_transform_name@
+
+NORMAL_INSTALL = true
+PRE_INSTALL = true
+POST_INSTALL = true
+NORMAL_UNINSTALL = true
+PRE_UNINSTALL = true
+POST_UNINSTALL = true
+ASDLGEN_HEAP = @ASDLGEN_HEAP@
+CC = @CC@
+CXX = @CXX@
+HEAP_SUFFIX = @HEAP_SUFFIX@
+JAVAC = @JAVAC@
+KSH = @KSH@
+MAKEINFO = @MAKEINFO@
+PACKAGE = @PACKAGE@
+PERL5 = @PERL5@
+RANLIB = @RANLIB@
+RUN_SML_HEAP = @RUN_SML_HEAP@
+SML_CM = @SML_CM@
+VERSION = @VERSION@
+ZIP_FLAGS = @ZIP_FLAGS@
+ZIP_PRG = @ZIP_PRG@
+
+ASDLGEN     = @RUN_SML_HEAP@ @SMLload=@ASDLGEN_HEAP@
+ASDL_INPUTS = @top_srcdir@/src/asdl/generic.asdl
+ASDL_OUTPUT = AsdlValue.c TypePickle.c AsdlValue.h TypePickle.h
+
+BUILT_SOURCES = $(ASDL_OUTPUT) AsdlValue.import.h TypePickle.import.h
+CLEANFILES = $(BUILT_SOURCES)
+
+libasdl_a_SOURCES = $(ASDL_OUTPUT) \
+	gpickle.c gpickle.h \
+	assoc.c assoc.h \
+        asdl_base.c asdl_base.h
+
+xlate_SOURCES = xlate.c $(libasdl_a_SOURCES)
+
+pkginclude_HEADERS = gpickle.h asdl_base.h  assoc.h \
+		     AsdlValue.h TypePickle.h \
+                     AsdlValue.import.h TypePickle.import.h
+
+bin_PROGRAMS = xlate
+
+pkglib_LIBRARIES = libasdl.a
+mkinstalldirs = $(SHELL) $(top_srcdir)/src/misc/mkinstalldirs
+CONFIG_CLEAN_FILES = 
+LIBRARIES =  $(pkglib_LIBRARIES)
+
+
+DEFS = @DEFS@ -I. -I$(srcdir) 
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+libasdl_a_LIBADD = 
+libasdl_a_OBJECTS =  AsdlValue.o TypePickle.o gpickle.o assoc.o \
+asdl_base.o
+AR = ar
+PROGRAMS =  $(bin_PROGRAMS)
+
+xlate_OBJECTS =  xlate.o AsdlValue.o TypePickle.o gpickle.o assoc.o \
+asdl_base.o
+xlate_LDADD = $(LDADD)
+xlate_LDFLAGS = 
+CFLAGS = @CFLAGS@
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
+LINK = $(CC) $(CFLAGS) $(LDFLAGS) -o $@
+HEADERS =  $(pkginclude_HEADERS)
+
+DIST_COMMON =  Makefile.am Makefile.in
+
+
+DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
+
+TAR = tar
+GZIP = --best
+DEP_FILES =  .deps/AsdlValue.P .deps/TypePickle.P .deps/asdl_base.P \
+.deps/assoc.P .deps/gpickle.P .deps/xlate.P
+SOURCES = $(libasdl_a_SOURCES) $(xlate_SOURCES)
+OBJECTS = $(libasdl_a_OBJECTS) $(xlate_OBJECTS)
+
+default: all
+
+.SUFFIXES:
+.SUFFIXES: .c .o
+$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
+	cd $(top_srcdir) && $(AUTOMAKE) --foreign src/c/Makefile
+
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status $(BUILT_SOURCES)
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+
+mostlyclean-pkglibLIBRARIES:
+
+clean-pkglibLIBRARIES:
+	test -z "$(pkglib_LIBRARIES)" || rm -f $(pkglib_LIBRARIES)
+
+distclean-pkglibLIBRARIES:
+
+maintainer-clean-pkglibLIBRARIES:
+
+install-pkglibLIBRARIES: $(pkglib_LIBRARIES)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(pkglibdir)
+	list='$(pkglib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(INSTALL_DATA) $$p $(pkglibdir)/$$p"; \
+	    $(INSTALL_DATA) $$p $(pkglibdir)/$$p; \
+	  else :; fi; \
+	done
+	@$(POST_INSTALL)
+	@list='$(pkglib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo " $(RANLIB) $(pkglibdir)/$$p"; \
+	    $(RANLIB) $(pkglibdir)/$$p; \
+	  else :; fi; \
+	done
+
+uninstall-pkglibLIBRARIES:
+	$(NORMAL_UNINSTALL)
+	list='$(pkglib_LIBRARIES)'; for p in $$list; do \
+	  rm -f $(pkglibdir)/$$p; \
+	done
+
+.c.o:
+	$(COMPILE) -c $<
+
+mostlyclean-compile:
+	rm -f *.o core
+
+clean-compile:
+
+distclean-compile:
+	rm -f *.tab.c
+
+maintainer-clean-compile:
+
+libasdl.a: $(libasdl_a_OBJECTS) $(libasdl_a_DEPENDENCIES)
+	rm -f libasdl.a
+	$(AR) cru libasdl.a $(libasdl_a_OBJECTS) $(libasdl_a_LIBADD)
+	$(RANLIB) libasdl.a
+
+mostlyclean-binPROGRAMS:
+
+clean-binPROGRAMS:
+	test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
+
+distclean-binPROGRAMS:
+
+maintainer-clean-binPROGRAMS:
+
+install-binPROGRAMS: $(bin_PROGRAMS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(bindir)
+	@list='$(bin_PROGRAMS)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    echo "  $(INSTALL_PROGRAM) $$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
+	     $(INSTALL_PROGRAM) $$p $(bindir)/`echo $$p|sed '$(transform)'`; \
+	  else :; fi; \
+	done
+
+uninstall-binPROGRAMS:
+	$(NORMAL_UNINSTALL)
+	list='$(bin_PROGRAMS)'; for p in $$list; do \
+	  rm -f $(bindir)/`echo $$p|sed '$(transform)'`; \
+	done
+
+xlate: $(xlate_OBJECTS) $(xlate_DEPENDENCIES)
+	@rm -f xlate
+	$(LINK) $(xlate_LDFLAGS) $(xlate_OBJECTS) $(xlate_LDADD) $(LIBS)
+
+install-pkgincludeHEADERS: $(pkginclude_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(pkgincludedir)
+	@list='$(pkginclude_HEADERS)'; for p in $$list; do \
+	  echo " $(INSTALL_DATA) $(srcdir)/$$p $(pkgincludedir)/$$p"; \
+	  $(INSTALL_DATA) $(srcdir)/$$p $(pkgincludedir)/$$p; \
+	done
+
+uninstall-pkgincludeHEADERS:
+	$(NORMAL_UNINSTALL)
+	list='$(pkginclude_HEADERS)'; for p in $$list; do \
+	  rm -f $(pkgincludedir)/$$p; \
+	done
+
+tags: TAGS
+
+ID: $(HEADERS) $(SOURCES)
+	here=`pwd` && cd $(srcdir) && mkid -f$$here/ID $(SOURCES) $(HEADERS)
+
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES)
+	tags=; \
+	here=`pwd`; \
+	test -z "$(ETAGS_ARGS)$(SOURCES)$(HEADERS)$$tags" \
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $(SOURCES) $(HEADERS) -o $$here/TAGS)
+
+mostlyclean-tags:
+
+clean-tags:
+
+distclean-tags:
+	rm -f TAGS ID
+
+maintainer-clean-tags:
+
+distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
+
+subdir = src/c
+
+distdir: $(DISTFILES)
+	here=`cd $(top_builddir) && pwd`; \
+	top_distdir=`cd $(top_distdir) && pwd`; \
+	cd $(top_srcdir) \
+	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(top_srcdir) --output-dir=$$top_distdir --foreign src/c/Makefile
+	@for file in $(DISTFILES); do \
+	  d=$(srcdir); \
+	  test -f $(distdir)/$$file \
+	  || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
+	  || cp -p $$d/$$file $(distdir)/$$file; \
+	done
+
+MKDEP = gcc -M $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
+
+DEPS_MAGIC := $(shell mkdir .deps > /dev/null 2>&1 || :)
+-include .deps/.P
+.deps/.P: $(BUILT_SOURCES)
+	echo > $@
+
+-include $(DEP_FILES)
+
+mostlyclean-depend:
+
+clean-depend:
+
+distclean-depend:
+
+maintainer-clean-depend:
+	rm -rf .deps
+
+.deps/%.P: %.c
+	@echo "Computing dependencies for $<..."
+	@o='o'; \
+	test -n "$o" && o='$$o'; \
+	$(MKDEP) $< >$@.tmp \
+	  && sed "s,^\(.*\)\.o:,\1.$$o \1.l$$o $@:," < $@.tmp > $@ \
+	  && rm -f $@.tmp
+info:
+dvi:
+check: all
+	$(MAKE)
+installcheck:
+install-exec: install-pkglibLIBRARIES install-binPROGRAMS
+	@$(NORMAL_INSTALL)
+
+install-data: install-pkgincludeHEADERS
+	@$(NORMAL_INSTALL)
+
+install: install-exec install-data all
+	@:
+
+uninstall: uninstall-pkglibLIBRARIES uninstall-binPROGRAMS uninstall-pkgincludeHEADERS
+
+all: Makefile $(LIBRARIES) $(PROGRAMS) $(HEADERS)
+
+install-strip:
+	$(MAKE) INSTALL_PROGRAM='$(INSTALL_PROGRAM) -s' INSTALL_SCRIPT='$(INSTALL_PROGRAM)' install
+installdirs:
+	$(mkinstalldirs)  $(pkglibdir) $(bindir) $(pkgincludedir)
+
+
+mostlyclean-generic:
+	test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
+
+clean-generic:
+	test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
+
+distclean-generic:
+	rm -f Makefile $(DISTCLEANFILES)
+	rm -f config.cache config.log stamp-h stamp-h[0-9]*
+	test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
+
+maintainer-clean-generic:
+	test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
+	test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
+mostlyclean:  mostlyclean-pkglibLIBRARIES mostlyclean-compile \
+		mostlyclean-binPROGRAMS mostlyclean-tags \
+		mostlyclean-depend mostlyclean-generic
+
+clean:  clean-pkglibLIBRARIES clean-compile clean-binPROGRAMS clean-tags \
+		clean-depend clean-generic mostlyclean
+
+distclean:  distclean-pkglibLIBRARIES distclean-compile \
+		distclean-binPROGRAMS distclean-tags distclean-depend \
+		distclean-generic clean
+	rm -f config.status
+
+maintainer-clean:  maintainer-clean-pkglibLIBRARIES \
+		maintainer-clean-compile maintainer-clean-binPROGRAMS \
+		maintainer-clean-tags maintainer-clean-depend \
+		maintainer-clean-generic distclean
+	@echo "This command is intended for maintainers to use;"
+	@echo "it deletes files that may require special tools to rebuild."
+
+.PHONY: default mostlyclean-pkglibLIBRARIES distclean-pkglibLIBRARIES \
+clean-pkglibLIBRARIES maintainer-clean-pkglibLIBRARIES \
+uninstall-pkglibLIBRARIES install-pkglibLIBRARIES mostlyclean-compile \
+distclean-compile clean-compile maintainer-clean-compile \
+mostlyclean-binPROGRAMS distclean-binPROGRAMS clean-binPROGRAMS \
+maintainer-clean-binPROGRAMS uninstall-binPROGRAMS install-binPROGRAMS \
+uninstall-pkgincludeHEADERS install-pkgincludeHEADERS tags \
+mostlyclean-tags distclean-tags clean-tags maintainer-clean-tags \
+distdir mostlyclean-depend distclean-depend clean-depend \
+maintainer-clean-depend info dvi installcheck install-exec install-data \
+install uninstall all installdirs mostlyclean-generic distclean-generic \
+clean-generic maintainer-clean-generic clean mostlyclean distclean \
+maintainer-clean
+
+
+$(ASDL_OUTPUT): $(ASDL_INPUTS)
+	$(ASDLGEN) --c --output_directory ./ $(ASDL_INPUTS)
+
+%.import.h: %.h
+	@top_srcdir@/src/misc/id_hack.pl $< > $@
+
+# Tell versions [3.59,3.63) of GNU make to not export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:

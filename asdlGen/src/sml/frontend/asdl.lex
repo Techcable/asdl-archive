@@ -9,7 +9,7 @@ type arg = lexarg
 
 fun mkTok yypos tok = tok(yypos,yypos+1)
 fun mkSTok yypos yytext tok = tok(yytext,yypos, yypos + (String.size yytext))
-fun trimFirst x = String.extract(x,1,NONE)
+val zapws  = (Substring.dropl Char.isSpace) o (Substring.dropr Char.isSpace)
 (* Doesn't handle quote string filename correctly *)
 fun mySynch(sm,err,yypos,yytext) =
     let
@@ -75,7 +75,11 @@ resynch="--#line"{ws}+[0-9]+({ws}+\"[^\"]*\")?;
 <INITIAL>"imports"         => (mkSTok yypos yytext Tokens.IMPORTS);
 <INITIAL>"view"            => (mkSTok yypos yytext Tokens.VIEW);
 <INITIAL>{id}              => (mkSTok yypos yytext Tokens.ID);
-<INITIAL>":".*             => (mkSTok yypos (trimFirst yytext) Tokens.QUOTE);
+<INITIAL>":".*             => (mkSTok yypos
+			       (Substring.string
+				(zapws (Substring.triml 1
+					(Substring.all yytext))))
+			       Tokens.QUOTE);
 <INITIAL>"%%"{ws}*         => (YYBEGIN LT; continue ());
 <LT>"%%"{ws}*		   => (YYBEGIN INITIAL;
 			       mkSTok yypos (makeString(charlist))

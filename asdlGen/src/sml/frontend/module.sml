@@ -13,9 +13,9 @@ structure Module :> MODULE =
 
         type field_info =
 	    {kind:field_kind,
-  	     name:Identifier.identifier,
+  	 src_name:Identifier.identifier,
 	     tref:Id.mid,
-	    name':Identifier.identifier option}     
+	    name:Identifier.identifier option}     
 
 	type con_info =
 	     {tag:int,
@@ -212,7 +212,7 @@ structure Module :> MODULE =
 			   let
 			       val kind = field_value x
 			       val attrbs = field_attribs x
-			       val name' = #2 attrbs
+			       val name = #2 attrbs
 			       val tref = fix_id (#1 attrbs)
 				   
 			       fun hungarianize (Id,s) = s
@@ -230,15 +230,15 @@ structure Module :> MODULE =
 					(s^(Int.toString i)))
 				   end
 			       
-			       val (cnt,name) =
-				   case name' of
+			       val (cnt,src_name) =
+				   case name of
 				       (SOME i) => (cnt,i)
 				     | NONE =>
 					   new_cnt(cnt,List.last (#1 attrbs))
 					   
 			   in
-			       (cnt,{kind=kind,name=name,
-				     name'=name',tref=tref}::fi)
+			       (cnt,{kind=kind,src_name=src_name,
+				     name=name,tref=tref}::fi)
 			   end
 		       val (_,fls) = List.foldl do_field
 			   (Counter.mkcounter (str_eq),[]) fl
@@ -407,7 +407,14 @@ structure Module :> MODULE =
 	       NONE => raise
 		   (Error.error ["Can't find constructor ", Id.toString mid])
 	     | (SOME x) => x
-       
+
+       fun src_name (name,NONE) = name
+	 | src_name (name,SOME x) =
+	   (print x;
+	    print "\n";
+	    Id.fromPath
+	    {qualifier=Id.getQualifier name, base=x})
+
        fun get_t (x:type_info) =  x
        val type_tag = #tag o get_t 
        val type_name = #name o get_t
@@ -417,6 +424,9 @@ structure Module :> MODULE =
        val type_is_prim  = #is_prim o get_t
        val type_props    = #props o get_t
        val type_uses = S.listItems o #uses o get_t
+
+       fun type_src_name x =
+	   src_name (type_name x,Typ.source_name (type_props x))
 
        fun type_is_local m t =
 	   let
@@ -433,11 +443,13 @@ structure Module :> MODULE =
        val con_fields = #fields o get_c
        val con_props = #props o get_c
        fun con_type m = ((lookup_type m) o #tref o get_c)
+       fun con_src_name x =
+	   src_name (con_name x,Con.source_name (con_props x))
 
        fun get_f (x:field_info) =  x
        val field_kind = #kind o get_f
        val field_name = #name o get_f
-       val field_name' = #name' o get_f
+       val field_src_name = #src_name o get_f
        fun field_type m = ((lookup_type m) o #tref o get_f)
 
 

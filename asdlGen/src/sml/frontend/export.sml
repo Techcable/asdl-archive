@@ -57,9 +57,6 @@ structure Export =
 			" --{java|c|cxx|sml|check|typ|html|all}",
 		       " [options ...]"," files ...","\n"]);
 		      OS.Process.exit OS.Process.failure)
-	fun export_it () =
-
-	    SMLofNJ.exportFn("../../heaps/asdlGen",asdlGen)
     end
 
 

@@ -94,7 +94,7 @@ functor mkAlgebraicTranslator(structure IdFix : ID_FIX
 		val rd = rd pkl_name
 		val wr = wr pkl_name (T.Id name)
 		val (fd,ulabel) =
-		    case (M.field_name' finfo) of
+		    case (M.field_name finfo) of
 			NONE => ({name=name,ty=ty},true)
 		      | (SOME x) =>
 			    ({name=name,ty=ty},false)

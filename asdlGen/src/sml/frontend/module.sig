@@ -55,6 +55,7 @@ signature MODULE =
 	val con_type           : module -> con_info -> type_info
 
 	val type_tag           : type_info -> int
+	val type_src_name      : type_info -> Id.mid
 	val type_name          : type_info -> Id.mid
 	val type_uses          : type_info -> Id.mid list
 	val type_cons          : type_info -> con_info list
@@ -65,11 +66,15 @@ signature MODULE =
 	    
 	val con_tag            : con_info -> int
 	val con_name           : con_info -> Id.mid
+	val con_src_name       : con_info -> Id.mid
 	val con_fields         : con_info -> field_info list
 
 	datatype field_kind = Id | Sequence | Option
 
 	val field_kind         : field_info -> field_kind
-	val field_name         : field_info -> Identifier.identifier 
-	val field_name'        : field_info -> Identifier.identifier option
+	val field_name         : field_info -> Identifier.identifier option
+	val field_src_name     : field_info -> Identifier.identifier 
     end
+
+
+			    

@@ -55,10 +55,16 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 
 	fun trans_tid f =
  	    (f o T.TypeId.fromPath o Id.toPath o 
-	      (Id.subst IdFix.ty_fix) o M.type_name)
+	      (Id.subst IdFix.ty_fix) o M.type_src_name)
 
 	fun wrappers p ty =
 	    let
+		val ret =
+		    case Option.map (fix_id o T.VarId.fromPath)
+			(M.Typ.user_init p) of
+			NONE => (fn x => x)
+		      | SOME f =>
+			(fn x => T.FnCall(f,[x]))
 		val name = Pkl.type_name ty
 		val ty =
 		    case (M.Typ.natural_type p) of
@@ -69,16 +75,16 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 		    case (M.Typ.unwrapper p) of
 			(SOME x) =>
 			    (fn e =>
-			     T.FnCall(T.VarId.fromPath x,[e]))
-		      | NONE => (fn x => x)
+			     T.FnCall(fix_id (T.VarId.fromPath x),[ret e]))
+		      | NONE => ret
 		val wrap =
 		    case (M.Typ.wrapper p) of
 			(SOME y) =>
-			    (fn x => T.FnCall(T.VarId.fromPath y,[x]))
-		      | NONE => (fn x => x)
+			    (fn e =>
+			     T.FnCall(fix_id (T.VarId.fromPath y),[ret e]))
+		      | NONE => ret
 	    in
-		{natural_ty=ty,
-		 pkl_name=name,unwrap=unwrap,wrap=wrap}
+		 {natural_ty=ty,pkl_name=name,unwrap=unwrap,wrap=wrap}
 	    end
 
 	fun get_bodies p {wr_body,rd_body} =
@@ -145,7 +151,7 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 		val tag_enum  = M.Con.enum_value cprops
 		val name = (fix_id o T.VarId.fromPath o Id.toPath) name
 		val tid = trans_tid (fn x => x) tinfo
-
+		   
 		val arg =
 		    if is_boxed then (T.DeRef(T.Id Pkl.arg_id))
 		    else (T.Id Pkl.arg_id)
@@ -184,16 +190,22 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 		val wr = {tag=T.EnumConst name,body=mk_block
 			  ((Pkl.write_tag tag_v)::(wr_attrbs@wr_fields))}
 
+		val ret_exp =
+		    case Option.map (fix_id o T.VarId.fromPath)
+			(M.Typ.user_init tprops) of
+			NONE => (T.Id Pkl.ret_id)
+		      | SOME f => T.FnCall(f,[T.Id Pkl.ret_id])
+			    
 		fun mk_cnstr prefix do_attrbs =
 		    let
 			val (args,init_attrbs) =
-			    if do_attrbs then(fd_attrbs@fd_fields,init_attrbs)
+			    if do_attrbs then (fd_attrbs@fd_fields,init_attrbs)
 			    else (fd_fields,[])
 			val block =
 			    {vars=[{name=Pkl.ret_id,ty=T.TyId tid}],
 			     body=[alloc_rec Pkl.ret_id
 				   (init_attrbs,init_fields),
-				   T.Return (T.Id Pkl.ret_id)]}
+				   T.Return ret_exp]}
 			val fname =(T.VarId.prefixBase prefix) name
 		    in
 			if (String.size prefix = 0)
@@ -249,6 +261,7 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 	fun trans_defined p {tinfo,name,cons,fields,props} =
 	    let
 		(* rewrite as unziper *)
+		val user_field_name = T.VarId.fromString "client_data"
 		val inits      = List.map #init  (fields:field_value list)
 		val rd_fields  = List.map #rd    fields
 		val wr_fields  = List.map #wr    fields
@@ -259,20 +272,21 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 		val mk_cnstrs  = List.map #mk_cnstr cons
 		val wr_clauses = List.map #wr cons
 		val choices    = List.mapPartial #choice_opt cons
-
-
 		    
 		val is_boxed = (M.type_is_boxed tinfo)
 		val name  = (fix_id o T.VarId.fromPath o Id.toPath) name
 		val tid = trans_tid ident_tid tinfo
 		val {pkl_name,natural_ty,unwrap,wrap} =
 		    wrappers props (T.TyId tid)
+
 		val user_field =
 		    case (M.Typ.user_attribute props) of
 			NONE => []
 		      | SOME x =>
-			    [{name=T.VarId.fromString "client_data",
+			    [{name=user_field_name,
 			      ty=T.TyId (T.TypeId.fromPath x)}]
+
+
 		val variant_opt =
 		    null2none choices
 		    {tag=tag_id,tag_ty=enumers,choices=choices}
@@ -298,7 +312,7 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 
 		fun do_con ({rd,...}:con_value) =  (rd temp_id)
 		val rd_clauses = List.map do_con cons
-		    
+
 		val rd_body =
 		    [T.Block{vars=[{name=temp_id,ty=T.TyId tid}],
 			     body=
@@ -530,7 +544,6 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 	    end
 
     end
-
 
 
 

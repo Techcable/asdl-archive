@@ -111,7 +111,7 @@ structure GenPickleTranslator:TRANSLATE =
 			      | M.Sequence => T.Sequence
 			      | M.Option => T.Option
 			val type_map_key = field_type_key m fi
-			val label = M.field_name fi
+			val label = M.field_src_name fi
 		    in
 			kind {type_map_key=type_map_key,label=label}
 		    end

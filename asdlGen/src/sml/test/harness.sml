@@ -62,7 +62,7 @@ structure UnixExternalProgs:EXTERNAL_PROGRAMS =
     struct
 	val cc_prg  = "gcc"
 	val cxx_prg = "g++"
-	val javac_prg = "/usr/local/jdk1.1.4/bin/javac"
+	val javac_prg = "javac"
 	val sml_prg = "../misc/sml-batch"
 
 	fun prefix x s = x^s

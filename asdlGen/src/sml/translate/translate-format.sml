@@ -56,7 +56,7 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 		  | M.Option => (T.REF(tid,[toStr' tid]),[T.STR "?"])
 		  | M.Sequence => (T.REF(tid,[toStr' tid]),[T.STR "*"])
 	    in
-		case (M.field_name' finfo) of
+		case (M.field_name finfo) of
 		    NONE => ty
 		  | (SOME x) => T.RM ((ty::q)@[toStr x])
 	    end

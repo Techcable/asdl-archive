@@ -1,0 +1,76 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(src/c/asdl_base.c)
+AC_CONFIG_AUX_DIR(src/misc)
+AM_INIT_AUTOMAKE(asdl, 1.0)
+AC_PROG_MAKE_SET
+
+dnl package options
+
+AC_ARG_WITH(cii, 
+[--with-cii Add library support for libcii],
+[case "${withval}" in
+  yes) 	LIBCII=d  ;;
+   no)  LIBCII="" ;;
+    *)  AC_MSG_ERROR(bad value ${withval} or --with-cii) ;;
+ esac],[LIBCII=""])
+AM_CONDITIONAL(HAVE_CII, test -n "${LIBCII}")
+
+dnl Checks for programs.
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_INSTALL
+AC_PROG_RANLIB
+
+AC_CHECK_PROGS(JAVAC,javac)
+AC_CHECK_PROGS(SML_CM,sml-cm)
+
+dnl find the paths to build #! shell scripts
+AC_PATH_PROGS(KSH,ksh)
+AC_PATH_PROGS(PERL5,perl5 perl)
+
+dnl how to run an sml heap
+eval `src/misc/sysname`
+AC_CHECK_PROGS(RUN_SML_HEAP, 
+	sml sml-cm \
+	runtime/run.${HEAP_SUFFIX} \
+	runtime/run.${HEAP_SUFFIX}.exe)
+
+ASDLGEN_HEAP='${top_srcdir}/src/sml/asdlGen.${HEAP_SUFFIX}'
+AC_SUBST(ASDLGEN_HEAP)
+AC_SUBST(HEAP_SUFFIX)
+
+dnl Figure out how to build a zip archive 
+AC_CHECK_PROGS(ZIP_PRG, zip pkzip pax)
+case "${ZIP_PRG}" in
+        zip | pkzip) ZIP_FLAGS="-q -0 -r"   ;;
+	pax)         ZIP_FLAGS="-w -x zip -f" ;;
+esac
+AC_SUBST(ZIP_FLAGS)
+
+dnl Checks for libraries.
+JAVA_CLASSDIR='${prefix}/share/classes/'
+
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS(limits.h malloc.h)
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+
+dnl look at the size metrics
+dnl AC_CHECK_SIZEOF(char) AC_CHECK_SIZEOF(short) 
+dnl AC_CHECK_SIZEOF(int) AC_CHECK_SIZEOF(long)
+
+dnl Check for java 
+AM_CONDITIONAL(HAVE_JAVA, test -n "${JAVAC}" )
+
+dnl Checks for library functions.
+dnl Write out the files
+AC_OUTPUT(Makefile src/Makefile
+          src/sml/Makefile src/java/Makefile 
+          src/cxx/Makefile src/c/Makefile 
+          src/misc/id_hack.pl src/misc/sml-batch,
+dnl Set the bits on the shell scripts
+[ chmod 755 src/misc/id_hack.pl src/misc/sml-batch ]
+)
+

@@ -1,6 +1,0 @@
-#!/bin/sh
-if test -d $1; then 
-	exit 0;
-else
-   mkdir -p $1;
-fi

@@ -39,7 +39,7 @@ translate/translate-format.sml
 translate/html-pp.sml 
 
 translate/pkl-gen.sig
-translate/pkl-gen.sml
+translate/oo-pkl-gen.sml
 translate/algebraic-pkl-gen.sml
 translate/algol-pkl-gen.sml
 

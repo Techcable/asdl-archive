@@ -1,5 +1,5 @@
-#! /usr/bin/perl
-# Generated automatically from id_hack.pl.in by configure.
+#! @PERL5@
+# @configure_input@
 $mod="";
 while(<>) {
     if (m/#define _(\w+)_/) {
