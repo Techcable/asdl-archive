@@ -9,7 +9,9 @@ smlnj-lib.cm
 ../base/asdl-base.cm
 ../frontend/sources.cm
 ../asts/sources.cm
-../util/sources.cm
+../util/misc/sources.cm
+../util/os/sources.cm
+../util/pp/sources.cm
 
 support/type-decl.sig
 support/type-decl.sml

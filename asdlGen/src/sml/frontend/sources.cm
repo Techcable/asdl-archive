@@ -20,8 +20,8 @@ $/smlnj-lib.cm
 ml-yacc-lib.cm
 smlnj-lib.cm
 #endif
-
-../util/sources.cm
+../util/misc/sources.cm
+../util/sourcemap/sources.cm
 ../base/asdl-base.cm
 Asdl.sig
 Asdl.sml

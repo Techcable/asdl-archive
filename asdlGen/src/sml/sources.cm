@@ -10,10 +10,8 @@ $/smlnj-lib.cm
 smlnj-lib.cm
 #endif
 
-util/misc/sources.cm
 util/os/sources.cm
-util/pp/sources.cm
-util/sourcemap/sources.cm
+util/misc/sources.cm
 
 base/asdl-base.cm
 frontend/sources.cm
