@@ -69,7 +69,7 @@ extra information to make the translation a bit easier.
 	val trans_type_con : Semant.MEnv.P.props ->
 	    {tinfo:Semant.type_info,	     
 	     name:Id.mid,
-	     kinds:Asdl.type_qualifier list,
+	     kinds:Semant.kind list,
 	     props:Semant.Type.P.props} -> type_con_value 
 	  
 	val trans_con: Semant.MEnv.P.props ->
@@ -93,11 +93,14 @@ extra information to make the translation a bit easier.
 	val trans_module: Semant.MEnv.P.props ->
 	    {module: Semant.module_info,
 	    imports: Semant.module_info list,
-	      props: Semant.Module.P.props,
+    	      props: Semant.Module.P.props,
 	    defines: defined_value list,
 	  type_cons: type_con_value list} -> module_value
 
-	val trans : Semant.MEnv.P.props -> module_value list -> output
+	val trans : Semant.MEnv.P.props ->
+	  {modules:module_value list,
+      prim_modules:Semant.module_info list,
+	prim_types:Semant.type_info list} -> output
 (**)
     end
 (**)

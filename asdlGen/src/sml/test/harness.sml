@@ -74,8 +74,8 @@ structure SupportFiles: SUPPORT_FILES =
 structure UnixExternalProgs:EXTERNAL_PROGRAMS =
     struct
 	val cc_prg  = "gcc"
-	val cxx_prg = "g++"
-	val javac_prg = "javac"
+	val cxx_prg = "echo g++"
+	val javac_prg = "echo javac"
 	val haskell_prg = "echo hugs"
 	val sml_prg = "sh ../misc/sml-batch"
 
@@ -217,12 +217,15 @@ structure Test =
 				  (!keep_going))
 
 	fun test_all n i =
+	  let
+	    val i = ("-d"::"../asdl/tests"::i)
+	  in
 	    [test (n^"-ml",do_sml,"--view=SML"::i),
 	     test (n^"-hs",do_haskell,"--view=Haskell"::i),
 	     test (n^"-c",do_c,"--view=C"::i),
 	     test (n^"-cxx",do_cxx,"--view=Cxx"::i),
 	     test (n^"-java",do_java,"--view=Java"::i)]
-
+	  end
 	    
 	fun run_test s =
 	    let

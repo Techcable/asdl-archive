@@ -29,7 +29,6 @@ functor mkSourceFileOutput (structure PP:CODE_PP) : TRANSLATE =
 	    let
 		val src = PP.pp_code p arg
 		val wd = width p
-
 		fun mkpp x =
 		    PPUtil.cat
 		    [PP.mkComment
@@ -39,8 +38,7 @@ functor mkSourceFileOutput (structure PP:CODE_PP) : TRANSLATE =
 				     
 		fun cvt (x,pp) =
 		    (x,(fn s => PPUtil.pp_to_outstream s wd (mkpp pp)))
-	    in
-		Out.translate p (List.map cvt src)
+	    in	Out.translate p (List.map cvt src)
 	    end
     end
 

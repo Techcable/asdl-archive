@@ -5,19 +5,20 @@
 --* 
 module Asdl {
 -- Toplevel defintions
-decl = Module(identifier* imports,type_decl* decls)
-     | ForeignModule(identifier* exports) -- For future extension
+decl = Module(import* imports,type_decl* decls)
+     | PrimitiveModule(identifier* exports) 
      | View(view_decl* decls)
        attributes(identifier name)
 
--- id or M.id (more general than it needs to be)
-path  = (identifier* qualifier,identifier base) 
+import = Imports(identifier module,identifier? alias)
+
+path  = (identifier? qualifier, identifier base) 
 
 -- ('?' | '*' | '!')
 -- N.B. shared type not fully supported yet
-type_qualifier = Option | Sequence | Shared  
+tycon = Option | Sequence | Shared  
 
-field = (path typ, identifier? label_opt,type_qualifier? qualifier_opt) 
+field = (path typ,identifier? label_opt, tycon? tycon_opt) 
 
 constructor = (identifier name, field* fs)
 

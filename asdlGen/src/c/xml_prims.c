@@ -1,4 +1,5 @@
-#include "xml_prims.h"
+#include "XMLPkl.h"
+#include "XMLPrims.h"
 #include "cii/table.h"
 #include <ctype.h>
 static Table_T tag_tbl = NULL;
@@ -10,10 +11,10 @@ static int get_tag(char *x) {
   } else {
     int i = 0;
     tag_tbl = Table_new(128,NULL,NULL);
-    while(xml_tag_map[i].name) {
+    while(XMLPkl_tag_map[i].name) {
 	 Table_put(tag_tbl,
-		   Atom_string(xml_tag_map[i].name),
-		   &(xml_tag_map[i].tag));
+		   Atom_string(XMLPkl_tag_map[i].name),
+		   &(XMLPkl_tag_map[i].tag));
 	 i++;
     }
     v = Table_get(tag_tbl,key);
@@ -143,18 +144,18 @@ static int scan_string(const char **res,int *len,FILE *s) {
      *res = buf;
      return 1;
 }
-void xml_write_element_begin(const char* n,outstream_ty s) {
+void XMLPkl_write_element_begin(const char* n,outstream_ty s) {
   putc('<',s);
   fputs(n,s);
   putc('>',s);
 }
-void xml_write_element_end(const char* n,outstream_ty s) {
+void XMLPkl_write_element_end(const char* n,outstream_ty s) {
   putc('<',s);
   putc('/',s);
   fputs(n,s);
   putc('>',s);
 }
-void xml_read_element_begin(const char* n,instream_ty s) {
+void XMLPkl_read_element_begin(const char* n,instream_ty s) {
   if (eat_ws(s) && match_char('<',s) &&
       eat_ws(s) && match_string(n,s) &&
       eat_till('>',s)) {
@@ -163,7 +164,7 @@ void xml_read_element_begin(const char* n,instream_ty s) {
     die();
   }
 }
-void xml_read_element_end(const char* n,instream_ty s) {
+void XMLPkl_read_element_end(const char* n,instream_ty s) {
   if (eat_ws(s) && match_char('<',s) &&
       eat_ws(s) && match_char('/',s) &&
       eat_ws(s) && match_string(n,s) &&
@@ -172,7 +173,7 @@ void xml_read_element_end(const char* n,instream_ty s) {
   } else {  die(); }
 
 }
-int xml_read_tagged_element(instream_ty s) {
+int XMLPkl_read_tagged_element(instream_ty s) {
   char buf[256];
   eat_ws(s);
   match_char('<',s);
@@ -182,7 +183,74 @@ int xml_read_tagged_element(instream_ty s) {
   return (get_tag(buf));
 }
 
-int_ty xml_read_int(instream_ty s) {
+void XMLPkl_write_option(const char *n,generic_writer_ty wr, 
+		      opt_ty v, outstream_ty s) {
+
+  if (v == NULL) {
+    fprintf(s,"<%s-opt sz=\"0\"></%s-opt>",n,n);
+  } else {
+    fprintf(s,"<%s-opt sz=\"0\">",n);
+    (*wr)(v,s);
+    fprintf(s,"</%s-opt>",n);
+  }
+}
+
+void XMLPkl_write_list(const char *n,generic_writer_ty wr, list_ty v, 
+		    outstream_ty s) {
+  int len = Seq_length(v);
+  int i;
+  fprintf(s,"<%s-seq sz=\"%d\">",n,len);
+  for(i=0;i<len;i++) {
+    (*wr)(Seq_get(v,i),s);
+  }
+  fprintf(s,"</%s-seq>",n);
+}
+
+opt_ty XMLPkl_read_option(const char *n,generic_reader_ty rd, instream_ty s) {
+     int len = 0;
+  if (eat_ws(s) && match_char('<',s) &&
+      eat_ws(s) && match_string(n,s) && match_string("-opt",s) &&
+      eat_ws(s) && match_string("sz=\"",s) &&
+      scan_int(&len,s) && eat_till('>',s)) {
+       opt_ty ret;
+       if(len == 0) {
+	    ret = (*rd)(s);
+       } else {
+	    ret = NULL;
+       }
+       /* check end tag */
+       if (eat_ws(s) && match_char('<',s) &&
+	   eat_ws(s) && match_char('/',s) &&
+	   eat_ws(s) && match_string(n,s) && match_string("-opt",s) &&
+	   eat_till('>',s)) {
+	    return ret;
+       } else { die (); }
+  } else {  die(); }
+}
+
+list_ty XMLPkl_read_list(const char *n,generic_reader_ty rd,instream_ty s) {
+     int len = 0;
+  if (eat_ws(s) && match_char('<',s) &&
+      eat_ws(s) && match_string(n,s) && match_string("-seq",s) &&
+      eat_ws(s) && match_string("sz=\"",s) &&
+      scan_int(&len,s) && eat_till('>',s)) {
+       Seq_T ret = Seq_new(len);
+       while(len) {
+	    Seq_addhi(ret,(*rd)(s));
+	    len--;
+       }
+       /* check end tag */
+       if (eat_ws(s) && match_char('<',s) &&
+	   eat_ws(s) && match_char('/',s) &&
+	   eat_ws(s) && match_string(n,s) && match_string("-seq",s) &&
+	   eat_till('>',s)) {
+	    return ret;
+       } else { die (); }
+  } else {  die(); }
+  return NULL; /* not reached */
+}
+
+XMLPrims_int_ty XMLPrims_read_int(instream_ty s) {
   int res = 0;
   if (eat_ws(s) && match_char('<',s) &&
       eat_ws(s) && match_string("int",s) &&
@@ -193,12 +261,12 @@ int_ty xml_read_int(instream_ty s) {
   return 0; /* not reached */
 }
 
-big_int_ty xml_read_big_int(instream_ty s) {
+XMLPrims_big_int_ty XMLPrims_read_big_int(instream_ty s) {
   die();
   return NULL;
 }
 
-string_ty xml_read_string(instream_ty s) {
+XMLPrims_string_ty XMLPrims_read_string(instream_ty s) {
   Text_T ret;
   if (eat_ws(s) && match_char('<',s) &&
       eat_ws(s) && match_string("string",s) &&
@@ -208,7 +276,7 @@ string_ty xml_read_string(instream_ty s) {
   } else {  die(); }
   return Text_null; /* not reached */
 }
-identifier_ty xml_read_identifier(instream_ty s) {
+XMLPrims_identifier_ty XMLPrims_read_identifier(instream_ty s) {
   const char *buf;
   const char *ret;
   int len;
@@ -242,111 +310,45 @@ static void emit_cdata(const char *str,int len,outstream_ty s) {
      }
 }
 
-void xml_write_int(int_ty x,outstream_ty s) {
+void XMLPrims_write_int(XMLPrims_int_ty x,outstream_ty s) {
   fprintf(s,"<int v=\"%d\"/>",x);
 }
-void xml_write_big_int(big_int_ty x,outstream_ty s) {
+void XMLPrims_write_big_int(XMLPrims_big_int_ty x,outstream_ty s) {
   die();
 }
-void xml_write_string(string_ty x,outstream_ty s) {
+void XMLPrims_write_string(XMLPrims_string_ty x,outstream_ty s) {
   fputs("<string v=\"",s);
   emit_cdata(x.str,x.len,s);
   fputs("\"/>",s);
 }
-void xml_write_identifier(identifier_ty x,outstream_ty s) {
+void XMLPrims_write_identifier(XMLPrims_identifier_ty x,outstream_ty s) {
   fputs("<identifier v=\"",s);
   emit_cdata(Atom_string(x),Atom_length(x),s);
   fputs("\"/>",s);
 }
-opt_ty xml_read_option(const char *n,generic_reader_ty rd, instream_ty s) {
-     int len = 0;
-  if (eat_ws(s) && match_char('<',s) &&
-      eat_ws(s) && match_string(n,s) && match_string("-opt",s) &&
-      eat_ws(s) && match_string("sz=\"",s) &&
-      scan_int(&len,s) && eat_till('>',s)) {
-       opt_ty ret;
-       if(len == 0) {
-	    ret = (*rd)(s);
-       } else {
-	    ret = NULL;
-       }
-       /* check end tag */
-       if (eat_ws(s) && match_char('<',s) &&
-	   eat_ws(s) && match_char('/',s) &&
-	   eat_ws(s) && match_string(n,s) && match_string("-opt",s) &&
-	   eat_till('>',s)) {
-	    return ret;
-       } else { die (); }
-  } else {  die(); }
-}
 
-list_ty xml_read_list(const char *n,generic_reader_ty rd,instream_ty s) {
-     int len = 0;
-  if (eat_ws(s) && match_char('<',s) &&
-      eat_ws(s) && match_string(n,s) && match_string("-seq",s) &&
-      eat_ws(s) && match_string("sz=\"",s) &&
-      scan_int(&len,s) && eat_till('>',s)) {
-       Seq_T ret = Seq_new(len);
-       while(len) {
-	    Seq_addhi(ret,(*rd)(s));
-	    len--;
-       }
-       /* check end tag */
-       if (eat_ws(s) && match_char('<',s) &&
-	   eat_ws(s) && match_char('/',s) &&
-	   eat_ws(s) && match_string(n,s) && match_string("-seq",s) &&
-	   eat_till('>',s)) {
-	    return ret;
-       } else { die (); }
-  } else {  die(); }
-  return NULL; /* not reached */
-}
-
-void xml_write_option(const char *n,generic_writer_ty wr, 
-		      opt_ty v, outstream_ty s) {
-
-  if (v == NULL) {
-    fprintf(s,"<%s-opt sz=\"0\"></%s-opt>",n,n);
-  } else {
-    fprintf(s,"<%s-opt sz=\"0\">",n);
-    (*wr)(v,s);
-    fprintf(s,"</%s-opt>",n);
-  }
-}
-
-void xml_write_list(const char *n,generic_writer_ty wr, list_ty v, 
-		    outstream_ty s) {
-  int len = Seq_length(v);
-  int i;
-  fprintf(s,"<%s-seq sz=\"%d\">",n,len);
-  for(i=0;i<len;i++) {
-    (*wr)(Seq_get(v,i),s);
-  }
-  fprintf(s,"</%s-seq>",n);
-}
-
-void* xml_read_generic_int(instream_ty s) {
-  int_ty* ret = malloc(sizeof(int_ty));
-  *ret = xml_read_int(s);
+void* XMLPrims_read_generic_int(instream_ty s) {
+  XMLPrims_int_ty* ret = malloc(sizeof(XMLPrims_int_ty));
+  *ret = XMLPrims_read_int(s);
   return ret;
 }
 
-void* xml_read_generic_string(instream_ty s) {
+void* XMLPrims_read_generic_string(instream_ty s) {
   Text_T* ret = malloc(sizeof(Text_T));
-  *ret = xml_read_string(s);
+  *ret = XMLPrims_read_string(s);
   return ret;
 }
-void* xml_read_generic_identifier(instream_ty s) {
-  return ((void*)xml_read_identifier(s));
+void* XMLPrims_read_generic_identifier(instream_ty s) {
+  return ((void*)XMLPrims_read_identifier(s));
 }
-void xml_write_generic_int(void *x,instream_ty s) {
-  xml_write_int(*((int_ty*)x),s);
+void XMLPrims_write_generic_int(void *x,instream_ty s) {
+  XMLPrims_write_int(*((XMLPrims_int_ty*)x),s);
 }
-void xml_write_generic_string(void *x,instream_ty s) {
-  xml_write_string(*((Text_T*)x),s);
+void XMLPrims_write_generic_string(void *x,instream_ty s) {
+  XMLPrims_write_string(*((Text_T*)x),s);
 }
-void xml_write_generic_identifier(void *x,instream_ty s) {
-  xml_write_identifier(x,s);
+void XMLPrims_write_generic_identifier(void *x,instream_ty s) {
+  XMLPrims_write_identifier(x,s);
 }
 
 

@@ -357,9 +357,6 @@ structure AnsiCPP : ALGOL_PP =
 	type code = (Ast.module * Semant.Module.P.props)
 
 	val cfg = Params.empty
-	val (cfg,base_inc) =
-	    Params.declareString cfg
-	    {name="base_include",flag=NONE,default="cii_base.h"} 
 	local
 	    open AnsiC
 	in
@@ -423,9 +420,7 @@ structure AnsiCPP : ALGOL_PP =
 		val mn = Ast.ModuleId.toString name
 		fun mk_file suffix f =
 		    OS.Path.joinBaseExt{base=f,ext=SOME suffix}
-		val x =
-		    List.map Ast.ModuleId.toString imports
-
+		val x = List.map Ast.ModuleId.toString imports
 		fun pp_inc s =  PPUtil.s ("#include \""^s^"\"")
 		val pp_incs =
 		    PPUtil.seq_term {fmt=pp_inc,sep=PPUtil.nl}
@@ -449,12 +444,8 @@ structure AnsiCPP : ALGOL_PP =
 		val (Trans.Ast.Module{decls,name,imports}) =
 		  Trans.translate p arg
 		val (header,body) = fix_decls decls
-
-		    
-		val includes =
-		    (base_inc p)::(List.map (mk_file "h") x)
-	    in
-		[([mk_file "h" mn],pp_interface mn header includes),
+		val includes = (List.map (mk_file "h") x)
+	    in	[([mk_file "h" mn],pp_interface mn header includes),
 		 ([mk_file "c" mn], pp_impl (mk_file "h" mn) body)]
 	    end
     end

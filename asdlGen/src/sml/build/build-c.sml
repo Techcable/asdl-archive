@@ -25,14 +25,13 @@ functor BuildC (structure CC : CC_BUILD
     val mk_c_srcs =  (List.map (CC.mk_src_file o mk_file))
 
     val c_headers = List.map mk_file
-      ["pkl-int.h","cii_base.h","prims.h","xml_prims.h",
-       "std_prims.h","prim_env.h","asdl_types.h","share.h"]
-    val c_common_srcs = mk_c_srcs
-      ["pkl-int.c","xml_prims.c","std_prims.c","prims.c","share.c"]
-    val c_xml_srcs = mk_c_srcs
-      ["xml_prim_env.c"]
-    val c_std_srcs = mk_c_srcs
-      ["std_prim_env.c"]
+      ["pkl-int.h","share.h",
+       "StdTypes.h",
+       "StdPrims.h","StdPkl.h",
+       "XMLPrims.h","XMLPkl.h"]
+    val c_common_srcs = mk_c_srcs ["pkl-int.c","share.c"]
+    val c_std_srcs = mk_c_srcs ["std_prims.c","StdTypes.c"]
+    val c_xml_srcs = mk_c_srcs ["xml_prims.c"]
 
     val rules = []
     fun def_rule r f x =

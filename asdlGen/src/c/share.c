@@ -1,5 +1,7 @@
+#include <stdlib.h>
 #include "share.h"
 #include "cii/table.h"
+#include "cii/atom.h"
 static Table_T ptr2key_tbl = NULL;
 static Table_T key2ptr_tbl = NULL;
 static int cmp_ptr(const void *x, const void *y) {
@@ -14,7 +16,7 @@ static void ensure_tables (void) {
      if(ptr2key_tbl == NULL)
 	  ptr2key_tbl = Table_new(1024,cmp_ptr,hash_ptr);
 }
-static identifier_ty new_key(void) {
+static const char* new_key(void) {
      static int k = 0;
      k++;
      return Atom_int(k);
@@ -31,7 +33,7 @@ void share_clear_table(void) {
 }
 share_ty ptr2share(void *ptr) {
      share_ty ret;
-     identifier_ty key;
+     const char* key;
 
      ensure_tables();
      key = Table_get(ptr2key_tbl,ptr);

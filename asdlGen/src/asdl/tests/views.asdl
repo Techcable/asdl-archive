@@ -26,10 +26,10 @@ binop = Plus | Minus | Times | Div
 
 }
 
-view C {
+view Cd {
 
   Slp.pos <= {
-    natural_type : int
+    natural_type : StdPrims.int
     unwrapper    : User.pos2int
     wrapper      : User.int2pos
     user_init    : User.pos_init
@@ -39,7 +39,6 @@ view C {
    reader    : User.exp_reader
    writer    : User.exp_writer
    user_init : User.exp_init
-   user_attribute : foo
   }
 
   module Slp <= interface_epilogue 

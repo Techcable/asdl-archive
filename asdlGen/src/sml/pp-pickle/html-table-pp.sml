@@ -172,7 +172,7 @@ structure HTMLTablePP =
 		      seq_term {fmt=pp_rec,sep=nl} rows,
 		      s "</table>"]
 
-	and pp_prim_value (V.IntValue x) = PPUtil.wrap V.Integer.toString x
+	and pp_prim_value (V.IntValue x) = PPUtil.wrap Int.toString x
 	  | pp_prim_value (V.StringValue x) =
 	    cat [s"<tt>\"",s(String.toCString x),s "\"</tt>"]
 	  | pp_prim_value (V.IdentifierValue x) =

@@ -46,7 +46,7 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 	  case (Semant.MEnv.P.pickler_kind me) of
 	    (SOME "xml") => xml
 	  | _ => std
-	  
+
 	fun die _ =  ProcCall((VarId.fromString "die"),[])
 	  
 	(* should be determined by functor parmeters *)
@@ -56,8 +56,10 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 	val arg_id     = VarId.fromString "_x"
 	val ret_id     = VarId.fromString "_r"
 	val stream_id  = VarId.fromString "_s"
-	val wr_tag_name = VarId.fromString "std_write_tag"
-	val rd_tag_name = VarId.fromString "std_read_tag"
+
+	fun std_pkl s = VarId.fromPath{qualifier=["StdPkl"],base=s}  
+	val wr_tag_name = std_pkl "write_tag"
+	val rd_tag_name = std_pkl "read_tag"
 	val outstream_ty = TyId (TypeId.fromString "outstream")
 	val instream_ty = TyId (TypeId.fromString "instream")
 	  
@@ -230,8 +232,8 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 				       Id (gwr_name tid),e,Id stream_id]))))
 
 	val (mk_rd,mk_wr,prefix) =
-	  pkl_kind m {xml=(mk_xml_rd,mk_xml_wr,"xml_"),
-		      std=(mk_std_rd,mk_std_wr,"std_")}
+	  pkl_kind m {xml=(mk_xml_rd,mk_xml_wr,"XMLPkl_"),
+		      std=(mk_std_rd,mk_std_wr,"StdPkl_")}
 
 	val rd_list_name = VarId.fromString (prefix^"read_list")
 	val wr_list_name = VarId.fromString (prefix^"write_list")
@@ -284,33 +286,28 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 	| Semant.Shared =>  {mktid=share_tid,mkrep=share_rep,con=share_con}
       end
 
-    fun get_prims me =
+    fun get_prims me tinfo =
       let
 	val {con=seq_con,mktid=seq_tid,...} = get_reps me Semant.Sequence
 	val {con=opt_con,mktid=opt_tid,...} = get_reps me Semant.Option
 	val {con=share_con,mktid=share_tid,...} = get_reps me Semant.Shared
-
- 	val prefix = pkl_kind me {xml="xml_",std="std_"}
- 	fun read tid = RET (FnCall(mk_name (prefix^"read") tid,[Id stream_id]))
+ 	fun read tid = RET (FnCall(mk_name "read" tid,[Id stream_id]))
  	fun write tid e =   
  	  EVAL(e,TyId tid,
- 	       (fn e => STMT(ProcCall(mk_name (prefix^"write") tid,
+ 	       (fn e => STMT(ProcCall(mk_name ("write") tid,
  				      [e,Id stream_id]))))
-	fun addPrim (s,ps) =
+	fun addPrim (tinfo,ps) =
 	  let
-	    val tid = TypeId.fromString s
-	    val info = {rd=SOME(read tid),wr=SOME(write tid)}
+	    val tname = Semant.Type.src_name tinfo
+	    val tid = (TypeId.fromPath o Id.toPath) tname
+	    val info = {rd=SOME(read tid), wr=SOME(write tid)}
 	  in
-	    (tid,Ty.Prim {ty=TyId tid,info=info,name=s})::
+	    (tid,Ty.Prim {ty=TyId tid,info=info,name=Id.getBase tname})::
 	    (seq_tid tid,Ty.App(seq_con,tid))::
 	    (share_tid tid,Ty.App(share_con,tid))::
 	    (opt_tid tid,Ty.App(opt_con,tid))::ps
 	  end
-	val prims = addPrim ("int",[])
-	val prims = addPrim ("string",prims)
-	val prims = addPrim ("identifier",prims)
-      in
-	prims
+      in List.foldl addPrim [] tinfo 
       end
 
     fun get_tag_decls me tags =

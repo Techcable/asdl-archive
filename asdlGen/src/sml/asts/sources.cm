@@ -1,5 +1,6 @@
 Group is
 ../util/sources.cm
+../base/asdl-base.cm
 smlnj-lib.cm
 types.sig
 types.sml
@@ -29,4 +30,8 @@ AsdlValue.sig
 AsdlValue.sml
 TypePickle.sig
 TypePickle.sml
+AsdlValueUtil.sig
+AsdlValueUtil.sml
+TypePickleUtil.sig
+TypePickleUtil.sml
 aka.sml

@@ -1,17 +1,6 @@
-/* Machine generated. Edit at your own risk 
-     Reproduce with the following
-    --attribs_default true
-    --base_include cii_base.h
-    --default_only true
-    --line_width 74
-    --mono_types false
-    --no_action false
-    --output_directory ./
-    --view C
-    */
 #ifndef _StdTypes_
 #define _StdTypes_
-#include "cii_base.h"
+#include "StdPrims.h"
 
 /*
     Defined Types

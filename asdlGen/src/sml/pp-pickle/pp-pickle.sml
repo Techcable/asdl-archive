@@ -38,7 +38,7 @@ structure PicklePP =
 	fun do_it (f,t,p,vs) =
 	    let
 		val ins = BinIO.openIn(t)
-		val typ = (GP.T.read_type_env ins) before
+		val typ = (TypePickleUtil.read_type_env ins) before
 		    (BinIO.closeIn ins)
 		val rd = GP.read_asdl_value typ
 		val lbs = GP.type_labels typ

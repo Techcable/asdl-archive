@@ -64,7 +64,7 @@ functor mkAlgolSemantTranslator
       fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} = 
 	let
 	  val tname = trans_tid (S.Type.src_name tinfo)
-	  val is_boxed = S.Type.is_boxed tinfo
+	  val is_enum = S.Type.is_enum tinfo
 	  val name = trans_id name
 
 	  val num_attrbs = List.length attrbs
@@ -100,7 +100,7 @@ functor mkAlgolSemantTranslator
 	  val tag = {c=name,v=(S.Con.tag cinfo)}
 	  val choice = {name=name,fields=List.map #fd fields}
 	  val con =
-	    {tag=tag,fields=List.map #ty_fd all, cnstr=mk_cnstr is_boxed}
+	    {tag=tag,fields=List.map #ty_fd all, cnstr=mk_cnstr is_enum}
 	  val enumer = {name=name,value=(S.Con.P.enum_value cprops)}
 	  fun match c =
 	    (tag,(List.map (sub_attrb c) attrbs)@
@@ -169,7 +169,7 @@ functor mkAlgolSemantTranslator
 	| trans_defined p {tinfo,name,fields,cons,props} =
 	let
 	  val name = trans_tid name
-	  val is_boxed = S.Type.is_boxed tinfo
+	  val is_enum = S.Type.is_enum tinfo
 	  val fds = List.map #fd (fields:field_value list)
 	  val enumers = List.map #enumer (cons:con_value list)
 	  val enum_name = T.TypeId.suffixBase "_enum" name
@@ -177,7 +177,7 @@ functor mkAlgolSemantTranslator
 	  val user_fields = Spec.get_user_fields props
 	  (* todo handle case of user fields with enums *)
 	  val (decls,get_tag) =
-	    if is_boxed then
+	    if is_enum then
 	      let
 		val choices = List.map #choice (cons:con_value list)
 		val variant = {tag=tag_id,tag_ty=enumers,choices=choices}
@@ -236,7 +236,7 @@ functor mkAlgolSemantTranslator
 	    end
 
 	  val cnstrs =
-	    (List.foldr (op @) [] (List.map (cnstr_decl is_boxed) cons))
+	    (List.foldr (op @) [] (List.map (cnstr_decl is_enum) cons))
 	in
 	  {decls=decls@cnstrs,ty_decl=ty_decl}
 	end
@@ -271,20 +271,23 @@ functor mkAlgolSemantTranslator
       fun get_tags ((_,Ty.Sum{cnstrs,...}),xs) =
 	List.foldr (fn ({tag,...},xs) => tag::xs) xs cnstrs
 	| get_tags (_,xs) = xs
-      fun trans p (ms:module_value list) =
+      fun trans p {modules=ms,prim_types,prim_modules} =
 	let
-	  val prims = Spec.get_prims p
-	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs) prims ms
+	  val prims = Spec.get_prims p prim_types
+	  val toMid = Ast.ModuleId.fromPath o Id.toPath o S.Module.name
+	  val prim_mods = List.map toMid prim_modules
+	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs) prims ms 
 	  val new_decls = Spec.get_aux_decls p (Ty.mk_env ty_decls)
 	  val tags = Spec.get_tag_decls p (List.foldr get_tags [] ty_decls)
 	  fun append_decls new_decls (T.Module{name,imports,decls},mp) =
-	    (T.Module{name=name,imports=imports,decls=decls@new_decls},mp)
+	    (T.Module{name=name,
+		      imports=prim_mods@imports,
+		      decls=decls@new_decls},mp)
 	  fun add_decls (ty_decls,m) =  append_decls (new_decls ty_decls) m
 	  fun add_tags [] = []
 	    | add_tags (x::xs) = (append_decls tags x)::xs
 	  val out = List.map add_decls ms 
-	in
-	  add_tags (List.filter (not o S.Module.P.suppress o #2) out)
+	in add_tags (List.filter (not o S.Module.P.suppress o #2) out)
 	end
     end
 

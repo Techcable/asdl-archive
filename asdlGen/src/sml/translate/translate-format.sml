@@ -147,8 +147,9 @@ structure FormatTranslator : SEMANT_TRANSLATOR =
 		       imports=List.map toMid imports,
 		       decls=decls},toc_entry)
 	    end
-	fun trans p (ms:module_value list) =
+	fun trans p {modules:module_value list,prim_types,prim_modules} =
 	  let
+	    val ms = modules
 	    val toc_id = T.ModuleId.fromString "toc"
 	    val toc_entries = List.map #2 ms
 	    val mods = List.map #1 ms

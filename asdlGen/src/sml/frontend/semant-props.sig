@@ -94,7 +94,7 @@ signature CON_PROPS =
   end
 (**)
 (**:[[signature MOD_PROPS]]:
-These are module level properties. Some of these probably should go
+These are module level properties. Moste of these should go
 away in the future.
 **)
 signature MOD_PROPS =

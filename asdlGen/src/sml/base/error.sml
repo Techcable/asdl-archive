@@ -6,9 +6,7 @@
  * Author: Daniel C. Wang
  *
  *)
-
-
-structure Error : ERROR =
+structure Error :> ERROR =
     struct
 	exception Error = Fail
 	fun say s = (TextIO.output(TextIO.stdErr,s))
@@ -22,5 +20,4 @@ structure Error : ERROR =
 	val unimplemented = error ["Unimplemented"]
 	val internal      = error ["Internal Error"]
 	val fatal         = error ["Fatal Error"]
-		       
     end

@@ -210,9 +210,11 @@ the final output. All of this code is fairly straight forward.
 (**)
 (**:[[functor mkAlgebraicSemantTranslator]] glue several modules together:
 **)      
-      fun trans p (ms:module_value list) =
+      fun trans p {modules,prim_types,prim_modules} =
 	let
-	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs) Spec.prims ms
+	  val ms = modules
+	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs)
+	    (Spec.prims prim_types) ms
 (* Call the Spec.aux_decls to generate pickler code as well as other useful
    functions *)
 	  val new_decls = (Spec.get_aux_decls p (Ty.mk_env ty_decls))
@@ -223,8 +225,7 @@ the final output. All of this code is fairly straight forward.
 		     imports=name::imports@(List.map aux_mod_name imports),
 		     decls=(new_decls ty_decls)},mp)
 	  val out = all@(List.map mk_aux_mods ms)
-	in
-	  List.filter (not o S.Module.P.suppress o #2) out
+	in List.filter (not o S.Module.P.suppress o #2) out
 	end
 (**)
     end

@@ -16,7 +16,6 @@ signature GENERIC_PICKLER =
     sig	
 	structure T: TYPE_PICKLE
 	structure V: ASDL_VALUE
-
 	    
 	val read_asdl_value  :
 	    T.type_env -> Id.mid -> T.instream -> V.asdl_value
@@ -32,11 +31,11 @@ signature GENERIC_PICKLER =
     end
 
 functor GenericPickler(structure T:TYPE_PICKLE
-		       structure V:ASDL_VALUE):GENERIC_PICKLER =
+		       structure V:ASDL_VALUE ):GENERIC_PICKLER =
 
     struct
 	structure T = T
-	structure V = V
+	structure V = struct open V StdPrimsUtil  end
 
 	fun mk_map name add {max_key,entries} =
 	    let
@@ -127,8 +126,6 @@ functor GenericPickler(structure T:TYPE_PICKLE
 	
 	fun read_asdl_value ({version,magic,mmap,tmap,cmap}:T.type_env) =
 	    let
-
-
 		fun insert ({key,v},tmapi) =
 		    Env.insert(tmapi,qid2Id (type_name v),key)
 

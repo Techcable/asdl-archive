@@ -1,5 +1,6 @@
 Group is
 smlnj-lib.cm
+../base/asdl-base.cm
 ../frontend/sources.cm
 ../asts/sources.cm
 

@@ -7,10 +7,10 @@ functor InstallAll(structure BuildC : BUILD_C
     structure P = Paths
     structure F = FileOps
     fun mk_abs root arcs = P.pathConcat(root,P.pathFromArcs arcs)
-    val pkg_lib_dir = P.dirFromPath(mk_abs install_dir ["lib","asdlGen"])
+    val pkg_lib_dir = P.dirFromPath(mk_abs install_dir ["lib")
     val pkg_heap_dir =
-      P.dirFromPath(mk_abs install_dir ["lib","asdlGen","heaps"])
-    val pkg_inc_dir = P.dirFromPath(mk_abs install_dir ["include","asdlGen"])
+      P.dirFromPath(mk_abs install_dir ["lib","heaps"])
+    val pkg_inc_dir = P.dirFromPath(mk_abs install_dir ["include"])
 
     fun install_includes (f,r) =
       (F.install_data_file{src=f,dst=P.setFileDir f pkg_inc_dir})@r

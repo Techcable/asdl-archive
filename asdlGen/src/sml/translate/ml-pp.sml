@@ -14,14 +14,6 @@ structure MLPP : ALGEBRAIC_PP =
     type code =  (Ast.module * Semant.Module.P.props)
 
     val cfg = Params.empty
-    val (cfg,base_sig) =
-      Params.declareString cfg
-      {name="base_signature",flag=NONE,default="STD_PRIMS"} 
-
-    val (cfg,base_str) =
-      Params.declareString cfg
-      {name="base_structure",flag=NONE,default="StdPrims"} 
-
     fun mkComment s =
       PP.box 2 [PP.s "(*",
 		   PP.seq_term {fmt=PP.s,sep=PP.nl} s,
@@ -256,84 +248,37 @@ structure MLPP : ALGEBRAIC_PP =
 	    | x => 
 	    PP.cat [PP.nl,PP.s "fun ",
 		    PP.seq{fmt=pp_fun_str,sep=dec_sep} x]
-	      
 	  val pp_fsigs =
-	    PP.cat [PP.nl,
-		    PP.seq{fmt=pp_fun_sig,sep=PP.nl} sigfdecs]
-	      
-	  fun pp_sig_import [] = PP.empty
-	    | pp_sig_import mids =
-	    let
-	      fun pp_bind mid =
-		let val mn = Ast.ModuleId.toString mid
-		  val mn_sig = mn^"_SIG"
-		in PP.s ("structure "^mn^" : "^mn_sig)
-		end
-	    in
-	      PP.box 0 [PP.seq_term{fmt=pp_bind,sep=PP.nl} mids]
-	    end
-	    
-	  fun pp_str_import mids =
-	    let
-	      val pmn = (base_str p)
-	      fun pp_bind mid =
-		let val mn = Ast.ModuleId.toString mid
-		in PP.s ("structure "^mn^" = "^mn)
-		end
-	    in PP.box 0
-	      [PP.seq_term{fmt=pp_bind,sep=PP.nl} mids,
-	       PP.s ("open "^pmn)]
-	    end
-	    
-	  fun pp_functor name body imports =
-	    let
-	      val mn = (base_str p)
-	      val mns = (base_sig p)
-	    in
+	    PP.cat [PP.nl, PP.seq{fmt=pp_fun_sig,sep=PP.nl} sigfdecs]
+
+	  fun pp_str name body =
 	      PP.box 2
 	      [PP.s ("structure "^name), PP.s (" : "^name^"_SIG ="),PP.nl,
-	       PP.box 2 [PP.s "struct", PP.nl,
-			 pp_str_import imports,
-			 body],PP.nl,
+	       PP.box 2 [PP.s "struct",PP.nl,body],PP.nl,
 	       PP.nl,PP.s "end"]
-	    end
-	  fun pp_sig name body imports =
+
+	  fun pp_sig name body =
 	    PP.box 2
 	    [PP.s ("signature "^name^"_SIG = "), PP.nl,
-	     PP.box 2 [PP.s "sig",PP.nl,
-		       PP.s ("include "^(base_sig p)), PP.nl,
-		       pp_sig_import imports, PP.nl,
-		       body],PP.nl,
+	     PP.box 2 [PP.s "sig",PP.nl,body],PP.nl,
 	     PP.s "end"]
 
 	  val pp_ty_decs = PP.cat pp_ty_decs
-	  val sig_tys =
-	    [sig_prologue props, PP.nl, pp_ty_decs, PP.nl]
+	  val sig_tys = [sig_prologue props, PP.nl, pp_ty_decs, PP.nl]
+	  val str_tys = [struct_prologue props, PP.nl,  pp_ty_decs, PP.nl]
 
-	  val str_tys =
-	    [struct_prologue props, PP.nl,  pp_ty_decs, PP.nl]
+	  val sig_fdecs = [pp_fsigs, sig_epilogue props, PP.nl]
+	  val str_fdecs = [pp_fdecs, PP.nl, struct_epilogue props,PP.nl]
 
-	  val sig_fdecs =
-	    [pp_fsigs, sig_epilogue props, PP.nl]
+	  val (dsig_body,dstr_body) = (sig_tys@sig_fdecs,str_tys@str_fdecs)
 
-	  val str_fdecs =
-	    [pp_fdecs, PP.nl, struct_epilogue props,PP.nl]
+	  val dsig = pp_sig mn (PP.cat dsig_body) 
+	  val dstr = pp_str mn (PP.cat dstr_body) 
 
-	  val (dsig_body,dstr_body) =
-	    (sig_tys@sig_fdecs,str_tys@str_fdecs)
-
-	  val dsig =
-	    pp_sig mn (PP.cat dsig_body) imports
-	  val dstr =
-	    pp_functor mn (PP.cat dstr_body) imports
-
-	  fun mk_file x b =
-	    [OS.Path.joinBaseExt{base=x,ext=SOME b}]
-		    
+	  fun mk_file x b = [OS.Path.joinBaseExt{base=x,ext=SOME b}]
 	  val fls = [(mk_file mn "sig", dsig),
 		     (mk_file mn "sml", dstr)]
-	in
-	  fls
+	in fls
 	end
     end
   end

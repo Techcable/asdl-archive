@@ -12,6 +12,7 @@ structure GenPickleTranslator:TRANSLATE =
     struct
 	structure S = Semant
 	structure T = TypePickle
+	structure TU = TypePickleUtil
 	structure Output = BinIOFileOutput
 
 	fun mapi f l = (List.foldl
@@ -37,12 +38,12 @@ structure GenPickleTranslator:TRANSLATE =
 		(type_map,cnstr_map)
 	    end
 
-	val prim_map =
-	    List.foldl (fn ((x,y),env) => Env.insert(env,x,y)) Env.empty
+	val prim_map = Env.empty
+(*	    List.foldl (fn ((x,y),env) => Env.insert(env,x,y)) Env.empty
 	    [(S.Prim.int,T.Int),
 	     (S.Prim.string,T.String),
 	     (S.Prim.identifier,T.Identifier)]
-
+*)
 	    
 	val cfg = Output.cfg
 	val (cfg,output_file)  =
@@ -221,7 +222,7 @@ structure GenPickleTranslator:TRANSLATE =
 		    {magic=1,version=1,mmap=mmap,tmap=tmap,cmap=cmap}
 		val fname = (output_file p)
 	    in
-		Output.translate p [([fname],T.write_type_env tenv)]
+		Output.translate p [([fname],TU.write_type_env tenv)]
 	    end
     end
 

@@ -7,8 +7,8 @@ structure FromSML :>
     structure F = Compiler.Ast
     structure T = Asdl
     val extern_f : Asdl.field = 
-      {typ={qualifier=[],base=Identifier.fromString "(int)--???"},
-       label_opt=NONE,qualifier_opt=NONE}
+      {typ={qualifier=NONE,base=Identifier.fromString "(int)--???"},
+       label_opt=NONE,tycon_opt=NONE}
 
     val sym2id = Identifier.fromString o Compiler.Symbol.name 
     fun fromDec (F.SigDec sigbs,xs) = List.foldr fromSigb xs sigbs 
@@ -20,9 +20,7 @@ structure FromSML :>
     and fromSigExp (name,F.BaseSig specs,xs) =
       let
 	val decls =  List.foldr fromSpec [] specs
-	val decl = T.Module{name=sym2id name,
-			    imports=[],
-			      decls=decls}
+	val decl = T.Module{name=sym2id name,imports=[], decls=decls}
       in
 	decl::xs
       end
@@ -66,9 +64,11 @@ structure FromSML :>
 	    val s = List.map sym2id s
 	    val l = (List.length s)
 	    val (q,b) = (List.take (s,l-1),List.last s)
-	    val path = {qualifier=q,base=b}
+	    val path = case q of
+	      [] => {qualifier=NONE,base=b}
+	    | [q] => {qualifier=SOME q,base=b}
 	  in
-	   (fn l => SOME {typ=path,label_opt=l,qualifier_opt=qo})
+	   (fn l => SOME {typ=path,label_opt=l,tycon_opt=qo})
 	  end
 	  | mktyfd q (F.ConTy ([s],[ty])) =
 	  (case (Compiler.Symbol.name s) of

@@ -34,50 +34,48 @@ functor mkFileOutput(type outstream
 
 	fun translate p args =
 	    let
-		fun do_file (arcl,f) =
-		    let
-			val dir = output_dir p
-			val {isAbs,vol,arcs} = OS.Path.fromString dir
-	
-			fun mkPath arcs =
-			    OS.Path.toString
+	      fun do_file (arcl,f) =
+		let
+		  val dir = output_dir p
+		  val {isAbs,vol,arcs} = OS.Path.fromString dir
+		    
+		  fun mkPath arcs =
+		    OS.Path.toString
 			    {isAbs=isAbs,vol=vol,arcs=arcs}
 			    
-			fun ensure_path ([x],_) = ()
-			  | ensure_path (x::xs,pre) =
-			    let
-				val p = pre@[x]
-				val pname = mkPath p
-			    in
-				(if (OS.FileSys.isDir pname) then
-				     ensure_path (xs,p)
-				 else  raise
-				     (Error.error ["Invalid Path ",pname]))
-				     handle (OS.SysErr _)=>
-				     (OS.FileSys.mkDir pname;
+		  fun ensure_path ([x],_) = ()
+		    | ensure_path (x::xs,pre) =
+		    let
+		      val p = pre@[x]
+		      val pname = mkPath p
+		    in
+		      (if (OS.FileSys.isDir pname) then
+			 ensure_path (xs,p)
+		       else  raise
+			 (Error.error ["Invalid Path ",pname]))
+			 handle (OS.SysErr _)=>
+			   (OS.FileSys.mkDir pname;
 				      Error.warn ["Created Directory: ",
 						  pname];
 				      ensure_path (xs,p))
-			    end
-			  | ensure_path _ = ()
-
-			val path = arcs@arcl
-			val outname = mkPath path
-		    in
-			(if (no_action p) then
-			     TextIO.print(outname^"\n")
-			else
-			    let
-				val outs =
-				    (ensure_path (path,[]); openOut outname)
-			    in
-				(f outs) before (closeOut outs)
-			    end);
-			outname
 		    end
-
-	    in
-		List.map do_file args
+		    | ensure_path _ = ()
+		    
+		  val path = arcs@arcl
+		  val outname = mkPath path
+		in
+		  (if (no_action p) then
+		     TextIO.print(outname^"\n")
+		   else
+		     let
+		       val outs =
+			 (ensure_path (path,[]); openOut outname)
+		     in
+		       (f outs) before (closeOut outs)
+		     end);
+		     outname
+		end
+	    in List.map do_file args
 	    end
     end
 

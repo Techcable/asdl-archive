@@ -2,21 +2,22 @@ structure PPASDL =
   struct
     structure PP = PPUtil
     structure  T = Asdl
-    fun pp_path {base,qualifier} =
+    fun pp_path {base,qualifier=SOME q} =
       let val mid =
 	ModuleId.fromPath {base=Identifier.toString base,
-			   qualifier=(List.map Identifier.toString qualifier)}
+			   qualifier=[Identifier.toString q]}
       in PP.s (ModuleId.toString mid)
       end
+      | pp_path {base,qualifier=NONE} = PP.s (Identifier.toString base)
     val pp_id = PP.wrap Identifier.toString
     fun opt pp = PP.opt {some=pp,none=PP.empty}
-    fun pp_q T.Sequence = PP.s "*"
-      | pp_q T.Option = PP.s "?"
-      | pp_q T.Shared = PP.s "!"
+    fun pp_tycon T.Sequence = PP.s "*"
+      | pp_tycon T.Option = PP.s "?"
+      | pp_tycon T.Shared = PP.s "!"
     val comma_sep = PP.cat [PP.s ",",PP.ws]
     val bar_sep = PP.cat [PP.ws,PP.s "| "]
-    fun pp_field {typ,label_opt,qualifier_opt} =
-      PP.cat[pp_path typ,opt pp_q qualifier_opt,
+    fun pp_field {typ,label_opt,tycon_opt} =
+      PP.cat[pp_path typ,opt pp_tycon tycon_opt,
 	     opt (fn x =>  PP.cat [PP.s " ",pp_id x]) label_opt]
     fun pp_fields fs =
       PP.box 2 [PP.s "(",PP.seq{fmt=pp_field,sep=comma_sep} fs,PP.s ")"]

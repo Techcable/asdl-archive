@@ -6,10 +6,8 @@
  * Author: Daniel C. Wang
  *
  *)
-
-
-
-functor PklReal(structure R : REAL) =
+(* work in progress*)
+functor PklReal(structure R : REAL): PKL =
     struct
 	(* fix bug in fromManExp *)
 	val zero_r = R.fromInt 0

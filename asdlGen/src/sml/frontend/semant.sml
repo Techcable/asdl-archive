@@ -14,10 +14,11 @@ structure Semant :> SEMANT =
     struct
 	structure Id = ModuleId
 	structure T = Asdl
+	structure TU = AsdlUtil
 (**:[[structure Semant]] [[structure QSet]]:
 Sets of qualifers.
 **)
-	datatype kind = datatype T.type_qualifier	    
+	datatype kind = datatype T.tycon
 	structure QSet =
 	  ListSetFn(struct 
 	    type ord_key = kind
@@ -48,20 +49,21 @@ Sets of qualifers.
 	    uses:S.set,
 	  fields:field_info list, 
 	    cons:con_info list,
-	is_boxed:bool, (* should move them into props *)
+	 is_enum:bool, (* should move them into props *)
 	 is_prim:bool,
 	   props:TypProps.props}
 
 	datatype info = T of type_info | C of con_info 
 
 	datatype import = Import of module_info
-	               | ImportAs of string * module_info
+	               | ImportAlias of  Id.mid
 	               | ImportAll of module_info
 	  
 	and module_info =
 	  M of {name:Id.mid,
 		defs:S.set,
-		penv:type_info Env.map,
+	     is_prim:bool,
+	        penv:type_info Env.map,
 	         env:info Env.map,
 	       props:ModProps.props,
 	     imports:import Env.map}
@@ -79,18 +81,11 @@ Sets of qualifers.
 	fun get_c (x:con_info) =  x
 	fun get_f (x:field_info) =  x
 	fun get_m (M x) = x
-      
-       fun mk_src_name (name,NONE) = name
+	
+	val toMid = Id.fromString o Identifier.toString
+	fun mk_src_name (name,NONE) = name
 	 | mk_src_name (name,SOME x) =
 	 Id.fromPath {qualifier=Id.getQualifier name,  base=x}
-(**)
-(**:[[structure Semant]] [[structure Prim]]:**)
-	structure Prim =
-	  struct
-	    val identifier = Id.fromString "identifier"
-	    val string     = Id.fromString "string"
-	    val int        = Id.fromString "int"
-	  end
 (**)
 (**:[[structure Semant]] [[structure Type]]:**)
 	structure Type =
@@ -102,7 +97,7 @@ Sets of qualifers.
 	    fun src_name x = mk_src_name (name x,P.source_name (props x))
 	    val cons = #cons o get_t
 	    val fields = #fields o get_t
-	    val is_boxed = #is_boxed o get_t
+	    val is_enum = #is_enum o get_t
 	    val is_prim  = #is_prim o get_t
 	    val uses = S.listItems o #uses o get_t
 	  end
@@ -138,16 +133,18 @@ Some basic functions
 	    structure P = ModProps	    
 	    val props = #props o get_m
 	    val name  = #name o get_m
+	    val prim_module  = #is_prim o get_m
 	    val file  = P.file o props
 	    fun src_name x =
 	      mk_src_name (#name (get_m x),P.source_name (props x))
 
 	    fun imports m =
 	      let
-		fun get_i (Import x) = x
-		  | get_i _ = raise Error.unimplemented
+		fun get_i (Import x) = SOME x
+		  | get_i (ImportAlias _) = NONE
+		  | get_i (ImportAll x) = NONE
 		val imps =
-		  (List.map get_i) o Env.listItems o #imports o get_m
+		  (List.mapPartial get_i) o Env.listItems o #imports o get_m
 	      in (imps m)
 	      end
 	    val get_mod_name = (Id.fromString o List.hd o Id.getQualifier)  
@@ -165,9 +162,16 @@ Lookup functions
 		  
 		and try_imports NONE = NONE
 		  | try_imports (SOME (Import m)) = find_info (m,mid)
-		  | try_imports _ = raise Error.internal
-	      in
-		try_local (Env.find(env,mid))
+		  | try_imports (SOME (ImportAlias(mid))) =
+		  try_imports (Env.find(imports,mid))
+		  | try_imports (SOME (ImportAll(m))) =
+ 		  let
+		    val M{name,...} = m
+		    val mid' = Id.fromPath
+		      {base=Id.getBase mid,qualifier=[Id.getBase name]}
+		  in find_info (m,mid')
+		  end
+	      in try_local (Env.find(env,mid))
 	      end
 	    fun type_info' m mid =
 	      case find_info(m,mid) of
@@ -234,7 +238,7 @@ Dependency graph nodes
 		  List.map (mkNode m) (S.listItems roots)
 		  | follow  roots m (Ty (_,ti)) =
 		  List.map (mkNode m) (luses (roots,ti))
-		 | follow  roots m (UnDef _) = []
+		  | follow  roots m (UnDef _) = []
 		  
 	       fun follow'  roots m Root =
 		 List.mapPartial (is_product o (mkNode m))
@@ -305,29 +309,38 @@ This really needs to be reworked.
 				ME{menv,penv,uenv,count,errs,props}) =
 	   let
 	       val {name,imports,decls} = def
-	       val toMid = Id.fromString o Identifier.toString
 	       val name_id = toMid name
 	       val mname = Identifier.toString name
-	       fun mk_import x = Import (Option.valOf (Env.find(menv,toMid x)))
-	       val imports = List.foldl
-		   (fn (x,env) => Env.insert(env,toMid x,mk_import x))
-		   Env.empty imports
+	       fun mk_import (T.Imports{module,alias},env) =
+		 let
+		   val minfo = (Option.valOf (Env.find(menv,toMid module)))
+		   val env = Env.insert(env,toMid module,Import minfo)
+		 in case alias of
+		   NONE => env
+		 | SOME alias =>
+		     Env.insert(env,toMid alias,ImportAlias(toMid module))
+		 end
+	       val imports = List.foldl mk_import Env.empty imports
 (**:[[structure Semant]] [[structure Module]] [[fun declare_module]]:
 Rewrite identifiers to include a fully qualified path.
 **)
-	       fun fix_typ {qualifier=[],base} =
+	       fun fix_typ {qualifier=NONE,base} =
 		 let
 		   val base = Identifier.toString base
 		   val qualifier = [mname]
 		   val pid = Id.fromString base
 		 in case (Env.find(penv,pid)) of
 		   NONE => Id.fromPath {base=base,qualifier=qualifier}
-		 | (SOME b) => pid
+		 | (SOME {name,...}) => pid
 		 end
-		 | fix_typ {qualifier,base} = 
-		 Id.fromPath {base=Identifier.toString base,
-			      qualifier=List.map Identifier.toString
-			      qualifier}
+		 | fix_typ {qualifier=SOME q,base} =
+		 (case (Env.find(imports,toMid q)) of
+		    SOME (ImportAlias(alias)) =>
+		      Id.fromPath {base=Identifier.toString base,
+				   qualifier=[Id.toString alias]}
+		  | _ =>
+		      Id.fromPath {base=Identifier.toString base,
+				   qualifier=[Identifier.toString q]})
 (**:[[structure Semant]] [[structure Module]] [[fun declare_module]]:
 Walk over the AST and figure out the set of types and qualifiers used
 in the definition of the type.
@@ -338,13 +351,13 @@ in the definition of the type.
 		       List.foldl (fn ({fs,...},xs) => fs@xs) fs (c::cs)
 		     | get_fields (T.ProductType{f,fs,...}) =  f::fs
 		     val fields = get_fields x
-		     fun add_set ({typ,qualifier_opt,...}:T.field,env) =
+		     fun add_set ({typ,tycon_opt,...}:T.field,env) =
 		       let
 			 val typ = fix_typ typ
 			 val qset = (case (Env.find(env,typ)) of
 				      NONE => QSet.empty
 				    | SOME qs => qs)
-			 val qset = (case qualifier_opt of
+			 val qset = (case tycon_opt of
 				       NONE => qset
 				     | SOME q => QSet.add(qset,q))
 		       in Env.insert(env,typ,qset)
@@ -357,7 +370,7 @@ Build a [[field_info]] record from a list of fields
 	       fun mk_field_info fl =
 		   let
 		     val str_eq = (op =): string * string -> bool;
-		     fun do_field ({typ,qualifier_opt,label_opt,...}:T.field,
+		     fun do_field ({typ,tycon_opt,label_opt,...}:T.field,
 				   (cnt,fi)) =
 		       let
 			 val tref = fix_typ typ
@@ -368,7 +381,7 @@ Build a [[field_info]] record from a list of fields
 			   
 			 fun new_cnt (cnt,x) =
 			   let
-			     val s = hungarianize(qualifier_opt,
+			     val s = hungarianize(tycon_opt,
 						  Identifier.toString x)
 			     val (cnt,i) = Counter.add(cnt,s)
 			   in
@@ -381,7 +394,7 @@ Build a [[field_info]] record from a list of fields
 			     SOME i => (cnt,i)
 			   | NONE => new_cnt(cnt,#base typ)
 		       in
-			 (cnt,{kind=qualifier_opt,src_name=src_name,
+			 (cnt,{kind=tycon_opt,src_name=src_name,
 			       name=label_opt,tref=tref}::fi)
 		       end
 		     val (_,fls) = List.foldl do_field
@@ -430,7 +443,7 @@ Declare a type and update all the necessary book keeping.
 				     qualifier=[mname]}
 		       val fields = mk_field_info fields
 		       val (box_cons,cons) = mk_con_info tname cons
-		       val is_boxed = box_cons orelse (not (List.null fields))
+		       val is_enum = box_cons orelse (not (List.null fields))
 		       val ty_uses = types_used t
 		       val inits = TypProps.parse (view tname)
 		       val props = TypProps.new (inits)
@@ -440,7 +453,7 @@ Declare a type and update all the necessary book keeping.
 				      fields=fields,
 				      cons=cons,
 				      props=props,
-				      is_boxed=is_boxed,
+				      is_enum=is_enum,
 				      uses=
 				      Env.foldli (fn (k,_,s) => S.add(s,k))
 				      S.empty ty_uses}
@@ -460,8 +473,7 @@ Declare a type and update all the necessary book keeping.
 		       val (env,errs) =
 			 List.foldl
 			 (fn (x,rest) => add_def (#name x,C x,rest)) rest cons
-		   in
-		       {uenv=uenv,defs=defs,env=env,errs=errs,count=count}
+		   in {uenv=uenv,defs=defs,env=env,errs=errs,count=count}
 		   end
 (**:[[structure Semant]] [[structure Module]] [[fun declare_module]]:
 Build a new module info and add it to the current module environment.
@@ -475,14 +487,45 @@ Build a new module info and add it to the current module environment.
 	       val inits = ModProps.parse (view name_id)
 	       val mprops = ModProps.new ((ModProps.mk_file file)::(inits))
 	       val m =
-		 M{name=name_id,props=mprops,
+		 M{name=name_id,props=mprops,is_prim=false,
 		   defs=defs,penv=penv,env=env,imports=imports}
 	       val menv = Env.insert(menv,name_id,m)
 	   in
 	     ME{uenv=uenv,penv=penv,menv=menv,
 		count=count,errs=errs,props=props}
 	   end
-	 | declare_module v (_,me) = me
+	 | declare_module view ({file,
+				 decl=T.PrimitiveModule{name,exports}},me) =
+	   let
+	     val mqualifier = [Identifier.toString name]
+	     fun declare_prim (pname,ME{uenv,menv,penv,count,errs,props}) =
+	       let
+		 val base = Identifier.toString pname
+		 val full_name =
+		   Id.fromPath{qualifier=mqualifier,base=base}
+		 val short_name =
+		   Id.fromPath{qualifier=[],base=base}
+		 val count = count + 1
+		 val tinfo =
+		   {tag=count,name=full_name,
+		    uses=S.empty,fields=[],cons=[],
+		    props=TypProps.new [],is_prim=true,is_enum=false}
+	       in ME{menv=menv,errs=errs,props=props,uenv=uenv,
+		     penv=Env.insert(penv,short_name,tinfo),count=count}
+	       end
+	     val name_id = toMid name
+	     val inits = ModProps.parse (view name_id)
+	     val mprops = ModProps.new ((ModProps.mk_file file)::(inits))
+	     val minfo = M{name=name_id,defs=S.empty,
+			   is_prim=true,penv=Env.empty,
+			   env=Env.empty,props=mprops,imports=Env.empty}
+	     val ME{uenv,menv,penv,count,errs,props} = me
+	     val menv = Env.insert(menv,toMid name,minfo)
+	     val me = ME{menv=menv,errs=errs,props=props,uenv=uenv,
+			 penv=penv,count=count}
+	   in List.foldl declare_prim me exports
+	   end
+	 | declare_module _ (_,me) = me
 (**)
 (**)
 (**:[[structure Semant]] [[structure MEnv]]:**)
@@ -545,14 +588,14 @@ Build a new module info and add it to the current module environment.
 		  | is_view _ = false
 		fun mk_env (x as {file,decl} ,env) =
 		  if (is_view decl) then env
-		  else IEnv.insert(env,#name(T.attrbs_decl decl),x)
+		  else IEnv.insert(env,#name(TU.attrbs_decl decl),x)
 		val env = List.foldl mk_env IEnv.empty inps
 		  
 		fun mkNode id =
 		  case (IEnv.find(env,id)) of
 		 (SOME {file,decl=T.Module{imports,...}}) =>
-		   List.map SOME imports
-	       | (SOME {file,decl=T.ForeignModule _}) => []
+		   List.map (fn (T.Imports{module,...}) => SOME module) imports
+	       | (SOME {file,decl=T.PrimitiveModule _}) => []
 	       | _ => raise
 		   (Error.error ["Can't find module: ",Identifier.toString id])
 		fun follow (SOME id) = mkNode id
@@ -570,32 +613,27 @@ Build a new module info and add it to the current module environment.
 	      | NONE => (fn _ => [])
 	      in (List.foldl check [] torder,get_view)
 	      end
-	    val prims = [(Prim.int,false),
-			 (Prim.string,true),
-			 (Prim.identifier,true)]
+
 	    fun prim_env inits =
 	      ME{menv=Env.empty,penv=Env.empty,uenv=Env.empty,
 		 count=0,props=ModEnvProps.new inits,
 		 errs=[]}
-	      
-	    fun declare_prim ((name,b),ME{uenv,menv,penv,count,errs,props}) =
-	      let
-		val count = count + 1
-		val tinfo =
-		  {tag=count,name=name,
-		   uses=S.empty,fields=[],cons=[],
-		   props=TypProps.new [],
-		   is_prim=true,is_boxed=b}
-	      in
-		ME{menv=menv,errs=errs,props=props,uenv=uenv,
-		   penv=Env.insert(penv, name,tinfo),count=count}
-	      end
-	    val prim_env =
-	      (fn i => List.foldl declare_prim (prim_env i) prims)
+
+	    fun is_prim {file,decl=T.PrimitiveModule _} = true
+	      | is_prim _ = false
+	    val std_prims = {file="<builtin>",
+			     decl=T.PrimitiveModule
+			     {name=Identifier.fromString "StdPrims",
+			      exports=List.map Identifier.fromString
+			      ["int","string","identifier"]}}
 	    fun declare {view,inits} ds =
-	      let val (ds,gv) = build_scc ds
-		  val penv = prim_env inits
-		  val v = gv (Id.fromString view)
+	      let
+		val prim_ms = std_prims::(List.filter is_prim ds)
+		val ds = List.filter (not o is_prim) ds
+		val (ds,gv) = build_scc ds
+		val v = gv (Id.fromString view)
+		val penv = prim_env inits
+		val penv = List.foldl (declare_module v) penv prim_ms
 	      in List.foldl (declare_module v) penv ds
 	      end
 	    fun qualified (ME{uenv,...}) (M{defs,...}) =

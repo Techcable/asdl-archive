@@ -6,6 +6,8 @@ smlnj-lib.cm
 
 Asdl.sig
 Asdl.sml
+AsdlUtil.sig
+AsdlUtil.sml
 aka.sml
 asdl.grm
 asdl.lex

@@ -49,7 +49,7 @@ structure TextPP =
 	    cat [s "(SOME ",pp_asdl_value v,s ")",pp_typeo typename]
 	  | pp_asdl_value (V.PrimValue{typename,v}) =
 	    pp_prim_value v
-	and pp_prim_value (V.IntValue x) = PPUtil.wrap V.Integer.toString x
+	and pp_prim_value (V.IntValue x) = PPUtil.wrap Int.toString x
 	  | pp_prim_value (V.StringValue x) =
 	    cat [s"\"",s(String.toCString x),s "\""]
 	  | pp_prim_value (V.IdentifierValue x) =

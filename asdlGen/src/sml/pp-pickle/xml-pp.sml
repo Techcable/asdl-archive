@@ -10,8 +10,11 @@
 
 structure XMLPP =
     struct
-	
-	structure V = AsdlValue
+      structure V =
+	struct 
+	  open AsdlValue AsdlValueUtil
+	end
+
 	open PPUtil
 
 	val toHex = Int.fmt StringCvt.HEX
@@ -76,7 +79,7 @@ structure XMLPP =
 	      | pp_asdl_value l (V.PrimValue{typename,v}) =  pp_prim_value l v
 	    and pp_prim_value l (V.IntValue x) =
 	      cat [s "<int",pp_label_opt l,
-		   s " v=\"",s (V.Integer.toString x),s "\"/>"]
+		   s " v=\"",s (Int.toString x),s "\"/>"]
 	      | pp_prim_value l (V.StringValue x) =
 	      cat [s "<string",pp_label_opt l,
 		   s " v=\"",s (String.translate fix_char x),s "\"/>"]

@@ -105,6 +105,7 @@ structure YaccGrammarTranslator : SEMANT_TRANSLATOR =
 	val prims = List.foldl add_prim ([]:YaccGrammar.grammar)
 	  ["int","string","identifier"]
 	  
-	fun trans p prods = [List.foldr (op @) prims prods]
+	fun trans p {modules,prim_types,prim_modules} =
+	  [List.foldr (op @) prims modules]
 
     end

@@ -37,11 +37,11 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 	val streams_ty = Option.getOpt
 	  (streams_ty,{ins="instream",outs="outstream"})
 	val monad = Option.map TypeId.fromString  monad_name
+	fun std_pkl s = VarId.fromPath{qualifier=["StdPkl"],base=s}
+
 	fun die _ =
-	  if Option.isSome monad then
-	    (Id (VarId.fromString "die"))
-      else
-	(Call(Id (VarId.fromString "die"),[Tuple([],NONE)]))
+	  if Option.isSome monad then Id (std_pkl "die")
+	  else Call(Id (std_pkl "die"),[Tuple([],NONE)])
 	
 	fun mk_name s id =
 	  let
@@ -58,11 +58,17 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 	val wr_name = mk_name "write"
 	val arg_id     = VarId.fromString "x"
 	val stream_id  = VarId.fromString "s"
-	val wr_tag_name = VarId.fromString "write_tag"
-	val rd_tag_name = VarId.fromString "read_tag"
+	val wr_tag_name = std_pkl "write_tag"
+	val rd_tag_name = std_pkl "read_tag"
+
 	val unit_ty = (TyTuple [])
-	val outstream_ty = TyId (TypeId.fromString (#outs streams_ty))
-	val instream_ty = TyId (TypeId.fromString (#ins streams_ty))
+	val outstream_ty = TyId 
+	  (TypeId.fromPath {qualifier=["StdPkl"],
+			    base=(#outs streams_ty)})
+	val instream_ty = TyId 
+	  (TypeId.fromPath {qualifier=["StdPkl"],
+			    base=(#ins streams_ty)})
+
 	val wrap = case monad of
 	    NONE => (fn x => x)
 	  | (SOME i) => (fn x => TyCon(i,[x]))
@@ -125,7 +131,7 @@ functions.
 (**:[[functor mkAlgebraicSpec]] definition of type constructor:**)
     val seq_rep = TyList
     val opt_rep = TyOption
-    val share_id = TypeId.fromPath{qualifier=[],base="share"}
+    val share_id = TypeId.fromPath{qualifier=["StdPkl"],base="share"}
     fun share_rep te = TyCon (share_id,[te])
 
     fun ty_exp  (Ty.Prim {ty,...}) = ty
@@ -135,14 +141,16 @@ functions.
 
     val seq_con =
       let
-	val rd_list_name = VarId.fromString "read_list"
-	val wr_list_name = VarId.fromString "write_list"
+	val rd_list_name = std_pkl "read_list"
+	val wr_list_name = std_pkl "write_list"
 	fun ty_con (tid,t) =
 	  let
 	    val ty = seq_rep (ty_exp t)
-	    val rd = Call(Id rd_list_name,[Id (rd_name tid),Id stream_id])
+	    val rd = Call(Id rd_list_name,
+			  [Id (rd_name tid),Id stream_id])
 	    fun wr e =
-	      Call(Id wr_list_name,[Id (wr_name tid),e,Id stream_id])
+	      Call(Id wr_list_name,
+		   [Id (wr_name tid),e,Id stream_id])
 	  in (ty,{wr=SOME wr,rd=SOME rd})
 	  end
       in ty_con
@@ -150,15 +158,15 @@ functions.
     
     val opt_con =
       let
-	val rd_option_name = VarId.fromString "read_option"
-	val wr_option_name = VarId.fromString "write_option"
+	val rd_option_name = std_pkl "read_option"
+	val wr_option_name = std_pkl "write_option"
 	fun ty_con (tid,t) =
 	  let
 	    val ty = opt_rep (ty_exp t)
-		val rd =
-		  Call(Id rd_option_name,[Id (rd_name tid),Id stream_id])
-		fun wr e =
-		  Call(Id wr_option_name,[Id (wr_name tid),e,Id stream_id])
+	    val rd = Call(Id rd_option_name,
+			  [Id (rd_name tid),Id stream_id])
+	    fun wr e = Call(Id wr_option_name,
+			    [Id (wr_name tid),e,Id stream_id])
 	  in
 	    (ty,{wr=SOME wr,rd=SOME rd})
 	  end
@@ -167,14 +175,16 @@ functions.
     
     val share_con =
       let
-	val rd_share_name = VarId.fromString "read_share"
-	val wr_share_name = VarId.fromString "write_share"
+	val rd_share_name = std_pkl "read_share"
+	val wr_share_name = std_pkl "write_share"
 	fun ty_con (tid,t) =
 	  let
 	    val ty = share_rep (ty_exp t)
-	    val rd = Call(Id rd_share_name,[Id (rd_name tid),Id stream_id])
+	    val rd = Call(Id rd_share_name,
+			  [Id (rd_name tid),Id stream_id])
 	    fun wr e =
-	      Call(Id wr_share_name,[Id (wr_name tid),e,Id stream_id])
+	      Call(Id wr_share_name,
+		   [Id (wr_name tid),e,Id stream_id])
 	  in (ty,{wr=SOME wr,rd=SOME rd})
 	  end
       in ty_con
@@ -185,20 +195,17 @@ functions.
     val share_tid =  TypeId.suffixBase "_share" 
 (**)
 (**:[[functor mkAlgebraicSpec]] definition of primitive types:**)
-    fun addPrim (s,ps) =
+    fun addPrim (tinfo,ps) =
       let
-	val tid = TypeId.fromString(s)
+	val tname = Semant.Type.src_name tinfo
+	val tid = (TypeId.fromPath o Id.toPath) tname
 	val info = {rd=SOME(read tid),
 		    wr=SOME(write tid)}
-      in
-	(tid,Ty.Prim {ty=TyId tid,info=info,name=s})::
+      in(tid,Ty.Prim {ty=TyId tid,info=info,name=Id.getBase tname})::
 	(seq_tid tid,Ty.App(seq_con,tid))::
 	(opt_tid tid,Ty.App(opt_con,tid))::ps
       end
-    
-    val prims = addPrim ("int",[])
-    val prims = addPrim ("string",prims)
-    val prims = addPrim ("identifier",prims)
+    fun prims tinfos = List.foldl addPrim [] tinfos
       
     fun get_reps me Semant.Sequence =
       {mktid=seq_tid,mkrep=seq_rep,con=seq_con}

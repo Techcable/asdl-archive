@@ -116,7 +116,7 @@ functor mkOOSemantTranslator
 
       fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} =
 	let
-	  val is_boxed = S.Type.is_boxed tinfo
+	  val is_enum = S.Type.is_enum tinfo
 	  val tname = trans_tid (S.Type.src_name tinfo)
 	  val (cname,name) = (trans_id name,trans_tid name)
 	  val all = attrbs@fields
@@ -135,7 +135,7 @@ functor mkOOSemantTranslator
 	  val tag = {c=tag_n,v=(S.Con.tag cinfo)}
 
 	  val con = {tag=tag,fields=List.map #ty_fd all,
-		     cnstr=mk_cnstr is_boxed}
+		     cnstr=mk_cnstr is_enum}
 	  val enumer = {name=tag_n,value=(S.Con.P.enum_value cprops)}
 	  fun match c = (tag,List.map (sub_field c) all)
 	  val ty = T.TyReference (T.TyId tname)
@@ -172,8 +172,8 @@ functor mkOOSemantTranslator
 	    | cast true f v =
 	    EVAL(RET (T.Cast(cty,v)),cty,(fn v => f (T.DeRef v)))
 	in
-	  {match=match,con=con,enumer=enumer,mk_decl=mk_decl is_boxed,
-	   cast=cast is_boxed}
+	  {match=match,con=con,enumer=enumer,mk_decl=mk_decl is_enum,
+	   cast=cast is_enum}
 	end
 
       fun trans_defined p {tinfo,name,fields,cons=[],props} = 
@@ -225,7 +225,7 @@ functor mkOOSemantTranslator
 	let
 	  val cname = trans_id name
 	  val name = trans_tid name
-	  val is_boxed = S.Type.is_boxed tinfo
+	  val is_enum = S.Type.is_enum tinfo
 	  val fds = List.map #fd (fields:field_value list)
 	  val user_fields = Spec.get_user_fields props
 	  val ty = T.TyReference (T.TyId name)
@@ -273,7 +273,7 @@ functor mkOOSemantTranslator
 
 
 	  val decl =
-	     if is_boxed then
+	     if is_enum then
 	       T.DeclAbstractClass
 	       {name=name,
 		idecls=idecls,
@@ -340,7 +340,7 @@ functor mkOOSemantTranslator
 		      imports=List.map toMid imports,
 		      decls=decls},props))
 	end
-      fun trans p (ms:module_value list) =
+      fun trans p {modules=ms,prim_types,prim_modules} =
 	let
 	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs) Spec.prims ms
 	  val new_decls = (aux_decls (Ty.mk_env ty_decls))

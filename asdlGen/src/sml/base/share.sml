@@ -1,7 +1,16 @@
+(* 
+ *
+ * COPYRIGHT (c) 1997, 1998 by Princeton University. 
+ * See COPYRIGHT file for details
+ *
+ * Author: Daniel C. Wang
+ *
+ *)
+(* work in progress*)
 signature SHARE =
   sig
     type name = string
-    datatype 'value pklv = DEF of name * 'value | USE of name
+    datatype 'a value pklv = DEF of name * 'value | USE of name
 
     type ('share_ref,'value) env
     type 'a sref

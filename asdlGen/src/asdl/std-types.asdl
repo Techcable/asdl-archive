@@ -1,6 +1,5 @@
 module StdTypes {
- nat = (int) -- natural numbers (unsigned numbers)
-
+ nat = (int)
  bool = TRUE | FALSE
 
  int8   = (int)
@@ -14,10 +13,7 @@ module StdTypes {
  uint64 = (int)
 
  ieee_real = (string)
-
-
 }
-
 
 view Doc {
  { StdTypes.int8 StdTypes.int16 StdTypes.int32 StdTypes.int64 } 
@@ -30,10 +26,7 @@ view Doc {
  StdTypes.ieee_real : Raw bits of an IEEE real
  StdTypes.nat : Language appropiate representation for natural numbers
  }
-
 }
-
-
 
 view SML {
  -- implementation provided by hand
@@ -47,19 +40,22 @@ view C {
  module StdTypes <= is_library : true
 }
 
+view Haskell {
+module StdTypes <= suppress   : true
+module StdTypes <= is_library : true
+}	
+
 view Java {
 
 -- set suppress to false to generate stubs
-module StdTypes <= suppress    : true
+module StdTypes <= suppress   : true
 module StdTypes <= is_library : true
 
 -- define the type substitutions
- StdTypes.bool   
-                <= { natural_type : boolean
-                           reader : read_java_boolean
-                           writer : write_java_boolean
+ StdTypes.bool <= { natural_type : boolean
+                          reader : read_java_boolean
+                          writer : write_java_boolean
                    }
-
  StdTypes.ieee_real   
                 <= { natural_type : double
                            reader : read_java_double
@@ -99,14 +95,13 @@ module StdTypes <= is_library : true
 }
 
 view Cxx {
-
 -- set suppress to false to generate stubs
-module StdTypes <= suppress    : true
+module StdTypes <= suppress   : true
 module StdTypes <= is_library : true
 
 StdTypes.int8  <= { natural_type : int8
-                           reader : read_int8
-                           writer : write_int8
+                          reader : read_int8
+                          writer : write_int8
                    }
 
 StdTypes.int16  <= { natural_type : int16
@@ -131,13 +126,5 @@ StdTypes.uint16  <= { natural_type : uint16
                             reader : read_uint32
                             writer : write_uint32
                    }
-
-
-
 }
 
-
-view Haskell {
-module StdTypes <= suppress    : true
-module StdTypes <= is_library : true
-}

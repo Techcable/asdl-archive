@@ -127,7 +127,7 @@ structure XMLDTDTranslator : SEMANT_TRANSLATOR =
 		     imports=List.map toMid imports,
 		     decls=(roots@tags)},List.map mk_spec roots)
 	  end
-	fun trans p (mv:module_value list) =
+	fun trans p {modules=mv,prim_types,prim_modules} =
 	  let
 	    val root_id = T.TypeId.fromString "root"
 	    fun do_mod ((m as (T.Module{name,...}),roots),(ms,imps,xs)) =

@@ -1,13 +1,3 @@
-(* 
- *
- * COPYRIGHT (c) 1997, 1998 by Princeton University. 
- * See COPYRIGHT file for details
- *
- * Author: Daniel C. Wang
- *
- *)
-
-
 (* pp.sml *)
 
 (* This defines an abstract type (ppstream) and associated operations. A
@@ -578,6 +568,9 @@ end (* PrettyPrint *)
 
 (*
  * $Log$
+ * Revision 1.2  1998/05/04 16:13:05  danwang
+ * Munnged copyright headers
+ *
  * Revision 1.1  1997/12/02 20:53:19  danwang
  * Initial revision
  *

@@ -1,14 +1,3 @@
-/* Machine generated. Edit at your own risk 
-     Reproduce with the following
-    --attribs_default true
-    --base_include cii_base.h
-    --default_only true
-    --line_width 74
-    --mono_types false
-    --no_action false
-    --output_directory ./
-    --view C
-    */
 #include "StdTypes.h"
 const StdTypes_bool_ty StdTypes_TRUE = StdTypes_TRUE_enum;
 const StdTypes_bool_ty StdTypes_FALSE = StdTypes_FALSE_enum;
@@ -51,7 +40,6 @@ StdTypes_int64_ty StdTypes_read_int64(instream_ty s) {
     return read_int64(s);
 }
 
-
 StdTypes_uint8_ty StdTypes_read_uint8(instream_ty s) {
   return read_uint8(s);
 }
@@ -59,7 +47,6 @@ StdTypes_uint8_ty StdTypes_read_uint8(instream_ty s) {
 StdTypes_uint16_ty StdTypes_read_uint16(instream_ty s) {
   return read_uint16(s);
 }
-
 
 StdTypes_uint32_ty StdTypes_read_uint32(instream_ty s) {
   return read_uint32(s);

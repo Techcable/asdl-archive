@@ -30,7 +30,7 @@ structure ASCIIPP =
 	    cat [s "?[",pp_asdl_value v,s "]"]
 	  | pp_asdl_value (V.PrimValue{typename,v}) =
 	    pp_prim_value v
-	and pp_prim_value (V.IntValue x) =  s ((V.Integer.toString x)^"_")
+	and pp_prim_value (V.IntValue x) =  s ((Int.toString x)^"_")
 	  | pp_prim_value (V.StringValue x) =
 	    cat [s"\"",s(String.toCString x),s "\""]
 	  | pp_prim_value (V.IdentifierValue x) =

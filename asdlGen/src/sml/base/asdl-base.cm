@@ -1,18 +1,44 @@
-Group is
+Library 
+structure Error
+structure Identifier
+structure StdPkl
+structure StdPrims
+structure StdPrimsUtil
+structure StdTypes
+structure StdTypesUtil
+
+signature ERROR
+signature IDENTIFIER
+signature STD_PKL
+signature STD_PRIMS
+signature STD_PRIMS_UTIL
+
+signature STD_TYPES
+signature STD_TYPES_UTIL
+
+is
 smlnj-lib.cm
-base.sml
+
 error.sig
 error.sml
+
 identifier.sig
 identifier.sml
-pkl.sml
+
 pkl.sig
 pkl-int.sml
-pkl-real.sml
-std-types.sml
-share.sml
-asdl-types.sig
-prims.sig
+
+std-pkl.sig
+std-pkl.sml
+
 std-prims.sig
 std-prims.sml
 
+std-prims-util.sig
+std-prims-util.sml
+
+std-types.sml
+(*
+pkl-real.sml
+share.sml
+*)

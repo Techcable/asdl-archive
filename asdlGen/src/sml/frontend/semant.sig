@@ -44,19 +44,7 @@ Since ASDL fields can be modified by various type constructors in the ASDL
 source declarations we reuse the [[type_qualifier]] datatype from the AST
 in the description of fields.
 **)	  
-	datatype kind = datatype Asdl.type_qualifier
-(**)
-(**:[[signature SEMANT]] [[structure Prim]]:
-The [[Prim]] substructure contains a set of primitive identifiers that
-identify the primtive types in ASDL. These are the only identifiers that
-are not fully qualified identifiers. 
-**)
-	structure Prim :
-	  sig
-	    val int         : Id.mid
-	    val string      : Id.mid
-	    val identifier  : Id.mid	    
-	  end
+	datatype kind = datatype Asdl.tycon
 (**)
 (**:[[signature SEMANT]] [[structure Type]]:
 The [[Type]] substructure organizes several functions that provide
@@ -103,11 +91,10 @@ and user defined ASDL types.
 **)
 	    val is_prim  : type_info -> bool
 (**:[[signature SEMANT]] [[structure Type]]:
-The function [[is_boxed]] is a predicate that returns true iff a sum type
-is just a finite enumeration of constants. The name of this function
-should be changed to something else.
+The function [[is_enum]] is a predicate that returns true iff a sum type
+is just a finite enumeration of constants. 
 **)
-	    val is_boxed : type_info -> bool
+	    val is_enum  : type_info -> bool
 (**:[[signature SEMANT]] [[structure Type]]:
 [[uses]] simply returns the qualified identifier of types used on the
 right hand side of a type declaration. Its internally by the validation
@@ -193,10 +180,12 @@ module definition was parsed.
 (**:[[signature SEMANT]] [[structure Module]]:
 The [[imports]] function returns a list of modules imported by this
 module. The [[types]] function returns a list of type identifiers
-that are defined by this module.
+that are defined by this module. The [[prim_module]] returns true if this
+module is a primitive module.
 **)
 	    val imports    : module_info -> module_info list 
 	    val types      : module_info -> Id.mid list
+	    val prim_module: module_info -> bool
 (**:[[signature SEMANT]] [[structure Module]]:
 These functions query a module for information about types and constructors 
 defined by this module. The [[type_info']] and [[con_info']] behave

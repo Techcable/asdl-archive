@@ -167,8 +167,15 @@ functor mkTranslateFromTranslator
 		   defines=defines,
 		   type_cons=type_cons}
 		end
-	      val res = List.map do_module  (S.MEnv.modules menv)
-	    in T.trans p res
+	      val minfos = (S.MEnv.modules menv)
+	      val prim_modules = List.filter S.Module.prim_module  minfos
+	      val modules = List.filter (not o S.Module.prim_module)  minfos
+	      val modules = List.map do_module  modules
+		
+	      val prim_types = S.MEnv.prim_types menv
+	    in T.trans p {modules=modules,
+			  prim_modules=prim_modules,
+			  prim_types=prim_types}
 	    end
 	end
 (**)

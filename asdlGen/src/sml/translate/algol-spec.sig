@@ -48,7 +48,9 @@ signature ALGOL_SPEC =
         mktid:Ty.ty_id -> Ty.ty_id,
 	  con:Ty.ty_con}
 
-    val get_prims     : Semant.MEnv.P.props -> Ty.ty_decl list
+    val get_prims : Semant.MEnv.P.props -> Semant.type_info list -> 
+      Ty.ty_decl list
+
     val get_aux_decls : Semant.MEnv.P.props -> Ty.env
                                         -> Ty.ty_decl list -> Ty.Ast.decl list
     val get_tag_decls : Semant.MEnv.P.props -> Ty.tag list ->

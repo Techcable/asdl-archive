@@ -73,7 +73,9 @@ resynch="--#line"{ws}+[0-9]+({ws}+\"[^\"]*\")?;
 <INITIAL>"="               => (mkTok yypos Tokens.EQ);
 <INITIAL>"attributes"      => (mkSTok yypos yytext Tokens.ATTRIBUTES);
 <INITIAL>"module"          => (mkSTok yypos yytext Tokens.MODULE);
+<INITIAL>"primitive"       => (mkSTok yypos yytext Tokens.PRIMITIVE);
 <INITIAL>"imports"         => (mkSTok yypos yytext Tokens.IMPORTS);
+<INITIAL>"alias"           => (mkSTok yypos yytext Tokens.ALIAS);
 <INITIAL>"view"            => (mkSTok yypos yytext Tokens.VIEW);
 <INITIAL>{id}              => (mkSTok yypos yytext Tokens.ID);
 <INITIAL>":".*             => (mkSTok yypos

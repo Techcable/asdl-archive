@@ -6,8 +6,6 @@
  * Author: Daniel C. Wang
  *
  *)
-
-
 functor PklInteger(structure Integer : INTEGER) : PKL =
     struct
 	structure IO = BinIO
@@ -137,13 +135,4 @@ functor PklWord(structure Word : WORD) : PKL =
 		ret
 	    end	
     end
-
-
-
-
-
-
-
-
-
 
