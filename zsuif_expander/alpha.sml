@@ -103,7 +103,7 @@ struct
                          initSEmited   ())
 
   fun newAddrReg () = newReg UInt64Bit
-  fun newIntReg  () = newReg Int32Bit
+  fun newIntReg  () = newReg Int64Bit
 
   fun zeroOut (emit, reg) = emit "+%s=0\n" [REG reg]
   fun addOne  (emit, reg) =
@@ -415,15 +415,15 @@ struct
   fun emitJumpIfNotZero (emt, r, lab, kr) =
      (emt "+PC=%s!0,%s" [REG r, B.LAB lab]; emitKilledRegs(emt, [], kr))
 
-  fun emitRegMulConst (emt, reg, n, res, kr) =
-      let
-          val sReg = REG reg
-          val sRes = REG res
-          val sn   = F.STR (Inf.toString n)
-      in
-          emt "+%s=%s*%s" [sRes, sReg, sn];
-          emitKilledRegs (emt, [], kr)
-      end
+  fun emitRegMulConst (emt, r as Reg(ty, _), n, rd, kr) =
+     let
+	val r2 = newReg(ty)
+     in
+	emitConstIntToReg (emt, n, r2);
+	emt "+%s=%s*%s" [REG rd, REG r, REG r2];
+	emitKilledRegs (emt, [], r2::kr)
+     end
+    | emitRegMulConst _ = raise (Fail "Non-register passed to emitRegMulConst")
 
   fun compileBuiltinOper (emt, rd, r1, oper, r2, kr) =
      (emt "+%s=%s%s%s" [REG rd, REG r1, F.STR oper, REG r2];
@@ -662,7 +662,7 @@ struct
                     val lab   = findAndSetLabel target
                     val slab  = B.LAB lab
                 in
-                    emt "c.word\t .%s\n" [slab]
+                    emt "c.quad\t %s\n" [slab]
                 end
               | doCase _ = raise (Fail "Bad constant in switch statement")
       in
@@ -670,8 +670,9 @@ struct
           emt "+%s=%s-%s\t%s\n" [REG newReg, REG newReg, REG first, REG first];
           emt "+%s=%s{2\n" [REG newReg, REG newReg];
           compileVarReference (emt, addrReg, tabLab);
-          emt "+%s=R[%s+%s]\t%s%s\n" [REG first, REG newReg, REG addrReg,
-                                      REG newReg, REG addrReg];
+	  emt "+%s=%s+%s\t%s\n" [REG addrReg, REG addrReg,
+				 REG newReg, REG newReg];
+          emt "+%s=Q[%s]\t%s\n" [REG first, REG addrReg, REG addrReg];
           emt "+PC=%s\t%s\n" [REG first, REG first];
           emt "-.%s:\n" [B.LAB tabLab];
           app doCase cases

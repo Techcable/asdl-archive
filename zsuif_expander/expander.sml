@@ -569,7 +569,6 @@ struct
 	  |  (Z.CExpression expr) => compileCExpr expr
 	  |  (Z.Constant expr) => compileConstantExpr expr
 
-      (* ??? Is this an optimization? Is it necessary? *)
       and compileBinaryExpr {binop = binop as Z.Multiply,
 			     source1 = src1,
 			     source2 = src2 as Z.Constant
@@ -668,7 +667,7 @@ struct
             val addrReg  = M.newAddrReg ()
 	 in
             M.cUnaryOperator (emt, Z.Convert, tmpIReg, idxReg, [tmpIReg],
-                              (newArg, currentProc ())); (* ??? *)
+                              (newArg, currentProc ()));
             if siz = 1 then ()
             else M.emitRegMulConst (emt, idxReg, Inf.fromInt siz, idxReg, []);
 
@@ -1075,7 +1074,7 @@ struct
 	 raise B.Can'tDoItYet
 
       and compileStoreStmt {data_operand = dataOper,
-				 destination_address = destAddr} =
+			    destination_address = destAddr} =
 	 let
             val (r, kind) = compileExpr dataOper
             val (a, _)    = compileExpr destAddr
@@ -1205,12 +1204,20 @@ struct
 		     | _ => raise ValueConditional)
 	  | _ => raise ValueConditional
 
+      and negateOp Z.Is_equal_to = Z.Is_not_equal_to
+	| negateOp Z.Is_not_equal_to = Z.Is_equal_to
+	| negateOp Z.Is_less_than = Z.Is_greater_than_or_equal_to
+	| negateOp Z.Is_less_than_or_equal_to = Z.Is_greater_than
+	| negateOp Z.Is_greater_than = Z.Is_less_than_or_equal_to
+	| negateOp Z.Is_greater_than_or_equal_to = Z.Is_less_than
+	| negateOp _ = raise (Fail "Error in negateOp")
+
       (* compileRelOp : compile a relational operator in control-flow *)
       (* context.                                                     *)
       and compileRelOp emt binop r1 r2 {tlab=SOME t, flab=NONE} =
-	 M.emitConditionalJump(emt, r1, binop, r2, [r1, r2], t)
+	 M.emitConditionalJump(emt, r1, negateOp binop, r2, [r1, r2], t)
 	| compileRelOp emt binop r1 r2 {tlab=NONE, flab=SOME f} =
-         compileRelOp emt binop r1 r2 {tlab=SOME f, flab=NONE}
+	 M.emitConditionalJump(emt, r1, binop, r2, [r1, r2], f)
 	| compileRelOp emt binop r1 r2 {tlab=SOME t, flab=SOME f} =
          (compileRelOp emt binop r1 r2 {tlab=SOME t, flab=NONE};
           M.emitUncondJump (emt, f))

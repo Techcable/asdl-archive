@@ -153,16 +153,16 @@ struct
       | getRegType _ =
         raise (Fail ("Invalid type specified in function getRegType"))
 
-    fun atomicType (Z.Data (Z.BooleanType _))        = true
-      | atomicType (Z.Data (Z.IntegerType _))        = true
-      | atomicType (Z.Data (Z.UIntegerType _))       = true
+    fun atomicType (Z.Data (Z.BooleanType _))       = true
+      | atomicType (Z.Data (Z.IntegerType _))       = true
+      | atomicType (Z.Data (Z.UIntegerType _))      = true
       | atomicType (Z.Data (Z.FloatingPointType _)) = true
-      | atomicType (Z.Data (Z.EnumeratedType _))     = true
-      | atomicType (Z.Data (Z.PointerType _))        = true
-      | atomicType (Z.Data (Z.ArrayType _))          = false
-      | atomicType (Z.Data (Z.GroupType _))          = false
-      | atomicType (Z.Procedure _)                    = false
-      | atomicType (Z.Qualified {type' = typ, ...})   = atomicType typ
+      | atomicType (Z.Data (Z.EnumeratedType _))    = true
+      | atomicType (Z.Data (Z.PointerType _))       = true
+      | atomicType (Z.Data (Z.ArrayType _))         = false
+      | atomicType (Z.Data (Z.GroupType _))         = false
+      | atomicType (Z.Procedure _)                  = false
+      | atomicType (Z.Qualified {type' = typ, ...}) = atomicType typ
       | atomicType _                           =
         raise (Fail ("Invalid type specified in function atomicType"))
 
