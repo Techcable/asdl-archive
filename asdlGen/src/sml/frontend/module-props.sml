@@ -51,6 +51,8 @@ signature MOD_PROPS =
 	val interface_epilogue     : props -> string
 	val implementation_prologue: props -> string
 	val implementation_epilogue: props -> string
+	val supress                : props -> bool
+	val is_library             : props -> bool
      end 
 
 
@@ -117,6 +119,12 @@ structure ModProps :> MOD_PROPS =
 	    decl_string p {name="implementation_prologue",default=""}
 	val (implementation_epilogue,_) =
 	    decl_string p {name="implementation_epilogue",default=""}
+	val (supress,_) =
+	    decl_bool p {name="supress",default=false}
+	val (is_library,_) =
+	    decl_bool p {name="is_library",default=false}
     end 
+
+
 
 

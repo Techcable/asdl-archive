@@ -229,7 +229,8 @@ structure JavaPP : JAVA_PP =
 	      | pp_scope Protected = PP.s "protected"
 
 	    and pp_enumer  {name,value=(SOME i)} =
-		PP.cat [PP.s "final static int ",pp_id name,PP.s " = ",PP.d i]
+		PP.cat [PP.s "public final static int ",
+			pp_id name,PP.s " = ",PP.d i]
 	      | pp_enumer  {name,value=NONE} = raise Error.internal
 		
 	    and pp_field {name,ty} =

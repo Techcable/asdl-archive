@@ -1,0 +1,91 @@
+module StdTypes {
+ nat = (int) -- natural numbers (unsigned numbers)
+
+ int8   = (int)
+ int16  = (int)
+ int32  = (int)
+ int64  = (int)
+
+ uint8  = (int)
+ uint16 = (int)
+ uint32 = (int)
+ uint64 = (int)
+
+ ieee_real = (string)
+
+
+}
+
+
+view Doc {
+ { StdTypes.int8 StdTypes.int16 StdTypes.int32 StdTypes.int64 } 
+<= doc_string : Signed integer type with a guaranteed minimum bit width
+
+ { StdTypes.uint8 StdTypes.uint16 StdTypes.uint32 StdTypes.uint64 } 
+<= doc_string : Unsigned integer type with a guaranteed minimum bit width
+
+<= doc_string {
+ StdTypes.ieee_real : Raw bits of an IEEE real
+ StdTypes.nat : Language appropiate representation for natural numbers
+ }
+
+}
+
+
+
+view SML {
+ -- implementation provided by hand
+ module StdTypes <= supress : true
+}
+
+view C {
+ -- implementation provided by hand
+ module StdTypes <= supress : true
+}
+
+view Java {
+
+-- set supress to false to generate stubs
+module StdTypes <= supress    : true
+module StdTypes <= is_library : true
+
+-- define the type substitutions
+
+ StdTypes.ieee_real   
+                <= { natural_type : double
+                           reader : read_java_double
+                           writer : write_java_double 
+                   }
+
+{ StdTypes.int8 }
+                <= { natural_type : byte 
+                           reader : read_java_byte
+                           writer : write_java_byte 
+                   }
+                       
+{ StdTypes.int16 StdTypes.uint8 } 
+                <= { natural_type : short
+                           reader : read_java_short
+                           writer : write_java_short 
+                   }
+
+{ StdTypes.int32 StdTypes.uint16 }
+                <= { natural_type : int
+                           reader : read_java_int 
+                           writer : write_java_int 
+                   }
+
+{ StdTypes.int64 }
+                <= { natural_type : long
+                           reader : read_java_long
+                           writer : write_java_long 
+                   }
+
+{ StdTypes.uint64 }
+                 <= { natural_type : java.math.BigInteger 
+                            reader : read_java_BigInteger
+                            writer : write_java_BigInteger 
+                    }
+
+}
+

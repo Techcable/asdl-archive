@@ -9,6 +9,7 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 	structure Pkl = AlgolPklGen
 	    
 	val set_dir = true
+	val ignore_supress = false
 	val fix_fields = false
 
 	type input_value    = M.module

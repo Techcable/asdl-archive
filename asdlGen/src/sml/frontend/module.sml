@@ -375,19 +375,42 @@ structure Module :> MODULE =
 	       NONE => raise Error.internal
 	     | (SOME m) =>  (f m)
 		   
-       fun sequence_types me = S.listItems o (get_minfo #seqs me)
-       fun option_types   me = S.listItems o (get_minfo #opts me)
+       fun sequence_types me m =
+	   let
+	       val set =
+		   if (Mod.is_library (module_props m)) then
+		       (get_minfo #defs me m)
+		   else
+		       (get_minfo #seqs me m)
+	   in
+	       S.listItems set
+	   end
+
+       fun option_types me m =
+	   let 
+	       val set =
+		   if (Mod.is_library (module_props m)) then
+		       (get_minfo #defs me m)
+		   else
+		       (get_minfo #opts me m)
+	   in
+	       S.listItems set
+	   end
+       
        fun is_seq_type   me m x =
 	   let
-	       val seqs = (get_minfo #seqs me) m 
+	       val props = module_props m
 	   in
-	       S.member(seqs,x)
+	       (Mod.is_library props)
+	       orelse S.member((get_minfo #seqs me) m,x)
 	   end
+
        fun is_opt_type   me m x =
 	   let
-	       val opts = (get_minfo #opts me) m 
-	   in
-	       S.member(opts,x)
+	       val props = module_props m
+	   in	       
+	       (Mod.is_library props) orelse
+	       S.member((get_minfo #opts me) m ,x)
 	   end
 
        fun lookup_type m mid =

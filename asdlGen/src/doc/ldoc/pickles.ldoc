@@ -71,15 +71,17 @@ argument and return the value read.
 
 <descrip>
 <tag/int/
+
 Since ASDL integers are intended to be of infinite precision they are
-represented with a variable-length, signed-magnitude encoding.  The eight
-bit of each byte indicates if a given byte is the last byte of the integer
-encoding. The seventh bit of the first byte is used to determine the sign of
-the value. Numbers in the range of -63 to 63 can be encoded in one
-byte. Numbers out of this range require an extra byte for every seven bits
-of precision needed.  If most integer values tend to be values near zero,
-this encoding of integers may use less space than a fixed precision
-representation. 
+represented with a variable-length, signed-magnitude encoding.  The
+eight bit of each byte indicates if a given byte is the last byte of
+the integer encoding. The seventh bit of the most significant byte is
+used to determine the sign of the value. Numbers in the range of -63
+to 63 can be encoded in one byte. Numbers out of this range require an
+extra byte for every seven bits of precision needed.  Bytes are
+written out in little-endian order. If most integer values tend to be
+values near zero, this encoding of integers may use less space than a
+fixed precision representation.
 
 <tag/string/
 Strings are represented with a length-header that describe how many more

@@ -14,6 +14,7 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 	type field_value    = T.format 
 
 	val set_dir = false
+	val ignore_supress = true
 	val fix_fields = false
 	val cfg = Params.empty
 
@@ -71,7 +72,7 @@ structure FormatTranslator : MODULE_TRANSLATOR =
 		  | M.Sequence => (T.REF(tid,[toStr' tid]),[T.STR "*"])
 	    in
 		case (M.field_name finfo) of
-		    NONE => ty
+		    NONE => T.RM(ty::q)
 		  | (SOME x) => T.RM ((ty::q)@[toStr x])
 	    end
 	val id2STR = T.STR o Id.toString 

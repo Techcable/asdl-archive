@@ -1,35 +1,39 @@
-
-module TypePickle {
+module TypePickle (imports StdTypes) {
 -- Description of type environments in asdl.
+
     qid = (identifier* qualifier, identifier base)
 
     field = Id | Option | Sequence
-	  attributes(int type_map_key, identifier label)
+	  attributes(StdTypes.nat type_map_key, identifier label)
 
     prim = String | Identifier | Int
 
-    type_map = (int max_key, type_map_entry* entries)
-    type_map_entry = (int key, type_map_value v)
+    type_map = (StdTypes.nat max_key, type_map_entry* entries)
+    type_map_entry = (StdTypes.nat key, type_map_value v)
 
-    type_map_value = Defined(qid name, field* fields,int* cnstr_map_keys)
+    type_map_value = Defined(qid name, 
+                             field * fields,
+                             StdTypes.nat * cnstr_map_keys)
 		   | Prim (prim p)
-		     attributes(int pkl_tag)
+		     attributes(StdTypes.nat pkl_tag)
 
-    cnstr_map = (int max_key, cnstr_map_entry* entries)
-    cnstr_map_entry = (int key, cnstr_map_value v)
-    cnstr_map_value = (int pkl_tag, int type_map_key, qid name, field* fields)
+    cnstr_map = (StdTypes.nat max_key, cnstr_map_entry* entries)
+    cnstr_map_entry = (StdTypes.nat key, cnstr_map_value v)
+    cnstr_map_value = 
+	(StdTypes.nat pkl_tag, 
+         StdTypes.nat type_map_key, qid name, field* fields)
 
     module_map = 
-	    (int max_key, module_map_entry* entries)
+	    (StdTypes.nat max_key, module_map_entry* entries)
     module_map_entry = 
-	    (int key, module_map_value v)
+	    (StdTypes.nat key, module_map_value v)
     module_map_value = (qid name,string file)
 
-    type_env = (int         version,
-		int         magic,	
-		module_map  mmap,
-		type_map    tmap,
-		cnstr_map   cmap)
+    type_env = (StdTypes.nat  version,
+		StdTypes.nat  magic,	
+		module_map    mmap,
+		type_map      tmap,
+		cnstr_map     cmap)
 }
 
 module AsdlValue (imports TypePickle) {
@@ -47,6 +51,7 @@ module AsdlValue (imports TypePickle) {
     prim_value = IntValue(int)
 	       | StringValue(string)
 	       | IdentifierValue(identifier)
+
 }
 
 view Doc {
@@ -80,9 +85,8 @@ view Doc {
   TypePickle.Id       : Normal type 
   TypePickle.Option   : Option type
   TypePickle.Sequence : Sequence type
-}
-
-
-
+  }
 
 }
+
+

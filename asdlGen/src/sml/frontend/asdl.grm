@@ -179,6 +179,16 @@ view_entries: view_entity view_attrib QUOTE view_entries
 	    | view_entity LANGLE EQ LBRACE view_av_list RBRACE view_entries
 	      (List.foldr (fn ((a,v),xs) => (view_entity,a,v)::xs)
 	       view_entries view_av_list)
+
+             | LBRACE view_entity_list RBRACE LANGLE EQ
+	       LBRACE view_av_list RBRACE view_entries
+	       (let fun mk_ve_list (ve,rest) =
+		    List.foldr (fn ((a,v),xs) => (ve,a,v)::xs)
+	            rest view_av_list
+		in
+		    List.foldr mk_ve_list view_entries view_entity_list 
+		end)
+
 	    | (nil)
 
 	      

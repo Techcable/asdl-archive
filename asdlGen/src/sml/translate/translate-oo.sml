@@ -34,6 +34,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 
 	val cfg = Params.empty
 	val set_dir = true
+	val ignore_supress = false
 	val fix_fields = false
 
 	type input_value    = M.module

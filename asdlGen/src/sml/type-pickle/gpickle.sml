@@ -51,6 +51,15 @@ functor GenericPickler(structure T:TYPE_PICKLE
 		sub
 	    end
 
+	fun mk_map' name add x dflt =
+	    let
+		val sub = mk_map name add x
+		fun sub' x =
+		    (sub x handle _ => dflt)
+	    in
+		sub'
+	    end
+
   	fun mk_qid s = {base=Identifier.fromString s,qualifier=[]}:T.qid
 
 
@@ -122,10 +131,10 @@ functor GenericPickler(structure T:TYPE_PICKLE
 		val tmap = mk_map "types"       add tmap
 		val cmap = mk_map "constructor" add cmap
 
-		fun prim_reader T.Int  = (V.IntValue o Base.read_int)
+		fun prim_reader T.Int  = (V.IntValue o V.read_int)
 		  | prim_reader T.Identifier =
-		    (V.IdentifierValue o Base.read_identifier)
-		  | prim_reader T.String = (V.StringValue o Base.read_string)
+		    (V.IdentifierValue o V.read_identifier)
+		  | prim_reader T.String = (V.StringValue o V.read_string)
 
 		fun type_reader (x as (T.Prim{pkl_tag,p})) =
 		    let
@@ -204,12 +213,15 @@ functor GenericPickler(structure T:TYPE_PICKLE
 			    in
 				{key=pkl_tag,v=mk}
 			    end
-			val max = (List.length cnstrs_map_keys) 
-			val crmap = mk_map "Con Reader" add
-			    {max_key=max,entries=cnstrs_map_keys}
+			val max = (List.length cnstrs_map_keys)
+			val {qualifier=_,base=tname} = name
+			val tname = Identifier.toString tname
+			fun error s = V.NoneValue{typename=name}
+			val crmap = mk_map' ("Con Reader:;"^tname) add
+			    {max_key=max,entries=cnstrs_map_keys} error
 			fun mk s =
 			    let
-				val tag = (Base.read_tag s)
+				val tag = (V.read_tag s)
 				val rd = (crmap tag)
 			    in
 				rd s

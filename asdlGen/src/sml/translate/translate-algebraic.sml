@@ -16,6 +16,7 @@ functor mkAlgebraicTranslator(structure IdFix : ID_FIX
 	structure Pkl = Pkl
 
 	val set_dir = true
+	val ignore_supress = false
 	val fix_fields = fix_fields
 	val fix_id = T.VarId.subst IdFix.id_fix
 	val fix_ty = T.TypeId.subst IdFix.ty_fix
@@ -42,8 +43,8 @@ functor mkAlgebraicTranslator(structure IdFix : ID_FIX
 		val name = Pkl.type_name ty
 		val ty =
 		    case (M.Typ.natural_type p,M.Typ.natural_type_con p) of
-			(SOME t,_) => (T.TyCon (T.TypeId.fromPath t,[ty]))
-		      | (NONE,SOME t) => T.TyId (T.TypeId.fromPath t)
+			(SOME t,_) =>  T.TyId (T.TypeId.fromPath t)
+		      | (NONE,SOME t) => (T.TyCon (T.TypeId.fromPath t,[ty]))
 		      | _ => ty
 		val unwrap =
 		    case (M.Typ.unwrapper p) of

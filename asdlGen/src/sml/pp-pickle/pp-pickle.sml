@@ -44,7 +44,7 @@ structure TextPP =
 	    cat [s "(SOME ",pp_asdl_value v,s ")",pp_typeo typename]
 	  | pp_asdl_value (V.PrimValue{typename,v}) =
 	    pp_prim_value v
-	and pp_prim_value (V.IntValue x) = d x
+	and pp_prim_value (V.IntValue x) = PPUtil.wrap V.Integer.toString x
 	  | pp_prim_value (V.StringValue x) =
 	    cat [s"\"",s(String.toCString x),s "\""]
 	  | pp_prim_value (V.IdentifierValue x) =
@@ -107,7 +107,7 @@ structure HTMLListPP =
 	    cat [pp_typeo typename,s "(SOME ",pp_asdl_value f v,s ")"]
 	  | pp_asdl_value f (V.PrimValue{typename,v}) =
 	    pp_prim_value v
-	and pp_prim_value (V.IntValue x) = d x
+	and pp_prim_value (V.IntValue x) = PPUtil.wrap V.Integer.toString x
 	  | pp_prim_value (V.StringValue x) =
 	    cat [s"<tt>\"",s(String.toCString x),s "\"</tt>"]
 	  | pp_prim_value (V.IdentifierValue x) =
