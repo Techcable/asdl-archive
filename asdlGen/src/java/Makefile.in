@@ -68,8 +68,13 @@ ZIP_PRG = @ZIP_PRG@
 ASDLGEN     = @RUN_SML_HEAP@ @SMLload=@ASDLGEN_HEAP@
 ASDL_INPUTS = @top_srcdir@/src/asdl/generic.asdl
 ASDL_OUTPUT = asts/AsdlValue/g.java asts/TypePickle/g.java
+
+@HAVE_JAVA_TRUE@pkgdata_DATA = asdl.zip
+@HAVE_JAVA_TRUE@CLEANFILES = asdl.zip asts/*/* asdl_base/*.class
 mkinstalldirs = $(SHELL) $(top_srcdir)/src/misc/mkinstalldirs
 CONFIG_CLEAN_FILES = 
+DATA =  $(pkgdata_DATA)
+
 DIST_COMMON =  Makefile.am Makefile.in
 
 
@@ -87,6 +92,25 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
+
+install-pkgdataDATA: $(pkgdata_DATA)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(pkgdatadir)
+	@list='$(pkgdata_DATA)'; for p in $$list; do \
+	  if test -f $(srcdir)/$$p; then \
+	    echo " $(INSTALL_DATA) $(srcdir)/$$p $(pkgdatadir)/$$p"; \
+	    $(INSTALL_DATA) $(srcdir)/$$p $(pkgdatadir)/$$p; \
+	  else if test -f $$p; then \
+	    echo " $(INSTALL_DATA) $$p $(pkgdatadir)/$$p"; \
+	    $(INSTALL_DATA) $$p $(pkgdatadir)/$$p; \
+	  fi; fi; \
+	done
+
+uninstall-pkgdataDATA:
+	$(NORMAL_UNINSTALL)
+	list='$(pkgdata_DATA)'; for p in $$list; do \
+	  rm -f $(pkgdatadir)/$$p; \
+	done
 tags: TAGS
 TAGS:
 
@@ -110,19 +134,20 @@ installcheck:
 install-exec: 
 	@$(NORMAL_INSTALL)
 
-install-data: 
+install-data: install-pkgdataDATA
 	@$(NORMAL_INSTALL)
 
 install: install-exec install-data all
 	@:
 
-uninstall: 
+uninstall: uninstall-pkgdataDATA
 
-all: Makefile
+all: Makefile $(DATA)
 
 install-strip:
 	$(MAKE) INSTALL_PROGRAM='$(INSTALL_PROGRAM) -s' INSTALL_SCRIPT='$(INSTALL_PROGRAM)' install
 installdirs:
+	$(mkinstalldirs)  $(pkgdatadir)
 
 
 mostlyclean-generic:
@@ -150,14 +175,11 @@ maintainer-clean:  maintainer-clean-generic distclean
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 
-.PHONY: default tags distdir info dvi installcheck install-exec \
-install-data install uninstall all installdirs mostlyclean-generic \
-distclean-generic clean-generic maintainer-clean-generic clean \
-mostlyclean distclean maintainer-clean
+.PHONY: default uninstall-pkgdataDATA install-pkgdataDATA tags distdir \
+info dvi installcheck install-exec install-data install uninstall all \
+installdirs mostlyclean-generic distclean-generic clean-generic \
+maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 
-
-@HAVE_JAVA_TRUE@ pkgdata_DATA = asdl.zip
-@HAVE_JAVA_TRUE@ CLEANFILES = asdl.zip asts/*/* asdl_base/*.class
 
 $(ASDL_OUTPUT): $(ASDL_INPUTS)
 	$(ASDLGEN) --java --output_directory ./ $(ASDL_INPUTS)
