@@ -2,6 +2,8 @@
 #define _ASDL_BASE_
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
+#define NONE INT_MIN
 typedef FILE* instream_ty;
 typedef FILE* outstream_ty;
 
@@ -10,8 +12,8 @@ int           read_tag(instream_ty s);
 
 
 /* int type */
-typedef int    int_ty;
-typedef int*   int_option_ty;
+typedef int   int_ty;
+typedef int   int_option_ty;
 
 typedef struct int_list_s* int_list_ty;
 int_list_ty int_list(int_ty head,int_list_ty tail);
