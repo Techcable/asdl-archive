@@ -2,37 +2,66 @@
 # hack to build the source dist
 CVSROOT=":pserver:cvs@vista.cs.princeton.edu:/cvsroot"
 PACKAGE=asdlGen
-VERSION=$1
-RELEASE=$2
+case "$#" in
+  1) tarball=$1
+     distname=`basename $tarball | sed -e 's/-[0-9]*.src.tar//g'`
+     ;;
+  2) VERSION=$1
+     RELEASE=$2
+     REV=-Dtoday 
+     ;;
+  3) VERSION=$1
+     RELEASE=$2
+     REV=-r$3 
+     ;;
+  *) echo error 
+     exit 1
+     ;;
+esac
+
 TMPDIR=/usr/tmp/
-NAME=${PACKAGE}-${VERSION}-${RELEASE}
-REV=today
-DISTDIR=${TMPDIR}/${PACKAGE}-${VERSION}
-cd ${TMPDIR}
-# build the source dist first
-rm -rf ${NAME}.src.tar.gz ${PACKAGE}-${VERSION}
 
-cvs  -d ${CVSROOT} export -d ${PACKAGE}-${VERSION} -D${REV} ${PACKAGE}
+if [ -z $tarball ] ; then 
+    distname=${PACKAGE}-${VERSION}
+    tarball=${distname}-${RELEASE}.src.tar
+    DISTDIR=${TMPDIR}/${distname}
+    cd ${TMPDIR}
+    # build the source dist first
+    cvs  -d ${CVSROOT} export -d ${distname} ${REV} ${PACKAGE}
 
-# build the documentation
-mkdir ${DISTDIR}/doc
-cd ${DISTDIR}/doc
-sgml2latex -p letter -o ps -P "\usepackage{pslatex}" \
+    # build the documentation
+    mkdir ${DISTDIR}/doc
+    cd ${DISTDIR}/doc
+    sgml2latex -p letter -o ps -P "\usepackage{pslatex}" \
 	${DISTDIR}/src/doc/manual.sgml
 
-mkdir ${DISTDIR}/doc/html
-cd ${DISTDIR}/doc/html
-sgml2html ${DISTDIR}/src/doc/manual.sgml
+    mkdir ${DISTDIR}/doc/html
+    cd ${DISTDIR}/doc/html
+    sgml2html ${DISTDIR}/src/doc/manual.sgml
 
-# build toplevel readmes etc...
-cd ${DISTDIR}
-for file in *.sgml ; do
-   sgml2html -s 0 ${file}
-   sgml2txt -f ${file}
-   fbase=`basename ${file} .sgml`
-   mv ${fbase}.txt $fbase
-done
+    # build toplevel readmes etc...
+    cd ${DISTDIR}
+    for file in *.sgml ; do
+	sgml2html -s 0 ${file}
+	sgml2txt -f ${file}
+	fbase=`basename ${file} .sgml`
+	mv ${fbase}.txt $fbase
+    done
+    cd ${TMPDIR}
+    tar cf ${tarball} ${distname}
+    rm -rf ${distname}
+fi
 
+echo building binary dist from $tarball
 cd ${TMPDIR}
-tar cf ${NAME}.src.tar ${PACKAGE}-${VERSION}
-gzip ${NAME}.src.tar
+tar xf ${tarball}
+mv ${distname} ${distname}-build
+cd ${distname}-build
+./configure --prefix=${TMPDIR}/${distname}
+eval `src/misc/sysname`
+make clean
+make install
+cd ${TMPDIR}
+bindist=`basename ${tarball} .src.tar`.${HEAP_SUFFIX}.tar
+cp ${tarball}  ${bindist}
+tar rf ${bindist} ${distname}
