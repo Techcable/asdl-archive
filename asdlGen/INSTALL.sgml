@@ -6,72 +6,12 @@
 <title>INSTALL notes for &asdlGen; version &asdlGen.version;
 <author>&author.danwang;
 <date>&asdlGen.release-date;
-
-<p>These install notes aren't comprehensive feel free to send me email
-<tt>danwang@cs.princeton.edu</tt> with questions and problems.
-
-<sect>The Binary Distribution
 <p>
-Since installing the distribution from sources requires the SML/NJ compiler,
-I'm providing a binary distribution for those who just want to use &asdlGen;
-in a development environment that does not have SML/NJ installed. Fetch the
-right binary version from 
-<url url="http://www.cs.princeton.edu/zephyr/ASDL/&num;software">.
-
-<sect1>Unix
-<p> On a Unix system with ksh all you should have to do is unpack
-the archive and put the shell script <htmlurl url="bin/asdlGen" name="">
-bin/asdlGen in your path. If your stuck on a Unix system
-without ksh you'll have to hack the script so it can locate the directory
-where you unpacked the sources.
-
-<sect1>Windows NT/95<p>
-In a Windows environment you need to set the environment variable 
-ASDL&lowbar;HOME to the location of where you unpacked the distribution. 
-Also set your path to include <url url="bin/asdlGen.bat" 
-name="bin/asdlGen.bat">. 
-
-<sect1>Library Code<p> 
-Both the Unix and Windows binary distribution include some compiled
-libraries and header files found in the <tt/{include,share,lib}/
-directories. The generated C code produced by &asdlGen; now uses Dave
-Hanson's <url url="http://www.cs.princeton.edu/software/cii/" name="C
-Interfaces and Implementations"> library. The source for the library is
-redistributed with &asdlGen;, and the binary distribution contains a
-compiled library <em>without</em> thread support. 
-
-
-<sect>Installing from Sources<p> 
-&asdlGen; now builds with <tt/autoconf/. To build from
-sources you should have  
-<url url="http://cm.bell-labs.com/cm/cs/what/smlnj/NEWS/110-README.html"
-name="version 110"> of <url
-url="http://cm.bell-labs.com/cm/cs/what/smlnj/index.html" name="Standard ML
-of New Jersey">. In the future, I plan to experiment with releasing sources
-via a read only remote CVS repository.
-
-<sect1>Unix
-<p>
-On a Unix machine run 
-<tscreen>
-./configure --prefix=<em>Your install prefix</em>
-</tscreen>
-let <tt/configure/ do it's thing, and do a <tt/make install/. Make install
-will install most of the required supporting C, C++, and Java libraries
-appropriately, and builds SML/NJ heap image. I'd suggest copying the heap to
-<tscreen>
-<em>your sml/nj directory</em>/bin/.heaps
-</tscreen>
-and making a symbolic link to the <tt>.run-it</tt> in the SML/NJ directory.
-<sect1>Windows NT/95
-<p>
-I haven't figured out how to automatically compile the supporting Java, C,
-and C++ libraries, but here are instructions on how to build the &asdlGen;
-program itself.
-
-On a Windows machine after sml-cm starts up in <tt>src/sml/</tt>.
-<tscreen><verb>
-Standard ML of New Jersey, Version 110.0.3, January 30, 1998 
-- use "build.sml";
-</verb></tscreen>
+The installation and build process is under going a major overhall, and
+isn't complete yet. You should ignore many of the <tt/make/ files as they
+are going to go away. SML is now being used to build and install most of the
+software. If you fire up SML/NJ and execute a <tt/CM.make()/ in the
+<tt>src/sml/</tt> directory, you should get a system from which to dump a
+heap. See the internal documentation about the new build system and
+<tt>src/sml/build</tt> for the uggly details.
 </article>

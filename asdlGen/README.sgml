@@ -7,32 +7,44 @@
 <author>&author.danwang;
 <date>&asdlGen.release-date;
 <p>
-This is the third public release of &asdlGen;. It is still missing a few
-important library functions to handle floating point numbers. This release
-contains bug fixes an some incompatible changes in the way &asdlGen; handles
-command line arguments. New features include:
+This is a very alpha relase of the most latest version of &asdlGen;. Many of
+the internals have been significantly reworked, and most of the major
+internal interfaces have been documented. Consider it as a work in
+progress. The build system is completely broken, so you'll need to build
+things by hand. For the ML code this isn't any more painful than typing 
+<tt>CM.make()</tt> in <tt>src/sml/</tt>. Major features include
+<p>
+Only the SML and C backends are working everything else is stuck
+in various different states of disrepair. I'm pushing this relase out mainly
+to get some feedback, and to let people get a feel of what's going on.
 <itemize>
+<item><tt>src/sml/convert</tt>Quick and dirty converters from SML and class
+hierarchies to ASDL specifications.
 
-<item> Command line arguments now conform the the GNU long option standards
-and require an "=" between the argument and value. POSIX short options are
-available for many common flags. See the Reference manual for details.
-
-<item> The Java and C++ code can use a different list implementation.
-  The Java and C++ back ends now can optionally produce tree walker classes
-  and shallow and deep copy methods. 
-  <em>Unfortunately, the deep copy method on lists does not
-  not perform the deep copy correctly.</em>
-
-<item> A preliminary ASDL specification of the
-  <url url="&url.suif;" name="SUIF 2.0"> IR. A working prototype 
-  translator between the SUIF 2.0 and <url url="&url.zsuif;" name="ZSUIF">
-  is also provided.  This is included to elicit comments from developers 
-  who are interested in a SUIF 2.0 interface.
-<item>
- The HTML dump of pickles now uses a fancier HTML table layout by
- default. The old HTML list format is still available see the Reference
- Manual for details.
-
+<item>New syntax for importing modules
+<code>
+module T (imports VeryLongModuleName alias M) {
+ foo = (M.t)
+}
+</code>
+<item>Very preliminary support for XML.
+<item>Support for user defined primitives. Rather than hard coding
+information about user primitive types into &asdlGen; primtives are now
+extensible. In particular the old primitive types of <tt/int/, <tt/string/,
+<tt/identifier/. Are implemented by pre-appending the following declaration
+to all inputs
+<code>
+primitive module StdPrims {
+ int string identifier
+}
+</code>
+&asdlGen; tacks this on to any set of input files to remain compatible with
+existing code. Users, can add there own primitive types by simply including
+there own primtive module declaration.
+<item>Reworked simplified interface to primitve types.
+<item>SML code now splits type definitions from pickle code. I've gotten
+rid of all the <tt/open/ and <tt/include/s and stuck to fully qualified
+identifiers in all the code. 
 </itemize>
 
 <sect>COPYRIGHT<p>
@@ -49,46 +61,12 @@ See the <url
  bug list"> for bug hunting details.
 
 <sect>Documentation<p>
-There is now a reference manual available in 
+The refrence manual in 
 <url url="doc/html/manual.html" name="HTML"> and
-<url url="doc/manual.ps/" name="Postscript">. A step by step tutorial is
-in the works. 
-
-<sect>Using zsuif.asdl<p> 
-This distribution comes with a preliminary <url url="&url.suif;"
-name="SUIF 2.0"> specification in <tt><url url="src/asdl/zsuif/"></tt>.  To
-generate and compile the code along with the SUIF to ZSUIF translator see 
-the README. 
-
-<sect>Questions Comments?<p>
-Questions and comments should be directed to 
-<htmlurl url="&url.zephyr-discussion" name="zephyr-discusssion@virginia.edu">
-For more information about the
-Zephyr Project see <url url="&url.zephyr;"> For the latest information
-about ASDL see <url url="&url.asdlGen">
-
-For applications that wish to manipulate generic ASDL values there are
-various language specific libraries that take the type environment produced
-by the --typ option and are able to manipulate the generic values.  An
-example of this can be found in <htmlurl url="src/c/" name="src/c/xlate.c">, 
-and <htmlurl url="src/sml/pp-pickle" name="src/sml/pp-pickle.sml">, which
-depend on the ASDL descriptions found in src/asdl/generic.asdl.
-
-<sect>TODO<p>
-<itemize>
-<item> Floating point support
-<item> Get deep copy methods working for sequences in C++ and Java.
-<item> In the not too distant future, pickle files will come stamped with a
-magic number that identifies the type environment from which it was
-generated. If the type environments are not exactly the same. The code will
-complain. Right now the pickle code generates untyped pickles. So if you
-feed it a pickle that is of the wrong type it will break.  
-
-<item> None of the translators warn you when it has to mangle and
-identifier to avoid using a reserved keyword.
-<item> The pretty printing rules could be tweaked. 
-<item> The handling of primitive types is more ad hoc than I'd like. 
-</itemize>
+<url url="doc/manual.ps/" name="Postscript">, is out of date, but still
+might be useful.
+<url url="doc/internals/main.ps" name="Internals"> provides a road map for the
+&asdlGen; 
 </article>
 
 
