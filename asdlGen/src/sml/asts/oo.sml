@@ -1,6 +1,13 @@
 (* 
- * Copyright (c) 1997 by Daniel C. Wang 
+ *
+ * COPYRIGHT (c) 1997, 1998 by Princeton University. 
+ * See COPYRIGHT file for details
+ *
+ * Author: Daniel C. Wang
+ *
  *)
+
+
 structure OOTypes: OO_TYPES =
     struct
 	open LT

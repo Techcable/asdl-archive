@@ -1,6 +1,13 @@
- (* 
- * Copyright (c) 1997 by Daniel C. Wang 
+(* 
+ *
+ * COPYRIGHT (c) 1997, 1998 by Princeton University. 
+ * See COPYRIGHT file for details
+ *
+ * Author: Daniel C. Wang
+ *
  *)
+
+
 signature C_PLUS_PLUS_PP =
     sig
 	structure T : OO_TYPES

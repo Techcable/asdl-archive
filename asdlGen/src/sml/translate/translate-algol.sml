@@ -1,6 +1,13 @@
 (* 
- * Copyright (c) 1997 by Daniel C. Wang 
+ *
+ * COPYRIGHT (c) 1997, 1998 by Princeton University. 
+ * See COPYRIGHT file for details
+ *
+ * Author: Daniel C. Wang
+ *
  *)
+
+
 functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
     struct
 	structure M = Module

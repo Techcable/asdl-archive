@@ -1,6 +1,13 @@
 (* 
- * Copyright (c) 1997 by Daniel C. Wang 
+ *
+ * COPYRIGHT (c) 1997, 1998 by Princeton University. 
+ * See COPYRIGHT file for details
+ *
+ * Author: Daniel C. Wang
+ *
  *)
+
+
 signature ASDL_PARSER =
     sig
 	val parse: string list ->

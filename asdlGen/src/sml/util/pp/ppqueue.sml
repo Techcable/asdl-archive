@@ -1,8 +1,12 @@
-(* ppqueue.sml
+(* 
  *
- * COPYRIGHT (c) 1996 Bell Laboratories.
+ * COPYRIGHT (c) 1997, 1998 by Princeton University. 
+ * See COPYRIGHT file for details
+ *
+ * Author: Daniel C. Wang
  *
  *)
+
 
 signature PPQUEUE =
 sig
@@ -86,6 +90,9 @@ end (* structure PPQueue *)
 
 (*
  * $Log$
+ * Revision 1.1  1997/12/02 20:53:19  danwang
+ * Initial revision
+ *
  * Revision 1.1.1.1  1997/01/14  01:38:49  george
  *   Version 109.24
  *

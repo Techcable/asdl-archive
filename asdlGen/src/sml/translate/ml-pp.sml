@@ -1,6 +1,13 @@
 (* 
- * Copyright (c) 1997 by Daniel C. Wang 
+ *
+ * COPYRIGHT (c) 1997, 1998 by Princeton University. 
+ * See COPYRIGHT file for details
+ *
+ * Author: Daniel C. Wang
+ *
  *)
+
+
 signature ML_PP =
     sig
 	structure T : ALGEBRAIC_TYPES

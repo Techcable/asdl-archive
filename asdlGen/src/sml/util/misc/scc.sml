@@ -1,15 +1,12 @@
-(* scc.sml
+(* 
  *
- * COPYRIGHT (c) 1996 Bell Laboratories.
+ * COPYRIGHT (c) 1997, 1998 by Princeton University. 
+ * See COPYRIGHT file for details
  *
- * Calculate strongly-connected components of directed graph.
- * The graph can have nodes with self-loops.
+ * Author: Daniel C. Wang
  *
- * author: Matthias Blume
- *
- * hacked: To use SML/NJ  ORD_KEY and ORD_MAP library
- *
- *) 
+ *)
+ 
 
 signature SCC = sig
 
@@ -151,6 +148,9 @@ end
 
 (*
  * $Log$
+ * Revision 1.1  1997/12/02 20:53:19  danwang
+ * Initial revision
+ *
  * Revision 1.1.1.1  1997/01/14  01:38:49  george
  *   Version 109.24
  *

@@ -1,6 +1,13 @@
 (* 
- * Copyright (c) 1997 by Daniel C. Wang 
+ *
+ * COPYRIGHT (c) 1997, 1998 by Princeton University. 
+ * See COPYRIGHT file for details
+ *
+ * Author: Daniel C. Wang
+ *
  *)
+
+
 functor AlgebraicPklGen (val instream_ty  : AlgebraicTypes.ty_exp
 			 val outstream_ty : AlgebraicTypes.ty_exp
 			 val monad        : AlgebraicTypes.ty_id  option)
