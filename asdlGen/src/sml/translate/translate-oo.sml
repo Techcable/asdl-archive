@@ -482,6 +482,11 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 		    {mods={scope=T.Private,static=false,final=false},
 		     field={name=kind_var,ty=tag_ty}}
 
+(* TODO chop of qualifier appropriately *)
+		val base_class =
+		    Option.map
+		    (T.TypeId.fromPath) (M.Typ.base_class props)
+
 		val kind_mth =
 		    if is_boxed then
 			T.MthAbstract{name=kind_id,
@@ -571,7 +576,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 			{name=tid,
 			 idecls=idecls,
 			 scope=T.Public,
-			 inherits=NONE,
+			 inherits=base_class,
 			 fields=List.map tomfield fields,
 			 mths=mths}
 		    else
@@ -590,7 +595,7 @@ functor mkOOTranslator(structure IdFix : ID_FIX
 			     final=true,
 			     idecls=idecls,
 			     scope=T.Public,
-			     inherits=NONE,
+			     inherits=base_class,
 			     cnstrs=[cnstr],
 			     fields=[kind_mfield],
 			     mths=mths}

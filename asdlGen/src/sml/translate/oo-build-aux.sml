@@ -148,7 +148,10 @@ functor mkOOBuildAux(structure T : OO_TYPES
 	    (mk_apply (super) visit_arg)
 
 	
-	fun visit_aux visit_tid (Class{name,inherits,vars,...},rest) =
+	fun visit_aux visit_tid  (Class{name,inherits,vars,
+					abstract=true,...},rest) =
+	    (visit_tid,mk_visit (visit_id name) name NONE)::rest
+	  | visit_aux visit_tid (Class{name,inherits,vars,...},rest) =
 	    (visit_tid,mk_visit (visit_id name) name inherits)::rest
 	  | visit_aux visit_tid (Const{name,inherits=SOME tid},rest) =
 	    (visit_tid,mk_visit (visit_id name) tid (SOME tid))::rest

@@ -102,8 +102,9 @@ view Java {
     writer       : pos_writer
     user_init    : pos_init
   }
-
+  Slo.binop <= base_class : Object
   Slp.exp <= {
+   base_class: Object
    reader    : exp_reader
    writer    : exp_writer
    user_init : exp_init
