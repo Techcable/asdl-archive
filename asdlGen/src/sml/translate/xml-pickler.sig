@@ -6,7 +6,7 @@
  * Author: Daniel C. Wang
  *
  *)
-signature XML_PICKLER_PRIMS =
+signature XML_PICKLER_ARG =
   sig
     structure Ty : TYPE_DECL
     type decl

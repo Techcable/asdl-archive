@@ -11,11 +11,13 @@
 signature TYPE_DECL =
   sig
     structure TypeId : MODULE_ID
-    type id = Identifier.identifier
+    structure VarId : MODULE_ID
+    type id = VarId.mid
     type ty_id = TypeId.mid
     type ty_exp
     type tag
     type exp 
+    type env
 
     datatype ty =
       Prim of {ty : ty_exp,
@@ -33,7 +35,7 @@ signature TYPE_DECL =
 	    match : (choice -> exp) -> exp -> exp}
     | App   of (ty_con * ty_id)
     | Alias of  ty_id
-    withtype field   = {label : id option,tid : ty_id}
+    withtype field   = {label : id option,label' : id, tid : ty_id}
          and match   = (field * exp)
          and choice  = (tag * match list)
          and con = {tag : tag,
@@ -44,12 +46,15 @@ signature TYPE_DECL =
 		        wr : (exp -> exp) option}
          and ty_con =  ty_decl -> (ty_exp * ty_info)
 
-    val noInfo : ty_info
+    val noInfo  : ty_info
+    val mk_env  : ty_decl list -> env
+    val add_env : (ty_decl * env) -> env
+    val lookup  : (env * ty_id) -> ty option
   end
 
 signature AUX_DECLS =
   sig
-    structure Ty   : TYPE_DECL 
+    structure Ty : TYPE_DECL 
     type decl 
-    val trans : Ty.ty_decl list -> Ty.ty_decl list -> decl list
+    val trans : Ty.env -> Ty.ty_decl list -> decl list
   end

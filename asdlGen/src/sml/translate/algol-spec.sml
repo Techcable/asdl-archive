@@ -12,6 +12,7 @@ structure AlgolTy : ALGOL_TYPE_DECL =
     structure Ast = AlgolAst
     structure T =
       mkTypeDecl(structure TypeId = Ast.TypeId
+		 structure VarId = Ast.VarId
 		 type ty_exp = Ast.ty_exp
 		 type exp = (Ast.ty_exp,
 			     Ast.id,Ast.exp,Ast.stmt) StmtExp.stmt_exp
@@ -19,159 +20,180 @@ structure AlgolTy : ALGOL_TYPE_DECL =
     open T
   end
 
-functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
+functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
   struct
-    type decl = Ty.Ast.decl
-    type attrb_cvt =  {toString:Ty.exp -> Ty.exp,fromString:Ty.exp -> Ty.exp}
-    type attrib = {name:string,cvt:attrb_cvt}
-    structure Ty = Ty
-    open Ty.Ast
-    open StmtExp
-    val inits = [Module.ME.init_mono_types false]
+(* todo get rid of all the opens *)
+    structure Arg =
+      struct
+	open Ty.Ast
+	open StmtExp
 
-    fun mk_name s  =
-      (VarId.prefixBase (s^"_")) o VarId.fromPath o TypeId.toPath
-      
-    val rd_name = mk_name "read"
-    val wr_name = mk_name "write"
+	type decl = Ty.Ast.decl
+	type attrb_cvt =
+	  {toString:Ty.exp -> Ty.exp,fromString:Ty.exp -> Ty.exp}
+	type attrib = {name:string,cvt:attrb_cvt}
+	structure Ty = Ty
 
-    fun die _ =  ProcCall((VarId.fromString "die"),[])
+	val inits = [Module.ME.init_mono_types false]
+	  
+	fun mk_name s  =
+	  (VarId.prefixBase (s^"_")) o VarId.fromPath o TypeId.toPath
+	  
+	val rd_name = mk_name "read"
+	val wr_name = mk_name "write"
 
-    (* should be determined by functor parmeters *)
-    val grd_name = mk_name "read_generic"
-    val gwr_name = mk_name "write_generic"
+	fun pkl_kind me {xml,std} =
+	  case (Module.ME.pickler_kind me) of
+	    (SOME "xml") => xml
+	  | _ => std
+	  
+	fun die _ =  ProcCall((VarId.fromString "die"),[])
+	  
+	(* should be determined by functor parmeters *)
+	val grd_name = mk_name "read_generic"
+	val gwr_name = mk_name "write_generic"
+	  
+	val arg_id     = VarId.fromString "_x"
+	val ret_id     = VarId.fromString "_r"
+	val stream_id  = VarId.fromString "_s"
+	val wr_tag_name = VarId.fromString "write_tag"
+	val rd_tag_name = VarId.fromString "read_tag"
+	val outstream_ty = TyId (TypeId.fromString "outstream")
+	val instream_ty = TyId (TypeId.fromString "instream")
+	  
+	val next_id = ref 0
+	fun tmpId () =
+	  (next_id := (!next_id) + 1;
+	   VarId.fromString ("t"^Int.toString (!next_id)))
+	(* conservative check *)
+	fun isPure (Const _) = true
+	  | isPure (NilPtr) = true
+	  | isPure (Id _) = true
+	  | isPure (VarRecSub(e,_,_)) = isPure e
+	  | isPure (RecSub(e,_)) = isPure e
+	  | isPure (DeRef e) = isPure e
+	  | isPure _ = false
+	  
+	fun expId (Id id) = SOME id
+	  | expId _ = NONE
+	  
+	fun mk_block (vars,body) =
+	  ({vars=List.map (fn (id,ty) => {name=id,ty=ty}) vars,body=body})
+	val finfo = {tmpId=tmpId,
+		     isPure=isPure,
+		     expId=expId,
+		     getId=Id,
+		     setId=(fn (i,e) => Assign(Id i,e)),
+		     stmtScope=Block o mk_block}
+	  
+	fun get_block res = mk_block o (StmtExp.flatten finfo res)
+	fun get_stmt res = Block o (get_block res)
+	fun get_proc_body e =
+	  (next_id := 0;get_block NONE e)
+	  
+	fun get_fun_body (e,ty)  =
+	  (next_id := 0;
+	   get_block NONE (EVAL (e,ty,(fn v => STMT (Return v)))))
 
-    val arg_id     = VarId.fromString "_x"
-    val ret_id     = VarId.fromString "_r"
-    val stream_id  = VarId.fromString "_s"
-    val wr_tag_name = VarId.fromString "write_tag"
-    val rd_tag_name = VarId.fromString "read_tag"
-    val outstream_ty = TyId (TypeId.fromString "outstream")
-    val instream_ty = TyId (TypeId.fromString "instream")
-
-    val next_id = ref 0
-    fun tmpId () =
-      (next_id := (!next_id) + 1;
-       VarId.fromString ("t"^Int.toString (!next_id)))
-    (* conservative check *)
-    fun isPure (Const _) = true
-      | isPure (NilPtr) = true
-      | isPure (Id _) = true
-      | isPure (VarRecSub(e,_,_)) = isPure e
-      | isPure (RecSub(e,_)) = isPure e
-      | isPure (DeRef e) = isPure e
-      | isPure _ = false
-
-    fun expId (Id id) = SOME id
-      | expId _ = NONE
-
-    fun mk_block (vars,body) =
-      ({vars=List.map (fn (id,ty) => {name=id,ty=ty}) vars,body=body})
-    val finfo = {tmpId=tmpId,
-		 isPure=isPure,
-		 expId=expId,
-		 getId=Id,
-		 setId=(fn (i,e) => Assign(Id i,e)),
-		 stmtScope=Block o mk_block}
-      
-    fun get_block res = mk_block o (StmtExp.flatten finfo res)
-    fun get_stmt res = Block o (get_block res)
-    fun get_proc_body e =
-      (next_id := 0;get_block NONE e)
-
-    fun get_fun_body (e,ty)  =
-      (next_id := 0;
-       get_block NONE (EVAL (e,ty,(fn v => STMT (Return v)))))
-
-
-    fun write_tag {c,v} =
-      STMT (ProcCall(wr_tag_name,[Const(IntConst v),Id stream_id]))
-
-    fun read_tag cs =
-      let
-	fun mk_clause ret ({c,v},exp)  =
-	  {tag=IntConst v,body=get_stmt ret exp}
-	fun exp ret =
-	  Case{test=FnCall(rd_tag_name,[Id stream_id]),
-	       clauses=List.map (mk_clause ret) cs,
-	       default=die "bad tag"}
-      in
-	EXPR exp
-      end
-
-    fun read tid = RET (FnCall(rd_name tid,[Id stream_id]))
-    fun write tid e =   
-      EVAL(e,TyId tid,(fn e => STMT(ProcCall(wr_name tid,[e,Id stream_id]))))
-      
-    fun write_decl {name,arg,body} =
-      DeclProc(wr_name name,
-	       [{name=arg_id,ty=arg},{name=stream_id,ty=outstream_ty}],
-	       get_proc_body (body (RET(Id arg_id))))
-      
-    fun read_decl {name,ret,body} =
-      DeclFun(rd_name name,[{name=stream_id,ty=instream_ty}],
-	      get_fun_body (body,ret),
-	      ret)
-
-    fun expSeq exps = BIND {vars=[],exps=[],body=(fn _ => exps)}
-
-    fun xml_con_name {c,v} = VarId.toString c
-    fun get_tag_decls tags =
-      let
-	fun topair {c,v} = (VarId.toString c,v)
-      in
-	[DeclTagTable(List.map topair tags)]
-      end
-
-    fun xml_write_elem {name,attribs,content} =
-      let
-	val beg_e =
-	  STMT (ProcCall(VarId.fromString "xml_write_element_begin",
-			  [Const(StrConst name),Id stream_id]))
-	val end_e =
-	  STMT (ProcCall(VarId.fromString "xml_write_element_end",
-			  [Const(StrConst name),Id stream_id]))
-      in
-	(expSeq ([beg_e]@content@[end_e]))
-      end
-    fun xml_read_elem {name,attribs,content} =
-      let
-	val beg_e =
-	  [ProcCall(VarId.fromString "xml_read_element_begin",
-			  [Const(StrConst name),Id stream_id])]
-	val end_e =
-	  [ProcCall(VarId.fromString "xml_read_element_end",
-			  [Const(StrConst name),Id stream_id])]
-      in
-	EXPR (fn res =>
-	      let
-		val {vars,body} = get_block res (content[])
-	      in
-		Block{vars=vars,body=(beg_e@body@end_e)}
-	      end)
-      end
-
-    fun xml_read_tagged_elems elems =
-      let
-	val test =
-	  (FnCall(VarId.fromString "xml_read_tagged_element",[Id stream_id]))
-	fun read_elem res ({tag=tag as {c,v},attribs,content}) =
+	  
+	fun write_tag {c,v} =
+	  STMT (ProcCall(wr_tag_name,[Const(IntConst v),Id stream_id]))
+	  
+	fun read_tag cs =
 	  let
-	    val name = xml_con_name tag
+	    fun mk_clause ret ({c,v},exp)  =
+	      {tag=IntConst v,body=get_stmt ret exp}
+	    fun exp ret =
+	      Case{test=FnCall(rd_tag_name,[Id stream_id]),
+		   clauses=List.map (mk_clause ret) cs,
+		   default=die "bad tag"}
+	  in
+	    EXPR exp
+	  end
+	
+	fun read tid = RET (FnCall(rd_name tid,[Id stream_id]))
+	fun write tid e =   
+	  EVAL(e,TyId tid,
+	       (fn e => STMT(ProcCall(wr_name tid,[e,Id stream_id]))))
+	  
+	fun write_decl {name,arg,body} =
+	  DeclProc(wr_name name,
+		   [{name=arg_id,ty=arg},{name=stream_id,ty=outstream_ty}],
+		   get_proc_body (body (RET(Id arg_id))))
+	  
+	fun read_decl {name,ret,body} =
+	  DeclFun(rd_name name,[{name=stream_id,ty=instream_ty}],
+		  get_fun_body (body,ret),
+		  ret)
+	  
+	fun expSeq exps = BIND {vars=[],exps=[],body=(fn _ => exps)}
+	fun xml_con_name {c,v} = VarId.toString c
+	  
+	fun xml_write_elem {name,attribs,content} =
+	  let
+	    val beg_e =
+	      STMT (ProcCall(VarId.fromString "xml_write_element_begin",
+			  [Const(StrConst name),Id stream_id]))
+	    val end_e =
+	      STMT (ProcCall(VarId.fromString "xml_write_element_end",
+			     [Const(StrConst name),Id stream_id]))
+	  in
+	    (expSeq ([beg_e]@content@[end_e]))
+	  end
+	fun xml_read_elem {name,attribs,content} =
+	  let
+	    val beg_e =
+	      [ProcCall(VarId.fromString "xml_read_element_begin",
+			[Const(StrConst name),Id stream_id])]
 	    val end_e =
 	      [ProcCall(VarId.fromString "xml_read_element_end",
 			[Const(StrConst name),Id stream_id])]
-	    val {vars,body} = get_block res (content []) 
 	  in
-	    {tag=IntConst v,body=Block{vars=vars,body=body@end_e}}
+	    EXPR (fn res =>
+		  let
+		val {vars,body} = get_block res (content[])
+		  in
+		    Block{vars=vars,body=(beg_e@body@end_e)}
+		  end)
 	  end
-      in
-	EXPR (fn res =>
-	      Case{clauses=List.map (read_elem res) elems,
-		   test=test,
-		   default=die "bad tag"})
-      end
+	
+	fun xml_read_tagged_elems elems =
+	  let
+	    val test =
+	      (FnCall(VarId.fromString "xml_read_tagged_element",
+		      [Id stream_id]))
+	    fun read_elem res ({tag=tag as {c,v},attribs,content}) =
+	      let
+		val name = xml_con_name tag
+		val end_e =
+		  [ProcCall(VarId.fromString "xml_read_element_end",
+			    [Const(StrConst name),Id stream_id])]
+		val {vars,body} = get_block res (content []) 
+	      in
+	    {tag=IntConst v,body=Block{vars=vars,body=body@end_e}}
+	      end
 
+
+	  in
+	    EXPR (fn res =>
+		  Case{clauses=List.map (read_elem res) elems,
+		       test=test,
+		       default=die "bad tag"})
+	  end
+	val prims = []
+      end
+    structure XMLPklGen = XMLPickler(structure Arg = Arg)
+    structure StdPklGen = StdPickler(structure Arg = Arg)
+    open Arg
+    fun get_aux_decls me =
+      pkl_kind me {xml=XMLPklGen.trans, std=StdPklGen.trans}
+    fun get_tag_decls tags =
+      let
+    fun topair {c,v} = (VarId.toString c,v)
+      in
+	[DeclTagTable(List.map topair tags)]
+      end
+    
     fun get_reps m =
       let
 	val seq_rep = TySequence
@@ -198,10 +220,9 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
 				       Id (gwr_name tid),e,Id stream_id]))))
 
 	val (mk_rd,mk_wr,prefix) =
-	  case (Module.ME.pickler_kind m) of
-	    (SOME "xml") => (mk_xml_rd,mk_xml_wr,"xml_")
-	  | _ => (mk_std_rd,mk_std_wr,"std_")
-	  
+	  pkl_kind m {xml=(mk_xml_rd,mk_xml_wr,"xml_"),
+		      std=(mk_std_rd,mk_std_wr,"std_")}
+
 	val rd_list_name = VarId.fromString (prefix^"read_list")
 	val wr_list_name = VarId.fromString (prefix^"write_list")
 	  
@@ -247,10 +268,7 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
     fun get_prims me =
       let
 	val {seq_con,opt_con,seq_tid,opt_tid,...} = get_reps me
- 	val (prefix) =
- 	  case (Module.ME.pickler_kind me) of
- 	    (SOME "xml") => ("xml_")
- 	  | _ => ("std_")
+ 	val prefix = pkl_kind me {xml="xml_",std="std_"}
  	fun read tid = RET (FnCall(mk_name (prefix^"read") tid,[Id stream_id]))
  	fun write tid e =   
  	  EVAL(e,TyId tid,
@@ -273,14 +291,12 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
       end
 
     fun get_tag_decls me tags =
-      case (Module.ME.pickler_kind me) of
-	(SOME  "xml") => 
-	  let
-	    fun topair {c,v} = (VarId.toString c,v)
-	  in
-	    [DeclTagTable(List.map topair tags)]
-	  end
-      | _ => []
+      pkl_kind me
+      {xml=
+       let fun topair {c,v} = (VarId.toString c,v)
+       in [DeclTagTable(List.map topair tags)] end,
+       std=[]}
+
     fun call_fn path args = RET (FnCall(VarId.fromPath path,args))
       fun get_info ty p =
 	let
@@ -346,3 +362,8 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
 
 
   end
+  
+
+
+
+

@@ -8,9 +8,7 @@
 
 functor mkAlgolModuleTranslator
   (structure IdFix  : ID_FIX
-   structure Spec   : ALGOL_SPEC
-   val aux_decls    : Spec.Ty.ty_decl list -> Spec.Ty.ty_decl list ->
-     Spec.Ty.Ast.decl list): MODULE_TRANSLATOR  =
+   structure Spec   : ALGOL_SPEC) :  MODULE_TRANSLATOR  =
      struct
       structure M = Module
       structure Ty = Spec.Ty
@@ -61,9 +59,9 @@ functor mkAlgolModuleTranslator
 	    (fix_id o T.VarId.fromString o Identifier.toString)
 	  val name = trans_fid name
 	  val fd = {name=name,ty=ty}
-	  val label = (M.field_name finfo) 
+	  val label = Option.map trans_fid (M.field_name finfo) 
 	in
-	  {fd=fd,ty_fd={label=label,tid=tid}}
+	  {fd=fd,ty_fd={label=label,label'=name,tid=tid}}
 	end
 
       fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} = 
@@ -116,7 +114,7 @@ functor mkAlgolModuleTranslator
 	end
 
       fun trans_defined p {tinfo,name, cons=[],props,
-			   fields=[{fd={ty,...},ty_fd={label=NONE,tid}}]} =
+			   fields=[{fd={ty,...},ty_fd={label=NONE,tid,...}}]} =
 	let
 	  val name = trans_tid name
 	in
@@ -286,7 +284,7 @@ functor mkAlgolModuleTranslator
 	let
 	  val prims = Spec.get_prims p
 	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs) prims ms
-	  val new_decls = (aux_decls ty_decls)
+	  val new_decls = Spec.get_aux_decls p (Ty.mk_env ty_decls)
 	  val tags = Spec.get_tag_decls p (List.foldr get_tags [] ty_decls)
 	  fun append_decls new_decls (T.Module{name,imports,decls},mp) =
 	    (T.Module{name=name,imports=imports,decls=decls@new_decls},mp)

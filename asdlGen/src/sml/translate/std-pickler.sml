@@ -7,20 +7,15 @@
  *
  *)
 
-functor StdPickler (structure Arg : STD_PICKLER_PRIMS) : AUX_DECLS =
+functor StdPickler (structure Arg : STD_PICKLER_ARG) : AUX_DECLS =
   struct
     structure Ty = Arg.Ty
     type decl = Arg.decl
-    structure Env = SplayMapFn
-      (struct type ord_key = Ty.TypeId.mid
-	      val compare = Ty.TypeId.compare
-      end)
-    val penv = List.foldl Env.insert' Env.empty Arg.prims
-    fun trans tys = trans_env  (List.foldl Env.insert' penv tys) 
-    and trans_env env tids =
+
+    fun trans env tids =
       let
 	fun get_ty tid =
-	  (case Env.find(env,tid) of
+	  (case Ty.lookup(env,tid) of
 	    SOME ty => (tid,ty)
 	  | NONE => raise Error.internal)
 	     
@@ -58,8 +53,8 @@ functor StdPickler (structure Arg : STD_PICKLER_PRIMS) : AUX_DECLS =
 	and rd_con {tag,fields,cnstr} =
 	  (tag,cnstr (List.map rd_field fields))
 
-	and rd_field {label,tid} =
-	  case Env.find(env,tid) of
+	and rd_field {tid,...} =
+	  case Ty.lookup(env,tid) of
 	    SOME (Ty.App(f,ty)) => (Option.valOf o #rd o #2 o f o get_ty) ty
 	  | SOME (Ty.Prim{info={rd=SOME rd,...},...}) => rd 
 	  |  _ => Arg.read tid
@@ -90,8 +85,8 @@ functor StdPickler (structure Arg : STD_PICKLER_PRIMS) : AUX_DECLS =
 	    in wr_decl(ty_id,ty)
 	    end
 	 | wr_decl _ = raise Error.internal
-	and wr_match ({label,tid},exp) =
-	  case Env.find(env,tid) of
+	and wr_match ({tid,...},exp) =
+	  case Ty.lookup(env,tid) of
 	    SOME (Ty.App(f,ty)) =>
 	      ((Option.valOf o #wr o #2 o f o get_ty) ty) exp
 	  | SOME (Ty.Prim{info={wr=SOME wr,...},...}) => wr exp

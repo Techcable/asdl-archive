@@ -21,7 +21,8 @@ signature ALGOL_TYPE_DECL =
       where type tag =  {c:Ast.id,v:int}
 	and type exp = (Ast.ty_exp,Ast.id,Ast.exp,Ast.stmt) StmtExp.stmt_exp
 	and type ty_exp = Ast.ty_exp
-        and TypeId = Ast.TypeId 
+        and type VarId.mid = Ast.VarId.mid
+        and type TypeId.mid = Ast.TypeId.mid
   end
 
 signature ALGOL_SPEC =
@@ -29,25 +30,10 @@ signature ALGOL_SPEC =
     structure Ty : ALGOL_TYPE_DECL
     val inits : Module.ME.init list
 
-    val get_prims : Module.ME.props -> Ty.ty_decl list
-    val get_tag_decls : Module.ME.props -> Ty.tag list ->
-      Ty.Ast.decl list      
-
-    val get_reps: Module.ME.props ->
-      {seq_rep : Ty.ty_exp -> Ty.ty_exp,
-       seq_con : Ty.ty_con,
-       opt_rep : Ty.ty_exp -> Ty.ty_exp,
-       opt_con : Ty.ty_con,
-       seq_tid : Ty.ty_id -> Ty.ty_id,
-       opt_tid : Ty.ty_id -> Ty.ty_id}
-
     val generic_fns : Ty.ty_id -> Ty.Ast.decl list
-
     val get_fun_body : (Ty.exp * Ty.ty_exp) -> Ty.Ast.block
-
     val get_stmt  : (Ty.Ast.id * Ty.Ast.ty_exp) option ->
                                                 Ty.exp -> Ty.Ast.stmt
-
 
     val get_info      : Ty.ty_exp -> Module.Typ.props -> Ty.ty_info
     val get_wrappers  : Ty.ty_exp -> Module.Typ.props ->
@@ -57,6 +43,22 @@ signature ALGOL_SPEC =
            unwrap: Ty.exp -> Ty.exp}
     val get_user_fields : Module.Typ.props -> Ty.Ast.field list
 
+    val get_reps: Module.ME.props ->
+      {seq_rep : Ty.ty_exp -> Ty.ty_exp,
+       seq_con : Ty.ty_con,
+       opt_rep : Ty.ty_exp -> Ty.ty_exp,
+       opt_con : Ty.ty_con,
+       seq_tid : Ty.ty_id -> Ty.ty_id,
+       opt_tid : Ty.ty_id -> Ty.ty_id}
+    val get_prims     : Module.ME.props -> Ty.ty_decl list
+    val get_aux_decls : Module.ME.props -> Ty.env
+                                        -> Ty.ty_decl list -> Ty.Ast.decl list
+    val get_tag_decls : Module.ME.props -> Ty.tag list ->
+      Ty.Ast.decl list      
+
     val die     : string -> Ty.Ast.stmt
   end
+
+
+
 

@@ -21,7 +21,8 @@ signature OO_TYPE_DECL =
       where type tag =  {c:Ast.id,v:int}
 	and type exp = (Ast.ty_exp,Ast.id,Ast.exp,Ast.stmt) StmtExp.stmt_exp
 	and type ty_exp = Ast.ty_exp
-        and TypeId = Ast.TypeId 
+        and type VarId.mid = Ast.VarId.mid
+        and type TypeId.mid = Ast.TypeId.mid
   end
 
 signature OO_SPEC =

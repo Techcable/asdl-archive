@@ -9,8 +9,6 @@
 functor mkAlgebraicModuleTranslator
   (structure IdFix  : ID_FIX
    structure Spec   : ALGEBRAIC_SPEC
-   val aux_decls    : Spec.Ty.ty_decl list ->
-                      Spec.Ty.ty_decl list -> Spec.Ty.Ast.decl list
    val fix_fields   : bool): MODULE_TRANSLATOR  =
      struct
       structure M = Module
@@ -56,11 +54,11 @@ functor mkAlgebraicModuleTranslator
 	  val (fd,ulabel,label) =
 	    case (M.field_name finfo) of
 	      NONE => ({name=name,ty=ty},true,NONE)
-	    | (SOME x) =>({name=name,ty=ty},false,SOME x)
+	    | (SOME x) =>({name=name,ty=ty},false,SOME (trans_fid x))
 	in
 	  {fd=fd,
 	   ulabel=ulabel,
-	   ty_fd={label=label,tid=tid}}
+	   ty_fd={label=label,label'=name,tid=tid}}
 	end
       
       fun trans_fields topt (fields:field_value list) =
@@ -175,8 +173,8 @@ functor mkAlgebraicModuleTranslator
 
       fun trans p (ms:module_value list) =
 	let
-	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs) [] ms
-	  val new_decls = (aux_decls ty_decls)
+	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs) Spec.prims ms
+	  val new_decls = (Spec.get_aux_decls p (Ty.mk_env ty_decls))
 	  fun add_decls (ty_decls,(T.Module{name,imports,decls},mp)) =
 	    (T.Module{name=name,
 		     imports=imports,

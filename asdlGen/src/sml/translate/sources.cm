@@ -11,6 +11,8 @@ std-pickler.sig
 xml-pickler.sml
 xml-pickler.sig
 
+attrib-getter.sig
+attrib-getter.sml
 
 translate.sig
 translate.sml

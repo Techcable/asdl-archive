@@ -8,7 +8,7 @@
 
 functor mkOOModuleTranslator
   (structure Spec   : OO_SPEC
-   val aux_decls    : Spec.Ty.ty_decl list ->
+   val aux_decls    : Spec.Ty.env ->
                       Spec.Ty.ty_decl list ->
   (Spec.Ty.ty_id * Spec.Ty.Ast.mth) list) : MODULE_TRANSLATOR  =
      struct
@@ -107,11 +107,11 @@ functor mkOOModuleTranslator
 	  val ty = if is_prim then (T.TyId tid) else ty
 	  val trans_fid =
 	    (fix_id o T.VarId.fromString o Identifier.toString)
-	  val name = trans_fid name
+		  val name = trans_fid name
 	  val fd = {name=name,ty=ty}
-	  val label = (M.field_name finfo) 
+	  val label = Option.map trans_fid (M.field_name finfo) 
 	in
-	  {fd=fd,ty_fd={label=label,tid=tid}}
+	  {fd=fd,ty_fd={label=label,label'=name,tid=tid}}
 	end
 
       fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} =
@@ -348,11 +348,10 @@ functor mkOOModuleTranslator
 		      imports=List.map toMid imports,
 		      decls=decls},props))
 	end
-
       fun trans p (ms:module_value list) =
 	let
-	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs) [] ms
-	  val new_decls = (aux_decls ty_decls)
+	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs) Spec.prims ms
+	  val new_decls = (aux_decls (Ty.mk_env ty_decls))
 	  fun add_decls (ty_decls,(T.Module{name,imports,decls},mp)) =
 	    (T.Module{name=name,
 		     imports=imports,

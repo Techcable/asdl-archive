@@ -12,6 +12,7 @@ structure OOTy : OO_TYPE_DECL =
     structure Ast = OOAst
     structure T =
       mkTypeDecl(structure TypeId = Ast.TypeId
+		 structure VarId = Ast.VarId
 		 type ty_exp = Ast.ty_exp
 		 type exp = (Ast.ty_exp,
 			     Ast.id,Ast.exp,Ast.stmt) StmtExp.stmt_exp

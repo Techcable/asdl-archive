@@ -21,7 +21,8 @@ signature ALGEBRAIC_TYPE_DECL =
       where type tag =  {c:Ast.cnstr,v:int}
 	and type exp = Ast.exp
 	and type ty_exp = Ast.ty_exp
-        and TypeId = Ast.TypeId 
+        and type VarId.mid = Ast.VarId.mid
+        and type TypeId.mid = Ast.TypeId.mid
   end
 
 signature ALGEBRAIC_SPEC =
@@ -46,5 +47,8 @@ signature ALGEBRAIC_SPEC =
       {natural_ty: Ty.ty_exp,
              wrap: Ty.exp -> Ty.exp,
            unwrap: Ty.exp -> Ty.exp}
+      
+    val get_aux_decls : Module.ME.props -> Ty.env
+                                        -> Ty.ty_decl list -> Ty.Ast.decl list
   end
 
