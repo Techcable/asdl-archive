@@ -116,7 +116,13 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
     fun expSeq exps = BIND {vars=[],exps=[],body=(fn _ => exps)}
 
     fun xml_con_name {c,v} = VarId.toString c
-    fun xml_decl_tags _ = []
+    fun get_tag_decls tags =
+      let
+	fun topair {c,v} = (VarId.toString c,v)
+      in
+	[DeclTagTable(List.map topair tags)]
+      end
+
     fun xml_write_elem {name,attribs,content} =
       let
 	val beg_e =
@@ -194,7 +200,7 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
 	val (mk_rd,mk_wr,prefix) =
 	  case (Module.ME.pickler_kind m) of
 	    (SOME "xml") => (mk_xml_rd,mk_xml_wr,"xml_")
-	  | _ => (mk_std_rd,mk_std_wr,"")
+	  | _ => (mk_std_rd,mk_std_wr,"std_")
 	  
 	val rd_list_name = VarId.fromString (prefix^"read_list")
 	val wr_list_name = VarId.fromString (prefix^"write_list")
@@ -241,16 +247,15 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
     fun get_prims me =
       let
 	val {seq_con,opt_con,seq_tid,opt_tid,...} = get_reps me
-	val (prefix) =
-	  case (Module.ME.pickler_kind me) of
-	    (SOME "xml") => ("xml_")
-	  | _ => ("")
-	fun read tid = RET (FnCall(mk_name (prefix^"read") tid,[Id stream_id]))
-	fun write tid e =   
-	  EVAL(e,TyId tid,
-	       (fn e => STMT(ProcCall(mk_name (prefix^"write") tid,
-				      [e,Id stream_id]))))
-
+ 	val (prefix) =
+ 	  case (Module.ME.pickler_kind me) of
+ 	    (SOME "xml") => ("xml_")
+ 	  | _ => ("std_")
+ 	fun read tid = RET (FnCall(mk_name (prefix^"read") tid,[Id stream_id]))
+ 	fun write tid e =   
+ 	  EVAL(e,TyId tid,
+ 	       (fn e => STMT(ProcCall(mk_name (prefix^"write") tid,
+ 				      [e,Id stream_id]))))
 	fun addPrim (s,ps) =
 	  let
 	    val tid = TypeId.fromString s
@@ -267,6 +272,15 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
 	prims
       end
 
+    fun get_tag_decls me tags =
+      case (Module.ME.pickler_kind me) of
+	(SOME  "xml") => 
+	  let
+	    fun topair {c,v} = (VarId.toString c,v)
+	  in
+	    [DeclTagTable(List.map topair tags)]
+	  end
+      | _ => []
     fun call_fn path args = RET (FnCall(VarId.fromPath path,args))
       fun get_info ty p =
 	let

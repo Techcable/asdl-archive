@@ -177,7 +177,7 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 		Var(VarDecInit(SOME Static,te,trans_id id,
 				Constant (trans_const c)))
 	    end
-
+	  | trans_decl (T.DeclTagTable x) = TagTable x
 
 	and trans_fields fl =
 	    let

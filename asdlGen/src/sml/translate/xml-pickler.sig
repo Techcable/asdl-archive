@@ -23,11 +23,10 @@ signature XML_PICKLER_PRIMS =
 		      attribs:attrib list,
 		      content:Ty.exp list -> Ty.exp} -> Ty.exp
 
-    val xml_decl_tags : Ty.tag list -> decl list
+
     val xml_read_tagged_elems : {tag:Ty.tag,
 			  attribs:attrib list,
 		          content:Ty.exp list -> Ty.exp} list -> Ty.exp
-
 
     val read       : Ty.ty_id -> Ty.exp
     val write      : Ty.ty_id -> Ty.exp -> Ty.exp

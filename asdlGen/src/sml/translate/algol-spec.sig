@@ -30,7 +30,9 @@ signature ALGOL_SPEC =
     val inits : Module.ME.init list
 
     val get_prims : Module.ME.props -> Ty.ty_decl list
-      
+    val get_tag_decls : Module.ME.props -> Ty.tag list ->
+      Ty.Ast.decl list      
+
     val get_reps: Module.ME.props ->
       {seq_rep : Ty.ty_exp -> Ty.ty_exp,
        seq_con : Ty.ty_con,

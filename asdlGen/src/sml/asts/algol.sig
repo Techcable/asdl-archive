@@ -62,7 +62,8 @@ signature ALGOL_AST =
 	  | DeclProc  of (id * field list * block)
 	  | DeclConst of (id * const * ty_exp)
 	  | DeclLocalConst of (id * const * ty_exp)
-
+	    (* specific to asdl *)
+	  | DeclTagTable of (string * int) list
 
 	withtype field        = {name:id,ty:ty_exp}
 	     and choice       = {name:id,fields:field list}

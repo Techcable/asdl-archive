@@ -141,7 +141,7 @@ structure ModEnvProps :> MOD_ENV_PROPS =
 	  decl_bool p {name="mono_types",default=false}
 	val (pickler_kind,init_pickler_kind) =
 	  decl_string_opt p {name="pickler_kind",
-			     default=SOME "standard"}
+			     default=SOME "std"}
 
     end 
 

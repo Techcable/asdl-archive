@@ -51,7 +51,7 @@ structure AnsiC:ANSI_C =
 	  | Fun of (fun_dec) 
 	  | Ty  of  (ty_dec)
 	  | Com of (string)
-
+	  | TagTable of (string * int) list
 	and const_exp = I of (int) | C of (char) | E of (id) | Void | NULL
 	 | A of id | S of (string)   
 	and unary_op  = NEG | NOT | DEREF  | ADDR

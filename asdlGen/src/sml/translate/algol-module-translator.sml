@@ -279,18 +279,23 @@ functor mkAlgolModuleTranslator
 			     imports=List.map toMid imports,
 			     decls=decls},props))
 	end
+      fun get_tags ((_,Ty.Sum{cnstrs,...}),xs) =
+	List.foldr (fn ({tag,...},xs) => tag::xs) xs cnstrs
+	| get_tags (_,xs) = xs
       fun trans p (ms:module_value list) =
 	let
 	  val prims = Spec.get_prims p
 	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs) prims ms
 	  val new_decls = (aux_decls ty_decls)
-	  fun add_decls (ty_decls,(T.Module{name,imports,decls},mp)) =
-	    (T.Module{name=name,
-		     imports=imports,
-		     decls=decls@(new_decls ty_decls)},mp)
+	  val tags = Spec.get_tag_decls p (List.foldr get_tags [] ty_decls)
+	  fun append_decls new_decls (T.Module{name,imports,decls},mp) =
+	    (T.Module{name=name,imports=imports,decls=decls@new_decls},mp)
+	  fun add_decls (ty_decls,m) =  append_decls (new_decls ty_decls) m
+	  fun add_tags [] = []
+	    | add_tags (x::xs) = (append_decls tags x)::xs
 	  val out = List.map add_decls ms 
 	in
-	  List.filter (not o M.Mod.suppress o #2) out
+	  add_tags (List.filter (not o M.Mod.suppress o #2) out)
 	end
     end
 

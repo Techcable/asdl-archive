@@ -156,7 +156,22 @@ functor mkPPAnsiC(structure T: ANSI_C) : PP_ANSI_C =
 	  | pp_decl (T.Com s) =  PP.vblock 4
 	    [PP.nl,PP.untab,PP.s "/*",PP.nl,PP.s s,PP.untab,
 	     PP.s "*/"]
-
+	  | pp_decl (T.TagTable x) =
+	    let
+	      fun pp_pair (s,v) =
+		PP.cat [PP.s "{",
+			pp_const_exp (T.S s),
+			PP.s ", ",
+			pp_const_exp (T.I v),
+			PP.s "}"]
+	    in
+	      PP.hblock 4
+	      [PP.s "struct xml_tag_map_entry_s xml_tag_map[] = {",PP.ws,
+	       PP.seq{fmt=pp_pair,sep=comma_sep} x,
+	       comma_sep,
+	       PP.s "{NULL , -1}};"]
+	    end
+	    
 
 
 	and pp_const_exp (T.I i) = PP.d i
