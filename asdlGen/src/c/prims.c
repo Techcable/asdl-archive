@@ -60,3 +60,22 @@ void write_generic_string(void *x, outstream_ty s) {
 void write_generic_identifier(void *x, outstream_ty s) {
  PE.gwr_identifier(x,s);
 }
+
+void* to_generic_identifier(identifier_ty x) {
+  return (void*)x;
+}
+
+identifier_ty from_generic_identifier(void * x) {
+  return (identifier_ty)x;
+}
+
+
+string_ty from_generic_string(void *x) {
+  return *((Text_T*)x);
+}
+
+void* to_generic_string(string_ty x) {
+  Text_T* ret = malloc(sizeof(Text_T));
+  *ret = x;
+  return ret;
+}

@@ -20,6 +20,17 @@ void           write_generic_int(void *x, outstream_ty s);
 void           write_generic_big_int(void *x, outstream_ty s);
 void           write_generic_string(void *x, outstream_ty s);
 void           write_generic_identifier(void *x, outstream_ty s);
+
+ 
+void*          to_generic_string(string_ty x);
+string_ty      from_generic_string(void * x);
+
+void*          to_generic_int(int_ty x);
+int_ty         from_generic_int(void *x);
+
+void*          to_generic_identifier(identifier_ty x);
+identifier_ty  from_generic_identifier(void* x);
+
 #endif /* _PRIMS_*/
 
 
