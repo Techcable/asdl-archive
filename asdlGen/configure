@@ -684,7 +684,7 @@ case "${RUN_SML_HEAP}" in
         RUN_SML_HEAP=`/bin/sh src/misc/find_runtime.sh`
         ;;
 esac
-ASDLGEN_VERSION=2.0beta
+ASDLGEN_VERSION=2.0-beta
 ASDLGEN_HEAP='${top_srcdir}/src/sml/asdlGen.${HEAP_SUFFIX}'
 
 
