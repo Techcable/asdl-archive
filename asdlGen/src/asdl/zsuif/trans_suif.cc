@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdlib.h>
 #include "trans_suif.h"
 #include "trans_type.h"
 #include "trans_statement.h"
@@ -8,9 +9,12 @@ static lstring zsuif_atag_type = lstring("/trans_suif/tid");
 
 /*****************************************/
 trans_suif::trans_suif(void) { 
+
   next_symb_id = 1;
   next_type_id = 1;
-  is_extern = 0;
+  state = NORMAL;
+
+  (void)MP_set(64);
   null_symb =
     new zsuif_symbol(0,lstring("NullSymbol"));
   
@@ -135,8 +139,27 @@ zsuif_int_or_source_op* trans_suif::get_field_offset(group_type *t,
 /*****************************************/
 zsuif_suif_int* trans_suif::trans(i_integer i) {
   if (i.is_finite()) {
-    MP_T v = MP_new(i.c_unsigned_int());
-    return new zsuif_Finite(v);
+    char  buf[256];
+    char *p = buf;
+    char *end;
+    MP_T  sign;
+    MP_T  res, final;
+
+    i.write(&buf[0]);
+
+    sign = MP_new(1);
+    if (buf[0] == '-') {
+      sign = MP_fromint(sign, -1);
+      p++;
+    }
+    res = MP_new(0);
+    res = MP_fromstr(res, p, 10, &end);
+
+    final = MP_mul(MP_new(0), sign, res);
+
+    free(sign); free(res);
+
+    return new zsuif_Finite(final);
   }
   if (i.is_undetermined()) {
     return new zsuif_Undetermined();
@@ -213,7 +236,7 @@ public:
     if(zsymb) {
       return zsymb;
     } else {
-      error(-1,"Bad symbol\n");
+      /*      error(-1,"Bad symbol\n"); */
       return NULL;
     }
   }
@@ -225,32 +248,32 @@ public:
   }
 
   void handle_procedure_symbol(procedure_symbol* s) { 
-    procedure_symbol* ps = s;
-    zsuif_procedure_definition* def;
-    procedure_definition* pd = ((s->definition()).get());
-    if(pd == NULL) { 
-      zsuif_procedure_symbol* name =  
-	new zsuif_procedure_symbol(trans->make_symb(ps));
-      trans_type typ(trans,ps->get_type());
-      zsuif_procedure_type* procedure_type = typ.get_procedure_type();
-      zsuif_qualification_list* qualifications = typ.get_qualifications();
-      
-      def = new zsuif_procedure_definition
-	(name, qualifications, procedure_type, NULL); 
-    } else {
-      int hack = trans->is_extern;
-      trans->is_extern = 0;
-      def = trans->trans(pd);
-      trans->is_extern = hack;
-    }
-    zsuif_symbol_table_entry* e = new zsuif_ProcedureEntry(def);
-    if(def->procedure_body != NULL) {
-      return_entry(e,s);
-    } else {
-      trans->init_entry_attribs(e,s);
-      trans->add_entry_extern(e);
-      zsymb = e->key;
-    }
+      procedure_symbol* ps = s;
+      zsuif_procedure_definition* def;
+      procedure_definition* pd = ((s->definition()).get());
+      if(pd == NULL) { 
+	zsuif_procedure_symbol* name =  
+	  new zsuif_procedure_symbol(trans->make_symb(ps));
+	trans_type typ(trans,ps->get_type());
+	zsuif_procedure_type* procedure_type = typ.get_procedure_type();
+	zsuif_qualification_list* qualifications = typ.get_qualifications();
+	
+	def = new zsuif_procedure_definition
+	  (name, qualifications, procedure_type, NULL); 
+      } else {
+	trans_suif::trans_state hack = trans->state;
+	trans->state = trans_suif::NORMAL;
+	def = trans->trans(pd);
+	trans->state = hack;
+      }
+      zsuif_symbol_table_entry* e = new zsuif_ProcedureEntry(def);
+      if(def->procedure_body != NULL) {
+	return_entry(e,s);
+      } else {
+	trans->init_entry_attribs(e,s);
+	trans->add_entry_extern(e);
+	zsymb = e->key;
+      }
   }
 
   void handle_parameter_symbol(parameter_symbol* s) { 
@@ -290,41 +313,46 @@ public:
     return_entry(e,s);
   }
   
-  void handle_variable_symbol(variable_symbol* s) { 
+  void handle_variable_symbol(variable_symbol* s) {
     variable_definition* vd = ((s->definition()).get());
     if(vd) {
-      zsuif_variable_definition* def = trans->trans(vd);
-      zsuif_symbol_table_entry* e = 
-	new zsuif_VariableEntry(def,StdTypes_FALSE);
-      return_entry(e,s);
-    } else {
-
-      zsuif_variable_symbol* vs = 
-	new zsuif_variable_symbol(trans->make_symb(s));
-
-      trans_type vtype(trans,s->get_type());
-      zsuif_type* type = vtype.get_type();
-      if(trans->is_extern) {
-	zsuif_variable_definition* def = 
-	  new zsuif_variable_definition(vs,type,NULL);
-	
+	zsuif_variable_definition* def = trans->trans(vd);
 	zsuif_symbol_table_entry* e = 
 	  new zsuif_VariableEntry(def,StdTypes_FALSE);
-	
-	trans->init_entry_attribs(e,s);
-	trans->add_entry_extern(e);
-	zsymb = e->key;
-      } else {
-	zsuif_variable_definition* def = 
-	  new zsuif_variable_definition(vs,type,NULL);
-	zsuif_symbol_table_entry* e =  
-	  new zsuif_VariableEntry(def,StdTypes_TRUE);
 	return_entry(e,s);
+      } else {
+	
+	zsuif_variable_symbol* vs = 
+	  new zsuif_variable_symbol(trans->make_symb(s));
+	
+	trans_type vtype(trans,s->get_type());
+	zsuif_type* type = vtype.get_type();
+	
+	switch(trans->state) {
+	case trans_suif::EXTERN_VARS: {
+	  zsuif_variable_definition* def = 
+	    new zsuif_variable_definition(vs,type,NULL);
+	  
+	  zsuif_symbol_table_entry* e = 
+	    new zsuif_VariableEntry(def,StdTypes_FALSE);
+	  
+	  trans->init_entry_attribs(e,s);
+	  trans->add_entry_extern(e);
+	  zsymb = e->key;
+	}  break;
+	case trans_suif::NORMAL: {
+	  zsuif_variable_definition* def = 
+	    new zsuif_variable_definition(vs,type,NULL);
+	  zsuif_symbol_table_entry* e =  
+	    new zsuif_VariableEntry(def,StdTypes_TRUE);
+	  return_entry(e,s);
+	}
+	break;
+	case trans_suif::EXTERN_PROCS:
+	  assert(0); break; /* should never happen */
+	}
       }
-
     }
-  }
-
 };
 
 zsuif_symbol * trans_suif::trans(symbol* s) {
@@ -356,12 +384,20 @@ public:
       }
     }
   }
-  void handle_procedure_symbol(procedure_symbol* s) { trans->trans(s); }
+  void handle_procedure_symbol(procedure_symbol* s) { 
+    /* when doing extern variables ignore procedures */
+    if (trans->state != trans_suif::EXTERN_VARS) {   trans->trans(s); } 
+  }
   void handle_parameter_symbol(parameter_symbol* s) { trans->trans(s); }
   void handle_code_label_symbol(code_label_symbol* s) { trans->trans(s); }
   void handle_field_symbol(field_symbol* s) { trans->trans(s); }
   void handle_register_symbol(register_symbol* s) { trans->trans(s); }
-  void handle_variable_symbol(variable_symbol* s) { trans->trans(s); }
+  void handle_variable_symbol(variable_symbol* s) {
+     /* don't deal with variables when doing extern procedures */
+    if (trans->state != trans_suif::EXTERN_PROCS) {
+      trans->trans(s); 
+    }
+  }
 
 };
 /*****************************************/
@@ -373,11 +409,21 @@ void trans_suif::do_table(symbol_table *s) {
 void trans_suif::handle_file_set_block(file_set_block* fbs) {
   assert(fbs != NULL);
   s_count_t num_blocks = fbs->file_block_count();
-  is_extern = 0;
-  do_table(fbs->get_file_set_symbol_table());
-  is_extern = 1;
+
+  /* we have to walk over the extern_symbol table twice 
+     first to figure out which variables are extern, then
+     a second time to handle procedures to work around a bug.
+     This will get fixed in the future. (danwang)
+  */
+  state = EXTERN_VARS;
   do_table(fbs->get_external_symbol_table());
- 
+
+  state = EXTERN_PROCS;
+  do_table(fbs->get_external_symbol_table());
+
+
+  state = NORMAL;
+  do_table(fbs->get_file_set_symbol_table());
 
   int i;
   for(i=0; i < num_blocks ; i++) {

@@ -9,6 +9,7 @@
 
 class trans_suif : public pyg_visitor {
 private:
+
     zsuif_type_table_entry_list* type_table_entries; 
     zsuif_symbol_table_entry_list* symbol_table_entries;
     zsuif_symbol_table_entry_list* extern_symbol_table_entries; 
@@ -21,7 +22,9 @@ private:
     int next_symb_id;
     int next_type_id;
 public:
-    int is_extern; /* hack */
+    enum trans_state {EXTERN_VARS, EXTERN_PROCS, NORMAL};
+    trans_state state;
+
     zsuif_symbol* make_symb(symbol*);
     boolean       in_table(symbol*);
     zsuif_symbol* add_entry(zsuif_symbol_table_entry*);

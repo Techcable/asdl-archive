@@ -1,7 +1,7 @@
 
 module zsuif (imports StdTypes) {
-
-suif_int = Finite(StdTypes.uint32)
+big_int  = (int)
+suif_int = Finite(big_int)
          | PlusInf
          | NegInf
          | UnsignedInf
@@ -555,8 +555,21 @@ view Java {
 }
 
 view Cxx {
+zsuif.big_int <= { 
+ natural_type: MP_T
+       reader: read_cii_MP_T 
+       writer: write_cii_MP_T 
+ }
 module StdTypes <= suppress : false
 module StdTypes <= is_library : false
 }
 
-
+view SML {
+zsuif.big_int <= { 
+natural_type: IntInf.int
+      reader: BigBase.read_int
+      writer: BigBase.write_int
+ }
+module StdTypes <= suppress : false
+module StdTypes <= is_library : false
+}
