@@ -8,7 +8,7 @@ case "$#" in
      ;;
   2) VERSION=$1
      RELEASE=$2
-     REV=-Dtoday 
+     REV=-Dnow
      ;;
   3) VERSION=$1
      RELEASE=$2
@@ -30,7 +30,6 @@ if [ -z $tarball ] ; then
     # build the source dist first
     rm -rf ${distname}
     cvs  -d ${CVSROOT} export -d ${distname} ${REV} ${PACKAGE}
-
     # build the documentation
     mkdir ${DISTDIR}/doc
     cd ${DISTDIR}/doc
@@ -52,6 +51,7 @@ if [ -z $tarball ] ; then
     cd ${TMPDIR}
     tar cf ${tarball} ${distname}
     rm -rf ${distname}
+    exit 0
 fi
 
 echo building binary dist from $tarball
