@@ -79,14 +79,13 @@ functor XMLPickler (structure Arg : XML_PICKLER_PRIMS) : AUX_DECLS =
 	  | wr_decl (ty_id,Ty.Prod{ty,fields,cnstr,match,info}) =
 	  let
 	    fun wr fields =
-	      wrap_wr ty_id
 	      (Arg.xml_write_elem {name=Ty.TypeId.toString ty_id,
-				  attribs=[],
-				  content=List.map wr_match fields})
-	      val body = defaultOrElse info #wr (match wr)
-	    in
-	      Arg.write_decl{name=ty_id,arg=ty,body=body}
-	    end
+				   attribs=[],
+				   content=List.map wr_match fields})
+	    val body = defaultOrElse info #wr (match wr)
+	  in
+	    Arg.write_decl{name=ty_id,arg=ty,body=body}
+	  end
 	  | wr_decl (ty_id,Ty.Sum{ty,cnstrs,match,info,...}) =
 	    let
 	      val body = ((wrap_wr ty_id) o (match wr_con))

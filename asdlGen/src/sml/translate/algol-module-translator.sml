@@ -84,8 +84,8 @@ functor mkAlgolModuleTranslator
 	      fun mk_init ({fd={name,ty},ty_fd},id) = {name=name,init=T.Id id}
 	      val field_inits = List.map mk_init aexps
 	      val variant_init =
-		case (List.map mk_init fexps) of [] => NONE
-	      | fs => SOME {tag=tag_id,name=name,fields=fs}
+		case (List.map mk_init fexps) of
+		  fs => SOME {tag=tag_id,name=name,fields=fs}
 	    in
 	      [EXPR (fn (SOME (ret,_)) =>
 		     T.AllocateRec {dst=ret,ty=tname,field_inits=field_inits,

@@ -41,9 +41,9 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) =
     val grd_name = mk_name "read_generic"
     val gwr_name = mk_name "write_generic"
 
-    val arg_id     = VarId.fromString "x"
-    val ret_id     = VarId.fromString "r"
-    val stream_id  = VarId.fromString "s"
+    val arg_id     = VarId.fromString "_x"
+    val ret_id     = VarId.fromString "_r"
+    val stream_id  = VarId.fromString "_s"
     val wr_tag_name = VarId.fromString "write_tag"
     val rd_tag_name = VarId.fromString "read_tag"
     val outstream_ty = TyId (TypeId.fromString "outstream")
