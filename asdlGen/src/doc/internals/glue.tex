@@ -1,0 +1,21 @@
+\begin{myfigure}
+\psfig{figure=lang-spec.eps,width=6in}
+\caption{Compositon of modules \label{algebraic-glue}}
+\end{myfigure}
+Now that most of the major components have been discussed, we can discuss
+how one actually goes about building a non-trivial langauge. We'll do this
+by explain how support for ML is provided. Figure \ref{algebraic-glue}
+describes how several important functors interact to produce a module which
+implements the support for ML code. Each bold arrow represents the use or
+import of one module by the other. Any signature between the path of an
+import represents an import constraint. 
+
+At the top of the graph is a structure that represents the syntax of general
+algebraic languages. The left hand path is a series of module compositions
+that map ASDL semantics onto the semantics of an algebraic language. The
+right hand builds intrastructure to pretty print the syntax into ML. A the
+bottom of the graph we see a functor that merges the syntax and semantics
+into a single unit that produces ML code from ASDL specifications. Note that
+this graph is not complete and leaves out a few parameters as well as
+important sharing constraints, but it accurately describes the high-level
+picture of how things are composed.
