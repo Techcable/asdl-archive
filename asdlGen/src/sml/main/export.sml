@@ -21,7 +21,7 @@ structure Export =
 
 	val (opts,help)  = O.boolFlag opts
 	  {name="help",
-	   flags="h?",
+	   flags="h",
 	   v=true,
 	   dflt=false,
 	   doc="print help and exit"}
@@ -55,7 +55,7 @@ structure Export =
 	      (String.concat ["Usage: asdlGen [options] files ...\n",
 			      "Generate code from ASDL specifications\n"])
 		val rest =
-		  ListFormat.fmt{init="\n  Drivers:\n  ",
+		  ListFormat.fmt{init="\nDrivers:\n  ",
 				 fmt=(fn x => x),
 				 sep=", ",
 				 final="\n"} (List.map #1 langs)

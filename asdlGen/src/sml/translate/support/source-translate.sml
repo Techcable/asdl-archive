@@ -38,7 +38,7 @@ functor mkSourceFileOutput (structure PP : CODE_PP
 	   arg_dflt=SOME "-",
 	   dflt="",
 	   advice="file",
-	   doc="output dependency information (- is stdout)"}
+	   doc="output dependency information"}
 
 	val (opts,lib_dir) = O.stringParam opts
 	  {name="lib-dir",
@@ -46,7 +46,7 @@ functor mkSourceFileOutput (structure PP : CODE_PP
 	   arg_dflt=NONE,
 	   dflt="",
 	   advice="directory",
-	   doc="Directory to place library code"}
+	   doc="directory to place library code"}
 
 	val (opts,no_libs) = O.boolFlag opts
 	  {name="no-libs",

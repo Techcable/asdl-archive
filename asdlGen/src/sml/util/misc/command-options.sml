@@ -38,8 +38,6 @@ structure CommandOptions :> COMMAND_OPTIONS =
       | getInt (IsFlag x) = getInt x
       | getInt _ = raise (Fail "getInt")
 
-
-
     val empty = M.empty
     fun mkCvt s p c x =
       case (p x) of NONE => (s,ArgError) | SOME v => (s,c v)
@@ -78,15 +76,12 @@ structure CommandOptions :> COMMAND_OPTIONS =
     fun stringParam x = xArg SOME S getStr x
     fun getRest (rest,m) = rest
 
-    fun mkUsage (spec:args_spec) hdr =
-      let val descrs = M.listItems spec
-      in G.usageInfo{header=hdr, options=descrs}
-      end
+
     exception Error of string
     fun mkCmd (spec:args_spec) f (arg0,args) =
       let
 	val descrs = (M.listItems spec)
-	fun err s = (TextIO.output(TextIO.stdErr,s);raise Error s)
+	fun err s = (TextIO.output(TextIO.stdErr,s^"\n");raise Error s)
 	fun do_it () =
 	  let
 	    val (opts,rest) =
@@ -111,4 +106,49 @@ structure CommandOptions :> COMMAND_OPTIONS =
 	  | do_arg(_,_,xs) = xs
       in M.foldli do_arg [] m
       end
+
+    local 
+      open G
+      fun sepBy (sep,[]) = ""
+	| sepBy (sep,x::xs) =
+	concat (x::foldr (fn (elem,l) => sep::elem::l) [] xs)
+      fun fmtShort (NoArg _) so = concat ["-",Char.toString so]
+	| fmtShort (ReqArg (_,ad)) so = concat ["-",Char.toString so]
+	| fmtShort (OptArg (_,ad)) so = concat ["-",Char.toString so]
+	
+      fun fmtLong (NoArg _) lo = concat ["--",lo]
+	| fmtLong (ReqArg (_,ad)) lo = concat ["--",lo,"=",ad]
+	| fmtLong (OptArg (_,ad)) lo = concat ["--",lo,"[=",ad,"]"]
+
+      fun fmtOpt {short=sos, long=los, desc=ad, help=descr} = (
+          sepBy (", ",map (fmtShort ad) (String.explode sos)),
+          sepBy (", ",map (fmtLong ad) los),
+          descr)
+
+	(* hacked from getopt.sml *)
+      fun usageInfo {header, options} = let
+          fun unlines l = sepBy ("\n", l)
+          val fmtOptions = map fmtOpt options
+          val (ms1,ms2,ms3) = foldl
+		(fn ((e1,e2,e3), (m1,m2,m3)) => (
+		    Int.max (size e1,m1), 
+                    Int.max (size e2,m2),
+                    Int.max (size e3,m3)
+		  )) (0,0,0) fmtOptions
+	  val pad = StringCvt.padRight #" "
+          val table = foldr
+		(fn ((e1,e2,e3),l) => concat [
+		      "  ", pad ms1 e1, "  ", pad ms2 e2, "  ", pad ms3 e3
+		    ] :: l
+		  ) [] fmtOptions
+          in
+            unlines (header::table)
+          end
+	
+    in
+    fun mkUsage (spec:args_spec) hdr =
+      let val descrs = M.listItems spec
+      in usageInfo{header=hdr, options=descrs}
+      end
+    end
   end
