@@ -1,7 +1,7 @@
 
 module zsuif (imports StdTypes) {
 
-suif_int = Finite(int)
+suif_int = Finite(StdTypes.uint32)
          | PlusInf
          | NegInf
          | UnsignedInf

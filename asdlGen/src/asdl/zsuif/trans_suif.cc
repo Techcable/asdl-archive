@@ -135,7 +135,7 @@ zsuif_int_or_source_op* trans_suif::get_field_offset(group_type *t,
 /*****************************************/
 zsuif_suif_int* trans_suif::trans(i_integer i) {
   if (i.is_finite()) {
-    return new zsuif_Finite(i.c_int());
+    return new zsuif_Finite(i.c_unsigned_int());
   }
   if (i.is_undetermined()) {
     return new zsuif_Undetermined();
