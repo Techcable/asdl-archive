@@ -19,7 +19,10 @@ typedef MP_T  big_int_ty;
 typedef const char* identifier_ty; /* atom type */
 typedef void *(*generic_reader_ty)(instream_ty s);
 typedef void (*generic_writer_ty)(void *x,outstream_ty s);
-
+typedef struct {
+  identifier_ty key;
+    void* value; /* value is NULL when this is a USE of the key */
+} share_ty;
 #define die() (fprintf(stderr,"%s:%d: Fatal Error\n",__FILE__,__LINE__), \
 		exit(-1))
 

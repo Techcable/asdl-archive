@@ -5,6 +5,18 @@
 #define WRITE_TAG(x,s) write_uint32(x,s)
 #define READ_TAG(s)    read_uint32(s)
 
+int32 std_read_tag(instream_ty s) {
+     return read_int32(s);
+}
+
+int_ty std_read_int(instream_ty s) {
+     return read_int32(s);
+}
+
+big_int_ty std_read_big_int(instream_ty s) {
+     return read_cii_MP_T(s);
+}
+
 Text_T std_read_string(instream_ty s) {
      Text_T ret;
 
@@ -20,6 +32,17 @@ identifier_ty std_read_identifier(instream_ty s) {
      return Atom_new(txt.str,txt.len);
 }
 
+void std_write_tag(int32 x, outstream_ty s) {
+     write_int32(x,s);
+}
+
+void std_write_int(int_ty x, outstream_ty s) {
+     write_int32(x,s);
+}
+
+void std_write_big_int(big_int_ty x, outstream_ty s) {
+     write_cii_MP_T(x,s);
+}
 
 void std_write_string(Text_T x,outstream_ty s) {
      WRITE_TAG(x.len,s); 
@@ -28,7 +51,7 @@ void std_write_string(Text_T x,outstream_ty s) {
 void std_write_identifier(identifier_ty x,outstream_ty s) {
      Text_T txt;
      txt.len = Atom_length(x);
-     txt.str = Atom_string(x);
+     txt.str = x;
      std_write_string(txt,s);
 }
 
@@ -48,7 +71,27 @@ opt_ty std_read_option(generic_reader_ty rd,instream_ty s) {
      }
      return (*rd)(s);
 }
-
+share_ty std_read_share(generic_reader_ty rd,instream_ty s) {
+     int len = read_int32(s);
+     share_ty ret;
+     char* str;
+     if (len == 0) die();
+     if (len < 0) { /* definition */
+	  len = -len;
+	  str = malloc(len);
+	  if(str == NULL) die();
+	  READ_BYTES(str,len,s);
+	  ret.key = Atom_new(str,len);
+	  ret.value = (*rd)(s);
+     } else {
+	  str = malloc(len);
+	  if(str == NULL) die();
+	  READ_BYTES(str,len,s);
+	  ret.key = Atom_new(str,len);
+	  ret.value = NULL;
+     }
+     return ret;
+}
 
 void std_write_list(generic_writer_ty wr,list_ty v, outstream_ty s) {
      int len = Seq_length(v);
@@ -67,19 +110,38 @@ void std_write_option(generic_writer_ty wr,opt_ty v, outstream_ty s) {
 	  (*wr)(v,s);
      }
 }
+void std_write_share(generic_writer_ty wr,share_ty v,outstream_ty s) {
+     if(v.value == NULL) {
+	  std_write_identifier(v.key,s);
+     } else {
+	  int len = Atom_length(v.key);
+	  write_int32(-len,s);
+	  WRITE_BYTES(v.key,len,s);
+	  (*wr)(v.value,s);
+     }
+}
+void* std_read_generic_int(instream_ty s) {
+   return read_generic_int32(s);
+}
 
 void* std_read_generic_string(instream_ty s) {
   Text_T* ret = malloc(sizeof(Text_T));
   *ret = std_read_string(s);
   return ret;
 }
+
 void* std_read_generic_identifier(instream_ty s) {
   return (void*)std_read_identifier(s);
+}
+
+void std_write_generic_int(void *x,instream_ty s) {
+     write_generic_int32(x,s);
 }
 
 void std_write_generic_string(void *x,instream_ty s) {
   std_write_string(*((Text_T*)x),s);
 }
+
 void std_write_generic_identifier(void *x,instream_ty s) {
   std_write_identifier(x,s);
 }

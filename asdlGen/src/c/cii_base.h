@@ -5,6 +5,7 @@
 #include "xml_prims.h"
 #include "std_prims.h"
 #include "prims.h"
+#include "share.h"
 #endif /* _ASDL_BASE_ */
 
 

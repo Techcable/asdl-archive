@@ -25,11 +25,13 @@ void           std_write_generic_identifier(void *x, outstream_ty s);
 
 list_ty std_read_list(generic_reader_ty rd,instream_ty s);
 opt_ty std_read_option(generic_reader_ty rd,instream_ty s);
+share_ty std_read_share(generic_reader_ty rd,instream_ty s);    
 
 void std_write_list(generic_writer_ty wr,list_ty v, outstream_ty s);
 void std_write_option(generic_writer_ty wr,opt_ty v, outstream_ty s);
+void std_write_share(generic_writer_ty wr,share_ty v,outstream_ty s); 
 
-void           write_tag(int x,outstream_ty s);
-int_ty         read_tag(instream_ty s);
+void        std_write_tag(int x,outstream_ty s);
+int_ty      std_read_tag(instream_ty s);
 #endif /* _STD_PRIMS */
 
