@@ -107,15 +107,13 @@ structure MLPP : ML_PP =
 	    PP.hblock 0 [pp_id id,pp_exp e]
 	  | pp_exp (T.Tuple (el,opt_ty)) =
 	    PP.hblock 1
-	    [PP.s "(" ,PP.seq{fmt=pp_exp,sep=comma_sep} el, PP.s")",
-	     pp_opt_ty opt_ty]
+	    [PP.s "(" ,PP.seq{fmt=pp_exp,sep=comma_sep} el, PP.s")"]
 	  | pp_exp (T.Record (el,fl,opt_ty)) =
 	    let
 		fun  eq _ = false
 	    in
 		PP.cat [PP.vblock 2
-			(pp_rec_seq eq pp_exp el fl),
-			pp_opt_ty opt_ty]
+			(pp_rec_seq eq pp_exp el fl)]
 	    end
 	  | pp_exp (T.Match(e,cl)) =
 	    PP.vblock 4 [PP.s "(case (",pp_exp e,PP.s ") of ",PP.nl,
