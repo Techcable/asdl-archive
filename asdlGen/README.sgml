@@ -3,45 +3,69 @@
   %decls.common;
 ]>
 <article>
-<title>README for &asdlGen; version &asdlGen.version;
+<title>README for &asdlGen; version 2.0-beta;
 <author>&author.danwang;
 <date>&asdlGen.release-date;
 <p>
-This is an alpha release of the most latest version of &asdlGen;. Many of
+This is beta release &asdlGen;. Many of
 the internals have been significantly reworked, and most of the major
-internal interfaces have been documented. Consider it as a work in
-progress. The build system is now limping along. C and C++ code gets built
-automatically on most Unix platforms. In the top-level directory
+internal interfaces have been documented. There have been also several
+significant changes to various backends, and a different compilation model
+for the generated code.
+
+<p>In the past &asdlGen; assumed the existence of several support libraries
+that it would link with the source code produced by it. This made installing
+&asdlGen; quiet a non-trivial task. In the new model &asdlGen; will by
+default emit all the necessary source code needed to compile the world,
+rather than assuming the existence of &asdlGen; specific libraries. The C
+code still requires <tt>libcii.a</tt> which is included verbatim but not
+built in the current distribution.
+
+<p> There's still work to do, most importantly documenting many of the new
+features and providing some good examples. The old user manual is out of
+date but it's better then nothing. 
+
+<p> Also, &asdlGen; is designed to make inter-language operation easier. It
+may not exploit or produce the most idiomatic code for a given language,
+advice on how to improve the code for a given language will be appreciated. 
+
 <code>
-% ./configure --prefix=<em/install-prefix/
+% ./configure --prefix=<em>install-prefix/</em>
 % make all
 </code>
-will do something sensible. Currently it just builds the needed libraries
-and dumps a heap for asdlGen in <tt>src/sml/</tt>. The install rules will
-change in the future. It currently doesn't produce any standalone
+Dumps a SML/NJ heap for asdlGen in <tt>src/sml/</tt>. The install rules will
+change in the future. It currently doesn't produce any stand-alone
 executables.
 
-Major features include
+Major Changes/Features include
 <p>
 <itemize>
+<item> Support for SML97, Haskell98, OCaml-2.0, Java, C++, C, and Icon. 
 <item>
-SML, C, C++, Java, Haskell, and Icon backends are now working, but untested.
-The Haskell, backend produces code that at leasts parses against
-<tt>Hugs98</tt> but doesn't use labeled records as I was having problems
-with field mangling.
+Reworked command line handling and command line options. &asdlGen;
+<tt>--help</tt> is now much more informative.  
+<item> &asdlGen; can optionally output dependency information for <tt/make/
+or language appropriate build system.
+<item>Reworked pretty printing for all the backends to produce more 
+readable code.  
+<item>Currently dropped support for pickle pretty-printer, it will be
+reincarnated some time in the future.
+<item>Java and C++ backends now use generic/templated arrays 
+to implement sequence and option types.
 
-<item><tt>src/sml/convert</tt>Quick and dirty converters from SML and class
-hierarchies to ASDL specifications.
-
+<item>Experimental support for preservation of sharing and XML.
+<item> SML97, Haskell98, and Ocaml-2.0 supports an "s-expression" ASCII
+picklers. Useful for debugging.
+<item> Ability for users to define there own primitive types.
 <item>New syntax for importing modules
 <code>
 module T (imports VeryLongModuleName alias M) {
  foo = (M.t)
 }
 </code>
-<item>Very preliminary support for XML.
+<item> Better name mangling schemes. 
 <item>Support for user defined primitives. Rather than hard coding
-information about user primitive types into &asdlGen; primtives are now
+information about user primitive types into &asdlGen; primitives are now
 extensible. In particular the old primitive types of <tt/int/, <tt/string/,
 <tt/identifier/. Are implemented by pre-appending the following declaration
 to all inputs
@@ -51,12 +75,14 @@ primitive module StdPrims {
 }
 </code>
 &asdlGen; tacks this on to any set of input files to remain compatible with
-existing code. Users, can add there own primitive types by simply including
-there own primtive module declaration.
-<item>Reworked simplified interface to primitve types.
-<item>SML code now splits type definitions from pickle code. I've gotten
-rid of all the <tt/open/ and <tt/include/s and stuck to fully qualified
-identifiers in all the code. 
+existing code. Users, can add their own primitive types by simply including
+there own primitive module declaration. See <tt>src/asdl/std-types.asdl</tt>
+for an example that defines a richer set fix width integer and word types,
+for various languages.
+<item> Support for an unnamed "Toplevel" module. Allowing one to generate less
+verbose code for pedagogical purposes. See
+<tt>src/asdl/tests/toplevel.asdl</tt> for an example usage.
+
 </itemize>
 
 <sect>COPYRIGHT<p>
