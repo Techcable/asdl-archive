@@ -4,9 +4,6 @@
 #include <stdio.h>
 typedef FILE* outstream;
 typedef FILE* instream;
-#endif 
-
-
 
 extern "C" {
 #include "pkl-int.h"
@@ -65,5 +62,6 @@ extern identifier        read_identifier(instream s);
 extern identifier_option read_identifier_option(instream s);
 extern identifier_list*  read_identifier_list(instream s);
 extern void die();
+
 
 #endif
