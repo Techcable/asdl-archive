@@ -21,7 +21,7 @@ AC_PROG_INSTALL
 AC_PROG_RANLIB
 
 AC_CHECK_PROGS(JAVAC,javac)
-AC_CHECK_PROGS(SML_CM,sml-cm)
+AC_CHECK_PROGS(SML_CM,sml-cm sml-cm.bat)
 
 dnl find the paths to build #! shell scripts
 AC_PATH_PROGS(KSH,ksh)
@@ -31,6 +31,7 @@ dnl how to run an sml heap
 eval `/bin/sh src/misc/sysname`
 AC_CHECK_PROGS(RUN_SML_HEAP, 
 	sml sml-cm \
+        sml-cm.bat \
 	runtime/run.${HEAP_SUFFIX} \
 	runtime/run.${HEAP_SUFFIX}.exe)
 
