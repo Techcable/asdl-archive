@@ -52,8 +52,10 @@ functor FileOpsBuild(structure Params : FILE_OPS_BUILD_PARAMS )
 	fun make_path (NONE,cmds) = cmds
 	  | make_path (SOME d,cmds) =
 	  let
+	    val arg = [B.STR (Paths.dirToNative d)]
 	    val cmd =
-	      B.EXEC(Params.mkDir,[B.STR (Paths.dirToNative d)])
+	      B.OR [B.EXEC (Params.existsDir,arg),
+		    B.EXEC(Params.mkDir,arg)]
 	  in
 	   (make_path (Paths.getDirParent d,cmd::cmds))
 	  end
