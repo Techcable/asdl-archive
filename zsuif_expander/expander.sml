@@ -836,11 +836,7 @@ struct
 			 Z.Bitwise_or | Z.Bitwise_nand | Z.Bitwise_nor |
 			 Z.Bitwise_xor | Z.Left_shift | Z.Right_shift),
 			r1 as Reg (r, _), r2, rd, kr) =
-	 let
-	    val oper = M.getRtlOper (zoper, r)
-	 in
-	    M.emitBinaryOp (emt, rd, r1, oper, r2, kr)
-	 end
+	 M.emitBinaryOp (emt, rd, r1, zoper, r2, kr)
 
 	| compileBinOp (Z.Multiply, r1, r2, rd, kr) =
 	 M.emitMulDivRem (emt, rd, r1, M.Mul, r2, newGlobal, kr)

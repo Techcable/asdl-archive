@@ -556,16 +556,12 @@ struct
                   end
       end
 
-  fun emitBinaryOp (emt, res, reg1, oper, reg2, kRegs) =
-      let
-          val sRes  = REG res
-          val sReg1 = REG reg1
-          val sReg2 = REG reg2
-          val sOper = F.STR oper
-      in
-          emt "+%s=%s%s%s" [sRes, sReg1, sOper, sReg2];
-          doKilledRegs (emt, [], kRegs)
-      end
+  fun emitBinaryOp (emt, rd, r1 as Reg (regTy, _), oper, r2, kr) =
+     (emt "+%s=%s%s%s"
+          [REG rd, REG r1, F.STR (getRtlOper (oper, regTy)), REG r2];
+      doKilledRegs (emt, [], kr))
+    | emitBinaryOp (emt, rd, r1, oper, r2, kr) =
+     raise (Fail "Invalid operand in emitBinaryOp")
 
   fun emitFunCallFrameSize (emt, fnReg, stkSize, argNum) =
       let

@@ -81,8 +81,6 @@ sig
   val emitRegAssign          : emtTyp * B.operand * B.operand * bool *
                                B.operand list -> unit
 
-  val getRtlOper             : Z.binop * B.regtype -> string
-
   val emitComparisonOp       : emtTyp * B.operand * B.operand * Z.binop *
                                B.operand * B.operand list -> unit
 
@@ -102,7 +100,7 @@ sig
   val emitUnaryOp            : emtTyp * Z.unop * B.operand * B.operand *
                                B.operand list *
                                ((unit -> B.operand) * int) -> unit
-  val emitBinaryOp           : emtTyp * B.operand * B.operand * string *
+  val emitBinaryOp           : emtTyp * B.operand * B.operand * Z.binop *
                                B.operand * B.operand list -> unit
   val emitMulDivRem          : emtTyp * B.operand * B.operand * OptOperators *
                                B.operand * (unit -> B.operand) *

@@ -466,9 +466,12 @@ struct
      | emitRegMulConst _ =
       raise (Fail "Non-register passed to emitRegMulConst")
 
-   fun emitBinaryOp (emt, rd, r1, oper, r2, kr) =
-      (emt "+%s=%s%s%s" [REG rd, REG r1, F.STR oper, REG r2];
+   fun emitBinaryOp (emt, rd, r1 as Reg (regTy, _), oper, r2, kr) =
+      (emt "+%s=%s%s%s"
+           [REG rd, REG r1, F.STR (getRtlOper (oper, regTy)), REG r2];
        emitKilledRegs (emt, [], kr))
+     | emitBinaryOp (emt, rd, r1, oper, r2, kr) =
+      raise (Fail "Invalid operand in emitBinaryOp")
 
    fun emitMulDivRem (emt, regt, reg1, oper, reg2, _, kr) =
       let
@@ -477,8 +480,7 @@ struct
 	  | Div => Z.Divide
 	  | Rem => Z.Remainder
       in
-	 emitBinaryOp (emt, regt, reg1, getRtlOper(zop, Int32Bit),
-			     reg2, kr)
+	 emitBinaryOp (emt, regt, reg1, zop, reg2, kr)
       end
 
    fun emitSwitchStmt (emt, decReg, newReg, addrReg,
