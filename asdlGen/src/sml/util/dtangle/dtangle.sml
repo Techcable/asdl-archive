@@ -276,7 +276,8 @@ different commenting conventions can be processed together.
       let
 	val dflt = {spec=L.null_spec,outs=TextIO.stdOut,kp=0,
 		    close=(fn () => TextIO.flushOut TextIO.stdOut)}
-	val (opts,non_opts,errs) = parseOpts args
+	val ((opts,non_opts),errs) = ((parseOpts args,[]) handle
+				   G.Error s => (([],[]),[s]))
 	fun find_arg_errs (ArgErr x,xs) = x::xs
 	  | find_arg_errs (Usage,xs) = xs
 	  | find_arg_errs (_,xs) = xs
