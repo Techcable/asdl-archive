@@ -1,0 +1,67 @@
+%*
+% LaTeX wrapper used code to build the complete document.
+%*
+%::
+\documentclass[11pt]{book}
+\usepackage{noweb}
+\usepackage{epsfig}
+\usepackage{pslatex}
+\usepackage{fullpage}
+\newcommand{\asdlGen}{{\tt asdlGen}\ }
+\newenvironment{myfigure}
+	{\begin{figure}[th]\begin{center}}
+	{\end{center}\end{figure}}
+\author{Daniel C. Wang}
+\date{\today}
+\title{\Large Internal Guide to {\tt asdlGen}}
+\begin{document}
+\maketitle
+\tableofcontents
+\chapter{Introduction}
+\input{intro.tex}
+\chapter{The Front-end}
+\section{The Abstract Syntax of ASDL Inputs}
+\input{asdl.tex}
+\input{parser.tex}
+\section{Interface to ASDL Semantic Entities}
+\input{semant.tex} 
+\section{Properties Associated with ASDL Semantic Entities}
+\input{semant-props.tex}
+\chapter{The Back-end}
+\section{Recursive Walks Over Semantic Entities}
+\input{semant-translator.tex}
+\input{semant-translate.tex}
+\section{Abstract Interface Manipulating ASDL Values}
+\input{type-decl.tex}
+\section{Generating Picklers}
+\input{std-pickler.tex}
+\section{Making Statements Look Like Expressions}
+\input{stmt-exp.tex}
+\chapter{Gluing it Together}
+\input{glue.tex}
+\section{Example Algebraic Languages}
+\input{algebraic-spec.tex}
+\input{algebraic-semant-translator.tex}
+\section{The Driver}
+\chapter{The Build System}
+\section{Core Primitves}
+\input{meta-build.tex}
+\section{File System Operations}
+todo
+\section{Interface for Building C programs}
+todo
+\section{Interface for Building SML programs}
+todo
+\chapter{The Utility Libraries (TODO)}
+\section{Pretty Printing Interface}
+todo
+\section{Property Records}
+todo
+\section{Parameter Handling}
+todo
+\section{Qualified Identifiers}
+todo
+\chapter{External Support Code}
+\section{Building Support Code}
+todo
+\end{document}
