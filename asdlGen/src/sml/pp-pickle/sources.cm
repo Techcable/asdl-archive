@@ -8,3 +8,4 @@ pp-pickle.sml
 html-list-pp.sml
 html-table-pp.sml
 text-pp.sml
+xml-pp.sml

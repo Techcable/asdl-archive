@@ -31,3 +31,6 @@ ansi-c-pp.sml
 translate-oo.sml
 java-pp.sml
 c-plus-plus-pp.sml 
+
+translate-xml-dtd.sml
+xml-dtd-pp.sml

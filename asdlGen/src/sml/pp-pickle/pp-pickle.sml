@@ -29,6 +29,8 @@ structure PicklePP =
 		HTMLTablePP.pp_value lbs outs s (rd (qid s) ins)
 	fun pp_txt (rd,lbs,ins,outs) s =
 		TextPP.pp_value lbs outs s (rd (qid s) ins)
+	fun pp_xml (rd,lbs,ins,outs) s =
+		XMLPP.pp_value lbs outs s (rd (qid s) ins)
 
 
 	fun do_it (f,t,p,vs) =
@@ -46,6 +48,9 @@ structure PicklePP =
 
 	fun pickle_pp (_,"--text"::t::p::xs) =
 	    (do_it (pp_txt,t,p,xs); OS.Process.success)
+
+	  | pickle_pp (_,"--xml"::t::p::xs) =
+	    (do_it (pp_xml,t,p,xs); OS.Process.success)
 
 	  | pickle_pp (_,"--html"::"--lists"::t::p::xs) =
 	    (do_it (pp_html_list,t,p,xs); OS.Process.success)

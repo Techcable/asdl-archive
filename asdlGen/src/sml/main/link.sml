@@ -19,6 +19,14 @@ structure Main =
 				structure Parser = AsdlParser
 				structure Gen = HTMLGen
 				val dflt_view = "Doc")
+	structure XMLDTDGen =
+	    mkTranslateFromTranslator
+	    (structure T = XMLDTDTranslator
+	     structure G = mkSourceFileOutput(structure PP = XMLDTDPP))
+	structure XMLDTD =  mkMain(structure M = Module
+				structure Parser = AsdlParser
+				structure Gen = XMLDTDGen
+				val dflt_view = "DTD")
 
         structure MLTranslator =
 	    mkAlgebraicTranslator(structure IdFix = IdFix.ML

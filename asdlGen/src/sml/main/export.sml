@@ -16,6 +16,8 @@ structure Export =
 		 OS.Process.failure)
 
 	val HTMLGenFn =  mkExportFn Main.HTML.do_it
+
+	val XMLDTDGenFn =  mkExportFn Main.XMLDTD.do_it
 	    
 	val MLGenFn =  mkExportFn Main.ML.do_it
 
@@ -50,6 +52,7 @@ structure Export =
 	  | asdlGen (name, ("--haskell"::rs)) = HaskellGenFn(name,rs)
 	  | asdlGen (name, ("--doc"::rs)) = HTMLGenFn(name,rs)
 	  | asdlGen (name, ("--typ"::rs)) = TypGenFn(name,rs)
+	  | asdlGen (name, ("--dtd"::rs)) = XMLDTDGenFn(name,rs)
 	  | asdlGen (name, ("--check"::rs)) = CheckFn(name,rs)
 	  | asdlGen (name, ("--pp_pkl"::rs)) = PPPickleFn(name,rs)
 	    (* hacks fix this right *)
@@ -60,6 +63,7 @@ structure Export =
 	  | asdlGen (name, ("-Lhaskell"::rs)) = HaskellGenFn(name,rs)
 	  | asdlGen (name, ("-Ldoc"::rs)) = HTMLGenFn(name,rs)
 	  | asdlGen (name, ("-Ltyp"::rs)) = TypGenFn(name,rs)
+	  | asdlGen (name, ("-Ldtd"::rs)) = XMLDTDGenFn(name,rs)
 	  | asdlGen (name, ("-Lcheck"::rs)) = CheckFn(name,rs)
 	  | asdlGen (name, ("-Lpp_pkl"::rs)) = PPPickleFn(name,rs)
 	    (* hacks fix this right *)
@@ -70,6 +74,7 @@ structure Export =
 	  | asdlGen (name, ("-L"::"haskell"::rs)) = HaskellGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"doc"::rs)) = HTMLGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"typ"::rs)) = TypGenFn(name,rs)
+	  | asdlGen (name, ("-L"::"dtd"::rs)) = XMLDTDGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"check"::rs)) = CheckFn(name,rs)
 	  | asdlGen (name, ("-L"::"pp_pkl"::rs)) = PPPickleFn(name,rs)
 	  | asdlGen ("pp_pkl", (rs)) = PPPickleFn("pp_pkl",rs)
@@ -77,7 +82,7 @@ structure Export =
 	    let
 		val rets =
 		    List.map (fn x => (x (name,rs)))
-		    [CheckFn,TypGenFn,HTMLGenFn,
+		    [CheckFn,TypGenFn,XMLDTDGenFn,HTMLGenFn,
 		     JavaGenFn,AnsiCGenFn,CPlusPlusGenFn,
 		     MLGenFn,HaskellGenFn]
 	    in
