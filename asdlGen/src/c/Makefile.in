@@ -68,7 +68,6 @@ ZIP_PRG = @ZIP_PRG@
 ASDLGEN     = @RUN_SML_HEAP@ @SMLload=@ASDLGEN_HEAP@
 ASDL_INPUTS = @top_srcdir@/src/asdl/generic.asdl
 ASDL_OUTPUT = AsdlValue.c TypePickle.c AsdlValue.h TypePickle.h
-
 BUILT_SOURCES = $(ASDL_OUTPUT) AsdlValue.import.h TypePickle.import.h
 CLEANFILES = $(BUILT_SOURCES)
 
