@@ -30,8 +30,10 @@ functor mkAlgolSemantTranslator
 			     match:T.exp -> Ty.choice,
 			     enumer:T.enumer,
 			     choice:T.choice}
-      type type_con_value = {ty_decls:Ty.ty_decl list,decls:T.decl list}
-      type module_value   = Ty.ty_decl list * (T.module * S.Module.P.props)
+      type type_con_value = {ty_decls:Ty.ty_decl list,gdecls:T.decl list}
+      type module_value   = {ty_decls:Ty.ty_decl list,
+			       gdecls:T.decl list,
+			         mdec: (T.module * S.Module.P.props)}
       type output         = (T.module * S.Module.P.props) list
 
       val inits = Spec.inits
@@ -175,15 +177,13 @@ functor mkAlgolSemantTranslator
 		val ty_exp = T.TyReference
 		  (T.TyRecord {fixed=user_fields@fds,variant=SOME variant})
 		fun get_tag e = T.RecSub(T.DeRef e,tag_id)
-	      in
-		([T.DeclTy(name,ty_exp)],get_tag)
+	      in ([T.DeclTy(name,ty_exp)],get_tag)
 	      end
 	    else 
 	      let
 		val enum_decl = T.DeclTy(enum_name,T.TyEnum enumers)
 		val decl =  T.DeclTy(name,T.TyReference(T.TyId enum_name))
-	      in
-		([enum_decl,decl],T.DeRef)
+	      in ([enum_decl,decl],T.DeRef)
 	      end
 	  val ty = (T.TyId name)
 	  val {natural_ty,unwrap,wrap,init} = Spec.get_wrappers ty props
@@ -215,12 +215,10 @@ functor mkAlgolSemantTranslator
 	      val fds = (List.map #fd fields)@fds
 	      val body =
 		Spec.get_fun_body (cnstr (List.map mk_e fds), T.TyId name)
-	    in
-	      [T.DeclFun(cname,fds,body,T.TyId name)]
+	    in [T.DeclFun(cname,fds,body,T.TyId name)]
 	    end
 	    | cnstr_decl false {cname,...} =
-	    let
-	      val var_name = T.VarId.suffixBase "_val" cname
+	    let val var_name = T.VarId.suffixBase "_val" cname
 	    in
 	    [T.DeclLocalConst(var_name,T.EnumConst cname,T.TyId enum_name),
 	     T.DeclConst(cname,T.AddrConst var_name,T.TyId name)]
@@ -234,31 +232,32 @@ functor mkAlgolSemantTranslator
       fun trans_type_con p {tinfo,name,props,kinds} =
 	let
 	  val name = trans t2t name
-	  val decls = Spec.generic_fns name
+	  val gdecls = Spec.generic_fns name
 	  fun do_kind k =
 	    let val {mktid,con,...} = Spec.get_reps p k
 	    in (mktid name,Ty.App(con,name))
 	    end
 	  val ty_decls = List.map do_kind kinds
-	in {ty_decls=ty_decls,decls=decls}
+	in {ty_decls=ty_decls,gdecls=gdecls}
 	end
 
       fun trans_module p {module,imports,defines,type_cons,props} =
 	let
-	  fun merge ({ty_decl,decls},(ty_decls,rest)) =
-	    (ty_decl::ty_decls,decls@rest)
-	  fun merge_ty ({ty_decls,decls},(ty_rest,rest)) =
-	    (ty_decls@ty_rest,decls@rest)
-	  val type_cons = List.foldr (merge_ty) ([],[]) type_cons 	    
-	  val (ty_decls,decls) = List.foldr merge  type_cons defines
+	  fun merge_ty ({ty_decls,gdecls},(ty_rest,rest)) =
+	    (ty_decls@ty_rest,gdecls@rest)
+	  fun merge ({ty_decl,decls},(ty_rest,rest)) =
+	    (ty_decl::ty_rest,decls@rest)
+	  val (gty_decls,gdecls) = List.foldr (merge_ty) ([],[]) type_cons
+	  val (ty_decls,decls) =  List.foldr merge ([],[]) defines
 	  val toMid =
 	    Ast.ModuleId.fromPath o S.Module.Id.toPath o S.Module.name
 	in
-	  (ty_decls,(T.Module{name=toMid module,
-			     imports=List.map toMid imports,
-			     decls=decls},props))
+	  {ty_decls=ty_decls@gty_decls,gdecls=gdecls,
+	   mdec=(T.Module
+		 {name=toMid module,
+		  imports=List.map toMid imports,decls=decls},props)}
 	end
-      fun get_tags ((_,Ty.Sum{cnstrs,...}),xs) =
+      fun get_tags (Ty.Sum{cnstrs,...},xs) =
 	List.foldr (fn ({tag,...},xs) => tag::xs) xs cnstrs
 	| get_tags (_,xs) = xs
       fun trans p {modules=ms,prim_types,prim_modules} =
@@ -267,18 +266,33 @@ functor mkAlgolSemantTranslator
 	  val toMid = Ast.ModuleId.fromPath o
 	    S.Module.Id.toPath o S.Module.name
 	  val prim_mods = List.map toMid prim_modules
-	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs) prims ms 
+	  val ty_decls = List.foldl
+	       (fn ({ty_decls=x,gdecls,mdec},xs) => x@xs) prims ms 
 	  val new_decls = Spec.get_aux_decls p (Ty.mk_env ty_decls)
-	  val tags = Spec.get_tag_decls p (List.foldr get_tags [] ty_decls)
-	  fun append_decls new_decls (T.Module{name,imports,decls},mp) =
-	    (T.Module{name=name,
-		      imports=prim_mods@imports,
-		      decls=decls@new_decls},mp)
-	  fun add_decls (ty_decls,m) =  append_decls (new_decls ty_decls) m
-	  fun add_tags [] = []
-	    | add_tags (x::xs) = (append_decls tags x)::xs
-	  val out = List.map add_decls ms 
-	in add_tags (List.filter (not o S.Module.P.suppress o #2) out)
+	  fun mk_aux_mods suffix ({ty_decls,gdecls,mdec},rest) =
+	       let
+		 val (T.Module{name,imports,decls},mp) = mdec
+		 val mdec' = (T.Module{name=name,imports=prim_mods@imports,
+				       decls=decls},mp)
+		 val aux_mod_name = T.ModuleId.suffixBase suffix
+		 val mp = S.Module.P.new []
+	       in mdec'::(T.Module{name=aux_mod_name name,
+				  imports=name::imports
+				  @(List.map aux_mod_name imports),
+				  decls=(new_decls ty_decls)@gdecls},mp)::rest
+	       end
+	  fun append_decls new_decls ({ty_decls,gdecls,mdec},rest) =
+	    let val  (T.Module{name,imports,decls},mp) = mdec
+	    in  ((T.Module{name=name,
+			  imports=prim_mods@imports,
+			  decls=decls@new_decls@gdecls},mp)::rest)
+	    end
+	  fun add_decls (x as {ty_decls,...},r) =
+	    append_decls (new_decls ty_decls) (x,r)
+	  val out = case S.MEnv.P.aux_mod_suffix p of
+	    NONE => List.foldr add_decls [] ms
+	  | SOME s => List.foldr (mk_aux_mods s) [] ms
+	in (List.filter (not o S.Module.P.suppress o #2) out)
 	end
     end
 

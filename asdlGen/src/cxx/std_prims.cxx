@@ -10,6 +10,9 @@ int StdPkl_read_tag(instream s) { return read_uint32(s); }
 void StdPrims_write_int(int x,outstream s) { write_uint32(x,s); }
 int StdPrims_read_int(instream s) { return read_uint32(s); }
 
+void StdPrims_write_big_int(big_int x,outstream s) { write_big_int(x,s); }
+big_int StdPrims_read_big_int(instream s) { return read_big_int(s); }
+
 void StdPrims_write_string(StdPrims_string x,outstream s) {
   int sz = strlen(x);
   StdPkl_write_tag(sz,s); 
@@ -74,7 +77,6 @@ static char *uniquify(char *x) {
 	  } 
 	  p=p->next;
      }
-
      /* new entry */
      p = new _bucket;
      p->id=x;

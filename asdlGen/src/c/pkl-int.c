@@ -18,60 +18,17 @@
 		exit(-1))
 
 /* todo handle IO errors */     
-
-
-signed char  read_C_signed_char(FILE* s) {
-  return read_C_signed_long(s);
-}
-signed short read_C_signed_short(FILE* s) {
-  return read_C_signed_long(s);
-}
-signed int read_C_signed_int(FILE* s) {
-  return read_C_signed_long(s);
-}
-void write_C_signed_char(signed char x, FILE *s) {
-  write_C_signed_long(x,s);
-}
-void write_C_signed_short(signed short x, FILE *s) {
-  write_C_signed_long(x,s);
-}
-void write_C_signed_int(signed int x, FILE *s) {
-  write_C_signed_long(x,s);
-}
-
-
-void write_C_signed_long(signed long x, FILE* s) {
-  int is_neg  =  (x < 0) ;      
-  
-  if (x == LONG_MIN) {
-    /* handle 2's complement asymmetry */
-    WRITE_BYTE(SET_CONTINUE(0),s);
-    x = labs(LONG_MIN / 128);
-  } else {
-    x = labs(x);
-  }
-  
-  while( x > 63) {
-    WRITE_BYTE(SET_CONTINUE(NIBBLE(x)),s);
-    x >>= 7;
-  }
-  
-  if(is_neg) { WRITE_BYTE(SET_NEG(x),s); }
-  else { WRITE_BYTE(x,s); }
-}
-
-signed long read_C_signed_long(FILE* s) {
+/* declare static so gcc might inline it  */
+static signed long read_C_signed_long(FILE* s) {
   signed long acc = 0L;
   int shift = 0;
   int x;
-  
   READ_BYTE(x,s);
   while(IS_CONTINUE_BIT_SET(x)) {
     acc |= (NIBBLE(x)<<shift);
     shift+=7;
     READ_BYTE(x,s);
   }
-  
   /* Check the sign first to handle 2's complement asymmetry */
   if(IS_NEG_BIT_SET(x)) {
     acc = -acc;
@@ -79,45 +36,10 @@ signed long read_C_signed_long(FILE* s) {
   } else {
     acc += (MASK_NEG(x) << shift);
   }
-  
   return acc;   
 }
 
-unsigned char  read_C_unsigned_char(FILE* s) {
-  return read_C_unsigned_long(s);
-}
-
-unsigned short read_C_unsigned_short(FILE* s) {
-  return read_C_unsigned_long(s);
-}
-
-unsigned int read_C_unsigned_int(FILE* s) {
-  return read_C_unsigned_long(s);
-}
-
-void write_C_unsigned_char(unsigned char x, FILE *s) {
-  write_C_unsigned_long(x,s);
-}
-
-void write_C_unsigned_short(unsigned short x, FILE *s) {
-  write_C_unsigned_long(x,s);
-}
-
-void write_C_unsigned_int(unsigned int x, FILE *s) {
-  write_C_unsigned_long(x,s);
-}
-
-
-
-void write_C_unsigned_long(unsigned long x, FILE* s) {
-  while( x > 63) {
-    WRITE_BYTE(SET_CONTINUE(NIBBLE(x)),s);
-    x >>= 7;
-  }
-  WRITE_BYTE(x,s); 
-}
-
-unsigned long read_C_unsigned_long(FILE* s) {
+static unsigned long read_C_unsigned_long(FILE* s) {
   unsigned long acc = 0L;
   int shift = 0;
   int x;
@@ -128,17 +50,61 @@ unsigned long read_C_unsigned_long(FILE* s) {
     shift+=7;
     READ_BYTE(x,s);
   }
-  
   if(IS_NEG_BIT_SET(x)) {
     fprintf(stderr,"Warrning ignoring sign bit on unsigned read\n");
   }
-  
   acc += (MASK_NEG(x) << shift);
-  
   return acc;   
 }
+static MP_T read_cii_MP_T(FILE *s) {
+     MP_T acc = MP_new(0L);
+     MP_T tmp = MP_new(0L);
+     int shift = 0;
+     int x;
 
-void write_cii_MP_T(MP_T x,FILE* s) {
+     READ_BYTE(x,s);
+     while(IS_CONTINUE_BIT_SET(x)) {
+	  MP_fromint(tmp,NIBBLE(x));
+	  MP_lshift(tmp,tmp,shift);
+	  MP_or(acc,acc,tmp);
+	  shift+=7;
+	  READ_BYTE(x,s);
+     }
+     MP_fromint(tmp,MASK_NEG(x));
+     MP_lshift(tmp,tmp,shift);
+     MP_or(acc,acc,tmp);
+     if(IS_NEG_BIT_SET(x)) {
+	  MP_neg(acc,acc);
+     }
+     free(tmp);
+     return acc;
+}
+
+static void write_C_signed_long(signed long x, FILE* s) {
+  int is_neg  =  (x < 0) ;      
+   if (x == LONG_MIN) {
+    /* handle 2's complement asymmetry */
+    WRITE_BYTE(SET_CONTINUE(0),s);
+    x = labs(LONG_MIN / 128);
+  } else {
+    x = labs(x);
+  }
+  while( x > 63) {
+    WRITE_BYTE(SET_CONTINUE(NIBBLE(x)),s);
+    x >>= 7;
+  }
+  if(is_neg) { WRITE_BYTE(SET_NEG(x),s); }
+  else { WRITE_BYTE(x,s); }
+}
+
+static void write_C_unsigned_long(unsigned long x, FILE* s) {
+  while( x > 63) {
+    WRITE_BYTE(SET_CONTINUE(NIBBLE(x)),s);
+    x >>= 7;
+  }
+  WRITE_BYTE(x,s); 
+}
+static void write_cii_MP_T(MP_T x,FILE* s) {
      int set_neg_bit;
      int v;
      MP_T tmp = MP_new(0L);
@@ -159,82 +125,101 @@ void write_cii_MP_T(MP_T x,FILE* s) {
      WRITE_BYTE(v,s);
      free(tmp); 
 }
-
-MP_T read_cii_MP_T(FILE *s) {
-     MP_T acc = MP_new(0L);
-     MP_T tmp = MP_new(0L);
-     int shift = 0;
-     int x;
-
-     READ_BYTE(x,s);
-
-     while(IS_CONTINUE_BIT_SET(x)) {
-	  MP_fromint(tmp,NIBBLE(x));
-	  MP_lshift(tmp,tmp,shift);
-	  MP_or(acc,acc,tmp);
-	  shift+=7;
-	  READ_BYTE(x,s);
-     }
-     MP_fromint(tmp,MASK_NEG(x));
-     MP_lshift(tmp,tmp,shift);
-     MP_or(acc,acc,tmp);
-     if(IS_NEG_BIT_SET(x)) {
-	  MP_neg(acc,acc);
-     }
-     free(tmp);
-     return acc;
+big_int read_big_int(FILE* s) { return read_cii_MP_T(s); }
+nat read_nat(FILE* s) { return read_C_unsigned_long(s); }
+bool read_bool(FILE *s) {
+  switch (read_C_unsigned_long(s)) {
+  case 1 : return false; /* this is not a bug */
+  case 2 : return true; /* this is not a bug */
+  default : die();
+  }
 }
+ieee_real read_ieee_real(FILE *s) { die(); }
 
-#define DECL_READ_GENERIC(q,t) \
-void* read_generic_C_##q##_##t(FILE* s) { \
-     q t* ret = malloc(sizeof(*ret)); \
-     if (ret == NULL) die(); \
-     *ret = read_C_##q##_##t(s); \
-     return ret; }
-
-#define DECL_WRITE_GENERIC(q,t) \
-void write_generic_C_##q##_##t(void* x, FILE* s) { \
-     write_C_##q##_##t(*((q t*)x), s); }
-
-#define DECL_TO_GENERIC(q,t) \
-void* to_generic_C_##q##_##t(q t x) { \
-     q t* ret = malloc(sizeof(*ret)); \
-     if (ret == NULL) die(); \
-     *ret = x; \
-     return ret; }
-
-#define DECL_FROM_GENERIC(q,t) \
-q t from_generic_C_##q##_##t(void* x) { \
-     return *((q t*)x); }
-
-#define DECL_GENERICS(t)  \
-DECL_READ_GENERIC(signed,t)  \
-DECL_WRITE_GENERIC(signed,t) \
-DECL_READ_GENERIC(unsigned,t)  \
-DECL_WRITE_GENERIC(unsigned,t) \
-DECL_TO_GENERIC(unsigned,t) \
-DECL_FROM_GENERIC(unsigned,t) \
-DECL_TO_GENERIC(signed,t) \
-DECL_FROM_GENERIC(signed,t) 
-
-DECL_GENERICS(char)
-DECL_GENERICS(short)
-DECL_GENERICS(int)
-DECL_GENERICS(long)
+int8  read_int8(FILE* s) { return read_C_signed_long(s); }
+int16 read_int16(FILE* s) { return read_C_signed_long(s); }
+int32 read_int32(FILE* s) { return read_C_signed_long(s); }
+int64 read_int64(FILE* s) { return read_cii_MP_T(s); }
 
 
-void *read_generic_cii_MP_T(FILE *s) {
+uint8  read_uint8(FILE* s) { return read_C_unsigned_long(s); }
+uint16 read_uint16(FILE* s) { return read_C_unsigned_long(s); }
+uint32 read_uint32(FILE* s) { return read_C_unsigned_long(s); }
+uint64 read_uint64(FILE* s) { return read_cii_MP_T(s); }
+
+void write_nat(nat x,FILE* s) { write_C_unsigned_long(x,s); }
+void write_bool(bool x,FILE *s) {
+  switch (x) {
+  case false : write_C_unsigned_long(1,s); break;
+  case true  :  write_C_unsigned_long(2,s); break;
+  default : die();
+  }
+}
+void write_big_int(big_int x, FILE *s) { write_cii_MP_T(x,s); }
+void write_ieee_real(ieee_real x,FILE *s) { die(); }
+void write_int8(int8 x, FILE *s)   { write_C_signed_long(x,s); }
+void write_int16(int16 x, FILE *s) { write_C_signed_long(x,s); }
+void write_int32(int32 x, FILE *s) { write_C_signed_long(x,s); }
+void write_int64(int64 x, FILE *s) { write_cii_MP_T(x,s); }
+
+void write_uint8(uint8 x, FILE *s)   { write_C_unsigned_long(x,s); }
+void write_uint16(uint16 x, FILE *s) { write_C_unsigned_long(x,s); }
+void write_uint32(uint32 x, FILE *s) { write_C_unsigned_long(x,s); }
+void write_uint64(uint64 x, FILE *s) { write_cii_MP_T(x,s); }
+
+#define DECL_READ_GENERIC(t) \
+ void* read_generic_##t(FILE* s) { \
+      t* ret = (t*) malloc(sizeof(*ret)); \
+      if (ret == NULL) die(); \
+      *ret = read_##t(s); \
+      return ret; }
+
+#define DECL_WRITE_GENERIC(t) \
+ void write_generic_##t(void* x, FILE* s) { \
+      write_##t(*((t*)x), s); }
+
+DECL_READ_GENERIC(nat)
+DECL_READ_GENERIC(bool)
+DECL_READ_GENERIC(ieee_real)
+DECL_READ_GENERIC(int8)
+DECL_READ_GENERIC(int16)
+DECL_READ_GENERIC(int32)
+void *read_generic_int64(FILE *s) {
+  return (void*)(read_cii_MP_T(s));
+}
+void *read_generic_big_int(FILE *s) {
   return (void*)(read_cii_MP_T(s));
 }
 
-void write_generic_cii_MP_T(void *x,FILE *s) {
-  write_cii_MP_T(x,s);
+DECL_READ_GENERIC(uint8)
+DECL_READ_GENERIC(uint16)
+DECL_READ_GENERIC(uint32)
+void *read_generic_uint64(FILE *s) {
+   return (void*)(read_cii_MP_T(s));
 }
 
-void *to_generic_cii_MP_T(MP_T x) {
-  return (void*)x;
+DECL_WRITE_GENERIC(nat)
+DECL_WRITE_GENERIC(bool)
+DECL_WRITE_GENERIC(ieee_real)
+
+DECL_WRITE_GENERIC(int8)
+DECL_WRITE_GENERIC(int16)
+DECL_WRITE_GENERIC(int32)
+void write_generic_int64(void *x,FILE *s) {
+  write_cii_MP_T((MP_T)x,s);
+}
+void write_generic_big_int(void *x,FILE *s) {
+  write_cii_MP_T((MP_T)x,s);
 }
 
-MP_T from_generic_cii_MP_T(void *x) {
-  return (MP_T)x;
+DECL_WRITE_GENERIC(uint8)
+DECL_WRITE_GENERIC(uint16)
+DECL_WRITE_GENERIC(uint32)
+void write_generic_uint64(void *x,FILE *s) {
+  write_cii_MP_T((MP_T)x,s);
 }
+
+
+
+
+

@@ -29,6 +29,7 @@ val mktyid =
 %term     LBRACK | RBRACK
 	| LBRACE | RBRACE
         | LANGLE | RANGLE
+        | TOP
         | LPAREN | RPAREN
         | QUOTE of string
         | FIELDSEP
@@ -84,6 +85,12 @@ decl     : MODULE id LBRACE type_decl_list RBRACE
               (T.Module{name=id,imports=[],decls=type_decl_list}) 
          | MODULE id LPAREN import_list RPAREN LBRACE type_decl_list RBRACE
               (T.Module{name=id,imports=import_list,decls=type_decl_list}) 
+         | MODULE TOP LBRACE type_decl_list RBRACE
+              (T.Module{name=Identifier.fromString "",
+			imports=[],decls=type_decl_list}) 
+         | MODULE TOP LPAREN import_list RPAREN LBRACE type_decl_list RBRACE
+              (T.Module{name=Identifier.fromString "",
+			imports=import_list,decls=type_decl_list}) 
          | VIEW id LBRACE view_decl_list RBRACE
 	      (T.View{name=id,decls=view_decl_list})
          | PRIMITIVE MODULE id LBRACE export_list RBRACE
@@ -162,7 +169,10 @@ field_list': field FIELDSEP field_list' (field::field_list')
 view_entity : id DOT id ([id1,id2])
             | id DOT id DOT id ([id1,id2,id3])
             | MODULE id ([id])
-
+            | TOP DOT id DOT id ([Identifier.fromString "",id1,id2])
+            | TOP DOT id ([Identifier.fromString "",id1])
+            | MODULE TOP ([Identifier.fromString ""])
+           
 view_prop : LANGLE EQ ID (ID)
 
 view_entity_list : view_entity view_entity_list (view_entity::view_entity_list)

@@ -13,7 +13,8 @@ structure OOAst: OO_AST =
 	open LangIds
 
 	datatype ty_exp =
-	    TyId         of (ty_id)
+	    TyVoid
+	  | TyId         of (ty_id)
 	  | TyArray      of (ty_exp * int option)
 	  | TyReference  of (ty_exp)
 	  | TyOption     of (ty_exp)

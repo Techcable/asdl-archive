@@ -43,7 +43,7 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 	val trans_eid = 
 	    VarId.fromPath o  T.VarId.toPath o (T.VarId.suffixBase "_enum")
 	    
-	val variant_id = Ast.VarId.fromString "v"
+	val variant_id = Ast.VarId.fromString "u"
 	val temp_id = Ast.VarId.fromString "t"
 	val new_id = Ast.VarId.fromString "malloc";
 	val die_id = Ast.VarId.fromString "die";
@@ -141,9 +141,8 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 			NONE => []
 		      | (SOME x) =>
 			    trans_variant_init dst_rval x
-	    in
-		mk_block((emalloc(dst_lval,Sizeof(dst_rval)))
-			  @fields@variant_init)
+	    in mk_block((emalloc(dst_lval,Sizeof(dst_rval)))
+			@fields@variant_init)
 	    end
 	  | trans_stmt (T.If{test,then_stmt,else_stmt}) =
 	    If{test=trans_exp test,
@@ -191,8 +190,7 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 	    let
 		fun  do_field ({name,ty}) =
 		    {name=trans_id name,ty=trans_ty_exp NONE ty}
-	    in
-		List.map do_field fl
+	    in	List.map do_field fl
 	    end
 
 	and trans_choices cs =
@@ -255,8 +253,7 @@ structure TranslateAnsiC : TRANSLATE_TO_ANSI_C =
 	    val decls = List.map trans_decl decls
 	    val name = trans_mid name
 	    val imports = List.map trans_mid imports
-	  in
-	    Ast.Module {name=name,imports=imports,decls=decls}
+	  in Ast.Module {name=name,imports=imports,decls=decls}
 	  end
     end
 

@@ -1,14 +1,3 @@
-{-
-  Machine generated. Edit at your own risk 
-  Reproduce with the following
- --base_import=qualified StdPkl
- --haskell_deriving=Prelude.Eq, Prelude.Ord, Prelude.Show
- --line_width=74
- --no_action=false
- --output_directory=/tmp/haskell
- --pickler=std,sexp
- --view=Haskell
--}
 module StdTypes(Int8,
     Int16,
     Int32,

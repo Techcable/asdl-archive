@@ -171,11 +171,11 @@ public class PklJava {
     return 1.0;
   }
 
-  public static void write_java_BigInteger(BigInteger x, OutputStream s) {
+  public static void write_java_math_BigInteger(BigInteger x, OutputStream s) {
     die("unimplemented");
   }
 
-  public static BigInteger read_java_BigInteger(InputStream s) {
+  public static BigInteger read_java_math_BigInteger(InputStream s) {
     die("unimplemented");
     return null;
   }

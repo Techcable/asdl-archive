@@ -37,7 +37,7 @@ functor BuildC (structure CC : CC_BUILD
     val common_srcs = mk_srcs ["pkl-int.c","share.c"]
     val common_objs = comp_srcs common_srcs
 
-    val std_srcs = mk_srcs ["std_prims.c","StdTypes.c"]
+    val std_srcs = mk_srcs ["std_prims.c"]
     val std_objs = comp_srcs std_srcs
     val std_lib = make_lib "libasdl"
       (merge_objs (std_objs,common_objs))

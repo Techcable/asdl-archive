@@ -28,7 +28,6 @@ signature OO_TYPE_DECL =
 signature OO_SPEC =
   sig
     structure Ty    : OO_TYPE_DECL
-    structure IdMap : ID_MAP
 
     val inits  : Semant.MEnv.P.init list
     val prims  : Semant.type_info list -> Ty.ty_decl list
@@ -46,6 +45,7 @@ signature OO_SPEC =
     val opt_tid : Ty.ty_id -> Ty.ty_id
 
     val int_kind : bool
+    val int_tid  : Ty.ty_id
 
     val get_stmt  : (Ty.Ast.id * Ty.Ast.ty_exp) option ->
                                                 Ty.exp -> Ty.Ast.stmt

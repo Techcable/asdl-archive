@@ -10,6 +10,7 @@ Modified by Daniel Wang for new asdlGen naming convention.
 -}
 
 module StdPkl(Outstream, Instream, InIO, OutIO,
+	      write_integral, read_integral,
               write_tag, read_tag,
 	      write_list, read_list, 
               write_option,  read_option, die)  where
@@ -33,43 +34,43 @@ type OutIO a = IO a
 --
 -- There should be a version that uses the BITS library
 
-andb :: Int -> Int -> Int
+andb :: (Integral a) => a -> a -> a
 x `andb` y = x `mod` (y+1)
 
-orb :: Int -> Int -> Int
+orb :: (Integral a) => a -> a -> a
 orb = (+)
 
-shiftl :: Int -> Int -> Int
+shiftl :: (Integral a) => a -> a -> a
 n `shiftl` s = n * (2^s)
 
-shiftr :: Int -> Int -> Int
+shiftr :: (Integral a) => a ->  a ->  a
 n `shiftr` s = n `div` (2^s)
 
 
-write_tag :: Int -> Handle -> IO ()
-write_tag n s = loop (abs n)
+write_integral :: Integral a => a -> Handle -> IO ()
+write_integral n s = loop (abs n)
 	        where 
-		loop x | x <= 63   = hPutChar s (chr (finish (n<0) x))
+		loop x | x <= 63   = hPutChar s (chr (toInt(finish (n<0) x)))
 		       | otherwise = do 
-				      hPutChar s (chr (nibble x))
+				      hPutChar s (chr (toInt(nibble x)))
 				      loop (x `shiftr` 7)
 	        nibble n = ((n `andb` 0x7f) `orb` 0x80) `andb` 0xff
 		finish False n = n `andb` 255
 		finish True  n = (n `orb` 0x40) `andb` 0xff
 
 
-read_tag :: Handle -> IO Int
-read_tag s  
+read_integral :: Integral a => Handle -> IO a
+read_integral s  
  = do {
      c <- hGetChar s;
-     loop (ord c) 0 0
+     loop (fromInt (ord c)) 0 0
    } 
    where
 	loop n acc shift = 
 	  if (continue_bit_set n) then
 	    do {
 	      c <- hGetChar s;
-	      loop ((ord c) `andb` 255) 
+	      loop (fromInt(ord c) `andb` 255) 
 		    (acc `orb` ((n `andb` 0x7f) `shiftl` shift)) 
 		    (shift+7)
 	    }
@@ -81,6 +82,10 @@ read_tag s
 	continue_bit_set w = odd (w `shiftr` 7)
 	neg_bit_set w      = odd (w `shiftr` 6)
 
+write_tag :: Int -> Handle -> IO () 
+write_tag = write_integral
+read_tag :: Handle -> IO Int
+read_tag = read_integral
 
 write_list :: (a -> Handle -> IO b) -> [a] -> Handle -> IO ()
 write_list f xs s = do 

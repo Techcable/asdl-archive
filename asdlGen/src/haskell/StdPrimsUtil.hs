@@ -1,6 +1,6 @@
-module StdPrimsUtil(write_int, write_string, write_identifier,
-                    read_int, read_string,  read_identifier,
-	            sexp_wr_int, sexp_wr_string, sexp_wr_identifier,
+module StdPrimsUtil(write_int, write_string, write_identifier, write_big_int,
+                    read_int, read_string,  read_identifier, read_big_int,
+	            sexp_wr_int, sexp_wr_string, sexp_wr_identifier, 
 	            sexp_rd_int, sexp_rd_string, sexp_rd_identifier) where
 
 import Prelude
@@ -13,17 +13,21 @@ import qualified SexpLex
 write_int        :: StdPrims.Int -> StdPkl.Outstream -> StdPkl.OutIO ()
 write_string     :: StdPrims.String -> StdPkl.Outstream -> StdPkl.OutIO ()
 write_identifier :: StdPrims.Identifier -> StdPkl.Outstream -> StdPkl.OutIO ()
-write_int = StdPkl.write_tag
+write_big_int    :: StdPrims.Big_int -> StdPkl.Outstream -> StdPkl.OutIO ()
+
+write_int = StdPkl.write_integral
 write_string str s = do
 		      StdPkl.write_tag (length str) s
 		      hPutStr s str
 write_identifier = write_string
+write_big_int = StdPkl.write_integral
 
 read_int        :: StdPkl.Instream -> StdPkl.OutIO StdPrims.Int
 read_string     :: StdPkl.Instream -> StdPkl.OutIO StdPrims.String
 read_identifier :: StdPkl.Instream -> StdPkl.OutIO StdPrims.Identifier
+read_big_int    :: StdPkl.Instream -> StdPkl.OutIO StdPrims.Big_int
 
-read_int = read_int
+read_int = StdPkl.read_integral
 read_string s = do
 		  sz  <- StdPkl.read_tag s
 		  str <- readN s sz
@@ -34,12 +38,12 @@ readN s n = if n == (0::Int) then return ""
 	              else do {c  <- hGetChar s;
 			       cs <- readN s (n-1);
 			       return (c:cs)}
-
+read_big_int = StdPkl.read_integral
 
 sexp_wr_int        :: StdPrims.Int -> SexpPkl.Outstream -> SexpPkl.OutIO ()
 sexp_wr_string     :: StdPrims.String -> SexpPkl.Outstream -> SexpPkl.OutIO ()
 sexp_wr_identifier :: StdPrims.Identifier -> SexpPkl.Outstream -> 
-                                                            SexpPkl.OutIO ()
+	                                                SexpPkl.OutIO ()
 out_prim :: String -> (a -> SexpLex.Tok) -> a -> 
                       SexpPkl.Outstream -> SexpPkl.OutIO ()
 out_prim t f x h = 
@@ -48,7 +52,6 @@ out_prim t f x h =
                   hPutStr h (SexpLex.toString (f x))
 		  SexpPkl.wr_lp h
 		  
-
 sexp_wr_int = out_prim "int" SexpLex.INT 
 sexp_wr_string = out_prim "string" SexpLex.STR 
 sexp_wr_identifier = out_prim "identifier" SexpLex.STR

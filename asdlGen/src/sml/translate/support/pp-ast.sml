@@ -49,6 +49,7 @@ functor mkPPAst(structure Ast :
 	else SOME arg
       end
 
+			
     val id_tbl = mk_tbl IdMap.name IdMap.id_map
     val ty_tbl = mk_tbl IdMap.name IdMap.ty_map
 
@@ -80,6 +81,7 @@ functor mkPPAst(structure Ast :
       if cap_mod then (fn {base,qualifier} => 
 		       SOME {base=cap base, qualifier=List.map cap qualifier})
       else (fn x => NONE)
+
     val fix_mid = (ModuleId.subst cap_mod_path) o (ModuleId.subst id_fix)
 
 

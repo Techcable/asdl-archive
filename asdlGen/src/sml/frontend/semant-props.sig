@@ -124,11 +124,13 @@ command line options rather than the normal view mechanism.
 **)
 signature MOD_ENV_PROPS =
   sig include COMMON_PROPS
-    val mono_types   : props -> bool
-    val init_mono_types : bool -> init
-    val pickler_kind : props -> string 
-    val init_pickler_kind : string -> init
-    val explicit_sharing : props -> bool
+    val mono_types            : props -> bool
+    val init_mono_types       : bool -> init
+    val aux_mod_suffix        : props -> string option
+    val init_aux_mod_suffix   : string option -> init
+    val pickler_kind          : props -> string 
+    val init_pickler_kind     : string -> init
+    val explicit_sharing      : props -> bool
     val init_explicit_sharing : bool -> init
   end
 (**)

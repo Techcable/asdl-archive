@@ -82,8 +82,7 @@ functor mkOOBuildAux(structure T : OO_AST
 	    end
 
 	(* visitor code *)
-	val void_ty  = T.TyId (T.TypeId.fromString "void")
-	    
+	val void_ty  = T.TyVoid
 	val visit_arg  =  (T.VarId.fromString "x")
 	val visit_def_mth  =  (T.VarId.fromString "visit")
 

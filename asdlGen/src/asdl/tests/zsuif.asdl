@@ -1,5 +1,5 @@
 
-module zsuif (imports StdTypes) {
+module zsuif {
 -- hacked
 suif_int = (int)
 lstring  = (identifier)
@@ -14,21 +14,21 @@ constant = ConstInt(suif_int)
 source_op =
            SrcVar(variable_symbol var)
          | SrcReg(register_symbol reg, type type)
-         | SrcDst(instruction instr, StdTypes.nat op_num)
+         | SrcDst(instruction instr, nat op_num)
           
 destination_op = 
            DstTmp -- unnamed destination 
          | DstVar(variable_symbol var)
          | DstReg(register_symbol reg, type type)
-         | DstSrc(instruction instr, StdTypes.nat op_num)
+         | DstSrc(instruction instr, nat op_num)
 
 int_or_source_op = Int(suif_int)
                  | SrcOp(source_op)
 
-symbol = (StdTypes.nat uid, identifier name)
+symbol = (nat uid, identifier name)
 
 -- reorganized type hierarchy 
-type_id  = (StdTypes.nat)
+type_id  = (nat)
 
 type = Data(data_type)
      | Procedure(procedure_type)
@@ -82,7 +82,7 @@ symbol_table_entry =
                       type type, procedure_symbol proc)
      | FieldEntry(int_or_source_op bit_offset)
      | NestedVariable(variable_symbol start, int_or_source_op bit_offset)
-     attributes (symbol key, StdTypes.bool address_taken)
+     attributes (symbol key, bool address_taken)
 
 symbol_table = (symbol_table_entry* entries)
 

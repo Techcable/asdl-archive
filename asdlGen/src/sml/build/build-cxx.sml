@@ -33,7 +33,7 @@ functor BuildCXX (structure CC : CC_BUILD
     val common_srcs = mk_srcs []
     val common_objs = comp_srcs common_srcs
 
-    val std_srcs = mk_srcs ["std_prims.cxx","StdTypes.cxx"]
+    val std_srcs = mk_srcs ["std_prims.cxx"]
     val std_objs = comp_srcs std_srcs
     val std_lib = make_lib "libasdlxx"
       (merge_objs (std_objs,common_objs))

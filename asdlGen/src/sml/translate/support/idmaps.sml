@@ -27,7 +27,7 @@ structure IdMaps =
 
  	structure SML =
 	  struct
-	    val id_map = List.map (fix_kw "'")
+	    val id_map = ("","Ast")::(List.map (fix_kw "'")
 	    ["and", "abstraction", "abstype", "as", "case",
 	     "datatype", "else", "end", "eqtype", "exception", "do",
 	     "fn", "fun", "functor", "funsig", "handle", "if", "in",
@@ -35,7 +35,7 @@ structure IdMaps =
 	     "of", "op", "open", "overload", "raise", "rec",
 	     "ref","sharing", "sig", "signature", "struct", "structure",
 	     "then", "type", "val", "where", "while", "with", "withtype",
-	     "orelse", "andalso"]
+	     "orelse", "andalso"])
 	    
 	    val ty_map = id_map
 	    val name = "SML"
@@ -43,19 +43,19 @@ structure IdMaps =
   
       structure Haskell =
 	struct
-	  val id_map = List.map (fix_kw "'") 
+	  val id_map = ("","Ast")::(List.map (fix_kw "'") 
 	    ["case", "class", "data", "default", "deriving", "do",
 	     "else", "if", "import", "in", "infix", "infixl",
 	     "infixr", "instance", "let", "module", "newtype",
 	     "of","then", "type", "where", "as" , "qualified",
-	     "hiding"]
+	     "hiding"])
 	  val ty_map = id_map
 	  val name = "Haskell"
 	end
 
       structure OCaml =
 	struct
-	  val id_map = List.map (fix_kw "'")
+	  val id_map = ("","Ast")::(List.map (fix_kw "'")
 	    ["and", "as", "assert", "asr", "begin", "class", "closed",
 	     "constraint", "do", "done", "downto", "else", "end",
 	     "exception", "external", "false", "for", "fun", "function",
@@ -63,28 +63,28 @@ structure IdMaps =
 	     "let", "lor", "lsl", "lsr", "lxor", "match", "method", "mod",
 	     "module", "mutable", "new", "of", "open", "or", "parser",
 	     "private", "rec", "sig", "struct", "then", "to", "true", "try",
-	     "type", "val", "virtual", "when", "while", "with"]
+	     "type", "val", "virtual", "when", "while", "with"])
 	  val ty_map = id_map
 	  val name = "OCaml"
 	end
       
        structure AnsiC =
 	 struct
-	   val id_map = List.map (fix_kw "_")
+	   val id_map = (List.map (fix_kw "_")
 	     ["auto", "break", "case", "char", "const",
 	      "continue", "default", "do", "double", "else",
 	      "enum", "extern", "float", "for", "goto", "if",
 	      "int", "long", "register", "return", "short",
 	      "signed", "sizeof", "static", "struct", "switch",
 	      "typedef", "union", "unsigned", "void",
-	      "volatile", "while"]
+	      "volatile", "while"])
 	   val ty_map = id_map@[("int","int")]
 	   val name = "AnsiC"
 	 end
 	   
        structure CPlusPlus =
 	 struct
-	   val id_map = List.map (fix_kw "_")
+	   val id_map = ("","Ast")::(List.map (fix_kw "_")
 	     ["auto", "break", "case", "char", "const", "continue",
 	      "default", "do", "double", "else", "enum", "extern", "float",
 	      "for", "goto", "if", "int", "long", "register", "return",
@@ -93,7 +93,7 @@ structure IdMaps =
 	      "catch", "class", "delete", "friend", "inline", "new",
 	      "operator", "overload", "private", "protected", "public",
 	      "template", "this", "try", "virtual","kind",
-	      "typename" (* seems to be reserved by g++*)]
+	      "typename" (* seems to be reserved by g++*)])
 	   val ty_map = id_map@[("int","int")]
 	   val name = "Cxx"
 	 end
@@ -112,7 +112,7 @@ structure IdMaps =
 	      "static", "while", "throw", "throws", "try",
 	      "volatile","kind"]
 	     
-	   val ty_map = id_map@ [("int","int"),("string","String")]
+	   val ty_map = id_map 
 	   val name = "Java"
 	 end
        (* todo dump in the right keywords *)

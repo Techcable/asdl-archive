@@ -1,18 +1,7 @@
-module StdTypes {
- nat = (int)
- bool = TRUE | FALSE
-
- int8   = (int)
- int16  = (int)
- int32  = (int)
- int64  = (int)
-
- uint8  = (int)
- uint16 = (int)
- uint32 = (int)
- uint64 = (int)
-
- ieee_real = (string)
+primitive module StdTypes {
+ nat    bool
+ int8   int16  int32  int64 
+ uint8  uint16 uint32  uint64 ieee_real 
 }
 
 view Doc {
@@ -28,102 +17,50 @@ view Doc {
  }
 }
 
-view SML {
- -- implementation provided by hand
- module StdTypes <= suppress : true
- module StdTypes <= is_library : true
-}
-
 view C {
- -- implementation provided by hand
- module StdTypes <= suppress : true
- module StdTypes <= is_library : true
-}
+ StdTypes.nat         <= source_name : nat
+ StdTypes.bool        <= source_name : bool
+ StdTypes.ieee_real   <= source_name : ieee_real
 
-view Haskell {
-module StdTypes <= suppress   : true
-module StdTypes <= is_library : true
-}	
+ StdTypes.int8        <= source_name : int8
+ StdTypes.int16       <= source_name : int16
+ StdTypes.int32       <= source_name : int32
+ StdTypes.int64       <= source_name : int64
 
-view Java {
-
--- set suppress to false to generate stubs
-module StdTypes <= suppress   : true
-module StdTypes <= is_library : true
--- define the type substitutions
- StdTypes.bool <= { natural_type : boolean
-                          reader : read_java_boolean
-                          writer : write_java_boolean
-                   }
- StdTypes.ieee_real   
-                <= { natural_type : double
-                           reader : read_java_double
-                           writer : write_java_double 
-                   }
-
-{ StdTypes.int8 }
-                <= { natural_type : byte 
-                           reader : read_java_byte
-                           writer : write_java_byte 
-                   }
-                       
-{ StdTypes.int16 StdTypes.uint8 } 
-                <= { natural_type : short
-                           reader : read_java_short
-                           writer : write_java_short 
-                   }
-
-{ StdTypes.int32 StdTypes.uint16 }
-                <= { natural_type : int
-                           reader : read_java_int 
-                           writer : write_java_int 
-                   }
-
-{ StdTypes.int64 }
-                <= { natural_type : long
-                           reader : read_java_long
-                           writer : write_java_long 
-                   }
-
-{ StdTypes.uint64 }
-                 <= { natural_type : BigInteger 
-                            reader : read_java_BigInteger
-                            writer : write_java_BigInteger 
-                    }
-
+ StdTypes.uint8       <= source_name : uint8
+ StdTypes.uint16      <= source_name : uint16
+ StdTypes.uint64      <= source_name : uint64
 }
 
 view Cxx {
--- set suppress to false to generate stubs
-module StdTypes <= suppress   : false
-module StdTypes <= is_library : true
+ StdTypes.nat         <= source_name : nat
+ StdTypes.bool        <= source_name : bool
+ StdTypes.ieee_real   <= source_name : ieee_real
 
-StdTypes.int8  <= { natural_type : int8
-                          reader : read_int8
-                          writer : write_int8
-                   }
+ StdTypes.int8        <= source_name : int8
+ StdTypes.int16       <= source_name : int16
+ StdTypes.int32       <= source_name : int32
+ StdTypes.int64       <= source_name : int64
 
-StdTypes.int16  <= { natural_type : int16
-                           reader : read_int16
-                           writer : write_int16
-                   }
-StdTypes.int32  <= { natural_type : int32
-                           reader : read_int32
-                           writer : write_int32
-                   }
+ StdTypes.uint8       <= source_name : uint8
+ StdTypes.uint16      <= source_name : uint16
+ StdTypes.uint64      <= source_name : uint64
+}
 
-StdTypes.uint8  <= { natural_type : uint8
-                           reader : read_uint8
-                           writer : write_uint8
-                   }
-StdTypes.uint16  <= { natural_type : uint16
-                            reader : read_uint16
-                            writer : write_uint16
-                   }
-{ StdTypes.nat StdTypes.uint32 } 
-	         <= { natural_type : uint32
-                            reader : read_uint32
-                            writer : write_uint32
-                   }
+-- The Java view is a bit magic because java lacks type abbreviations
+-- and a global name space
+-- The Java backend treats the source_names java_foo as magic
+view Java {
+ StdTypes.nat         <= source_name : StdTypes.java_int
+ StdTypes.bool        <= source_name : StdTypes.java_boolean 
+ StdTypes.ieee_real   <= source_name : StdTypes.java_double 
+ StdTypes.int8        <= source_name : StdTypes.java_byte 
+ StdTypes.int16       <= source_name : StdTypes.java_short
+ StdTypes.int32       <= source_name : StdTypes.java_int
+ StdTypes.int64       <= source_name : StdTypes.java_long
+
+ StdTypes.uint8       <= source_name : StdTypes.java_short
+ StdTypes.uint16      <= source_name : StdTypes.java_int
+ StdTypes.uint64      <= source_name : StdTypes.java_math_BigInteger 
 }
 

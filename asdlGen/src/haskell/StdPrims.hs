@@ -10,8 +10,8 @@ http://www.dcs.gla.ac.uk/~reig/
 Modified by Daniel Wang for new asdlGen naming convention.
 -}
 
-module StdPrims(Int, String, Identifier)  where
+module StdPrims(Int, String, Identifier, Big_int)  where
 
 import Prelude
 type Identifier = String
-
+type Big_int    = Integer

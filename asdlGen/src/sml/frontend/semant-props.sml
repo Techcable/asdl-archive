@@ -107,5 +107,7 @@ structure ModEnvProps :> MOD_ENV_PROPS =
 	  decl_string p {name="pickler_kind",default="std"}
 	val (explicit_sharing,init_explicit_sharing) =
 	  decl_bool p {name="explicit_sharing",default=false}
+	val (aux_mod_suffix,init_aux_mod_suffix) =
+	    decl_string_opt p {name="aux_mod_suffix",default=NONE}
     end 
 (**)

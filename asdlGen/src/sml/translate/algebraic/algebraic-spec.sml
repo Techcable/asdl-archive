@@ -21,14 +21,12 @@ structure AlgebraicTy : ALGEBRAIC_TYPE_DECL =
 (**)
 (**:[[functor mkAlgebraicSpec]]:**)
 functor mkAlgebraicSpec(structure Ty    : ALGEBRAIC_TYPE_DECL
-			structure IdMap : ID_MAP
 			val get_attribs : bool
 			val prim_ty     : {intT:string,stringT:string}
 			val streams_ty  : {outs:string,ins:string} option
 			val monad_cons  : {inm:string,outm:string} option
 			val ignore_labels : bool) : ALGEBRAIC_SPEC =
   struct
-    structure IdMap = IdMap
     val aux_suffix = "Util"
     val ignore_labels = ignore_labels
     
@@ -89,7 +87,8 @@ functor mkAlgebraicSpec(structure Ty    : ALGEBRAIC_TYPE_DECL
 	    val base = s^"_"^base
 	    val qualifier =
 	      case qualifier of
-		[q] => [q^aux_suffix]
+		["<toplevel>"] => [aux_suffix]
+	      |	[q] => [q^aux_suffix]
 	      | _ => qualifier
 	  in VarId.fromPath{base=base,qualifier=qualifier}
 	  end

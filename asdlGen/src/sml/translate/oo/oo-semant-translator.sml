@@ -15,7 +15,7 @@ functor mkOOSemantTranslator
       structure T = Ast
       structure IdCvt =
 	mkIdCvt(structure Ast = Ast
-		structure IdMap = Spec.IdMap)
+		structure IdMap = IdMaps.Empty)
       open IdCvt
 
       val int_kind = Spec.int_kind
@@ -47,10 +47,10 @@ functor mkOOSemantTranslator
 	  {inline=true,scope=T.Public,args=fds, body={vars=[],body=body}}
 	end
 	fun mk_tag_tid tid =
-	  (if int_kind then (T.TypeId.fromString "int")
-		  else (T.TypeId.suffixBase "_enum" tid))
+	  (if int_kind then Spec.int_tid
+	   else (T.TypeId.suffixBase "_enum" tid))
 
-	val void_ty  = T.TyId (T.TypeId.fromString "void")
+	val void_ty  = T.TyVoid
 	val visit_arg  =  (T.VarId.fromString "x")
 	val accept_visitor  =  (T.VarId.fromString "v")
 
@@ -263,7 +263,6 @@ functor mkOOSemantTranslator
 	    [T.Expr(T.MthCall(T.FieldSub(T.DeRef(T.Id accept_visitor),
 					 visit_id name),[T.This]))]
 
-
 	  val decl =
 	     if is_enum then
 	       T.DeclAbstractClass
@@ -337,9 +336,11 @@ functor mkOOSemantTranslator
 	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs)
 	    (Spec.prims prim_types) ms
 	  val new_decls = Spec.get_aux_decls p (Ty.mk_env ty_decls)
+	  val toMid = (IdCvt.trans m2m) o S.Module.name
+	  val prim_imports =  List.map toMid prim_modules
 	  fun add_decls (ty_decls,(T.Module{name,imports,decls},mp)) =
 	    (T.Module{name=name,
-		     imports=imports,
+		     imports=prim_imports@imports,
 		     decls=T.add_methods (new_decls ty_decls) decls},mp)
 	  val out = List.map add_decls ms 
 	in

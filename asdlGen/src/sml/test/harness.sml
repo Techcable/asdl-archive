@@ -252,7 +252,7 @@ structure Test =
 				  (!keep_going))
 
 	fun test_all n i =
-	  let val i = ("--pickler=sexp,std"::"-d"::"../asdl/tests/work"::i)
+	  let val i = ("--aux_suffix=Util"::"-d"::"../asdl/tests/work"::i)
 	  in
 	    [test (n^"-ocaml",do_ocaml,"--view=OCaml"::i),
 	     test (n^"-ml",do_sml,"--view=SML"::i),
@@ -291,6 +291,8 @@ structure Test =
 	      mk_path ["modTest","op.asdl"],
 	      mk_path ["modTest","pos.asdl"]]) 
 
+	val big_int_test =
+	    (test_all "generic.asdl"  [mk_path ["generic.asdl"]])
 	val asdl_test =
 	    (test_all "asdl.asdl"  [mk_path ["asdl.asdl"]])
 
@@ -320,8 +322,12 @@ structure Test =
 	    [test ("cii",do_c,["--view=C",
 				mk_path ["slp3.asdl"]])]
 
-	    
+	val toplevel_test =
+	  (test_all "toplevel"  [mk_path ["toplevel.asdl"]])
+
 	val tests =
+	    toplevel_test@
+	    big_int_test@
 	    slp_test@
 	    slp3_test@
 	    asdl_test@

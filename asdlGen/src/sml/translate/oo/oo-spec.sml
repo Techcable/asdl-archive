@@ -21,11 +21,10 @@ structure OOTy : OO_TYPE_DECL =
   end
 
 functor mkOOSpec(structure Ty    : OO_TYPE_DECL
-		 structure IdMap : ID_MAP
 		 val streams_ty  : {outs:string,ins:string} option
-		 val int_kind    : bool) : OO_SPEC=
+		 val int_ty      : string 
+		 val int_kind    : bool) : OO_SPEC =
   struct
-    structure IdMap = IdMap
     open Ty.Ast
     open StmtExp
     val inits = []
@@ -39,6 +38,8 @@ functor mkOOSpec(structure Ty    : OO_TYPE_DECL
 	  (VarId.prefixBase (s^"_")) o VarId.fromPath o TypeId.toPath
 	val streams_ty = Option.getOpt
 	  (streams_ty,{ins="instream",outs="outstream"})
+	val int_tid = TypeId.fromString int_ty
+	val int_ty = TyId int_tid
 	val rd_name = VarId.fromString "read"
 	val wr_name = VarId.fromString "write"
 
@@ -124,7 +125,7 @@ functor mkOOSpec(structure Ty    : OO_TYPE_DECL
 	       (fn v =>
 		STMT(Expr(SMthCall(tid,wr_name,[v,Id stream_id])))))
 	  
-	val void_ty  = TyId (TypeId.fromString "void")
+	val void_ty  = TyVoid
 	fun write_decl {name,arg,body} =
 	  (name,Mth{name=wr_name,
 		    inline=false,
@@ -191,8 +192,6 @@ functor mkOOSpec(structure Ty    : OO_TYPE_DECL
 	    val (rd_elt,wr_elt) = elt_ops (tid,t)
 	    val elm_ty = (ty_exp t)
 	    val ty = seq_rep elm_ty
-
-	    val int_ty = TyId(TypeId.fromString "int")
 	    val len_var = (VarId.fromString "len",int_ty)
 	    val idx_var = (VarId.fromString "idx",int_ty)
 	    val seq_var = (VarId.fromString "seq",ty)

@@ -2,173 +2,90 @@
 #define _Pkl_int_
 #include <stdio.h>
 #include "cii/mp.h"
+/* typdefs based on minimum ANSI C guarantees */
 /* note this is a mess need to find a better way to do this */
+typedef unsigned int nat;
+#ifndef __cplusplus
+typedef enum {false, true} bool;
+#endif
+typedef double ieee_real;
 
-
-signed char  read_C_signed_char(FILE* s);
-signed short read_C_signed_short(FILE* s);
-signed int   read_C_signed_int(FILE* s);
-signed long  read_C_signed_long(FILE* s);
-
-void write_C_signed_char(signed char x, FILE *s);
-void write_C_signed_short(signed short x, FILE *s);
-void write_C_signed_int(signed int x, FILE *s);
-void write_C_signed_long(signed long x, FILE *s);
-
-unsigned char  read_C_unsigned_char(FILE* s);
-unsigned short read_C_unsigned_short(FILE* s);
-unsigned int   read_C_unsigned_int(FILE* s);
-unsigned long  read_C_unsigned_long(FILE* s);
-
-void write_C_unsigned_char(unsigned char x, FILE *s);
-void write_C_unsigned_short(unsigned short x, FILE *s);
-void write_C_unsigned_int(unsigned int x, FILE *s);
-void write_C_unsigned_long(unsigned long x, FILE *s);
-
-/* generic versions */
-void *read_generic_C_signed_char(FILE* s);
-void *read_generic_C_signed_short(FILE* s);
-void *read_generic_C_signed_int(FILE* s);
-void *read_generic_C_signed_long(FILE* s);
-
-void write_generic_C_signed_char(void* x, FILE *s);
-void write_generic_C_signed_short(void* x, FILE *s);
-void write_generic_C_signed_int(void* x, FILE *s);
-void write_generic_C_signed_long(void* x, FILE *s);
-
-void *read_generic_C_unsigned_char(FILE* s);
-void *read_generic_C_unsigned_short(FILE* s);
-void *read_generic_C_unsigned_int(FILE* s);
-void *read_generic_C_unsigned_long(FILE* s);
-
-void write_generic_C_unsigned_char(void* x, FILE *s);
-void write_generic_C_unsigned_short(void* x, FILE *s);
-void write_generic_C_unsigned_int(void* x, FILE *s);
-void write_generic_C_unsigned_long(void* x, FILE *s);
-
-/* coercion functions */
-void *to_generic_C_signed_char(signed char x);
-void *to_generic_C_signed_short(signed short x);
-void *to_generic_C_signed_int(signed int x);
-void *to_generic_C_signed_long(signed long x);
-
-signed char  from_generic_C_signed_char(void* x);
-signed short from_generic_C_signed_short(void* x);
-signed int   from_generic_C_signed_int(void* x);
-signed long  from_generic_C_signed_long(void* x);
-
-void *to_generic_C_unsigned_char(unsigned char x);
-void *to_generic_C_unsigned_short(unsigned short x);
-void *to_generic_C_unsigned_int(unsigned int x);
-void *to_generic_C_unsigned_long(unsigned long x);
-
-unsigned char  from_generic_C_unsigned_char(void* x);
-unsigned short from_generic_C_unsigned_short(void* x);
-unsigned int   from_generic_C_unsigned_int(void* x);
-unsigned long  from_generic_C_unsigned_long(void* x);
-
-/* todo use native 64 bit support when possible */
-
-void write_cii_MP_T(MP_T x, FILE *s);
-MP_T read_cii_MP_T(FILE* s);
-
-void write_generic_cii_MP_T(void *x, FILE *s);
-void *read_generic_cii_MP_T(FILE* s);
-
-
-
-/* magic to get guranteed widths */
-typedef signed char  int8;
-typedef signed short int16;
-typedef signed int int32;
-
-typedef unsigned char  uint8;
-typedef unsigned short uint16;
-typedef unsigned int uint32;
-
-#define write_int8   write_C_signed_char
-#define write_int16  write_C_signed_short
-#define write_int32  write_C_signed_int
-
-#define write_uint8  write_C_unsigned_char
-#define write_uint16 write_C_unsigned_short
-#define write_uint32 write_C_unsigned_int
-
-#define read_int8    read_C_signed_char
-#define read_int16   read_C_signed_short
-#define read_int32   read_C_signed_int
-
-#define read_uint8   read_C_unsigned_char
-#define read_uint16  read_C_unsigned_short
-#define read_uint32  read_C_unsigned_int
-
-#define write_generic_int8   write_generic_C_signed_char
-#define write_generic_int16  write_generic_C_signed_short
-#define write_generic_int32  write_generic_C_signed_int
-
-#define write_generic_uint8  write_generic_C_unsigned_char
-#define write_generic_uint16 write_generic_C_unsigned_short
-#define write_generic_uint32 write_generic_C_unsigned_int
-
-#define read_generic_int8    read_generic_C_signed_char
-#define read_generic_int16   read_generic_C_signed_short
-#define read_generic_int32   read_generic_C_signed_int
-
-#define read_generic_uint8   read_generic_C_unsigned_char
-#define read_generic_uint16  read_generic_C_unsigned_short
-#define read_generic_uint32  read_generic_C_unsigned_int
-
-
-#define to_generic_int8   to_generic_C_signed_char
-#define to_generic_int16  to_generic_C_signed_short
-#define to_generic_int32  to_generic_C_signed_int
-
-#define to_generic_uint8  to_generic_C_unsigned_char
-#define to_generic_uint16 to_generic_C_unsigned_short
-#define to_generic_uint32 to_generic_C_unsigned_int
-
-#define from_generic_int8    from_generic_C_signed_char
-#define from_generic_int16   from_generic_C_signed_short
-#define from_generic_int32   from_generic_C_signed_int
-
-#define from_generic_uint8   from_generic_C_unsigned_char
-#define from_generic_uint16  from_generic_C_unsigned_short
-#define from_generic_uint32  from_generic_C_unsigned_int
-
-/* todo get long long and long support right */
-#if 1
-typedef MP_T int64;
-typedef MP_T uint64;
-
-#define read_int64   read_cii_MP_T
-#define write_int64  write_cii_MP_T
-#define read_uint64  read_cii_MP_T
-#define write_uint64 write_cii_MP_T
-
-#define read_generic_int64   read_generic_cii_MP_T
-#define write_generic_int64  write_generic_cii_MP_T
-#define read_generic_uint64  read_generic_cii_MP_T
-#define write_generic_uint64 write_gemeric_cii_MP_T
-
-#define to_generic_int64    to_generic_cii_MP_T
-#define from_generic_int64  from_generic_cii_MP_T
-#define to_generic_uint64   to_generic_cii_MP_T
-#define from_generic_uint64 from_gemeric_cii_MP_T
-
+typedef signed char int8;
+typedef signed short int int16;
+typedef signed long  int int32;
+typedef unsigned char uint8;
+typedef unsigned short int uint16;
+typedef unsigned long  int uint32;
+typedef MP_T big_int;
+#if 0  
+/* use long long in future */
+typedef   signed long long int64;
+typedef unsigned long long uint64;
 #else
-#define read_int64   read_C_signed_long
-#define write_int64  write_C_signed_long
-#define read_uint64  read_C_unsigned_long
-#define write_uint64 write_C_unsigned_long
+typedef big_int int64;
+typedef big_int uint64;
+#endif
+#ifdef __cplusplus
+extern "C" {
+#endif
+big_int   read_big_int(FILE *s);
+nat       read_nat(FILE *s);
+bool      read_bool(FILE *s);
+ieee_real read_ieee_real(FILE *s);
 
-#define read_generic_int64   read_generic_C_signed_long
-#define write_generic_int64  write_generic_C_signed_long
-#define read_generic_uint64  read_generic_C_unsigned_long
-#define write_generic_uint64 write_gemeric_C_unsigned_long
+int8  read_int8(FILE *s);
+int16 read_int16(FILE *s);
+int32 read_int32(FILE *s);
+int64 read_int64(FILE *s);
 
-#define to_generic_int64    to_generic_C_signed_long
-#define from_generic_int64  from_generic_C_signed_long
-#define to_generic_uint64   to_generic_C_unsigned_long
-#define from_generic_uint64 from_gemeric_C_unsigned_long
+uint8  read_uint8(FILE *s);
+uint16 read_uint16(FILE *s);
+uint32 read_uint32(FILE *s);
+uint64 read_uint64(FILE *s);
+
+void write_big_int(big_int x,FILE *s);
+void write_nat(nat x,FILE *s);
+void write_bool(bool x,FILE *s);
+void write_ieee_real(ieee_real x,FILE *s);
+
+void write_int8(int8 x,FILE *s);
+void write_int16(int16 x,FILE *s);
+void write_int32(int32 x,FILE *s);
+void write_int64(int64 x,FILE *s);
+
+void write_uint8(uint8 x,FILE *s);
+void write_uint16(uint16 x,FILE *s);
+void write_uint32(uint32 x,FILE *s);
+void write_uint64(uint64 x,FILE *s);
+
+void* read_generic_nat(FILE *s);
+void* read_generic_bool(FILE *s);
+void* read_generic_ieee_real(FILE *s);
+
+void* read_generic_int8(FILE *s);
+void* read_generic_int16(FILE *s);
+void* read_generic_int32(FILE *s);
+void* read_generic_int64(FILE *s);
+
+void* read_generic_uint8(FILE *s);
+void* read_generic_uint16(FILE *s);
+void* read_generic_uint32(FILE *s);
+void* read_generic_uint64(FILE *s);
+
+void write_generic_nat(void* x, FILE *s);
+void write_generic_bool(void* x, FILE *s);
+void write_generic_ieee_real(void* x, FILE *s);
+
+void write_generic_int8(void* x, FILE *s);
+void write_generic_int16(void* x, FILE *s);
+void write_generic_int32(void* x, FILE *s);
+void write_generic_int64(void* x, FILE *s);
+
+void write_generic_uint8(void* x, FILE *s);
+void write_generic_uint16(void* x, FILE *s);
+void write_generic_uint32(void* x, FILE *s);
+void write_generic_uint64(void* x, FILE *s);
+#ifdef __cplusplus
+}
 #endif
 #endif

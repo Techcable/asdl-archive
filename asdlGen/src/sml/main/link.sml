@@ -45,7 +45,6 @@ structure Link =
 	
       structure SMLAlgebraicSpec =
 	mkAlgebraicSpec(structure Ty = AlgebraicTy
-			structure IdMap = IdMaps.SML	  
 			val get_attribs = true
 			val ignore_labels = false
 			val prim_ty = {intT="int",stringT="string"}
@@ -70,7 +69,6 @@ structure Link =
 
       structure OCamlAlgebraicSpec =
 	mkAlgebraicSpec(structure Ty = AlgebraicTy
-			structure IdMap = IdMaps.OCaml
 			val get_attribs = false
 			val ignore_labels = true
 			val prim_ty = {intT="int",stringT="string"}
@@ -95,7 +93,6 @@ structure Link =
 	
        structure HaskellAlgebraicSpec =
 	 mkAlgebraicSpec(structure Ty = AlgebraicTy
-			 structure IdMap = IdMaps.Haskell
 			 val get_attribs = false
 			 val ignore_labels = true
 			 val prim_ty = {intT="Int",stringT="String"}
@@ -120,8 +117,7 @@ structure Link =
 		val dflt_view = "Haskell")
 	 
        structure AnsiCAlgolSpec =
-	 mkAlgolSpec(structure Ty = AlgolTy
-		     structure IdMap = IdMaps.AnsiC)
+	 mkAlgolSpec(structure Ty = AlgolTy)
        structure AnsiCTranslator =
 	 mkAlgolSemantTranslator(structure Spec = AnsiCAlgolSpec)
 	 
@@ -138,10 +134,10 @@ structure Link =
 	 
        structure JavaOOSpec =
 	 mkOOSpec(structure Ty = OOTy
-		  structure IdMap = IdMaps.Java
 		  val streams_ty =
 		    SOME {ins="java.io.InputStream",
 			  outs="java.io.OutputStream"}
+		  val int_ty = "java_int"
 		  val int_kind = true)
        structure JavaTranslator =
 	 mkOOSemantTranslator(structure Spec = JavaOOSpec)
@@ -159,8 +155,8 @@ structure Link =
 	 
        structure CPlusPlusOOSpec = 
 	 mkOOSpec(structure Ty = OOTy
-		  structure IdMap = IdMaps.CPlusPlus
 		  val streams_ty = NONE
+		  val int_ty = "int"
 		  val int_kind = false)
 
        structure CPlusPlusTranslator =
@@ -178,8 +174,7 @@ structure Link =
 		val dflt_view = "Cxx")	   
 
        structure IconDynamicSpec =
-	 mkDynamicSpec(structure Ty = DynamicTy
-		       structure IdMap = IdMaps.Icon)
+	 mkDynamicSpec(structure Ty = DynamicTy)
 
       structure IconTranslator =
 	mkDynamicSemantTranslator(structure Spec = IconDynamicSpec)

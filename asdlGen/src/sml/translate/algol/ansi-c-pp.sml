@@ -49,7 +49,7 @@ functor mkPPAnsiC(structure T: ANSI_C) : PP_ANSI_C =
 
 	val pp_ty_prim = PP.str o toString_ty_prim
 	val semi_sep = cat [str ";",nl]
-	fun pp_ty_id id = cat [PP.tid id,str "_ty"]
+	fun pp_ty_id id = cat [PP.tid id,str "_ty"] 
 	val pp_id = PP.vid
 
 	fun pp_ty_exp (T.TyPrim x) = pp_ty_prim x
@@ -74,7 +74,7 @@ functor mkPPAnsiC(structure T: ANSI_C) : PP_ANSI_C =
 	  | pp_ty_exp (T.TyQualified (q,te)) =
 	    cat [pp_qualifier q,(str " "),pp_ty_exp te]
 	  | pp_ty_exp (T.TyAnnotate (s,te)) =
-	    hb 2 (str "/*") (str s) (cat [str " */ ",pp_ty_exp te])
+	    hb 2 (str "/* ") (str s) (cat [str " */ ",pp_ty_exp te])
 	  | pp_ty_exp (T.TyGroup te) =
 	    hb 2 (str "(") (pp_ty_exp te) (str ")")
 
@@ -322,8 +322,8 @@ structure AnsiCPP : ALGOL_PP =
 		val decs = List.map Ty decs
 
 		val header =
-		    [Com "Defined Types"]@fdecs@
-		    [Com "Defined Constructors and Support Functions"]@protos@
+		    [Com "Typedefs"]@fdecs@
+		    [Com "Prototypes"]@protos@
 		    [Com "Type Representation"]@decs
 
 	    in
@@ -345,8 +345,11 @@ structure AnsiCPP : ALGOL_PP =
 	    
 	fun pp_code p  (arg as (Ast.Module{name,decls,imports}),props)  =
 	    let
-		val mn = Ast.ModuleId.toString name
-		fun mk_file suffix f =
+	        val mn = Ast.ModuleId.toString name
+		val mn = case mn of "" => "Ast" | x => x
+	        fun mk_file suffix "" =
+		    OS.Path.joinBaseExt{base="T",ext=SOME suffix}
+		  | mk_file suffix f =
 		    OS.Path.joinBaseExt{base=f,ext=SOME suffix}
 		val x = List.map Ast.ModuleId.toString imports
 		fun pp_inc s =  PPUtil.s ("#include \""^s^"\"")

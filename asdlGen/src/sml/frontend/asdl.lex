@@ -58,6 +58,7 @@ resynch="--#line"{ws}+[0-9]+({ws}+\"[^\"]*\")?;
 <INITIAL>{ws}+             => (continue());
 <INITIAL>"["               => (mkTok yypos Tokens.LBRACK);
 <INITIAL>"]"               => (mkTok yypos Tokens.RBRACK);
+<INITIAL>"<Top>"           => (mkTok yypos Tokens.TOP);
 <INITIAL>"<"               => (mkTok yypos Tokens.LANGLE);
 <INITIAL>">"               => (mkTok yypos Tokens.RANGLE);
 <INITIAL>"("               => (mkTok yypos Tokens.LPAREN);

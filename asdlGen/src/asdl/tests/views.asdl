@@ -26,8 +26,8 @@ binop = Plus | Minus | Times | Div
 
 }
 
-view Cd {
-
+-- view C {
+view bogus {
   Slp.pos <= {
     natural_type : StdPrims.int
     unwrapper    : User.pos2int
@@ -94,7 +94,7 @@ view Java {
 Slp.exp <= source_name : Expression
 
   Slp.pos <= {
-    natural_type : int
+    natural_type : java_int
     unwrapper    : pos2int
     wrapper      : int2pos
     reader       : pos_reader

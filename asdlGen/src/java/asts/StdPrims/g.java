@@ -1,17 +1,13 @@
 package asts.StdPrims;
 import java.io.*;
-import java.math.BigInteger;
 
-public class g extends asts.StdPkl.g  {
+final public class g extends asts.StdPkl.PklJava  {
 
-  public static void write_int(int x, OutputStream s) { write_java_int(x,s); }
-  public static int read_int(InputStream s) {  return read_java_int(s); }
-
-  public static void write_String(String x,OutputStream s) {
+  public static void write_java_lang_String(String x,OutputStream s) {
     int sz = x.length();
     int i = 0;
     try {
-      write_tag(sz,s); 
+      asts.StdPkl.g.write_tag(sz,s); 
       while(i < sz) {
 	s.write((byte)x.charAt(i++));
       }
@@ -20,10 +16,8 @@ public class g extends asts.StdPkl.g  {
     }
   }
 
- public static String read_String(InputStream s) {
-
-    
-    int sz  = read_tag(s);
+ public static String read_java_lang_String(InputStream s) {
+    int sz  = asts.StdPkl.g.read_tag(s);
     StringBuffer sb = new StringBuffer(sz);
     try {
       while(sz > 0) {
@@ -36,18 +30,13 @@ public class g extends asts.StdPkl.g  {
     return sb.toString();
   }
  
-
   public static identifier read_identifier(InputStream s) {
-    return new identifier(read_String(s));
+    return new identifier(read_java_lang_String(s));
   }
 
   public static void write_identifier(identifier x,OutputStream s) {
-    write_String(x.toString(),s);
+    write_java_lang_String(x.toString(),s);
   }
-
-
-
-
 
 }
 

@@ -13,7 +13,8 @@ signature OO_AST = (* really more Java than anything else *)
 	include LANG_IDS
 
 	datatype ty_exp =
-	    TyId         of (ty_id)
+	    TyVoid
+	  | TyId         of (ty_id)
 	  | TyArray      of (ty_exp * int option)
 	  | TyReference  of (ty_exp)
 	  | TyOption     of (ty_exp)

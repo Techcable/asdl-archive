@@ -193,7 +193,8 @@ structure IconPP : DYNAMIC_PP =
 	       else PP.empty,pp_decls decls]
 	fun pp_code p (m as Module{name,...},props) =
 	  let
-	    val mn = ModuleId.toString name
+	    val mn = case (ModuleId.toString name) of 
+	      "" => "Ast" | x => x
 	    fun mk_file x b = [OS.Path.joinBaseExt{base=x,ext=SOME b}]
 	  in [(mk_file mn "icn",pp_module m)]
 	  end
