@@ -23,7 +23,7 @@ functor BuildWorld(structure SML      : SML_BUILD
     structure MkC =
       BuildC(structure CC = CC
 	     structure BU = BU
-	     val include_dirs = []
+	     val include_dirs =[]
 	     val debug = debug)
 
     structure MkCXX =
@@ -61,7 +61,7 @@ functor BuildWorld(structure SML      : SML_BUILD
 
     fun docs () = do_it MkDoc.rules
     fun install () = do_it I.rules
-    fun all x = (heaps x) andalso (c x) andalso (docs x)
+    fun all x = (heaps x) andalso (c x) andalso (cxx x)
   end
 
 structure Build =

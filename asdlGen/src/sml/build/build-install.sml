@@ -57,6 +57,6 @@ functor BuildInstall(structure BuildC   : BUILD_IT
     val rules = do_pkg rules BuildC.BU.getRules BuildC.rules ["..","c"] 
     val rules = do_pkg rules BuildCXX.BU.getRules BuildCXX.rules ["..","cxx"] 
     val rules = do_pkg rules BuildSML.BU.getRules BuildSML.rules ["..","sml"] 
-    val rules = List.foldl install_doc rules BuildDoc.docs
+(*    val rules = List.foldl install_doc rules BuildDoc.docs *)
   end
   
