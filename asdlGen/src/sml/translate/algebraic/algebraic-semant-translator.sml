@@ -219,7 +219,7 @@ the final output. All of this code is fairly straight forward.
 **)      
       fun trans p {modules,prim_types,prim_modules} =
 	let
-	  val toMid = (IdCvt.trans m2m) o S.Module.name
+	  val toMid = (IdCvt.trans m2m) o S.Module.src_name
 	  val prim_imports =  List.map toMid prim_modules
 	  fun import_prims (tyd,(T.Module{name,imports,decls},mp))=
 	    (tyd,(T.Module{name=name,imports=prim_imports@imports,

@@ -3,7 +3,6 @@
  * COPYRIGHT (c) 1997, 1998 by Princeton University. 
  * See COPYRIGHT file for details
  *
- * Author: Daniel C. Wang
  *
  *)
  
@@ -145,13 +144,3 @@ functor SCCUtilFun (structure Node: ORD_KEY): SCC = struct
 	      cont = fn (_, _, sccl) => sccl }
     end
 end
-
-(*
- * $Log$
- * Revision 1.1  1997/12/02 20:53:19  danwang
- * Initial revision
- *
- * Revision 1.1.1.1  1997/01/14  01:38:49  george
- *   Version 109.24
- *
- *)

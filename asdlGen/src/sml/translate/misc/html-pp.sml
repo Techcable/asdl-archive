@@ -26,6 +26,7 @@ structure HTMLPP : HTML_PP =
 	type code = Ast.module
 	val cfg = Params.empty
 	fun mkComment _ = PP.empty
+	fun mkDeps _ = PP.empty
 	fun group s pp =
 	    PP.hblock 0 [PP.s ("<"^s^">"),pp,
 			 PP.s ("</"^s^">")]
@@ -80,23 +81,31 @@ structure HTMLPP : HTML_PP =
 			       [PP.s "<dt>",pp_format tag,PP.nl,
 				PP.s "<dd>",pp_format fmt]),
 		     sep=PP.ws} fl)
-
+	    
 	fun pp_code p (Module{name,decls={title,body},imports}) =
-	    let	val base = ModuleId.toString name
-	    in [([OS.Path.joinBaseExt{base=base,ext=SOME "html"}],
-		 PP.vblock 0 [PP.s "<HTML>",
-			      PP.nl, 
-			      PP.s "<HEAD>",
-			      PP.nl, 
-			      group "TITLE" (PP.s title),
-			      PP.nl,
-			      PP.s "<BODY>",
-			      PP.nl,
-			      PP.seq_term {fmt=pp_format,sep=PP.nl} body,
-			      PP.s "</BODY>",PP.nl,
-			      PP.s "</HTML>"])]
-	    end
+	  let
+	    fun file_name m =
+	      OS.Path.joinBaseExt{base=(ModuleId.toString  m),
+				   ext=SOME "html"}
+	    val base = ModuleId.toString name
+	  in
+	    [FileSet.mkFile
+	     {name=file_name name,
+	      depends=List.map file_name imports,
+	      body=
+	      PP.vblock 0 [PP.s "<HTML>",
+			   PP.nl, 
+			   PP.s "<HEAD>",
+			   PP.nl, 
+			   group "TITLE" (PP.s title),
+			   PP.nl,
+			   PP.s "<BODY>",
+			   PP.nl,
+			   PP.seq_term {fmt=pp_format,sep=PP.nl} body,
+			   PP.s "</BODY>",PP.nl,
+			   PP.s "</HTML>"]}]
 	  end
+	end
     end
 
 

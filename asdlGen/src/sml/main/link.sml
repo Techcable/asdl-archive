@@ -8,12 +8,15 @@
  *)
 structure Link =
     struct
+      structure LF = LibFiles
       structure HTMLGen =
 	mkTranslateFromFn
 	(val set_dir = true
 	 val cfg = Params.empty
 	 val do_it = FormatTranslator.do_it
-	 structure G = mkSourceFileOutput(structure PP = HTMLPP))
+	 structure G =
+	   mkSourceFileOutput(structure PP = HTMLPP
+			      val file_set = FileSet.empty))
 	   
       structure HTML =
 	mkMain(structure S = Semant
@@ -24,7 +27,8 @@ structure Link =
       structure XMLDTDGen =
 	mkTranslateFromTranslator
 	(structure T = XMLDTDTranslator
-	 structure G = mkSourceFileOutput(structure PP = XMLDTDPP))
+	 structure G = mkSourceFileOutput(structure PP = XMLDTDPP
+					  val file_set = FileSet.empty))
 	   
       structure XMLDTD =
 	mkMain(structure S = Semant
@@ -35,7 +39,8 @@ structure Link =
       structure YaccGrammarGen =
 	mkTranslateFromTranslator
 	(structure T = YaccGrammarTranslator
-	 structure G = mkSourceFileOutput(structure PP = YaccGrammarPP))
+	 structure G = mkSourceFileOutput(structure PP = YaccGrammarPP
+					  val file_set = FileSet.empty))
 
       structure YaccGrammar =
 	mkMain(structure S = Semant
@@ -59,7 +64,8 @@ structure Link =
       structure SMLGen =
 	mkTranslateFromTranslator
 	(structure T = SMLTranslator
-	 structure G = mkSourceFileOutput(structure PP = SMLPP))
+	 structure G = mkSourceFileOutput(structure PP = SMLPP
+					  val file_set = LF.sml))
 
       structure SML =
 	mkMain(structure S = Semant
@@ -83,7 +89,8 @@ structure Link =
       structure OCamlGen =
 	mkTranslateFromTranslator
 	(structure T = OCamlTranslator
-	 structure G = mkSourceFileOutput(structure PP = OCamlPP))
+	 structure G = mkSourceFileOutput(structure PP = OCamlPP
+					  val file_set = LF.ocaml))
 
       structure OCaml =
 	mkMain(structure S = Semant
@@ -108,7 +115,8 @@ structure Link =
        structure HaskellGen =
 	   mkTranslateFromTranslator
 	   (structure T = HaskellTranslator
-	    structure G = mkSourceFileOutput(structure PP = HaskellPP))
+	    structure G = mkSourceFileOutput(structure PP = HaskellPP
+					     val file_set = LF.hs))
 
        structure Haskell =
 	 mkMain(structure S = Semant
@@ -124,7 +132,8 @@ structure Link =
        structure AnsiCGen =
 	 mkTranslateFromTranslator
 	 (structure T = AnsiCTranslator
-	  structure G = mkSourceFileOutput(structure PP = AnsiCPP))
+	  structure G = mkSourceFileOutput(structure PP = AnsiCPP
+					   val file_set = LF.c))
 
        structure AnsiC =
 	 mkMain(structure S = Semant
@@ -145,7 +154,8 @@ structure Link =
        structure JavaGen =
 	   mkTranslateFromTranslator
 	   (structure T = JavaTranslator
-	    structure G = mkSourceFileOutput(structure PP = JavaPP))
+	    structure G = mkSourceFileOutput(structure PP = JavaPP
+					     val file_set = LF.java))
 	      
        structure Java =
 	 mkMain(structure S = Semant
@@ -165,7 +175,8 @@ structure Link =
        structure CPlusPlusGen =
 	   mkTranslateFromTranslator
 	   (structure T = CPlusPlusTranslator
-	    structure G = mkSourceFileOutput(structure PP = CPlusPlusPP))
+	    structure G = mkSourceFileOutput(structure PP = CPlusPlusPP
+					     val file_set = LF.cxx))
 
        structure CPlusPlus =
 	 mkMain(structure S = Semant
@@ -182,13 +193,15 @@ structure Link =
       structure IconGen =
 	mkTranslateFromTranslator
 	(structure T = IconTranslator
-	 structure G = mkSourceFileOutput(structure PP = IconPP))
+	 structure G = mkSourceFileOutput(structure PP = IconPP
+					     val file_set = LF.icon))
 
       structure Icon =
 	mkMain(structure S = Semant
 	       structure Parser = AsdlParser
 	       structure Gen = IconGen 
 	       val dflt_view = "Icon")
+
 (*
        structure TypePickler =
 	 mkMain(structure S = Semant

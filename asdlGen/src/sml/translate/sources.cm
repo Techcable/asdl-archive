@@ -21,6 +21,8 @@ support/stmt-exp.sig
 support/stmt-exp.sml
 support/pp-ast.sig
 support/pp-ast.sml
+support/pp-depends.sml
+support/mk-file-set.sml
 
 picklers/std-pickler.sml
 picklers/std-pickler.sig

@@ -25,12 +25,11 @@ structure JavaPP :  sig
 		val cap_mod = false
 		val cap_typ = false
 		val sep = ".")
-	
-	val cfg = Params.empty
-
-	open PP
-	open Ast
-	fun mkComment s = vb 1 (str "/*") (seq nl str s) (str " */")
+      val cfg = Params.empty
+      open PP
+      open Ast
+      fun mkComment s = vb 1 (str "/*") (seq nl str s) (str " */")
+      val mkDeps = PPDepends.makefile
 	val const_class =  "g"
 	(* java requires lots of special magic *)
 	fun add_package_prefix {base,qualifier} =
@@ -272,9 +271,12 @@ structure JavaPP :  sig
 	    val pp =
 	      cat [str ("package "^package_prefix^";"), nl,
 		   pp_ty_decl x]
-	    val fname =  OS.Path.joinBaseExt
-	      {base=TypeId.getBase (get_name x),ext=SOME "java"}
-	  in  ([package_prefix,fname],pp)
+	    val fname =
+	      OS.Path.concat(package_prefix,OS.Path.joinBaseExt
+	      {base=TypeId.getBase (get_name x),ext=SOME "java"})
+	  in  FileSet.mkFile{name=fname,
+			     depends=[OS.Path.concat(package_prefix,
+						     "g.java")],body=pp}
 	  end
 	  | pp_cls mn x =
 	  let
@@ -284,9 +286,16 @@ structure JavaPP :  sig
 	    val pp =
 	      cat [str ("package "^package_prefix^"."^mn^";"), nl,
 		   pp_ty_decl x]
-	    val fname =  OS.Path.joinBaseExt
-	      {base=TypeId.getBase (get_name x),ext=SOME "java"}
-	  in  ([package_prefix,mn,fname],pp)
+	    val fname =
+	      OS.Path.concat(package_prefix,
+	      OS.Path.concat(mn,
+	      OS.Path.joinBaseExt
+			     {base=TypeId.getBase (get_name x),
+			      ext=SOME "java"}))
+	  in  FileSet.mkFile{name=fname,
+			  depends=[OS.Path.concat(package_prefix,
+				      OS.Path.concat(mn,"g.java"))],
+			     body=pp}
 	  end
 	fun do_const (DeclConst {field,public,value},(cs,ds)) =
 	  ((cat [pp_str_if  " public" public,
@@ -300,7 +309,16 @@ structure JavaPP :  sig
 	val body_epilogue =
 	  PPUtil.wrap Semant.Module.P.implementation_epilogue
 	  
-	fun  pp_consts "" x props =
+	fun mk_dep name =
+	  let val mn = ModuleId.toString (PP.fix_mid name)
+	  in
+	    OS.Path.concat(package_prefix,
+ 	    OS.Path.concat(mn,
+	    OS.Path.joinBaseExt
+			   {base=const_class,
+			    ext=SOME "java"}))
+	  end
+	fun  pp_consts "" x props imports =
 	  let
 	    val pp =
 	      cat
@@ -310,10 +328,14 @@ structure JavaPP :  sig
 	       (cat [str "final public class ",str const_class, str " {"])
 	       (cat x)
 	       (cat [body_epilogue props,nl, str "}"])]
-	    val fname = OS.Path.joinBaseExt {base=const_class,ext=SOME "java"}
-	  in  ([package_prefix,fname],pp)
+	    val fname = 
+	      OS.Path.concat(package_prefix,
+	      OS.Path.joinBaseExt {base=const_class,ext=SOME "java"})
+	  in FileSet.mkFile{name=fname,
+			    depends=List.map mk_dep imports,
+			    body=pp}
 	  end
-	  | pp_consts mn x props =
+	  | pp_consts mn x props imports =
 	  let
 	    val pp =
 	      cat
@@ -323,12 +345,19 @@ structure JavaPP :  sig
 	       (cat [str "final public class ",str const_class, str " {"])
 	       (cat x)
 	       (cat [body_epilogue props,nl, str "}"])]
-	    val fname = OS.Path.joinBaseExt {base=const_class,ext=SOME "java"}
-	  in  ([package_prefix,mn,fname],pp)
+	    val fname = 
+	      OS.Path.concat(package_prefix,
+	      OS.Path.concat(mn,
+	      OS.Path.joinBaseExt
+			     {base=const_class,
+			      ext=SOME "java"}))
+	  in FileSet.mkFile{name=fname,
+			    depends=List.map mk_dep imports,
+			    body=pp}
 	  end
 	fun pp_code p  (Module{name,imports,decls},props) =
 	  let val (cs,ds) = List.foldr do_const ([],[]) decls
 	      val mn = ModuleId.toString (PP.fix_mid name)
-	  in (pp_consts  mn cs props)::(List.map (pp_cls mn) ds)
+	  in (pp_consts mn cs props imports)::(List.map (pp_cls mn) ds)
 	  end
     end 

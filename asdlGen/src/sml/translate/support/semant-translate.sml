@@ -22,12 +22,11 @@ here only because the code evolved this way.
 (* needs some major clean up *)
 functor mkTranslateFromTranslator
   (structure G : TRANSLATE 
-   structure T : SEMANT_TRANSLATOR 
-     where type output = G.input list) =
+   structure T : SEMANT_TRANSLATOR where type output = G.input) : TRANSLATE =
     struct
       structure S = Semant
       structure Ast = T.Ast
-      type output = G.output list
+      type output = G.output 
       type input = S.menv_info
       val cfg = Params.empty
 	
@@ -78,17 +77,18 @@ functor mkTranslateFromTranslator
 	    in p end
 	      val p = make_params (List.hd (S.MEnv.modules menv))
 	      val props = S.MEnv.props menv
-	in List.map (G.translate p) (do_it props)
+	in (G.translate p) (do_it props)
 	end
     end
+
 functor mkTranslateFromFn
   (structure G : TRANSLATE 
    val cfg : Params.cfg
    val set_dir : bool
-   val do_it : Semant.menv_info -> G.input list) =
+   val do_it : Semant.menv_info -> G.input ) : TRANSLATE =
      struct
        type input = Semant.menv_info
-       type output = G.output list
+       type output = G.output
       val (cfg',output_directory) = Params.declareString cfg
 	{name="output_directory",flag=SOME #"d",
 	 default=OS.Path.currentArc}
@@ -107,6 +107,6 @@ functor mkTranslateFromFn
 	     val p = Params.mergeParams(p,params)
 	   in p end
 	     val p = make_params (List.hd (Semant.MEnv.modules menv))
-       in List.map (G.translate p) (do_it menv)
+       in (G.translate p) (do_it menv)
        end
    end

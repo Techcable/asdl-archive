@@ -50,7 +50,7 @@ structure AsdlSemant :> ASDL_SEMANT =
 		  name:Semant.Type.Id.id,
 		  fields:'fd list}
     type ('a,'b) cvt = 'a -> 'b
-      structure S = Semant
+    structure S = Semant
     fun fold {menv,module,field,con,typ,tycon} me =
       let
 	fun do_module m =
@@ -124,3 +124,10 @@ structure AsdlSemant :> ASDL_SEMANT =
       end
       
   end
+
+
+
+
+
+
+

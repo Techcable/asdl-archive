@@ -67,8 +67,8 @@ functor BuildWorld(structure SML      : SML_BUILD
     fun c () = wrap "c" MkC.rules
     fun cxx () = wrap "cxx" MkCXX.rules
     fun docs () = do_it MkDoc.rules
-    fun install () = do_it I.rules
-    fun all x = (heaps x) andalso (c x) andalso (cxx x)
+    fun install () = (do_it I.rules)
+    fun all x = (heaps x) (* andalso (c x) andalso (cxx x) *)
     fun clean () = do_it Clean.rules
   end
 

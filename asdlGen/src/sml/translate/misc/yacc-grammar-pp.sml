@@ -20,7 +20,7 @@ structure YaccGrammarPP : YACC_GRAMMAR_PP =
 	type code = Ast.decls
 	val cfg = Params.empty
 	fun mkComment _ = PP.empty
-
+	fun mkDeps _ = PP.empty
 	open Ast
 
 	val pp_tid = PP.wrap (TypeId.toString' "_")
@@ -51,10 +51,9 @@ structure YaccGrammarPP : YACC_GRAMMAR_PP =
 	fun pp_code _ (decls) =
 	  let
 	    fun file_name () =
-	      [OS.Path.joinBaseExt{base="out",
-				   ext=SOME "yacc"}]
-	  in
-	    [(file_name () ,pp_grammar decls)]
+	      OS.Path.joinBaseExt{base="out",ext=SOME "yacc"}
+	  in [FileSet.mkFile
+	      {name=file_name () ,body=pp_grammar decls,depends=[]}]
 	  end
 
     end

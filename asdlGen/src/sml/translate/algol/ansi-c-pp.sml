@@ -287,6 +287,7 @@ structure AnsiCPP : ALGOL_PP =
 	type code = (Ast.module * Semant.Module.P.props)
 
 	val cfg = Params.empty
+	val mkDeps = PPDepends.makefile
 	local
 	    open AnsiC
 	in
@@ -344,41 +345,45 @@ structure AnsiCPP : ALGOL_PP =
 	    PPUtil.wrap Semant.Module.P.implementation_epilogue
 	    
 	fun pp_code p  (arg as (Ast.Module{name,decls,imports}),props)  =
-	    let
-	        val mn = Ast.ModuleId.toString name
-		val mn = case mn of "" => "Ast" | x => x
-	        fun mk_file suffix "" =
-		    OS.Path.joinBaseExt{base="Ast",ext=SOME suffix}
-		  | mk_file suffix f =
-		    OS.Path.joinBaseExt{base=f,ext=SOME suffix}
-		val x = List.map Ast.ModuleId.toString imports
-		fun pp_inc s =  PPUtil.s ("#include \""^s^"\"")
-		val pp_incs =
-		    PPUtil.seq_term {fmt=pp_inc,sep=PPUtil.nl}
-
-		fun pp_impl name body =
-		    PPUtil.cat [pp_inc name,
-				body_prologue props,PPUtil.nl,
-				body,PPUtil.nl,
-				body_epilogue props,PPUtil.nl]
+	  let
+	    val mn = Ast.ModuleId.toString name
+	    val mn = case mn of "" => "Ast" | x => x
+	    fun mk_file b x =
+	      let val x = AnsiC.ModuleId.toString x
+		val x = case x of "" => "Ast" | x => x
+	      in OS.Path.joinBaseExt {base=x,ext=SOME b}
+	      end
+	    fun pp_inc s =  PPUtil.s ("#include \""^s^"\"")
+	    val pp_incs =
+	      PPUtil.seq_term {fmt=pp_inc,sep=PPUtil.nl}
+	      
+	    fun pp_impl name body =
+	      PPUtil.cat [pp_inc name,
+			  body_prologue props,PPUtil.nl,
+			  body,PPUtil.nl,
+			  body_epilogue props,PPUtil.nl]
 		    
-		fun pp_interface name header incs =
-		    PPUtil.cat
-		    [PPUtil.s ("#ifndef _"^name^"_"), PPUtil.nl,
-		     PPUtil.s ("#define _"^name^"_"), PPUtil.nl,
-		     pp_incs incs,
-		     header_prologue props,PPUtil.nl,
-		     header,
-		     PPUtil.nl,
-		     header_epilogue props,PPUtil.nl,
-		     PPUtil.s ("#endif /* _"^name^"_ */"), PPUtil.nl]
-		val (Trans.Ast.Module{decls,name,imports}) =
-		  Trans.translate p arg
-		val (header,body) = fix_decls decls
-		val includes = (List.map (mk_file "h") x)
-	    in	[([mk_file "h" mn],pp_interface mn header includes),
-		 ([mk_file "c" mn], pp_impl (mk_file "h" mn) body)]
-	    end
+	    fun pp_interface name header incs =
+	      PPUtil.cat
+	      [PPUtil.s ("#ifndef _"^name^"_"), PPUtil.nl,
+	       PPUtil.s ("#define _"^name^"_"), PPUtil.nl,
+	       pp_incs incs,
+	       header_prologue props,PPUtil.nl,
+	       header,
+	       PPUtil.nl,
+	       header_epilogue props,PPUtil.nl,
+	       PPUtil.s ("#endif /* _"^name^"_ */"), PPUtil.nl]
+	    val (Trans.Ast.Module{decls,name,imports}) =
+	      Trans.translate p arg
+	    val (header,body) = fix_decls decls
+	    val includes = (List.map (mk_file "h") imports)
+	  in [FileSet.mkFile{name=mk_file "h" name,
+			     depends=includes,
+			     body=pp_interface mn header includes},
+	      FileSet.mkFile{name=mk_file "c" name,
+			     depends=[mk_file "h" name],
+			     body=pp_impl (mk_file "h" name) body}]
+	  end
     end
 
 

@@ -336,7 +336,7 @@ functor mkOOSemantTranslator
 	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs)
 	    (Spec.prims prim_types) ms
 	  val new_decls = Spec.get_aux_decls p (Ty.mk_env ty_decls)
-	  val toMid = (IdCvt.trans m2m) o S.Module.name
+	  val toMid = (IdCvt.trans m2m) o S.Module.src_name
 	  val prim_imports =  List.map toMid prim_modules
 	  fun add_decls (ty_decls,(T.Module{name,imports,decls},mp)) =
 	    (T.Module{name=name,

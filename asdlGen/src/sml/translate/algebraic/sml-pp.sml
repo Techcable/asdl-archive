@@ -21,7 +21,7 @@ structure SMLPP : ALGEBRAIC_PP =
     type code =  (Ast.module * Semant.Module.P.props)
     val cfg = Params.empty
     fun mkComment s = vb 1 (str "(*") (seq nl str s) (str " *)")
-
+    val mkDeps = PPDepends.cmfile
     fun isSum (DeclSum _) = true
       | isSum _ = false
       
@@ -215,10 +215,16 @@ structure SMLPP : ALGEBRAIC_PP =
 
 	  val dsig = pp_sig mn (cat dsig_body) 
 	  val dstr = pp_str mn (cat dstr_body) 
+	  fun mk_file b x =
+	    let val x = ModuleId.toString (fix_mid x)
+	    in OS.Path.joinBaseExt {base=x,ext=SOME b}
+	    end
 
-	  fun mk_file x b = [OS.Path.joinBaseExt{base=x,ext=SOME b}]
-	  val fls = [(mk_file mn "sig", dsig),
-		     (mk_file mn "sml", dstr)]
-	in fls
-	end
+	in [FileSet.mkFile{name=mk_file "sig" name,
+			 depends=List.map (mk_file "sml") imports,
+			    body=dsig},
+	    FileSet.mkFile{name=mk_file "sml" name,
+			   depends=[mk_file "sig" name],
+			   body=dstr}]
+       end
   end

@@ -11,8 +11,9 @@
 functor mkMain (structure      S : SEMANT
 		structure Parser : ASDL_PARSER
 		structure    Gen : TRANSLATE
-		    where type input = S.menv_info
-			  val dflt_view    : string) =
+		  where type input = S.menv_info
+			and  type output = string list
+		val dflt_view    : string) =
   struct
     structure S = S
     val cfg = Gen.cfg

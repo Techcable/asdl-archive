@@ -185,7 +185,7 @@ functor mkAlgolSpec(structure Ty    : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 	val prims = []
       end
     structure XMLPklGen = XMLPickler(structure Arg = Arg
-				     val tag = "std")
+				     val tag = "xml")
     structure StdPklGen = StdPickler(structure Arg = Arg
 				     val tag = "std")
     open Arg

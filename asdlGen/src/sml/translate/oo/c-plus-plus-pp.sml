@@ -31,6 +31,7 @@ structure CPlusPlusPP : OO_PP =
       
       fun mkComment l =
 	vb 0 (str "////") (seq nl (fn x => str ("// "^x)) l) (str "////") 
+      val mkDeps = PPDepends.makefile
       val pp_id = PP.vid
       val pp_tid = PP.tid
 	
@@ -355,7 +356,10 @@ structure CPlusPlusPP : OO_PP =
       fun pp_code p (Module{name,imports,decls},props) =
 	let
 	  val mn = ModuleId.toString (fix_mid name)
-	  fun mk_file suffix f = OS.Path.joinBaseExt{base=f,ext=SOME suffix}
+	  fun mk_file b x =
+	    let val x = ModuleId.toString (fix_mid x)
+	    in OS.Path.joinBaseExt {base=x,ext=SOME b}
+	    end
 	  fun pp_inc s =  cat [str "#include \"",mid s,str ".hxx\""]
 	  val pp_incs = seq' nl pp_inc
 	  fun pp_impl body =
@@ -371,7 +375,12 @@ structure CPlusPlusPP : OO_PP =
 		 header_epilogue props,nl,
 		 str ("#endif /* _"),mid name, str "_ */", nl]
 	  val (header,body) = fix_decs_pp decls
-	in [([mk_file "hxx" mn],pp_interface header imports),
-	    ([mk_file "cxx" mn], pp_impl body)]
+	in 
+	  [FileSet.mkFile{name=mk_file "hxx" name,
+			 depends=List.map (mk_file "hxx") imports,
+			  body=pp_interface header imports},
+	   FileSet.mkFile{name=mk_file "cxx" name,
+			   depends=[mk_file "hxx" name],
+			   body=pp_impl body}]
 	end
   end

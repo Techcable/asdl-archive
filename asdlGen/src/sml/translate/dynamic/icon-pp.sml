@@ -21,7 +21,7 @@ structure IconPP : DYNAMIC_PP =
       val cfg = Params.empty
       fun mkComment l =
 	vb 0 (str "####") (seq nl (fn x => str ("# "^x)) l) (str "####") 
-      
+      val mkDeps = PPDepends.makefile
       open Ast
       val pp_tid = PP.tid
       val pp_id = PP.vid
@@ -191,12 +191,17 @@ structure IconPP : DYNAMIC_PP =
 		 cat [str "link ",
 		      seq (hsep ",") PP.mid imports,nl]
 	       else PP.empty,pp_decls decls]
-	fun pp_code p (m as Module{name,...},props) =
+	fun pp_code p (m as Module{name,imports,...},props) =
 	  let
-	    val mn = case (ModuleId.toString name) of 
-	      "" => "Ast" | x => x
-	    fun mk_file x b = [OS.Path.joinBaseExt{base=x,ext=SOME b}]
-	  in [(mk_file mn "icn",pp_module m)]
+	    fun file_name x =
+	      let val x =
+		case (ModuleId.toString x) of 
+		  "" => "Ast" | x => x
+	      in OS.Path.joinBaseExt{base=x,ext=SOME "icn"}
+	      end
+	  in [FileSet.mkFile{name=file_name name,
+			     depends=List.map file_name imports,
+			     body=pp_module m}]
 	  end
 
     end

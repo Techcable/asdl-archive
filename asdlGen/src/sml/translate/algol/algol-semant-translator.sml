@@ -264,7 +264,7 @@ functor mkAlgolSemantTranslator
 	let
 	  val prims = Spec.get_prims p prim_types
 	  val toMid = Ast.ModuleId.fromPath o
-	    S.Module.Id.toPath o S.Module.name
+	    S.Module.Id.toPath o S.Module.src_name
 	  val prim_mods = List.map toMid prim_modules
 	  val ty_decls = List.foldl
 	       (fn ({ty_decls=x,gdecls,mdec},xs) => x@xs) prims ms 

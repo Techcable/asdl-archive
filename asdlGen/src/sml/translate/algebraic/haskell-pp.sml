@@ -35,7 +35,7 @@ structure HaskellPP : ALGEBRAIC_PP =
        default="Prelude.Eq, Prelude.Ord, Prelude.Show"} 
 
     fun mkComment s = vb 1 (str "{-") (seq nl str s) (str "-}")
-
+    val mkDeps = PPDepends.makefile
     fun isTyDec (DeclSum _) = true
       | isTyDec (DeclTy _) = true
       | isTyDec _ = false
@@ -237,18 +237,21 @@ structure HaskellPP : ALGEBRAIC_PP =
 	   pp_fdecs,nl,
 	   struct_epilogue props]
 	val base_import = base_imp p
-	val imports =
+	val pp_imports =
 	  cat [str "import Prelude (Maybe(..),return)",nl,
 	       str "import qualified Prelude",nl,
 	       str "import qualified SexpPkl",nl,
 	       str ("import "^base_import),nl,
 	       pp_imports]
 
-	val module = pp_module name exports imports body
+	val module = pp_module name exports pp_imports body
 	val mn = ModuleId.toString (fix_mid name)
-	fun mk_file x b = [OS.Path.joinBaseExt {base=x,ext=SOME b}]
-	val fls = [(mk_file mn "hs", module)]
-      in fls
+	fun file_name m =
+	  OS.Path.joinBaseExt{base=(ModuleId.toString (fix_mid m)),
+				    ext=SOME "hs"}
+      in [FileSet.mkFile{name=file_name name,
+			 depends=List.map file_name imports,
+			 body=module}]
       end
   end
 

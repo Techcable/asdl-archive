@@ -153,6 +153,9 @@ functor mkDynamicSemantTranslator
       fun trans p {modules,prim_types,prim_modules} =
 	let
 	  val ms = modules
+	  val toMid = Ast.ModuleId.fromPath o
+	    S.Module.Id.toPath o S.Module.src_name
+	  val prim_mods = List.map toMid prim_modules
 	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs)
 	    (Spec.prims prim_types) (ms:module_value list)
 (* Call the Spec.aux_decls to generate pickler code as well as other useful
@@ -160,7 +163,7 @@ functor mkDynamicSemantTranslator
 	  val new_decls = (Spec.get_aux_decls p (Ty.mk_env ty_decls))
 	  fun mk_mods (ty_decls,(T.Module{name,imports,decls},mp)) =
 	    (T.Module{name=name,
-		     imports=imports,
+		     imports=prim_mods@imports,
 		     decls=decls@(new_decls ty_decls)},mp)
 	  val out = (List.map mk_mods ms)
 	in List.filter (not o S.Module.P.suppress o #2) out

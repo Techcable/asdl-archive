@@ -20,6 +20,7 @@ structure XMLDTDPP : XML_DTD_PP =
 	type code = Ast.module
 	val cfg = Params.empty
 	fun mkComment _ = PP.empty
+	fun mkDeps _ = PP.empty
 	local
 	  open Ast
 	  val bar_sep = PP.cat [PP.s " |",PP.ws]
@@ -99,10 +100,12 @@ structure XMLDTDPP : XML_DTD_PP =
 	fun pp_code _ (Module{name,decls,imports}) =
 	  let
 	    fun file_name m =
-	      [OS.Path.joinBaseExt{base=(ModuleId.toString  m),
-				   ext=SOME "dtd"}]
+	      OS.Path.joinBaseExt{base=(ModuleId.toString  m),
+				   ext=SOME "dtd"}
 	  in
-	    [(file_name name,pp_elem_decls decls)]
+	    [FileSet.mkFile {name=file_name name,
+			     body=pp_elem_decls decls,
+			     depends=List.map file_name imports}]
 	  end
 	end
     end

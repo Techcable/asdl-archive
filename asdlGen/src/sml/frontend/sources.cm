@@ -18,3 +18,4 @@ semant-props.sig
 semant-props.sml
 asdl-semant.sig
 asdl-semant.sml
+default-decls.sml

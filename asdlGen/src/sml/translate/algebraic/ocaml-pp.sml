@@ -20,7 +20,7 @@ structure OCamlPP : ALGEBRAIC_PP =
     type code =  (Ast.module * Semant.Module.P.props)
     val cfg = Params.empty
     fun mkComment s = vb 1 (str "(*") (seq nl str s) (str " *)")
-
+    val mkDeps = PPDepends.makefile
     fun isTyDec (DeclSum _) = true
       | isTyDec (DeclTy _) = true
       | isTyDec _ = false
@@ -187,15 +187,20 @@ structure OCamlPP : ALGEBRAIC_PP =
 	val str_fdecs = [pp_fdecs, PP.nl, struct_epilogue props]
 	  
 	val (dsig_body,dstr_body) = (sig_tys@sig_fdecs,str_tys@str_fdecs)
-
 	val mn = ModuleId.toString (fix_mid name)
 	val dsig = pp_sig mn (cat dsig_body) 
 	val dstr = pp_str mn (cat dstr_body) 
 	val uncap = CvtCase.cvt_string CvtCase.uncapitalize
-	fun mk_file x b = [OS.Path.joinBaseExt {base=uncap x,ext=SOME b}]
-	val fls = [(mk_file mn "mli", dsig),
-		   (mk_file mn "ml", dstr)]
-      in fls
+	fun mk_file b x =
+	  let val x = ModuleId.toString (fix_mid x)
+	  in OS.Path.joinBaseExt {base=uncap x,ext=SOME b}
+	  end
+      in [FileSet.mkFile{name=mk_file "mli" name,
+			 depends=List.map (mk_file "mli") imports,
+			 body=dsig},
+	  FileSet.mkFile{name=mk_file "ml" name,
+			 depends=[mk_file "mli" name],
+			 body=dstr}]
       end
   end
 

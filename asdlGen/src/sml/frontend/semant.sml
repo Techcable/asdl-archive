@@ -657,39 +657,13 @@ Build a new module info and add it to the current module environment.
 
 	    fun is_prim {file,decl=T.PrimitiveModule _} = true
 	      | is_prim _ = false
-	    (* TODO: factor builtins out *)				 
-	    val std_prims = [{file="<builtin>",
-			     decl=T.PrimitiveModule
-			     {name=Identifier.fromString "StdPrims",
-			      exports=List.map Identifier.fromString
-			      ["int","string","identifier","big_int"]}}]
-	    fun mk_vd (e,p,v) = {entity=List.map Identifier.fromString e,
-				 prop=p,value=v}
-	    val std_views = [{file="<bultin>",
-			     decl=T.View
-			     {name=Identifier.fromString "Java",
-			      decls=
-			      [mk_vd (["StdPrims","int"],
-				      "source_name","StdPrims.java_int"),
-			       mk_vd (["StdPrims","big_int"],
-				      "source_name",
-				      "StdPrims.java_math_BigInteger"),
-			       mk_vd (["StdPrims","string"],
-				      "source_name",
-				      "StdPrims.java_lang_String")]}},
-			     {file="<bultin>",
-			      decl=T.View
-			      {name=Identifier.fromString "OCaml",
-			       decls=
-			       [mk_vd (["StdPrims","int"],
-				       "source_name","StdPrims.std_int"),
-				mk_vd (["StdPrims","string"],
-				       "source_name","StdPrims.std_string")]}}]
 				     
 	    fun declare {view,inits} ds =
 	      let
-		val prim_ms = std_prims@(List.filter is_prim ds)
-		val ds = std_views@(List.filter (not o is_prim) ds)
+		val prim_ms =
+		  DefaultDecls.std_prims@(List.filter is_prim ds)
+		val ds =
+		  DefaultDecls.std_views@(List.filter (not o is_prim) ds)
 		val (ds,gv) = build_scc ds
 		val v = gv (MId.toSid (MId.fromString view))
 		val penv = prim_env inits

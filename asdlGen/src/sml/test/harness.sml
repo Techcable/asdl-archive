@@ -174,15 +174,14 @@ structure Test =
 		
 	fun remove_dups outs = ListMergeSort.uniqueSort String.compare outs
 
-	fun get_files  "" outs = remove_dups (List.foldr (op @) [] outs)
+	fun get_files  "" outs = remove_dups outs
 	  | get_files s outs =
 	    let
 		fun is_type x =
 		    case ((OS.Path.ext o OS.Path.file) x) of
 			NONE => false
 		      | SOME x => x = s
-		fun do_it (x,xs) = (List.filter is_type x)@xs
-	    in remove_dups (List.foldr do_it [] outs)
+	    in remove_dups (List.filter is_type outs)
 	    end
 	
 	fun java_comp i =
