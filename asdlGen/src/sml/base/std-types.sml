@@ -140,8 +140,8 @@ structure StdTypesUtil :> STD_TYPES_UTIL =
 	
       fun read_bool s =
 	(case (PklInt.read s) of
-	   2 => false
-	 | 1 => true
+	   2 => true
+	 | 1 => false
 	 | _ => raise (StdPkl.IOError "read_bool"))
 	   
       val read_nat = PklInt.read
