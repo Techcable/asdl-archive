@@ -199,13 +199,13 @@ installcheck:
 install-exec: install-pkglibPROGRAMS
 	@$(NORMAL_INSTALL)
 
-install-data: 
+install-data: install-data-local
 	@$(NORMAL_INSTALL)
 
 install: install-exec install-data all
 	@:
 
-uninstall: uninstall-pkglibPROGRAMS
+uninstall: uninstall-pkglibPROGRAMS uninstall-local
 
 all: Makefile $(PROGRAMS)
 
@@ -261,6 +261,17 @@ asdlGen.@HEAP_SUFFIX@: sources.cm build.sml
 
 run.@HEAP_SUFFIX@:
 	ln -s `../misc/find_runtime.sh` ./
+
+install-data-local:
+	$(mkinstalldirs) $(pkglibdir)/sml
+	for p in base/*.sml base/*.sig base/asdl-base.cm; do \
+	   $(INSTALL_DATA) ./$$p $(pkglibdir)/sml/`basename $$p`; \
+        done
+	(cd $(pkglibdir)/sml; \
+	echo "CM.stabilize'" '("asdl-base.cm",true);' | $(SML_CM) )
+
+uninstall-local:
+	   rm -f $(pkglibdir)/sml
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
