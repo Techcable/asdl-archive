@@ -23,8 +23,8 @@ case of an error the behavior is undefined. It is also important for the
 streams to be opened in binary mode to prevent line feed translations from
 corrupting the pickle. 
 
-<em/Plans are being made to support a text based pickle format similar to
-XML/
+<em>Plans are being made to support a text based pickle format similar to
+XML/SGML</em>
 
 <sect1>Pretty Printing Pickles<p>
 <tscreen>

@@ -15,8 +15,8 @@ Where <em/command/ is one of
 <tt/typ/     | Output a machine readable type description of the inputs @
 <tt/check/   | Check correctness of inputs @
 <tt/all/     | Do all of the above         @	
-<tt/pp_pkl/  | Pretty Print an ASDL pickle see the section on
-          <ref id="sect.pickles" name="Pickles"> @
+<tt/pp_pkl/  | Pretty Print an ASDL pickle see section <ref id="sect.pickles" 
+               name="Pickles"> @
 </tabular>
 </table>
 
@@ -57,7 +57,7 @@ The <tt/--output_directory/ option overrides the default output directory.
 Sets the default view to <tt/name/. The default view name is by convention
 the command name with the first character capitalized. The only exception to
 this rule is that the default view name for <tt/--ml/ is <tt/SML/. See the
-section on <ref id="sect.views" name="Views"> in the user guide for a more
+section <ref id="sect.views" name="Views"> in the user guide for a more
 detailed description.  
 </descrip>
 
@@ -81,7 +81,7 @@ primitive types and functions provided with the current release.
 <tag/C/
   <descrip>
   <tag><tt/--base_include file.h/</tag> 
-  The defualt value is <tt/asdl_base.h/. Name of the C header file to
+  The default value is <tt/asdl_base.h/. Name of the C header file to
   include that define the primitive types and functions for all the generated
   code. 
 

@@ -1,5 +1,5 @@
 <!entity asdlGen "<tt/asdlGen/" >
-<!entity asdlGen.version "1.0b" >
+<!entity asdlGen.version "1.0" >
 <!entity asdlGen.release-date "January 30, 1998" >
 
 <!entity author.danwang "Daniel C. Wang" >

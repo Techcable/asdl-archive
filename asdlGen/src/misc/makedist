@@ -1,0 +1,31 @@
+#!/bin/sh
+# hack to build the source dist
+PACKAGE=$1
+DISTDIR=/usr/tmp/${PACKAGE}
+REV=today
+rm -rf ${DISTDIR}
+# build the source dist first
+cvs export -d ${DISTDIR} -D${REV} asdlGen
+
+# build the documentation
+mkdir ${DISTDIR}/doc
+cd ${DISTDIR}/doc
+sgml2latex -p letter -o ps -P "\usepackage{pslatex}" \
+	${DISTDIR}/src/doc/manual.sgml
+
+mkdir ${DISTDIR}/doc/html
+cd ${DISTDIR}/doc/html
+sgml2html ${DISTDIR}/src/doc/manual.sgml
+
+# build toplevel readmes etc...
+cd ${DISTDIR}
+for file in *.sgml ; do
+   sgml2html -s 0 ${file}
+   sgml2txt -f ${file}
+   fbase=`basename ${file} .sgml`
+   mv ${fbase}.txt $fbase
+done
+
+cd ${DISTDIR}/..
+tar cf ${PACKAGE}-src.tar ${PACKAGE}
+gzip ${PACKAGE}-src.tar

@@ -4,12 +4,15 @@ Currently the code produced by &asdlGen; uses the standard memory management
 facilities of the output language. However, &asdlGen, assumes a garbage
 collect environment and does not automatically provided deallocation
 functions in languages without garbage collection. For languages like C and
-C++ that do not have native garbage collection facilities there exist freely
+C++ that do not have garbage collection there exist freely
 available packages such as the 
 <url url="http://reality.sgi.com/employees/boehm_mti/gc.html" 
 name="Boehm-Weiser Conservative Collector">. 
-Future plans are to provide interfaces to allow for finer grain control over
-aspects of allocation and deallocation in languages that support them. 
+Future plans are to provide interfaces to allow for finer grain
+control over aspects of allocation and deallocation for languages
+without garbage collection.
+
+
 
 <sect1>Cyclic Data Structures Caveat<p>
 The code that pickles data assumes that the data structures are acyclic. If

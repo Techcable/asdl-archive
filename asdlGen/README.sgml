@@ -7,13 +7,13 @@
 <author>&author.danwang;
 <date>&asdlGen.release-date;
 <p>
-This is the first public beta release of &asdlGen;. It includes most all
-of the features that will make it into the final release. It is missing a
-few important library functions to handle floating point numbers and provide
+This is the first public release of &asdlGen;.  It is missing a few
+important library functions to handle floating point numbers and provide
 control over the precision on integers. However, &asdlGen; is flexible
 enough to allow users to replace these missing functions with their own if
-they need this functionality now. The first non-beta release will
-include the missing functions. 
+they need this functionality now. The next release will include
+the missing functions.
+
 <sect>COPYRIGHT<p>
 &asdlGen; is distributed under the following terms.
 &doc.copyright;
@@ -29,8 +29,8 @@ See the <url
 
 <sect>Documentation<p>
 There is now a reference manual available in 
-<url url="src/doc/html/manual.html" name="HTML"> and
-<url url="src/doc/manual.ps/" name="Postscript">. A step by step tutorial is
+<url url="doc/html/manual.html" name="HTML"> and
+<url url="doc/manual.ps/" name="Postscript">. A step by step tutorial is
 in the works. 
 
 <sect>Questions Comments?<p>

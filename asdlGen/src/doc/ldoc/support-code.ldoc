@@ -1,4 +1,4 @@
-`<label id="sect.support-code"><p>
+<label id="sect.support-code"><p>
 <em/ Needs some more fleshing out/
 This section lists the primitive functions and types that are required for
 the code produced by &asdlGen; to correctly compile. Note this is a language
@@ -55,7 +55,7 @@ function for a specific type that reads or writes a option of that type.
 
 <sect1>Note about <tt/--mono_types false/ for C<p>
 For the <tt/--mono_types false/ option in C these function expect functions
-function pointers that correspond to the following C <tt/typedefs/
+pointers that correspond to the following C <tt/typedefs/
 <tscreen><verb>
 typedef void *(*generic_reader_ty)(instream_ty s);
 typedef void (*generic_writer_ty)(void *x,outstream_ty s);

@@ -95,12 +95,12 @@ languages is as follows
         produced for the module.
  
 	<tag><tt/source_name/</tag> 
-        Property of entities and types, constructors, and modules.
-        The value is interpreted as a string. Choose a different name for
-        the type constructor or module in the output code. The name has no
-        case restrictions. This is particularly useful when producing Java
-        code on Windows NT/95 since the file system is case insensitive and
-        types and constructors that differ only in case will cause problems. 
+        All entities have this property.  The value is interpreted as a
+        string. Choose a different name for the type constructor or module
+        in the output code. The name has no case restrictions. This is
+        particularly useful when producing Java code on Windows NT/95 since
+        the file system is case insensitive and types and constructors that
+        differ only in case will cause problems.
 
         <tag><tt/user_attribute/</tag>     
 	Property of types only.	The value is interpreted as a qualified 
@@ -182,7 +182,7 @@ mutable. Supported by ML and Haskell.  <em/Support for C++ templates
 will be added in the near future./
 
 <tag><tt/wrapper/</tag>
-A function convert the new type to the old type when writing the
+A function to convert the new type to the old type when writing the
 pickle. Supported by all output languages.
 
 <tag><tt/unwrapper/</tag>

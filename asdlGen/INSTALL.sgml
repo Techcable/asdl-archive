@@ -7,6 +7,9 @@
 <author>&author.danwang;
 <date>&asdlGen.release-date;
 
+These install notes aren't comprehensive feel free to send me email
+<tt>danwang@cs.princeton.edu</tt> with questions and problems.
+
 <sect>The Binary Distribution
 <p>
 Since installing the distribution from sources requires the SML/NJ compiler,
@@ -29,15 +32,14 @@ Also set your path to include <url url="bin/asdlGen.bat"
 name="bin/asdlGen.bat">. 
 
 <sect>Installing from Sources<p> 
-&asdlGen; now builds with <tt/autoconf/ and <tt/automake/. To build from
-sources you should have the latest version 
-<url url="ftp://ftp.research.bell-labs.com/dist/smlnj/working/110.0.2/"
+
+&asdlGen; now builds with <tt/autoconf/. To build from
+sources you should have the latest version <url
+url="ftp://ftp.research.bell-labs.com/dist/smlnj/working/110.0.2/"
 name="110.0.2"> of <url
 url="http://cm.bell-labs.com/cm/cs/what/smlnj/index.html" name="Standard ML
-of New Jersey">. Binary release are also available from 
-<url url="http://www.cs.princeton.edu/zephyr/ASDL/#software">.
-I plan to experiment with releasing sources via a read only
-remote CVS repository.
+of New Jersey">. In the future, I plan to experiment with releasing sources
+via a read only remote CVS repository.
 
 <sect1>Unix
 <p>
@@ -45,8 +47,13 @@ On a Unix machine run
 <tscreen>
 ./configure --prefix=<em>Your install prefix</em>
 </tscreen>
-let <tt/configure/ do it's thing, and do a <tt/make install/
-
+let <tt/configure/ do it's thing, and do a <tt/make install/. Make install
+will install most of the required supporting C, C++, and Java libraries
+appropriately, and builds SML/NJ heap image. I'd suggest copying the heap to
+<tscreen>
+<em>your sml/nj directory</em>/bin/.heaps
+</tscreen>
+and making a symbolic link to the <tt>.run-it</tt> in the SML/NJ directory.
 <sect1>Windows NT/95
 <p>
 I haven't figured out how to automatically compile the supporting Java, C,

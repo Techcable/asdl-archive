@@ -93,7 +93,7 @@ sum types, product types cannot form recursive type definitions, but they can
 contain recursively declared sum types.
 
 <sect2>Primitve Types<p> There are only three primitive types in ASDL. They
-are <tt/string/, <tt/int/, and <tt/identifier/. The <tt/string/, type
+are <tt/string/, <tt/int/, and <tt/identifier/. The <tt/string/ type
 represents length encoded strings of bytes. The <tt/int/ type represents
 arbitrary precision signed integers. The <tt/identifier/ type represents
 atomic printable names, which support fast equality testing, analogous to
@@ -168,7 +168,7 @@ struct M_sexpr_s {
 	  struct M_Int_s    { int_ty  int1;             } M_Int;
           struct M_String_s { string_ty string1;        } M_String;	 
           struct M_Atom_s   { identifier_ty identifier1;} M_Atom;
-          struct M_Cons_s   { sexpr1 M_sexpr_ty; sexpr2 M_sexpr_ty}; M_Cons;
+          struct M_Cons_s   { M_sexpr_ty; sexpr1 M_sexpr_ty sexpr2 }; M_Cons;
          } v;
 }
 </verb></tscreen>
