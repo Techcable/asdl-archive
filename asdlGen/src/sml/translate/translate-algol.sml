@@ -25,7 +25,7 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 			   choice_opt:T.choice option,
 			     mk_cnstr:string -> bool -> T.decl option,
 			           wr:T.clause,
-			           rd:T.clause}
+			           rd:(T.id -> T.clause)}
 
 	type field_value    = {fd:T.field,
 			       init:T.field_init,
@@ -171,14 +171,15 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 		    if is_boxed then (SOME {name=name,fields=fd_fields})
 		    else NONE
 
- 		fun alloc_rec (attrbs,fields) =
-		    T.AllocateRec{dst=Pkl.ret_id,ty=tid,
+ 		fun alloc_rec dst (attrbs,fields) =
+		    T.AllocateRec{dst=dst,ty=tid,
 			       field_inits=attrbs,variant_init=SOME
 			       {tag=tag_id,name=name,fields=fields}}
 		    
-		val rd = {tag=T.IntConst tag_v,body=
-			  if is_boxed then alloc_rec (rd_attrbs,rd_fields)
-			  else T.Assign(T.Id Pkl.ret_id,T.Id name)}
+	        fun rd x =
+		    {tag=T.IntConst tag_v,body=
+		     if is_boxed then alloc_rec x (rd_attrbs,rd_fields)
+		     else T.Assign(T.Id x,T.Id name)}
 		    				      
 		val wr = {tag=T.EnumConst name,body=mk_block
 			  ((Pkl.write_tag tag_v)::(wr_attrbs@wr_fields))}
@@ -190,7 +191,8 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 			    else (fd_fields,[])
 			val block =
 			    {vars=[{name=Pkl.ret_id,ty=T.TyId tid}],
-			     body=[alloc_rec(init_attrbs,init_fields),
+			     body=[alloc_rec Pkl.ret_id
+				   (init_attrbs,init_fields),
 				   T.Return (T.Id Pkl.ret_id)]}
 			val fname =(T.VarId.prefixBase prefix) name
 		    in
@@ -256,9 +258,10 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 		val enumers    = List.map #enumer (cons:con_value list)
 		val mk_cnstrs  = List.map #mk_cnstr cons
 		val wr_clauses = List.map #wr cons
-		val rd_clauses = List.map #rd cons
 		val choices    = List.mapPartial #choice_opt cons
 
+
+		    
 		val is_boxed = (M.type_is_boxed tinfo)
 		val name  = (fix_id o T.VarId.fromPath o Id.toPath) name
 		val tid = trans_tid ident_tid tinfo
@@ -292,6 +295,10 @@ functor mkAlgolTranslator(structure IdFix : ID_FIX) : MODULE_TRANSLATOR =
 		    else (ty,T.Id Pkl.arg_id)
 		val rd_test = Pkl.read_tag
 		val temp_id = Pkl.temp_id 10;
+
+		fun do_con ({rd,...}:con_value) =  (rd temp_id)
+		val rd_clauses = List.map do_con cons
+		    
 		val rd_body =
 		    [T.Block{vars=[{name=temp_id,ty=T.TyId tid}],
 			     body=
