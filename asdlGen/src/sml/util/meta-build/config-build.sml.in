@@ -87,3 +87,4 @@ structure ConfigBuildParams =
 structure ConfigSML = SMLBuild(structure Params = ConfigBuildParams)
 structure ConfigCC = CCBuild(structure Params = ConfigBuildParams)
 structure ConfigFileOps = FileOpsBuild(structure Params = ConfigBuildParams)
+(*EOF*)
