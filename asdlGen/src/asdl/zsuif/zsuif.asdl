@@ -97,6 +97,7 @@ procedure_definition =
 procedure_body = (parameter_symbol* params, statement body)
 
 variable_definition = (variable_symbol name,
+                       type type,
                        value_block? value_block)
 
 value_block = 

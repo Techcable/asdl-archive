@@ -293,11 +293,15 @@ public:
       zsuif_symbol_table_entry* e = new zsuif_VariableEntry(def);
       return_entry(e,s);
     } else {
+
       zsuif_variable_symbol* vs = 
 	new zsuif_variable_symbol(trans->make_symb(s));
-      
+
+      trans_type vtype(trans,s->get_type());
+      zsuif_type* type = vtype.get_type();
+
       zsuif_variable_definition* def = 
-	new zsuif_variable_definition(vs,NULL);
+	new zsuif_variable_definition(vs,type,NULL);
       
       zsuif_symbol_table_entry* e = new zsuif_VariableEntry(def);
       
@@ -519,8 +523,22 @@ zsuif_constant* trans_suif::trans(constant* c){
     return new zsuif_ConstString(c->get_string());
   }
   if(c->is_bit_block()) {
-    info(i_integer(1),"Warining bit blocks not implemented");
-    return new zsuif_ConstBits(string(""));
+    s_count_t num_bytes = c->get_bit_size();
+    char *str = new char[(2*num_bytes)+1];
+    unsigned char *bits =  c->get_bits();
+    int i = 0;
+    static const char hexdigits[] = "0123456789abcdef";
+    
+    while(i < num_bytes) {
+      int j = 2*i;
+      str[j]   = hexdigits[(bits[i]>>4)%16];
+      str[j+1] = hexdigits[bits[i]%16];
+      i++;
+    }
+    str[(2*i)+1] = '\0';
+    string res(str);
+    delete str;
+    return new zsuif_ConstBits(res);
   }
   error(-1,"Null Constant");
   return NULL; /* not reached */
@@ -630,7 +648,8 @@ zsuif_variable_definition*  trans_suif::trans(variable_definition* def){
   zsuif_variable_symbol* name =  new zsuif_variable_symbol(make_symb(vs));
 
   zsuif_value_block* vb = trans(def->initialization());
-  return new zsuif_variable_definition(name,vb); 
+  trans_type vtype(this,vs->get_type());
+  return new zsuif_variable_definition(name,vtype.get_type(),vb); 
 }
 
 
