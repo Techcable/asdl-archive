@@ -45,13 +45,14 @@ public:
 
 	 zsuif_destination_op* destination_op = NULL;
 	 zsuif_destination_op_list* destination_ops = NULL;
-
+	 
 	 s_count_t num_destinations = instr->num_destination_ops();
+	 assert(num_destinations > 0);
 	 /* cons things on backward so idx 0 is first */
 	 while(num_destinations--) {
-	      zsuif_destination_op* dst =  
-		   t->trans
-		   (&(instr->get_destination_op(num_destinations)));
+	     destination_op =  
+		   t->trans(&(instr->get_destination_op(num_destinations)));
+
 	      /* treat first one specially */
 	      if(num_destinations > 0) {
 		   destination_ops = 
