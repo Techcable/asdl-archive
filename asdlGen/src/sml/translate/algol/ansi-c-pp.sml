@@ -348,7 +348,7 @@ structure AnsiCPP : ALGOL_PP =
 	        val mn = Ast.ModuleId.toString name
 		val mn = case mn of "" => "Ast" | x => x
 	        fun mk_file suffix "" =
-		    OS.Path.joinBaseExt{base="T",ext=SOME suffix}
+		    OS.Path.joinBaseExt{base="Ast",ext=SOME suffix}
 		  | mk_file suffix f =
 		    OS.Path.joinBaseExt{base=f,ext=SOME suffix}
 		val x = List.map Ast.ModuleId.toString imports

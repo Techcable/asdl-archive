@@ -8,4 +8,4 @@ dtangle-lexer.sml
 dtangle.sml
 build-dtangle.sml
 ../meta-build/sources.cm    
-../getopt/sources.cm
+

@@ -249,12 +249,16 @@ different commenting conventions can be processed together.
 	desc=G.ReqArg(Str,"string"),
 	help="Output a line consisting of string"},
        {short="h?",long=["help"],
-	desc=G.NoArg Usage, help="help"}]
+	desc=G.NoArg (fn () => Usage), help="help"}]
       
     val desc = List.rev desc
     val usage = G.usageInfo
-      "Usage: dtangle options files ... options file ...\n" desc
-    val parseOpts = G.getOpt (G.ReturnInOrder Input) desc
+      {header="Usage: dtangle options files ... options file ...\n",
+       options=desc}
+    exception Error of string
+    val parseOpts = G.getOpt {argOrder=(G.ReturnInOrder Input),
+			      options=desc,
+			      errFn=(fn s => raise Error s)}
       
     fun doOpts (Spec s,{spec,outs,close,kp}) =
       {spec=s,outs=outs,close=close,kp=kp}
@@ -277,7 +281,7 @@ different commenting conventions can be processed together.
 	val dflt = {spec=L.null_spec,outs=TextIO.stdOut,kp=0,
 		    close=(fn () => TextIO.flushOut TextIO.stdOut)}
 	val ((opts,non_opts),errs) = ((parseOpts args,[]) handle
-				   G.Error s => (([],[]),[s]))
+				   Error s => (([],[]),[s]))
 	fun find_arg_errs (ArgErr x,xs) = x::xs
 	  | find_arg_errs (Usage,xs) = xs
 	  | find_arg_errs (_,xs) = xs
