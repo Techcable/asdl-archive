@@ -1,4 +1,4 @@
-structure UnixBuildParams =
+Structure UnixBuildParams =
   struct
     structure B = MetaBuild
     val run_cm  =

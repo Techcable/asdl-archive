@@ -23,9 +23,11 @@ structure AlgebraicTy : ALGEBRAIC_TYPE_DECL =
 functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 			val get_attribs : bool
 			val streams_ty : {outs:string,ins:string} option
+			val ignore_labels : bool
 			val monad_name : string option) =
   struct
     val aux_suffix = "Util"
+    val ignore_labels = ignore_labels
 (**:[[functor mkAlgebraicSpec]] [[structure Arg]]:**)
     structure Arg =
       struct 
@@ -36,7 +38,8 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 	val inits = []
 	val streams_ty = Option.getOpt
 	  (streams_ty,{ins="instream",outs="outstream"})
-	val monad = Option.map TypeId.fromString  monad_name
+	val monad = Option.map
+	  (fn x => TypeId.fromPath {qualifier=["StdPkl"],base=x}) monad_name
 	fun std_pkl s = VarId.fromPath{qualifier=["StdPkl"],base=s}
 
 	fun die _ =

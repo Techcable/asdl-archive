@@ -64,6 +64,7 @@ code. The name of the auxiliary module is derived by appending a
 suffix to the name of the original module.
 **)
     val aux_suffix : string
+    val ignore_labels : bool
 (**:[[signature ALGEBRAIC_SPEC]]:
 Given a property list that describes how to translate some of the
 qualified types in ASDL and the kind of a qualified type return a function

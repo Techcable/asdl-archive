@@ -1,64 +1,63 @@
-signature BUILD_C =
-  sig
-    include BUILD_IT
-
-    val xml_lib  : Paths.file_path
-    val asdl_lib : Paths.file_path
-    val headers  : Paths.file_path list
-  end
 functor BuildC (structure CC : CC_BUILD
-		val debug : bool
-		val src_dir : Paths.path) : BUILD_C =
+		structure BU : BUILD_UTIL
+		sharing CC.B = BU.B
+		val include_dirs : Paths.dir_path list
+		val debug : bool) : BUILD_IT =
   struct
-    structure P = Paths
-    structure B = CC.B
-    fun mk_abs root arcs = P.pathConcat(root,P.pathFromArcs arcs)
-    val c_comp_env =
-      CC.mk_comp_env {ipath=List.map P.dirFromPath [src_dir],
-		      debug=debug,
-		      opt=1,defines=[]}
+    structure BU = BU
+    structure CC = CC
+    val comp_srcs =
+      let fun mk_arg m =
+	BU.getDir(m,(fn (srcs,src_dir) =>
+		     BU.mUnit {cenv=CC.mk_comp_env
+			       {ipath=src_dir::include_dirs,
+				debug=debug, opt=1,defines=[]},
+			       srcs=srcs}))
+      in (BU.mkRule CC.comp_srcs) o mk_arg 
+      end
+    fun make_lib name =
+      BU.mkRule' (fn (mkf,objs) =>
+		  CC.make_lib {name=mkf name,static=false,objs=objs})
+    fun mk_headers x = BU.mBindList
+      (List.map (BU.mkInput (fn x => x)) x,BU.mUnit)
+    fun mk_srcs s =  BU.mBindList
+      (List.map (BU.mkInput CC.mk_src_file) s,BU.mUnit)
+    fun merge_objs (x,y) =
+      BU.mBind(x,(fn xs =>
+      BU.mBind(y,(fn ys => BU.mUnit (xs @ ys)))))
+      
+(* ignore the cruft above all the work happens below *)
 
-    val c_link_env =
-      CC.mk_link_env {lpath=List.map P.dirFromPath [src_dir],static=false}
-
-    fun mk_file x = P.fileFromPath (mk_abs src_dir [x])
-    val mk_c_srcs =  (List.map (CC.mk_src_file o mk_file))
-
-    val c_headers = List.map mk_file
-      ["pkl-int.h","share.h",
-       "StdTypes.h",
+    val headers =
+      mk_headers
+      ["pkl-int.h","share.h","StdTypes.h",
        "StdPrims.h","StdPkl.h",
        "XMLPrims.h","XMLPkl.h"]
-    val c_common_srcs = mk_c_srcs ["pkl-int.c","share.c"]
-    val c_std_srcs = mk_c_srcs ["std_prims.c","StdTypes.c"]
-    val c_xml_srcs = mk_c_srcs ["xml_prims.c"]
 
-    val rules = []
-    fun def_rule r f x =
-      let val (res,rules) = f x
-      in (res,r@rules)
-      end
-    val (c_common_objs,rules) = def_rule rules
-      CC.comp_srcs {cenv=c_comp_env,srcs=c_common_srcs}
+    val common_srcs = mk_srcs ["pkl-int.c","share.c"]
+    val common_objs = comp_srcs common_srcs
 
-    val (c_xml_objs,rules) = def_rule rules
-      CC.comp_srcs {cenv=c_comp_env,srcs=c_xml_srcs}
+    val std_srcs = mk_srcs ["std_prims.c","StdTypes.c"]
+    val std_objs = comp_srcs std_srcs
+    val std_lib = make_lib "libasdl"
+      (merge_objs (std_objs,common_objs))
 
-    val (c_std_objs,rules) = def_rule rules
-      CC.comp_srcs {cenv=c_comp_env,srcs=c_std_srcs}
+    val xml_srcs = mk_srcs ["xml_prims.c"]
+    val xml_objs = comp_srcs xml_srcs
+    val xml_lib = make_lib "libxml"
+      (merge_objs (xml_objs,common_objs))
 
-    val (c_xml_lib,rules) = def_rule rules
-      CC.make_lib {name=P.fileFromPath
-		   (mk_abs src_dir ["libxml"]),static=false,
-		   objs=c_xml_objs@c_common_objs}
-    val (c_asdl_lib,rules) = def_rule rules
-      CC.make_lib {name=P.fileFromPath
-		   (mk_abs src_dir ["libasdl"]),
-		   static=false,
-		   objs=c_std_objs@c_common_objs}
-    val xml_lib = CC.lib_path c_xml_lib
-    val asdl_lib = CC.lib_path c_asdl_lib
-    val headers = c_headers
+      
+    val rules = BU.mBind(xml_lib,(fn xml_lib =>
+      	        BU.mBind(std_lib,(fn std_lib =>
+	        BU.mBind(headers,(fn headers =>
+		BU.mUnit{lib=[CC.lib_path xml_lib,
+			      CC.lib_path std_lib],
+			includes=headers,
+			 share=[]:Paths.file_path list,
+			 doc=[]:Paths.file_path list,
+			 bin=[]:Paths.file_path list}))))))
+
   end
     
 

@@ -18,27 +18,35 @@ functor BuildWorld(structure SML      : SML_BUILD
   struct
     fun src_path arcs = Paths.pathConcat(src_root,Paths.pathFromArcs arcs)
 
+    structure BU = BuildUtil(structure B = CC.B)
+
     structure MkC =
       BuildC(structure CC = CC
-	     val debug = debug
-	     val src_dir = src_path ["c"]);
+	     structure BU = BU
+	     val include_dirs = []
+	     val debug = debug)
+
     structure MkCXX =
       BuildCXX(structure CC = CC
-	     val debug = debug
-	     val c_src_dir = src_path ["c"]
-	     val src_dir = src_path ["cxx"]);
-    structure MkDT =
-      BuildDTangle(structure SML = SML
-		   val debug = debug
-		   val src_dir = src_path ["sml","util","dtangle"])
+	       structure BU = BU
+	       val debug = debug
+	       val include_dirs = [Paths.dirFromPath (src_path ["c"])])
+
     structure MkSML =
       BuildSML(structure SML = SML
-	       structure DT = MkDT
-	       val debug = debug
-	       val src_dir = src_path ["sml"]);
+	       structure BU = BU
+	       val debug = debug)
+
+    structure MkDT =
+      BuildDTangle(structure SML = SML
+		   structure BU = BU
+		   val debug = debug)
+
     structure MkDoc =
       BuildDoc(structure DT = MkDT
+	       val dtangle_src = src_path ["sml","util","dtangle"]
 	       val src_root = src_root)
+
     structure I =
       BuildInstall(structure BuildC = MkC
 		   structure BuildCXX = MkCXX
@@ -46,13 +54,16 @@ functor BuildWorld(structure SML      : SML_BUILD
 		   structure BuildDoc = MkDoc
 		   structure FileOps = FO
 		   val install_dir = install_root)
-    fun install () = do_it I.rules
-    fun heaps () = do_it MkSML.rules
-    fun c () = do_it MkC.rules
-    fun cxx () = do_it MkCXX.rules
+    fun wrap s r = do_it (#2(BU.getRules (src_path [s]) r))
+    fun heaps () = wrap "sml" MkSML.rules
+    fun c () = wrap "c" MkC.rules
+    fun cxx () = wrap "cxx" MkCXX.rules
+
     fun docs () = do_it MkDoc.rules
+    fun install () = do_it I.rules
     fun all x = (heaps x) andalso (c x) andalso (docs x)
   end
+
 structure Build =
   struct
     fun do_it rules = MetaBuild.run  (MetaBuild.BUILD{name=NONE,rules=rules})
@@ -94,6 +105,26 @@ structure Build =
 		 val debug = true
 		 val install_root =  Paths.pathFromNative "/tmp/asdlGen"
 		 val src_root = Paths.pathFromNative "..")
+
+    structure Config =
+      BuildWorld(structure SML = ConfigSML
+		 structure CC = ConfigCC
+		 structure FO = ConfigFileOps
+		 val do_it = do_it
+		 val debug = true
+		 val install_root =  Paths.pathFromNative ConfigPaths.prefix
+		 val src_root = Paths.pathFromNative "..")
+    structure ConfigE =
+      BuildWorld(structure SML = ConfigSML
+		 structure CC = ConfigCC
+		 structure FO = ConfigFileOps
+		 val do_it = do_it'
+		 val debug = true
+		 val install_root =  Paths.pathFromNative ConfigPaths.prefix
+		 val src_root =
+		   Paths.pathConcat
+		   (Paths.pathFromNative ConfigPaths.top_srcdir,
+		    Paths.pathFromNative "src"))
   end
 
 

@@ -81,7 +81,7 @@ structure UnixExternalProgs:EXTERNAL_PROGRAMS =
 	val cc_prg  = "gcc"
 	val cxx_prg = "g++"
 	val javac_prg = "javac"
-	val haskell_prg = "echo hugs"
+	val haskell_prg = "hugs"
 	val icont_prg = "icont"
 	val sml_prg = "sh ../misc/sml-batch"
 
@@ -123,7 +123,7 @@ structure UnixExternalProgs:EXTERNAL_PROGRAMS =
 		    
 		val cmd = (join (haskell_prg::"+."::haskell_path::inputs))
 	    in
-		run cmd
+		run (cmd ^ " </dev/null")
 	    end
 
 	fun javac {class_path,inputs,rest} = 

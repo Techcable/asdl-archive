@@ -12,7 +12,7 @@ aren't sufficiently general enough to be easy to extend.
 In order to make build software easier, I've coded up the core set of
 make primitives in Standard ML. From these core primitives you can use
 the full power of Standard ML to compose a non-trival build
-specification. This system provieds two operations on the core
+specification. This system provides two operations on the core
 primitives. One is a simple straightforward interpreter the other a
 function that compiles the description into a [[make]] file, suitable
 for most standard makes.

@@ -1,44 +1,38 @@
 signature BUILD_DTANGLE =
   sig
-    include BUILD_IT
-    val heap_path    : Paths.file_path
-    val dtangle      : string B.cmd list ->  unit B.cmd
-
+    structure BU : BUILD_UTIL
     datatype style = ML | C | SHELL | TEX | ADA | VERB
-    val dtangle_rule : {inp:(style * int * Paths.file_path) list,
-			out:Paths.file_path} -> B.rule
+    val rules :
+      {heap:Paths.file_path,
+    dtangle:{inp:(style * int * Paths.file_path) list,
+	     out:Paths.file_path} -> (Paths.file_path * BU.B.rule list)} BU.M
 
   end
 functor BuildDTangle (structure SML : SML_BUILD
-		          val debug : bool
-		        val src_dir : Paths.path) : BUILD_DTANGLE =
+		      structure BU  : BUILD_UTIL
+		      sharing SML.B = BU.B
+		          val debug : bool) : BUILD_DTANGLE =
   struct
-    structure P = Paths
-    structure SML = SML
-    structure B = SML.B
+    structure BU = BU
+    structure B = BU.B
     datatype style = ML | C | SHELL | TEX | ADA | VERB
 
-    fun mk_abs root arcs =
-      P.fileFromPath (P.pathConcat(root,P.pathFromArcs arcs))
-    val comp_env =  SML.mk_comp_env {lpath=[]}
-    val cm_file = SML.mk_cm_file  (mk_abs src_dir ["sources.cm"])
-    val heap_name = mk_abs src_dir ["dtangle"]
-
-    fun def_rule r f x =
-      let val (res,rules) = f x
-      in (res,r@rules)
+    fun dump_heap {root,main,name} =
+      let fun dump (f,root) =
+	SML.dump_heap {name=f name,
+		       cenv=SML.mk_comp_env {lpath=[]},
+		       root=root,
+		       main=main}
+      in (BU.mkRule' dump) (BU.mkInput SML.mk_cm_file root)
       end
 
-    val rules = []
-    val (heap,rules) =
-      def_rule rules SML.dump_heap {name=heap_name,
-				    cenv=comp_env,
-				    root=cm_file,
-				    main="DTangle.main"}
-    val heap_path = SML.heap_path heap
-    fun dtangle args = SML.execute_heap{heap=heap,args=args}
-    fun dtangle_rule {inp,out} =
+    val dtangle_heap = dump_heap {root="sources.cm",
+				  main="DTangle.main",
+				  name="dtangle"}
+
+    fun dtangle_rule heap {inp,out} =
       let
+	fun dtangle args = SML.execute_heap{heap=heap,args=args}
 	fun lang2arg ML = "-lml"
 	  | lang2arg C = "-lc"
 	  | lang2arg TEX = "-ltex"
@@ -47,23 +41,22 @@ functor BuildDTangle (structure SML : SML_BUILD
 	  | lang2arg VERB = "-linc"
 	fun do_inp ((s,tp,f),(deps,args)) =
 	  let
-
 	    val deps = f::deps
 	    val args =
 	      B.STR("-p"^(Int.toString tp))::
 	      (B.STR(lang2arg s))::
 	      (B.STR (Paths.fileToNative f))::args
-	  in
-	    (deps,args)
+	  in (deps,args)
 	  end
 	val out_arg = [B.STR ("-o"),B.STR(Paths.fileToNative out)]
-	val (deps,args)  =
-	  List.foldr do_inp  ([],[]) inp
-	val valid = B.VALIDATE{targets=[out],
-			       depends=heap_path::deps}
-      in
-	B.RULE {valid=valid,update=dtangle (out_arg@args)}
+	val (deps,args) = List.foldr do_inp  ([],[]) inp
+	val valid =
+	  B.VALIDATE{targets=[out],depends=(SML.heap_path heap)::deps}
+      in (out,[B.RULE {valid=valid,update=dtangle (out_arg@args)}])
       end
+    val rules = BU.mBind(dtangle_heap,(fn heap =>
+		BU.mUnit {heap=SML.heap_path heap,
+			  dtangle=dtangle_rule heap}))
   end
     
 

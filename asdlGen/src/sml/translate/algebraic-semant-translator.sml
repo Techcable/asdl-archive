@@ -91,7 +91,7 @@ the final output. All of this code is fairly straight forward.
 **)            
       fun trans_fields topt (fields:field_value list) =
 	let
-	  val no_labels =  List.all #ulabel fields
+	  val no_labels =  Spec.ignore_labels orelse (List.all #ulabel fields)
 	  fun f2m ({fd={name,ty},...}:field_value) = T.MatchId(name,ty)
 	  fun f2e ({fd={name,ty},...}:field_value) = T.Id(name)
 	  val match_fields =  List.map f2m fields
@@ -212,19 +212,27 @@ the final output. All of this code is fairly straight forward.
 **)      
       fun trans p {modules,prim_types,prim_modules} =
 	let
-	  val ms = modules
+
+	  val toMid = Ast.ModuleId.fromPath o Id.toPath o S.Module.name
+	  val prim_imports =  List.map toMid prim_modules
+	  fun import_prims (tyd,(T.Module{name,imports,decls},mp))=
+	    (tyd,(T.Module{name=name,imports=prim_imports@imports,
+		      decls=decls},mp))
+	  val ms = List.map import_prims modules
 	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs)
 	    (Spec.prims prim_types) ms
 (* Call the Spec.aux_decls to generate pickler code as well as other useful
    functions *)
 	  val new_decls = (Spec.get_aux_decls p (Ty.mk_env ty_decls))
 	  val aux_mod_name = T.ModuleId.suffixBase Spec.aux_suffix
+
 	  val all = (List.map (fn (_,m) => m) ms)
 	  fun mk_aux_mods (ty_decls,(T.Module{name,imports,decls},mp)) =
 	    (T.Module{name=aux_mod_name name,
 		     imports=name::imports@(List.map aux_mod_name imports),
 		     decls=(new_decls ty_decls)},mp)
-	  val out = all@(List.map mk_aux_mods ms)
+
+	  val out = (all@(List.map mk_aux_mods ms))
 	in List.filter (not o S.Module.P.suppress o #2) out
 	end
 (**)

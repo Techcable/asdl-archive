@@ -44,6 +44,7 @@ structure Link =
       structure MLAlgebraicSpec =
 	mkAlgebraicSpec(structure Ty = AlgebraicTy
 			val get_attribs = true
+			val ignore_labels = false
 			val streams_ty = NONE
 			val monad_name = NONE)
 	
@@ -66,7 +67,9 @@ structure Link =
        structure HaskellAlgebraicSpec =
 	 mkAlgebraicSpec(structure Ty = AlgebraicTy
 			 val get_attribs = false
-			 val streams_ty = SOME {ins="Handle",outs="Handle"}
+			 val ignore_labels = true
+			 val streams_ty = 
+			   SOME {ins="Instream",outs="Outstream"}
 			 val monad_name = SOME "IO")
 	 
 	structure HaskellTranslator =

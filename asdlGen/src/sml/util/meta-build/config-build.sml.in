@@ -1,36 +1,38 @@
-structure UnixBuildParams =
+(* @configure_input@ *)
+structure ConfigBuildParams =
   struct
+	
     structure B = MetaBuild
     val run_cm  =
       B.mkVAR{name=SOME "SML_CM",
 	      doc=["SML with compilation manager"],
-	      init=B.STR "sml-cm"}
+	      init=B.STR "@SML_CM@"}
     val run_heap  =
       B.mkVAR{name=SOME "RUN_SML_HEAP",
 	      doc=["Run ML heap"],
-	      init=B.STR "sml"}
+	      init=B.STR "@SML_CM@"}
     (* this is unreliable *)
     val os = String.map Char.toLower (SMLofNJ.SysInfo.getOSName ())
     val heap_suffix = (Compiler.architecture)^"-"^os
     fun heap_arg x = "@SMLload="^x
     val comp  =
       B.mkVAR{name=SOME "CC",
-	      doc=["Unix C compiler"],
-	      init=B.STR "gcc"}
+	      doc=["C compiler"],
+	      init=B.STR "@CC@"}
     val comp_cxx  =
       B.mkVAR{name=SOME "CXX",
-	      doc=["Unix C compiler"],
-	      init=B.STR "g++"}
+	      doc=["C++ compiler"],
+	      init=B.STR "@CXX@"}
 
     val link  =
       B.mkVAR{name=SOME "LD",
-	      doc=["Unix C linker"],
-	      init=B.STR "gcc"}
+	      doc=["Config C linker"],
+	      init=B.STR "@LINKER@"}
 
     val mklib =
       B.mkVAR{name=SOME "MKLIB",
-	      doc=["Unix Library Archiver"],
-	      init=B.STR "ar"}
+	      doc=["Config Library Archiver"],
+	      init=B.STR "@MKLIB@"}
 
     val comp_args = [B.STR "-c"]
     val link_args = []
@@ -55,24 +57,24 @@ structure UnixBuildParams =
 
     val copy =
       B.mkVAR{name=SOME "COPY",
-	      doc=["Unix copy command"],
+	      doc=["Config copy command"],
 	      init=B.STR "cp"}
     val delete =
       B.mkVAR{name=SOME "DELETE",
-	      doc=["Unix delete command"],
+	      doc=["Config delete command"],
 	      init=B.STR "rm"}
     val delete_force_arg = "-f"
     val mkDir =
       B.mkVAR{name=SOME "MKDIR",
-	      doc=["Unix make directory"],
+	      doc=["Config make directory"],
 	      init=B.STR "mkdir"}
     val existsDir =
       B.mkVAR{name=SOME "TESTDIR",
-	      doc=["Unix test directory exists"],
+	      doc=["Config test directory exists"],
 	      init=B.STR "test -d"}
     val attrb_set =
       B.mkVAR{name=SOME "SETATTRB",
-	      doc=["Unix set file attributes"],
+	      doc=["Config set file attributes"],
 	      init=B.STR "chmod"}
     fun attrbs2str {r,w,x} =
       let
@@ -82,6 +84,6 @@ structure UnixBuildParams =
       end
 
   end
-structure UnixSML = SMLBuild(structure Params = UnixBuildParams)
-structure UnixCC = CCBuild(structure Params = UnixBuildParams)
-structure UnixFileOps = FileOpsBuild(structure Params = UnixBuildParams)
+structure ConfigSML = SMLBuild(structure Params = ConfigBuildParams)
+structure ConfigCC = CCBuild(structure Params = ConfigBuildParams)
+structure ConfigFileOps = FileOpsBuild(structure Params = ConfigBuildParams)

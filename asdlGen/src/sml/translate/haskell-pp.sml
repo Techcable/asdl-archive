@@ -21,7 +21,7 @@ structure HaskellPP : ALGEBRAIC_PP =
 	val cfg = Params.empty
 	val (cfg,base_imp) =
 	    Params.declareString cfg
-	    {name="base_import",flag=NONE,default="HaskellBase"} 
+	    {name="base_import",flag=NONE,default="qualified StdPkl"} 
 
 	fun mkComment s =
 	   (PP.box 2 [PP.s "{-",
@@ -115,20 +115,16 @@ structure HaskellPP : ALGEBRAIC_PP =
 		  PP.s (TypeId.getBase (TypeId.subst cap_path id))
 		else PP.s (TypeId.toString (TypeId.subst cap_path id))
 
-	      fun pp_rec_seq eq lbracket rbracket separator fmt x y = 
+	      fun pp_rec_seq lbracket rbracket separator fmt x y = 
 		let
 		  fun zip_fields ([],[]) = []
 		  | zip_fields  (x::xs,{name=y,ty}::ys) =
-		    if (eq(x,y)) then
-		      (NONE,y)::(zip_fields (xs,ys))
-		    else
-		      (SOME x,y)::(zip_fields  (xs,ys))
-		    | zip_fields _ =
-		      raise Error.internal
+		    (SOME x,y)::(zip_fields  (xs,ys))
+		    | zip_fields _ =  raise Error.internal
 			
 		  fun pp_one (NONE,y) = pp_id y
 		    | pp_one (SOME x,y) =
-		    PP.cat [pp_id y,PP.s " <- ", fmt x] (* reig*)
+		    PP.cat [pp_id y,PP.s "=", fmt x] (* reig*)
 		  val seq = zip_fields (x,y)
 		in
 		  [PP.s lbracket,PP.seq{fmt=pp_one,sep=separator} seq, 
@@ -186,14 +182,9 @@ structure HaskellPP : ALGEBRAIC_PP =
 		PP.box 1
 		[PP.s "(" ,PP.seq{fmt=pp_exp,sep=comma_sep} el, PP.s")"]
 		| pp_exp (Record (el,fl,opt_ty)) =
-		let
-		  fun eq (Id x,y)  = VarId.eq (x,y)
-		    | eq _ = false
-		in  PP.cat
-		  [PP.opt{some=pp_id o rec_con,none=PP.empty} opt_ty,
+		  PP.cat [PP.opt{some=pp_id o rec_con,none=PP.empty} opt_ty,
 		   PP.box 2
-		   (pp_rec_seq eq "{" "}" comma_sep pp_exp el fl)]
-		end
+		   (pp_rec_seq "{" "}" comma_sep pp_exp el fl)]
 		| pp_exp (Match(c as Call(e,el),cl)) = (* reig *)
 		PP.box 1 [PP.s "do", PP.nl,
 			  PP.s "i <- ", pp_exp c,  PP.nl,
@@ -227,14 +218,9 @@ structure HaskellPP : ALGEBRAIC_PP =
 			  PP.s ")",PP.nl]
 	      (* val pp_match = fn : HaskellTypes.match -> PPUtil.pp *)
 	      and pp_match (MatchRecord(ml,fl,opt_ty)) = 
-		let
-		  fun eq (MatchId (x,_),y)  = VarId.eq (x,y)
-		    | eq _ = false
-		in
 		  PP.cat
 		  [PP.opt{some=pp_id o rec_con,none=PP.empty} opt_ty,
-		   PP.box 2 (pp_rec_seq eq "{" "}" comma_sep pp_match ml fl)]
-		end
+		   PP.box 2 (pp_rec_seq "{" "}" comma_sep pp_match ml fl)]
 		| pp_match (MatchTuple(ml,_,_)) = 
 		PP.box 0 [PP.s "(",
 			  PP.seq {fmt=pp_match,sep=comma_sep} ml,
@@ -342,7 +328,7 @@ structure HaskellPP : ALGEBRAIC_PP =
 		    pp_id id
 		  | pp_fun_name _ = raise Error.impossible 
 
-		val pp_fnames = PP.seq {fmt=pp_fun_name,sep=comma_sep} fdecs
+
 
 		fun pp_sum_name (DeclSum (i,_)) =
 		    PP.cat [pp_ty_id i,PP.s "(..)"]
@@ -350,16 +336,16 @@ structure HaskellPP : ALGEBRAIC_PP =
 		    PP.cat [pp_ty_id i,PP.s "(..)"]
 		  | pp_sum_name _ = raise Error.impossible 
 
-		val pp_sum_names =
-		    PP.seq_term {fmt=pp_sum_name,sep=comma_sep} sdecs 
-
 		fun pp_tup_name (DeclTy(i,_)) =
 		    pp_ty_id i
 		  | pp_tup_name _ = raise Error.impossible 
 
-		val pp_tup_names =
-		    PP.seq_term {fmt=pp_tup_name,sep=comma_sep} decs 
-
+		val pp_exports =
+		  PP.seq {fmt=(fn x => x),sep=comma_sep}
+		  ((List.map pp_sum_name sdecs) @
+		   (List.map pp_tup_name decs) @
+		   (List.map pp_fun_name fdecs))
+		  
 		fun pp_imports imports =
 		    let
 			fun pp_import x =
@@ -370,27 +356,24 @@ structure HaskellPP : ALGEBRAIC_PP =
 		    end
 		
 		fun pp_sig name body incs =
-			PP.cat
-			[PP.box 0
-			 [PP.s ("module "^capitalize name^" ("),
-			 import_prologue props,
-			 pp_sum_names,
-			 pp_tup_names,
-			 pp_fnames, 
-			 import_epilogue props,
-			 PP.s ") where", PP.nl, PP.nl],
-			 PP.box 0
-			 [PP.seq_term {fmt=PP.s,sep=PP.nl} incs, 
-			  pp_imports imports,PP.nl,
-			  module_prologue props, PP.nl,
-			  body,PP.nl,
-			  module_epilogue props,PP.nl]
-			 ]
+			PP.box 0
+			[PP.s ("module "^capitalize name^" ("),
+			 PP.box 4 [import_prologue props,
+				   pp_exports,
+				   import_epilogue props,
+				   PP.s ") where "],
+			 PP.nl,
+			 PP.seq_term {fmt=PP.s,sep=PP.nl} incs, 
+			 pp_imports imports,PP.nl,
+			 module_prologue props, PP.nl,
+			 body,PP.nl,
+			 module_epilogue props,PP.nl]
 		val base_import = base_imp p
 	    in
 		[([mn^".hs"], 
 		  pp_sig mn (PP.cat [pp_ty_decs,pp_fsigs,pp_fdecs]) 
-		  ["import qualified Prelude", "import "^base_import])]
+		  ["import Prelude (Maybe(..),return)",
+		   "import "^base_import])]
 	    end
 	  end
     end

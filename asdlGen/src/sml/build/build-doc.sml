@@ -1,16 +1,19 @@
 signature BUILD_DOC =
   sig
-    include BUILD_IT
+    structure B : CORE_BUILD
+    val rules : B.rule list
     val docs : Paths.file_path  list
   end
-
-functor BuildDoc(structure DT : BUILD_DTANGLE 
+    (* TODO clean this up *)
+functor BuildDoc(structure DT : BUILD_DTANGLE
+		 val dtangle_src : Paths.path
 		 val src_root : Paths.path) : BUILD_DOC =
   struct
-    structure B = DT.B
     fun mk_file arcs =
       Paths.fileFromPath (Paths.pathConcat(src_root,Paths.pathFromArcs arcs))
-    val rules = DT.rules
+    structure B = DT.BU.B
+
+    val ({heap,dtangle},rules) = DT.BU.getRules dtangle_src DT.rules
 
     fun mk_ins (prefix,style) =
       let val kp = (List.length prefix) + 1
@@ -29,9 +32,10 @@ functor BuildDoc(structure DT : BUILD_DTANGLE
 	val noweb_cmd =
 	  B.EXEC(noweb,[B.STR ("-o"),B.STR (Paths.fileToNative out_nw)])
 	val noweb_rule = B.RULE{valid=noweb_valid,update=noweb_cmd}
-	val dtangle_rule = DT.dtangle_rule {inp=inp,out=out_nw}
-      in (out_tex::outs,noweb_rule::dtangle_rule::rules)
+	val (out,dtangle_rules) = dtangle {inp=inp,out=out_nw}
+      in (out::outs,noweb_rule::(dtangle_rules@rules))
       end
+
 
     fun do_dir ctx = List.foldr (mkTeX ctx) 
     fun mk s = (s^".nw",[s^".sig",s^".sml"])
