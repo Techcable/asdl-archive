@@ -11,4 +11,4 @@ case `basename $prog` in
  ;;
 esac
 name=`basename ${runtime}`
-echo $runtime $name 
+echo $runtime 
