@@ -25,7 +25,7 @@ $/smlnj-lib.cm
 #else
 smlnj-lib.cm
 #endif
-../util/sources.cm
+../util/misc/sources.cm 
 ../base/asdl-base.cm
 (*types.sig
 types.sml
