@@ -67,7 +67,7 @@ the addition of user code. strings.
        user implementation.
 
        <tag><tt/is_library/</tag>     
-       Default value is flase. If true instantiate assume all types can be used
+       Default value is false. If true assume all types can be used
        as lists or options and generate any needed code, rather then 
        generating list and option code on demand. Useful for generating stubs.
 

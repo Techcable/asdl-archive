@@ -271,7 +271,7 @@ See section <ref id="sect.invocation" name="Invocation"> for details.
 
 <sect2>Attributes<p> 
 All sum types may optionally be followed by a set of
-attributes. Attributes provided for notation for a fields common to all the
+attributes. Attributes provide notation for fields common to all the
 constructors in the sum type. 
 <tscreen><verb>
 module M {

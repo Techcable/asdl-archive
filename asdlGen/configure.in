@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/c/asdl_base.c)
 AC_CONFIG_AUX_DIR(src/misc)
-AM_INIT_AUTOMAKE(asdlGen, 1.10)
+AM_INIT_AUTOMAKE(asdlGen, 1.2)
 AC_PROG_MAKE_SET
 
 dnl Checks for programs.

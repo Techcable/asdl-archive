@@ -7,13 +7,14 @@
 <author>&author.danwang;
 <date> &asdlGen.release-date;
 
-<sect>CHANGES in 1.20 Release<p>
+<sect>CHANGES in 1.2 Release<p>
 <sect1>Bugs Fixed<p>
 <itemize>
 <item> Bug in Java code that would cause pickler to go into
 infinite loop.
 <item> Bug in Java code handling of StdTypes.bool.
 </itemize>
+<item> Fixed code so asdlGen does not silently fail on an error.
 <sect1>Incompatible Changes<p>
 <itemize>
 <item>Command line syntax has changed. See the Reference manual for details.
