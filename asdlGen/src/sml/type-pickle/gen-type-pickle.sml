@@ -40,7 +40,7 @@ structure GenPickleTranslator:TRANSLATE =
 	val cfg = Output.cfg
 	val (cfg,output_file)  =
 	    Params.declareString cfg
-	    {name="output_file",flag=NONE,default="env"}
+	    {name="output_file",flag=NONE,default="env.typ"}
 	val (cfg,output_directory)  =
 	    Params.declareString cfg
 	    {name="output_directory",flag=NONE,default=OS.Path.currentArc}
@@ -212,10 +212,7 @@ structure GenPickleTranslator:TRANSLATE =
 		val mmap = {max_key=mmax_key-1,entries=mentries}
 		val tenv =
 		    {magic=1,version=1,mmap=mmap,tmap=tmap,cmap=cmap}
-		val fname =
-		    OS.Path.joinBaseExt
-		    {base=(output_file p),
-		     ext=SOME "typ"}
+		val fname = (output_file p)
 	    in
 		Output.translate p [([fname],T.write_type_env tenv)]
 	    end
