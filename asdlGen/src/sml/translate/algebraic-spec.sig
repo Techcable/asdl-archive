@@ -6,14 +6,32 @@
  * Author: Daniel C. Wang
  *
  *)
-
+(**::
+The [[mkAlgebraicSemantTranslator]] functor builds
+a translator from ASDL semantic values to the semantic values
+of an algebraic language. It is parameterized over several structures
+that act as a specification for a particular language. Many of
+parameter structures implement refinements of more abstract
+signatures by specifying concrete implementations for previously
+abstract types.
+**)
+(**:[[signature ALGEBRAIC_PP]]:
+Specialized version of the [[CODE_PP]] signature constrains pretty
+printer to a toplevel module definition of implementations of the
+[[ALGEBRAIC_AST]] signature.
+**) 
 signature ALGEBRAIC_PP =
   sig
     structure Ast : ALGEBRAIC_AST
       include CODE_PP
         where type code = (Ast.module * Semant.Module.P.props)
   end
-
+(**)
+(**:[[signature ALGEBRAIC_TYPE_DECL]]:
+Specialized version of the [[TYPE_DECL]] signature that expose
+concrete representation for the abstract types found in the
+[[TYPE_DECL]] signature.
+**)
 signature ALGEBRAIC_TYPE_DECL =
   sig
     structure Ast : ALGEBRAIC_AST
@@ -24,7 +42,12 @@ signature ALGEBRAIC_TYPE_DECL =
         and type VarId.mid = Ast.VarId.mid
         and type TypeId.mid = Ast.TypeId.mid
   end
-
+(**)
+(**:[[signature ALGEBRAIC_SPEC]]:
+The signature [[ALGEBRAIC_SPEC]] specifies a number of functions that 
+control the precise details of how code is generated for a specific target 
+language. 
+**)
 signature ALGEBRAIC_SPEC =
   sig
     structure Ty : ALGEBRAIC_TYPE_DECL
@@ -45,7 +68,6 @@ signature ALGEBRAIC_SPEC =
            unwrap: Ty.exp -> Ty.exp}
       
     val get_aux_decls : Semant.MEnv.P.props -> Ty.env
-                                        -> Ty.ty_decl list -> Ty.Ast.decl list
+                 -> Ty.ty_decl list -> Ty.Ast.decl list
   end
-
-
+(**)

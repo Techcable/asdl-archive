@@ -39,48 +39,43 @@ public:
   }
 };
 #endif
-
-template <class T> 
-class List {
-public:
-  T head;
-  List<T>* tail;
-  inline List(T head, List<T>* tail) {
-    { this->head = head; this->tail = tail; }
-  }
+class Error {
+  public:
+  string msg;
+  Error(string x) { msg = x; }
 };
 
-typedef List<int> int_list;
-typedef List<string> string_list;
-typedef List<identifier> identifier_list;
+typedef Seq<int>* int_list;
+typedef Seq<string>* string_list;
+typedef Seq<identifier>* identifier_list;
 
 extern void   write_tag(int x,outstream s);
 extern int    read_tag(instream s);
 
 extern void          write_int(int x,outstream s);
 extern void          write_int_option(int_option x,outstream s);
-extern void          write_int_list(int_list* x, outstream s);
+extern void          write_int_list(int_list x, outstream s);
 
 extern int           read_int(instream s);
 extern int_option    read_int_option(instream s);
-extern int_list*     read_int_list(instream s);
+extern int_list      read_int_list(instream s);
 
 extern void          write_string(string x,outstream s);
 extern void          write_string_option(string_option x,outstream s);
-extern void          write_string_list(string_list* x, outstream s);
+extern void          write_string_list(string_list x, outstream s);
 
 extern string        read_string(instream s);
 extern string_option read_string_option(instream s);
-extern string_list*  read_string_list(instream s);
+extern string_list   read_string_list(instream s);
 
 extern void          write_identifier(identifier x,outstream s);
 extern void          write_identifier_option(identifier_option x,outstream s);
-extern void          write_identifier_list(identifier_list* x, outstream s);
+extern void          write_identifier_list(identifier_list x, outstream s);
 
 extern identifier        read_identifier(instream s);
 extern identifier_option read_identifier_option(instream s);
-extern identifier_list*  read_identifier_list(instream s);
-extern void die();
+extern identifier_list  read_identifier_list(instream s);
+
 
 
 #endif

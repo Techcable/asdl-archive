@@ -76,12 +76,12 @@ structure UnixExternalProgs:EXTERNAL_PROGRAMS =
 	val cc_prg  = "gcc"
 	val cxx_prg = "g++"
 	val javac_prg = "javac"
-	val haskell_prg = "hugs"
-	val sml_prg = "sh ..\\misc\\sml-batch"
+	val haskell_prg = "echo hugs"
+	val sml_prg = "sh ../misc/sml-batch"
 
 	fun prefix x s = x^s
 
-	fun run cmd = OS.Process.system ("echo " ^ cmd )
+	fun run cmd = OS.Process.system ((*"echo " ^ *)cmd )
 
 	val shpath = ListFormat.fmt
 	    {init="",final="",sep=":",fmt=(fn x => x)} 
@@ -207,11 +207,11 @@ structure Test =
 
 
 
-	val do_java = java_comp o Main.Java.do_it 
-	val do_c =    c_comp o Main.AnsiC.do_it 
-	val do_cxx =  cxx_comp o Main.CPlusPlus.do_it 
-	val do_sml =  sml_comp o Main.ML.do_it 
-	val do_haskell =  haskell_comp o Main.Haskell.do_it 
+	val do_java = java_comp o Link.Java.do_it 
+	val do_c =    c_comp o Link.AnsiC.do_it 
+	val do_cxx =  cxx_comp o Link.CPlusPlus.do_it 
+	val do_sml =  sml_comp o Link.ML.do_it 
+	val do_haskell =  haskell_comp o Link.Haskell.do_it 
 	val keep_going = ref false
 	fun test (name,f,i) () = (name,((f i) = OS.Process.success) orelse
 				  (!keep_going))

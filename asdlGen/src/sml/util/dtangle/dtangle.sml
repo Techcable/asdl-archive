@@ -252,7 +252,8 @@ different commenting conventions can be processed together.
 	desc=G.NoArg Usage, help="help"}]
       
     val desc = List.rev desc
-    val usage = G.usageInfo "Usage: dtangle options files ... options file ...\n" desc
+    val usage = G.usageInfo
+      "Usage: dtangle options files ... options file ...\n" desc
     val parseOpts = G.getOpt (G.ReturnInOrder Input) desc
       
     fun doOpts (Spec s,{spec,outs,close,kp}) =

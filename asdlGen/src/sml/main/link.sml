@@ -8,7 +8,7 @@
  *)
 
 
-structure Main =
+structure Link =
     struct
       structure HTMLGen =
 	mkTranslateFromTranslator

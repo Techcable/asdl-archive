@@ -6,7 +6,7 @@
  * Author: Daniel C. Wang
  *
  *)
-
+(**:[[structure AlgebraicTy]]:**)
 structure AlgebraicTy : ALGEBRAIC_TYPE_DECL =
   struct
     structure Ast = AlgebraicAst
@@ -18,13 +18,15 @@ structure AlgebraicTy : ALGEBRAIC_TYPE_DECL =
 		 type tag = {c:Ast.cnstr,v:int}) 
     open T
   end
-
+(**)
+(**:[[functor mkAlgebraicSpec]]:**)
 functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 			val get_attribs : bool
 			val streams_ty : {outs:string,ins:string} option
 			val monad_name : string option) =
   struct
     val aux_suffix = "Util"
+(**:[[functor mkAlgebraicSpec]] [[structure Arg]]:**)
     structure Arg =
       struct 
 	open Ty.Ast
@@ -49,8 +51,7 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 	      case qualifier of
 		[q] => [q^aux_suffix]
 	      | _ => qualifier
-	  in
-	    VarId.fromPath{base=base,qualifier=qualifier}
+	  in VarId.fromPath{base=base,qualifier=qualifier}
 	  end
 	  
 	val rd_name = mk_name "read"
@@ -96,13 +97,17 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 			   SOME ty => ty
 			 | NONE => TyId tid)}) xs
 	fun mk_record_exp get_ty xs =
-	  let
-	    val (fds,exps) = ListPair.unzip xs
-	  in
-	    Record (exps,mk_fields get_ty fds,NONE)
+	  let val (fds,exps) = ListPair.unzip xs
+	  in Record (exps,mk_fields get_ty fds,NONE)
 	  end
 	fun mk_record_typ get_ty fds = TyRecord (mk_fields get_ty fds)
       end
+    (**)
+(**:[[functor mkAlgebraicSpec]] glue code to build utility code:
+The [[structure Arg]] describes an interface from which one can
+automatically construct both pickler generators and attribute accessors
+functions.	
+**)
     open Arg
     structure StdPklGen = StdPickler(structure Arg = Arg)
     structure AttribGetGen = AttribGetter(structure Arg = Arg)
@@ -114,10 +119,10 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 	  if get_attribs then
 	    AttribGetGen.trans env tids
 	  else []
-      in
-	attrbs@pkls
+      in attrbs@pkls
       end
-
+(**)
+(**:[[functor mkAlgebraicSpec]] definition of type constructor:**)
     val seq_rep = TyList
     val opt_rep = TyOption
     val share_id = TypeId.fromPath{qualifier=[],base="share"}
@@ -138,11 +143,9 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 	    val rd = Call(Id rd_list_name,[Id (rd_name tid),Id stream_id])
 	    fun wr e =
 	      Call(Id wr_list_name,[Id (wr_name tid),e,Id stream_id])
-	  in
-	    (ty,{wr=SOME wr,rd=SOME rd})
+	  in (ty,{wr=SOME wr,rd=SOME rd})
 	  end
-      in
-	ty_con
+      in ty_con
       end
     
     val opt_con =
@@ -159,8 +162,7 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 	  in
 	    (ty,{wr=SOME wr,rd=SOME rd})
 	  end
-      in
-	ty_con
+      in ty_con
       end
     
     val share_con =
@@ -173,16 +175,16 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 	    val rd = Call(Id rd_share_name,[Id (rd_name tid),Id stream_id])
 	    fun wr e =
 	      Call(Id wr_share_name,[Id (wr_name tid),e,Id stream_id])
-	  in
-	    (ty,{wr=SOME wr,rd=SOME rd})
+	  in (ty,{wr=SOME wr,rd=SOME rd})
 	  end
-      in
-	ty_con
+      in ty_con
       end
+
     val seq_tid =  TypeId.suffixBase "_list" 
     val opt_tid =  TypeId.suffixBase "_option" 
     val share_tid =  TypeId.suffixBase "_share" 
-      
+(**)
+(**:[[functor mkAlgebraicSpec]] definition of primitive types:**)
     fun addPrim (s,ps) =
       let
 	val tid = TypeId.fromString(s)
@@ -204,7 +206,7 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
       {mktid=opt_tid,mkrep=opt_rep,con=opt_con}
       | get_reps me Semant.Shared = 
       {mktid=share_tid,mkrep=share_rep,con=share_con}
-
+(**)
     fun get_info p =
       let
 	val rd =
@@ -216,8 +218,7 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 	    (SOME x) =>
 	      SOME (fn e => Call(Id(VarId.fromPath x),[e,Id stream_id]))
 	  | NONE => NONE
-      in
-	{wr=wr,rd=rd}
+      in {wr=wr,rd=rd}
       end
     
     structure S = Semant
@@ -239,9 +240,8 @@ functor mkAlgebraicSpec(structure Ty : ALGEBRAIC_TYPE_DECL
 	    (SOME y) =>
 	      (fn x => Call(Id(VarId.fromPath y),[x]))
 	  | NONE => (fn x => x)
-      in
-	{natural_ty=ty,unwrap=unwrap,wrap=wrap}
+      in {natural_ty=ty,unwrap=unwrap,wrap=wrap}
       end
   end
-
+(**)
 

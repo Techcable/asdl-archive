@@ -72,12 +72,12 @@ functor mkPPAnsiC(structure T: ANSI_C) : PP_ANSI_C =
 	    PP.cat [pp_aggregate aggre,PP.s " ",
 	     PP.opt{some=pp_id,none=PP.empty} iopt]
 	  | pp_ty_exp (T.TyAggregate(aggre,iopt,fl)) =
-	    PP.vblock 4 [pp_aggregate aggre,PP.s " ",
+	    PP.cat [pp_aggregate aggre,PP.s " ",
 			 PP.opt{some=pp_id,none=PP.empty} iopt,
-			 PP.s " {",PP.ws,
-			 PP.seq {fmt=pp_field,sep=semi_sep} fl,
-			 PP.s ";",
-			 PP.untab,
+			 PP.s " {",
+			 PP.box 4 [PP.nl,
+				   PP.seq {fmt=pp_field,sep=semi_sep} fl,
+				   PP.s ";"],PP.ws,
 			 PP.s "}"]
 	  | pp_ty_exp (T.TyQualified (q,T.TyPointer te))  =
 	    PP.cat [pp_ty_exp te, PP.s " * ",pp_qualifier q]
@@ -91,13 +91,10 @@ functor mkPPAnsiC(structure T: ANSI_C) : PP_ANSI_C =
 	and pp_ty_dec (T.TyDec (tid,te)) =
 	    PP.cat [PP.s "typedef ",pp_ty_exp te,PP.s " ",pp_ty_id tid]
 	  | pp_ty_dec (T.TyAggregateDec(aggre,id,fl)) =
-	    PP.vblock 4 [pp_aggregate aggre,PP.s " ",
-			 pp_id id,
-			 PP.s " {",PP.ws,
-			 PP.seq {fmt=pp_field,sep=semi_sep} fl,
-			 PP.s ";",
-			 PP.untab,
-			 PP.s "}"]
+	    PP.box 4 [pp_aggregate aggre,PP.s " ", pp_id id,
+		      PP.s " {",PP.nl,
+		      PP.seq {fmt=pp_field,sep=semi_sep} fl,
+		      PP.s ";",PP.ws, PP.s "}"]
 	  | pp_ty_dec (T.TyEnumDec (tid,er)) =
 	    PP.hblock 0
 	    [PP.s "enum ",
@@ -157,8 +154,8 @@ functor mkPPAnsiC(structure T: ANSI_C) : PP_ANSI_C =
 	  | pp_decl (T.Fun fd) = pp_fun_dec fd
 	  | pp_decl (T.Var vd) =
 	    PP.cat [pp_var_dec vd,PP.s ";"]
-	  | pp_decl (T.Com s) =  PP.vblock 4
-	    [PP.nl,PP.untab,PP.s "/*",PP.nl,PP.s s,PP.untab,
+	  | pp_decl (T.Com s) =  PP.cat
+	    [PP.s "/*",PP.box 2 [PP.nl,PP.s s],PP.nl,
 	     PP.s "*/"]
 	  | pp_decl (T.TagTable x) =
 	    let
@@ -270,8 +267,9 @@ functor mkPPAnsiC(structure T: ANSI_C) : PP_ANSI_C =
 	  | pp_stmt (T.If{test,then_stmt,else_stmt}) =
 	    PP.vblock 4
 	    [PP.s "if(",pp_exp test,PP.s ")",
-	     PP.nl,pp_stmt then_stmt,PP.untab,
-	     PP.s "else",PP.nl,pp_stmt else_stmt]
+	     PP.box 4 [PP.nl,pp_stmt then_stmt],PP.nl,
+	     PP.s "else",
+	     PP.box 4 [PP.nl,pp_stmt else_stmt]]
 	  | pp_stmt (T.For {init,test,step,body}) =
 	    PP.vblock 4 [PP.s "for(",
 		    PP.hblock 4 [pp_exp init,semi_sep,
@@ -286,17 +284,18 @@ functor mkPPAnsiC(structure T: ANSI_C) : PP_ANSI_C =
 	  | pp_stmt (T.Return e) = PP.cat [PP.s "return ", pp_exp e,PP.s ";"]
 	  | pp_stmt (T.Block b) = pp_block b
 	  | pp_stmt (T.Switch {test,body,default=T.Nop}) =
-	    PP.vblock 4
-	    [PP.s "switch(",pp_exp test,PP.s ") {",PP.nl,
-	     PP.seq_term {fmt=pp_switch_arm,sep=PP.nl} body,
-	     PP.nl,PP.untab, PP.s "}"]
+	    PP.cat
+	    [PP.s "switch(",pp_exp test,PP.s ") {",
+	     PP.box 4 [PP.nl,
+		       PP.seq {fmt=pp_switch_arm,sep=PP.nl} body],
+	     PP.nl, PP.s "}"]
 	  | pp_stmt (T.Switch {test,body,default}) =
-	    PP.vblock 4
-	    [PP.s "switch(",pp_exp test,PP.s ") {",PP.nl,
-	     PP.seq_term {fmt=pp_switch_arm,sep=PP.nl} body,
-	     PP.s "default: ",pp_stmt default,
-	     PP.nl,PP.untab, PP.s "}"]
-
+	    PP.cat
+	    [PP.s "switch(",pp_exp test,PP.s ") {",
+	     PP.box 4 [PP.nl,
+		       PP.seq_term {fmt=pp_switch_arm,sep=PP.nl} body,
+		       PP.s "default: ",pp_stmt default],
+	     PP.nl, PP.s "}"]
 
 	and pp_switch_arm (T.CaseInt(i,sl)) =
 	    PP.vblock (4) [PP.s "case ",PP.d i,PP.s ":",

@@ -5,7 +5,6 @@
  * Author: Daniel C. Wang
  *
  *)
-
 functor mkAlgebraicSemantTranslator
   (structure IdFix  : ID_FIX
    structure Spec   : ALGEBRAIC_SPEC

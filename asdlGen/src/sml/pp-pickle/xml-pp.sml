@@ -32,12 +32,12 @@ structure XMLPP =
 	  cat [s " lb=\"",s (Identifier.toString l),s "\""]
 
 	fun pp_element (i,l) (SOME c) =
-	  cat[s "<",pp_id i,pp_label_opt l,s ">",br,c,br,s "</",pp_id i,s ">"]
+	  cat[s "<",pp_id i,pp_label_opt l,s ">",ws,c,ws,s "</",pp_id i,s ">"]
 	  | pp_element (i,l) NONE =  cat[s "<",pp_id i,pp_label_opt l,s "/>"]
 
 	fun pp_seq (i,x) l c =
 	  vblock 0 [s "<",pp_id i,s "-seq",pp_label_opt x,
-		    s " sz=\"",d l,s "\">",br,c,
+		    s " sz=\"",d l,s "\">",ws,c,
 	      s "</",pp_id i,s "-seq>"]
 	fun pp_opt (i,x) NONE  =
 	  cat[s "<",pp_id i,s "-opt",pp_label_opt x,s " sz=\"0\"></",
@@ -54,18 +54,18 @@ structure XMLPP =
 	      in
 		pp_element (typename,l)
 		(SOME (vblock 2 [pp_element (con,NONE)
-				 (SOME (seq{fmt=pp_lv,sep=br} lvs))]))
+				 (SOME (seq{fmt=pp_lv,sep=ws} lvs))]))
 	      end
 	      | pp_asdl_value l (V.ProductValue{typename,v,vs}) =
 	      let
 		val lvs = f (SOME typename,NONE) (v::vs)
 	      in
 		pp_element (typename,l)
-		(SOME (hblock 2 [seq{fmt=pp_lv,sep=br} lvs]))
+		(SOME (hblock 2 [seq{fmt=pp_lv,sep=ws} lvs]))
 	      end
 	      | pp_asdl_value l (V.SequenceValue {typename,vs}) =
 	      pp_seq (typename,l) (List.length vs)
-	      (seq{fmt=pp_asdl_value NONE,sep=br} vs)
+	      (seq{fmt=pp_asdl_value NONE,sep=ws} vs)
 	      
 	      | pp_asdl_value l (V.NoneValue{typename}) =
 	      pp_opt (typename,l) NONE

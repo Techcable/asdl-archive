@@ -1,19 +1,28 @@
- 
--- ASDL specicication in ASDL without use of labels
--- * = repetition ? = optional ala. grep
--- Think grep meets Cish prototypes
+--*::
+--This is an ASDL description of the parse trees returned by the parse.
+--It currently contains construcuts that are ignored by asdlGen but are
+--include for future extension.
+--* 
 module Asdl {
+-- Toplevel defintions
+decl = Module(identifier* imports,type_decl* decls)
+     | ForeignModule(identifier* exports) -- For future extension
+     | View(view_decl* decls)
+       attributes(identifier name)
 
-asdl_module = (identifier name,identifier* imports,asdl_type* defs)
+-- id or M.id (more general than it needs to be)
+path  = (identifier* qualifier,identifier base) 
 
-asdl_type = SumType(field*,constructor, constructor*)
-     | ProductType(field,field*)
-       attributes (identifier)
+-- ('?' | '*' | '!')
+type_qualifier = Option | Sequence | Shared  
 
-constructor = Con(identifier, field*)
+field = (path typ, identifier? label_opt,type_qualifier? qualifier_opt) 
 
-field = Id | Option | Sequence 
-    attributes (identifier*, identifier?) 
+constructor = (identifier name, field* fs)
 
+type_decl = SumType(field* attribs,constructor c, constructor* cs)
+          | ProductType (field f,field* fs)
+            attributes (identifier name)
 
+view_decl = (identifier* entity, string prop, string value)
 }

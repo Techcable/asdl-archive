@@ -9,14 +9,15 @@ parameters.sml
 properties.sml
 pp-util.sml
 paths.sml
-(* stolen from sml-nj compiler *)
-scc.sml
-(*sourcemap.nw*)
-sourcemap.sig
-sourcemap.sml
-pp.sml
-ppqueue.sml
+wpp.sml
 getopt/sources.cm
 run-with.sig
 run-with.sml
+(* below stolen from sml-nj compiler *)
+scc.sml
+(*pp.sml*) (* replaced by wpp *)
+(*ppqueue.sml*)
+(*sourcemap.nw*)
+sourcemap.sig
+sourcemap.sml
 

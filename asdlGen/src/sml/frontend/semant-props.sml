@@ -6,6 +6,19 @@
  * Author: Daniel C. Wang
  *
  *)
+(**::
+Here are the concrete implementations of the various property signatures.
+Notice they all are implemented with the same extensible record type
+implemented by the [[structure Properties]]. To keep the type distinct
+the resulting structures use an opaque signature match [[:>]].
+Each the actual external string used to refer to each property is
+defined as the [[name]] field of the record passed to a function to
+build the property. 
+**)
+(**:[[functor CommonProps]]:
+This functor builds all the common functionally. It paramterized by a
+string which is used for error reporting.
+**)
 functor CommonProps(val name : string) =
 	    struct
 		open Properties
@@ -17,6 +30,8 @@ functor CommonProps(val name : string) =
 		val (doc_string,_) =
 		    decl_string_opt p {name="doc_string",default=NONE}
 	    end
+(**)
+(**:[[structure ConProps]]:**)
 structure ConProps :> CON_PROPS =
     struct
 	structure P = CommonProps(val name = "con props")
@@ -24,6 +39,8 @@ structure ConProps :> CON_PROPS =
 	val (enum_value,_) =
 	    decl_int_opt p {name="enum_value",default=NONE}
     end
+(**)
+(**:[[structure TypProps]]:**)
 structure TypProps :> TYP_PROPS =
     struct
 	structure P = CommonProps(val name = "typ props")
@@ -46,8 +63,9 @@ structure TypProps :> TYP_PROPS =
 	    decl_path_opt p {name="wrapper",default=NONE}
 	val (unwrapper,_) =
 	    decl_path_opt p {name="unwrapper",default=NONE}
-
     end
+(**)
+(**:[[structure ModProps]]:**)
 structure ModProps :> MOD_PROPS =
     struct
 	structure P = CommonProps(val name = "mod props")
@@ -70,9 +88,11 @@ structure ModProps :> MOD_PROPS =
 	val (is_library,_) =
 	    decl_bool p {name="is_library",default=false}
     end 
+(**)
+(**:[[structure ModEnvProps]]:**)
 structure ModEnvProps :> MOD_ENV_PROPS =
     struct
-	structure P = CommonProps(val name = "mod props")
+	structure P = CommonProps(val name = "modenv props")
 	open P
 	val (mono_types,init_mono_types) =
 	  decl_bool p {name="mono_types",default=false}
@@ -81,8 +101,5 @@ structure ModEnvProps :> MOD_ENV_PROPS =
 			     default=SOME "std"}
 	val (explicit_sharing,init_explicit_sharing) =
 	  decl_bool p {name="explicit_sharing",default=false}
-
     end 
-
-
-
+(**)

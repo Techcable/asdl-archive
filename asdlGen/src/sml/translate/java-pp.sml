@@ -70,7 +70,6 @@ structure JavaPP :  sig
 
 	    and pp_ty_decl (DeclAbstractClass
 			    {name,idecls,scope,inherits,fields,mths}) =
-
 		PP.vblock 4
 		[pp_scope scope,
 		 PP.s " abstract class ",
@@ -80,25 +79,24 @@ structure JavaPP :  sig
 		 PP.s " {", PP.ws,
 		 pp_ty_idecls idecls,
 		 PP.seq_term {fmt=pp_mfield,sep=semi_sep} fields,
-		 PP.seq {fmt=pp_mth,sep=PP.ws} mths,
-		 PP.untab,PP.s "}"]
+		 PP.seq {fmt=pp_mth,sep=PP.ws} mths, 
+		 PP.s "}"]
 	      | pp_ty_decl (DeclClass
 			    {name,idecls,scope,final,
 			     inherits,fields,mths,cnstrs}) =
-		PP.vblock 4
+		PP.cat
 		[pp_scope scope,
 		 pp_str_if " final" final,
 		 PP.s " class ",
 		 pp_tidb name,
 		 PP.opt {some=(fn x => PP.cat [PP.s " extends ",pp_tid x]),
-			 none=PP.empty} inherits,
-		 PP.s " {",
-		 PP.ws,pp_ty_idecls idecls,
-		 PP.seq_term {fmt=pp_mfield,sep=semi_sep} fields,
-		 PP.nl,
-		 PP.seq_term {fmt=pp_cnstr name,sep=PP.nl} cnstrs,
-		 PP.seq {fmt=pp_mth,sep=PP.nl} mths,
-		 PP.untab,PP.s "}"]
+			 none=PP.empty} inherits, PP.s " {",
+		 PP.box 4
+		 [PP.ws,pp_ty_idecls idecls,
+		  PP.seq_term {fmt=pp_mfield,sep=semi_sep} fields, PP.nl,
+		  PP.seq_term {fmt=pp_cnstr name,sep=PP.nl} cnstrs,
+		  PP.seq {fmt=pp_mth,sep=PP.nl} mths], PP.nl,
+		 PP.s "}"]
 	      | pp_ty_decl _ = raise Error.internal
 		
 	    and pp_ty_idecl (IDeclEnum{name,enums}) =
@@ -212,24 +210,26 @@ structure JavaPP :  sig
 	      | pp_stmt (Expr e) =
 		PP.cat [pp_exp e,PP.s ";"]
 	      | pp_stmt (Case {test,clauses,default=Nop}) =
-		PP.vblock 4
-		[PP.s "switch(",pp_exp test,PP.s ") {",PP.nl,
-		 PP.seq_term {fmt=pp_clause,sep=PP.nl} clauses,
-		 PP.nl,PP.untab, PP.s "}"]
+		PP.cat
+		[PP.s "switch(",pp_exp test,PP.s ") {",
+		 PP.box 4 [PP.nl,
+			   PP.seq_term {fmt=pp_clause,sep=PP.nl} clauses],
+		 PP.nl, PP.s "}"]
 	      | pp_stmt (Case {test,clauses,default}) =
-		PP.vblock 4
-		[PP.s "switch(",pp_exp test,PP.s ") {",PP.nl,
-		 PP.seq_term {fmt=pp_clause,sep=PP.nl} clauses,
-		 PP.s "default: ",PP.ws,pp_stmt default,
-		 PP.nl,PP.untab, PP.s "}"]
+		PP.cat
+		[PP.s "switch(",pp_exp test,PP.s ") {",
+		 PP.box 4 [PP.nl,PP.seq_term {fmt=pp_clause,sep=PP.nl} clauses,
+			   PP.s "default: ",PP.ws,pp_stmt default],
+		 PP.nl, PP.s "}"]
 	      | pp_stmt (If{test,then_stmt,else_stmt=Nop}) =
 		PP.vblock 4
 		[PP.s "if(",pp_exp test,PP.s ")",PP.ws,pp_stmt then_stmt]
 	      | pp_stmt (If{test,then_stmt,else_stmt}) =
-		PP.vblock 4
+		PP.cat
 		[PP.s "if(",pp_exp test,PP.s ")",
-		 PP.ws, pp_stmt then_stmt,PP.untab,
-		 PP.s " else",PP.ws,pp_stmt else_stmt]
+		 PP.box 4 [PP.ws, pp_stmt then_stmt],
+		 PP.s " else",
+		 PP.box 4 [PP.ws,pp_stmt else_stmt]]
 	      | pp_stmt (Block {vars=[],body=[]}) =  PP.empty
 	      | pp_stmt (Block {vars=[],body=[x]}) =  pp_stmt x
 	      | pp_stmt (Block b) = pp_block b
@@ -253,20 +253,17 @@ structure JavaPP :  sig
 
 	    and pp_block {vars=[],body=[]} = PP.s " { } "
 	      | pp_block {vars=[],body} =
-		PP.vblock 4
-		 [PP.s "{",
-		  PP.nl,
-		  PP.seq {fmt=pp_stmt,sep=PP.ws} body,
-		  PP.untab,
-		  PP.s "}"]
+		PP.cat
+		[PP.s "{",
+		 PP.box 4 [PP.nl,PP.seq {fmt=pp_stmt,sep=PP.ws} body],
+		 PP.nl, PP.s "}"]
 	      | pp_block {vars,body} =
-		 PP.vblock 4
+		 PP.cat
 		 [PP.s "{",
-		  PP.nl,
-		  PP.seq_term {fmt=pp_field,sep=semi_sep} vars,
-		  PP.seq {fmt=pp_stmt,sep=PP.ws} body,
-		  PP.untab,
-		  PP.s "}"]
+		  PP.box 4 [PP.nl,
+			    PP.seq_term {fmt=pp_field,sep=semi_sep} vars,
+			    PP.seq {fmt=pp_stmt,sep=PP.ws} body],
+		  PP.nl,PP.s "}"]
 
 	    and pp_scope Public = PP.s "public"
 	      | pp_scope Private = PP.s "private"

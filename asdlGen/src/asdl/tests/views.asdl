@@ -92,7 +92,7 @@ view Cxx {
 }
 
 view Java {
-	Slp.exp <= source_name : Expression
+Slp.exp <= source_name : Expression
 
   Slp.pos <= {
     natural_type : int

@@ -7,7 +7,6 @@
  *
  *)
 (**::
-
 The [[signature SEMANT]] provides a procedural interface to
 ASDL semantic values. The semantic entities in ASDL are
 module environments, modules, types, constructors and fields.
@@ -156,7 +155,7 @@ keyword of the type.
 (**:[[signature SEMANT]] [[structure Field]]:
 The [[Field]] substructure organizes several functions on fields.
 Fields have no view modifiable properties. 
-**)
+**) 
 	structure Field :
 	  sig
 (**:[[signature SEMANT]] [[structure Field]]:

@@ -26,17 +26,16 @@ structure YaccGrammarPP : YACC_GRAMMAR_PP =
 
 	val pp_tid = PP.wrap (TypeId.toString' "_")
 	val pp_id = PP.wrap (VarId.toString' "_")
-	val bar_sep = PP.cat [PP.nl, PP.s "| "]
+	val bar_sep = PP.cat [PP.ws, PP.s "| "]
 	fun pp_terminal t = pp_id t
 	and pp_rule_atom (Term t) = pp_terminal t
 	  | pp_rule_atom (NonTerm ty) = pp_tid ty
 	and pp_rule (ra,_) =
-	  PP.hblock 4 
+	  PP.box 4 
 	  [PP.seq' {fmt=pp_rule_atom,sep=PP.ws,empty=PP.s "/* empty */"} ra]
 	and pp_production (ty,rule) =
-	  PP.cat [pp_tid ty,PP.s ": ",
-		  PP.vblock (~2) [PP.seq {fmt=pp_rule,sep=bar_sep} rule,
-				 PP.s ";"]]
+	  PP.cat [pp_tid ty,PP.s ":",
+		  PP.box 4 [PP.seq {fmt=pp_rule,sep=bar_sep} rule,PP.s ";"]]
 	and pp_grammar grammar =
 	    let
 	      val terminals = terminals grammar

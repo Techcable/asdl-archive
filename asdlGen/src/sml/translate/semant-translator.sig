@@ -1,3 +1,23 @@
+(* 
+ *
+ * COPYRIGHT (c) 1997, 1998 by Princeton University. 
+ * See COPYRIGHT file for details
+ *
+ * Author: Daniel C. Wang
+ *
+ *)
+(**::
+The [[signature SEMANT]] provides a simple procedural interface to
+the ASDL semantic entities. Very often, code just needs to make a one
+pass recursive walk over the entitites and translate each entities
+into an new value. Rather than repeating the same basic recursive
+walk several times. We introduce the [[signature SEMANT_TRANSLATOR]]
+that describes how to translate each entity into a new abstract value. 
+Modules that implement the [[SEMANT_TRANSLATOR]] signature can be
+passed to [[mkTranslateFromTranslator]] functor which implements the
+recursive walk.
+**)
+(* This interface needs to be clean up *)
 signature SEMANT_TRANSLATOR =
     sig
 	structure Ast : LANG_AST
@@ -44,7 +64,6 @@ signature SEMANT_TRANSLATOR =
 	  is_local:bool, 
 	     tinfo:Semant.type_info,
 	     props:Semant.Type.P.props} -> field_value
-
 
 	val trans_module: Semant.MEnv.P.props ->
 	    {module: Semant.module_info,

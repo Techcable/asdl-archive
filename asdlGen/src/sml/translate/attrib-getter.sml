@@ -18,10 +18,8 @@ functor AttribGetter(structure Arg : ATTRIB_GETTER_ARG) : AUX_DECLS =
 	  | SOME (Ty.Prod{ty,...}) => SOME ty 
 	  | SOME (Ty.Sum{ty,...}) => SOME ty 
 	  | SOME (Ty.App(con,tid_arg)) =>
-	      let
-		val ty_arg = Option.valOf (Ty.lookup(env,tid_arg))
-	      in
-		SOME (#1 (con (tid_arg,ty_arg)))
+	      let val ty_arg = Option.valOf (Ty.lookup(env,tid_arg))
+	      in SOME (#1 (con (tid_arg,ty_arg)))
 	      end
 	  | SOME (Ty.Alias(tid)) => get_ty tid
 	  | NONE => NONE)
@@ -39,7 +37,6 @@ functor AttribGetter(structure Arg : ATTRIB_GETTER_ARG) : AUX_DECLS =
 	    else xs
 	  end
 	  | mk_getter (_,xs)  = xs
-      in
-	List.foldr mk_getter [] tids
+      in List.foldr mk_getter [] tids
       end
   end

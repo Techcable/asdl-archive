@@ -35,7 +35,7 @@ functor mkSourceFileOutput (structure PP:CODE_PP) : TRANSLATE =
 		    [PP.mkComment
 		     (" Machine generated. Edit at your own risk "::
 		      " Reproduce with the following"::
-		      (Params.toArgList p)), PPUtil.nl,x]
+		      (Params.toArgList p)), PPUtil.ws,x]
 				     
 		fun cvt (x,pp) =
 		    (x,(fn s => PPUtil.pp_to_outstream s wd (mkpp pp)))

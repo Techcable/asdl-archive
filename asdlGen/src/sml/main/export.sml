@@ -15,28 +15,28 @@ structure Export =
 		(Error.say ("Error: "^(exnMessage e)^"\n");
 		 OS.Process.failure)
 
-	val HTMLGenFn =  mkExportFn Main.HTML.do_it
+	val HTMLGenFn =  mkExportFn Link.HTML.do_it
 
-	val XMLDTDGenFn =  mkExportFn Main.XMLDTD.do_it
+	val XMLDTDGenFn =  mkExportFn Link.XMLDTD.do_it
 
-	val YaccGrammarGenFn =  mkExportFn Main.YaccGrammar.do_it
+	val YaccGrammarGenFn =  mkExportFn Link.YaccGrammar.do_it
 	    
-	val MLGenFn =  mkExportFn Main.ML.do_it
+	val MLGenFn =  mkExportFn Link.ML.do_it
 
-	val AnsiCGenFn = mkExportFn Main.AnsiC.do_it
+	val AnsiCGenFn = mkExportFn Link.AnsiC.do_it
 
-	val JavaGenFn =  mkExportFn Main.Java.do_it
+	val JavaGenFn =  mkExportFn Link.Java.do_it
 
-	val HaskellGenFn =  mkExportFn Main.Haskell.do_it
+	val HaskellGenFn =  mkExportFn Link.Haskell.do_it
 
 	val CPlusPlusGenFn =
-	    mkExportFn Main.CPlusPlus.do_it
+	    mkExportFn Link.CPlusPlus.do_it
 
 	val CheckFn =
-	    mkExportFn Main.Check.do_it
+	    mkExportFn Link.Check.do_it
 
 	val TypGenFn =
-	    mkExportFn (Main.TypePickler.do_it)
+	    mkExportFn (Link.TypePickler.do_it)
 
 	fun PPPickleFn x =
 	    ((PicklePP.pickle_pp x) handle e =>

@@ -1,13 +1,9 @@
 structure T = T
 fun check_first p f msg s =
     if p (String.sub(s,0)) then s
-    else
-	let 
-	    val fixed = f s
-	in
-	    Error.warn [msg, "changing ",s," to ",fixed];
-	    fixed
-	end
+    else let val fixed = f s
+	 in Error.warn [msg, "changing ",s," to ",fixed]; fixed
+	 end
 
 val mkconid = 
 	  Identifier.fromString o

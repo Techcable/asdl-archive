@@ -7,7 +7,6 @@
  *
  *)
 
-
 signature PARAMETERS =
     sig
 
@@ -40,15 +39,13 @@ signature PARAMETERS =
 	    
     end
 
-structure Params:PARAMETERS =
+structure Params :> PARAMETERS =
     struct
-	
 	structure Map =
 	    ListMapFn(struct
 			  type ord_key = String.string
 			  val compare = String.compare
 		      end)
-	    
 	type 'a cfg_spec = {name:string,flag:char option,default:'a}
 
 	datatype cfg_dec =

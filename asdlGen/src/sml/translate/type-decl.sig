@@ -7,7 +7,7 @@
  *
  *)
 (**::
-The [[TYPE_DECL]] signature provides an abstract interface to for
+The [[TYPE_DECL]] signature provides an abstract interface for
 generating code for a particular target language. It is used by the
 pickler generators to produce code for pickling ASDL values. It
 describes an environment ([[env]]) of types that contain type
@@ -47,12 +47,11 @@ The following types are completely opaque to clients.
     type exp 
     type env
 (**)
-(**:[[signature TYPE_DECL]] [[ty]] datatype:
-**)
+(**:[[signature TYPE_DECL]] [[ty]] datatype:**)
     datatype ty =
 (**:[[signature TYPE_DECL]] [[ty]] datatype:
 The [[Prim]] constructor describes an atomic type.
- **)
+**)
       Prim of {ty : ty_exp,
 	     name : string,
 	     info : ty_info}

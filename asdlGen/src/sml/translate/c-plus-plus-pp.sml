@@ -98,15 +98,14 @@ structure CPlusPlusPP : OO_PP =
 		    val scopes =
 			group_scopes_pp scopes pp_mth mth_scope mths
 		in
-		    PP.vblock 0
+		    PP.cat
 		    [PP.s "class ",
 		     pp_tid name,
 		     PP.opt {some=(fn x =>
 				   PP.cat [PP.s " : public ",pp_tid x]),
 			     none=PP.empty} inherits,
-		     PP.s " {", PP.nl,
-		     pp_scopes scopes,
-		     PP.untab,
+		     PP.s " {",
+		     PP.box 4 [PP.nl,pp_scopes scopes],PP.nl,
 		     PP.s "}"]
 		end
 	      | pp_ty_decl (DeclClass
@@ -124,15 +123,14 @@ structure CPlusPlusPP : OO_PP =
 		    val scopes =
 			group_scopes_pp scopes pp_mth mth_scope mths
 		in
-		    PP.vblock 0
+		    PP.cat	    
 		    [PP.s "class ",
 		     pp_tid name,
 		     PP.opt {some=(fn x =>
 				   PP.cat [PP.s " : public ",pp_tid x]),
 			     none=PP.empty} inherits,
-		     PP.s " {", PP.nl,
-		     pp_scopes scopes,
-		     PP.untab,
+		     PP.s " {",
+		     PP.box 4 [PP.nl, pp_scopes scopes],PP.nl,
 		     PP.s "}"]
 		end
 	      | pp_ty_decl (DeclConst{field,public,value}) = 
@@ -267,16 +265,17 @@ structure CPlusPlusPP : OO_PP =
 	      | pp_stmt (Case {test,clauses,default=Nop}) =
 		PP.cat
 		[PP.ws,
-		 PP.vblock 4
-		 [PP.s "switch(",pp_exp test,PP.s ") {",PP.nl,
-		  PP.seq_term {fmt=pp_clause,sep=PP.nl} clauses,
-		  PP.nl,PP.untab, PP.s "}"]]
+		 PP.s "switch(",pp_exp test,PP.s ") {",
+		 PP.box 4
+		 [PP.nl,PP.seq_term {fmt=pp_clause,sep=PP.nl} clauses],
+		 PP.ws,PP.s "}"]
 	      | pp_stmt (Case {test,clauses,default}) =
-		PP.vblock 4
-		[PP.s "switch(",pp_exp test,PP.s ") {",PP.nl,
-		 PP.seq_term {fmt=pp_clause,sep=PP.nl} clauses,
-		 PP.s "default: ",PP.ws,pp_stmt default,
-		 PP.nl,PP.untab, PP.s "}"]
+		PP.cat
+		[PP.s "switch(",pp_exp test,PP.s ") {",
+		 PP.box 4 [PP.nl,
+			   PP.seq_term {fmt=pp_clause,sep=PP.nl} clauses,
+			   PP.s "default: ",PP.ws,pp_stmt default],
+		 PP.nl, PP.s "}"]
 	      | pp_stmt (If{test,then_stmt,else_stmt=Nop}) =
 		PP.vblock 4
 		[PP.s "if(",pp_exp test,PP.s ") ", pp_stmt then_stmt]
@@ -287,10 +286,11 @@ structure CPlusPlusPP : OO_PP =
 		 pp_stmt then_stmt,
 		 PP.s " else ",pp_stmt else_stmt]
 	      | pp_stmt (If{test,then_stmt,else_stmt}) =
-		PP.vblock 4
+		PP.cat
 		[PP.s "if(",pp_exp test,PP.s ")",
-		 PP.ws, pp_stmt then_stmt,PP.untab,
-		 PP.s "else",PP.ws,pp_stmt else_stmt]
+		 PP.box 4 [PP.ws, pp_stmt then_stmt],
+		 PP.s "else",
+		 PP.box 4 [PP.ws,pp_stmt else_stmt]]
 	      | pp_stmt (Block {vars=[],body=[]}) = PP.empty
 	      | pp_stmt (Block {vars=[],body=[x]}) = pp_stmt x
 	      | pp_stmt (Block b) = pp_block b
