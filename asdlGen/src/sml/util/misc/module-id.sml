@@ -50,7 +50,7 @@ structure ModuleId :> MODULE_ID =
 		    if qualifier = [""] then []
 		    else qualifier
 	    in
-		ListFormat.formatList
+		ListFormat.fmt
 		{init="",sep=sp,final="",fmt=(fn x => x)}
 		(qualifier @[base])
 	    end

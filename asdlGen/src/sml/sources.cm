@@ -19,6 +19,8 @@ type-pickle/type-pickle.asdl.sml
 pp-pickle/aka.sml
 pp-pickle/asdl_v.asdl.sig
 pp-pickle/asdl_v.asdl.sml
+pp-pickle/pp-pickle.sml
+pp-pickle/gpickle.sml
 
 frontend/asdl.grm
 frontend/asdl.lex
@@ -56,7 +58,5 @@ translate/java-pp.sml
 translate/c-plus-plus-pp.sml 
 
 type-pickle/gen-type-pickle.sml
-
-pp-pickle/sources.cm
 
 test/harness.sml

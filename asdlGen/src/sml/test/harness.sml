@@ -69,7 +69,7 @@ structure UnixExternalProgs:EXTERNAL_PROGRAMS =
 
 	fun run cmd = OS.Process.system cmd
 
-	val shpath = ListFormat.formatList
+	val shpath = ListFormat.fmt
 	    {init="",final="",sep=":",fmt=(fn x => x)} 
 
 	fun join s =

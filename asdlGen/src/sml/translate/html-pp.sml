@@ -30,7 +30,7 @@ structure HTMLPP : HTML_PP =
 	fun mk_id id =
 	    let
 		val {qualifier,base} = Id.toPath id
-		val path = ListFormat.formatList
+		val path = ListFormat.fmt
 		    {init="",sep="/",final=".html#"^base,
 		     fmt=(fn x => x)} qualifier
 	    in
