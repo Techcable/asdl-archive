@@ -78,7 +78,7 @@ structure ZSUIFHelloWorld =
 		fun init_block (i,c) =
 		    {bit_offset=i*8,
 		     block=Constant_value_block
-		     {constnat=ConstInt(Finite 0),
+		     {constant=ConstInt(Finite 0),
 		      data_type=char_type_id}}
 		val inits =
 		    (Vector.foldr (op ::)
@@ -107,10 +107,8 @@ structure ZSUIFHelloWorld =
 	val printf_call =
 	    Call_instruction{callee_address=printf_address_op,
 			     arguments=[printf_argument_op],
-			     return_value=
-			     {result_type=int_type_id,
-			      destination_op=DstTmp},
-			     return_values=[]}
+			     return_values=[{result_type=int_type_id,
+					     destination_op=DstTmp}]}
 
 	val zero_value =
 	    SrcDst{instr=

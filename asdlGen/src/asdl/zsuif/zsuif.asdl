@@ -291,8 +291,7 @@ instruction =
 	    destination_op destination_op)
 
  | Extract_elements_instruction 
-	   (source_op index,
-            source_op base_array_op,           
+	   (source_op base_array_op,           
             element_dst  element_dst,
             element_dst* element_dsts)
 
@@ -379,7 +378,6 @@ instruction =
  | Call_instruction 
              (source_op callee_address,
               source_op* arguments, 	        
-	      return_value return_value,
 	      return_value* return_values)
 
  | Ssa_phi_instruction 
