@@ -84,8 +84,8 @@ structure StdTypes : StdTypes_SIG =
 	type uint64 = PklIntInf.T
 	type ieee_real = Real.real
 
-	fun write_bool true = PklInt.write 1
-	  | write_bool false = PklInt.write 0
+	fun write_bool true = PklInt.write 2
+	  | write_bool false = PklInt.write 1
 
 	val write_nat = PklInt.write
 	val write_int8 = PklWord8.write
@@ -101,8 +101,9 @@ structure StdTypes : StdTypes_SIG =
 
 	fun read_bool s =
 	    (case (PklInt.read s) of
-		0 => false
-	      | _ => true)
+		2 => false
+	      | 1 => true
+	      | _ => raise Error.fatal)
 		    
 	val read_nat = PklInt.read
 	val read_int8 = PklWord8.read
