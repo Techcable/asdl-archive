@@ -28,8 +28,8 @@ signature FORMAT_DOC =
 	  | DL    of ditem  list
 
 	  | SECT  of int * format list
-	  | LABEL of Id.mid * format list
-	  | REF   of Id.mid * format list
+	  | LABEL of id * format list
+	  | REF   of id * format list
 
 	withtype ditem = {tag:format,fmt:format}
 	type format_doc = {title:string,body:format list}

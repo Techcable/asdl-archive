@@ -35,7 +35,7 @@ structure Export =
 
 	val CPlusPlusGenFn =
 	    mkExportFn Link.CPlusPlus.do_it
-
+(*
 	val CheckFn =
 	    mkExportFn Link.Check.do_it
 
@@ -46,7 +46,7 @@ structure Export =
 	    ((PicklePP.pickle_pp x) handle e =>
 		(Error.say ("Error: "^(exnMessage e)^"\n");
 		 OS.Process.failure))
-
+*)
 	fun all_success [] = true
 	  | all_success (x::xs) =
 	    (OS.Process.success = x) andalso (all_success xs)
@@ -59,11 +59,13 @@ structure Export =
 	  | asdlGen (name, ("--haskell"::rs)) = HaskellGenFn(name,rs)
 	  | asdlGen (name, ("--icon"::rs)) = IconGenFn(name,rs)
 	  | asdlGen (name, ("--doc"::rs)) = HTMLGenFn(name,rs)
-	  | asdlGen (name, ("--typ"::rs)) = TypGenFn(name,rs)
 	  | asdlGen (name, ("--dtd"::rs)) = XMLDTDGenFn(name,rs)
 	  | asdlGen (name, ("--yacc"::rs)) = YaccGrammarGenFn(name,rs)
+
+(*	  | asdlGen (name, ("--typ"::rs)) = TypGenFn(name,rs)
 	  | asdlGen (name, ("--check"::rs)) = CheckFn(name,rs)
 	  | asdlGen (name, ("--pp_pkl"::rs)) = PPPickleFn(name,rs)
+*)
 	    (* hacks fix this right *)
 	  | asdlGen (name, ("-Ljava"::rs)) = JavaGenFn(name,rs)
 	  | asdlGen (name, ("-Lc"::rs)) = AnsiCGenFn(name,rs)
@@ -73,11 +75,13 @@ structure Export =
 	  | asdlGen (name, ("-Lhaskell"::rs)) = HaskellGenFn(name,rs)
 	  | asdlGen (name, ("-Licon"::rs)) = IconGenFn(name,rs)
 	  | asdlGen (name, ("-Ldoc"::rs)) = HTMLGenFn(name,rs)
-	  | asdlGen (name, ("-Ltyp"::rs)) = TypGenFn(name,rs)
 	  | asdlGen (name, ("-Ldtd"::rs)) = XMLDTDGenFn(name,rs)
 	  | asdlGen (name, ("-Lyacc"::rs)) = YaccGrammarGenFn(name,rs)
+(*
+	  | asdlGen (name, ("-Ltyp"::rs)) = TypGenFn(name,rs)
 	  | asdlGen (name, ("-Lcheck"::rs)) = CheckFn(name,rs)
 	  | asdlGen (name, ("-Lpp_pkl"::rs)) = PPPickleFn(name,rs)
+*)
 	    (* hacks fix this right *)
 	  | asdlGen (name, ("-L"::"java"::rs)) = JavaGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"c"::rs)) = AnsiCGenFn(name,rs)
@@ -87,17 +91,20 @@ structure Export =
 	  | asdlGen (name, ("-L"::"haskell"::rs)) = HaskellGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"icon"::rs)) = IconGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"doc"::rs)) = HTMLGenFn(name,rs)
-	  | asdlGen (name, ("-L"::"typ"::rs)) = TypGenFn(name,rs)
+
 	  | asdlGen (name, ("-L"::"dtd"::rs)) = XMLDTDGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"yacc"::rs)) = YaccGrammarGenFn(name,rs)
-	  | asdlGen (name, ("-L"::"check"::rs)) = CheckFn(name,rs)
+
+(*	  | asdlGen (name, ("-L"::"check"::rs)) = CheckFn(name,rs)
+	  | asdlGen (name, ("-L"::"typ"::rs)) = TypGenFn(name,rs)
 	  | asdlGen (name, ("-L"::"pp_pkl"::rs)) = PPPickleFn(name,rs)
 	  | asdlGen ("pp_pkl", (rs)) = PPPickleFn("pp_pkl",rs)
+*)
 	  | asdlGen (name, ("--all"::rs)) =
 	    let
 		val rets =
 		    List.map (fn x => (x (name,rs)))
-		    [CheckFn,TypGenFn,XMLDTDGenFn,HTMLGenFn,
+		    [(*CheckFn,TypGenFn,*)XMLDTDGenFn,HTMLGenFn,
 		     JavaGenFn,AnsiCGenFn,CPlusPlusGenFn,
 		     SMLGenFn,HaskellGenFn,OCamlGenFn]
 	    in

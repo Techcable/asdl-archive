@@ -19,7 +19,6 @@ structure YaccGrammarPP : YACC_GRAMMAR_PP =
 	structure PP = PPUtil
 	type code = Ast.decls
 	val cfg = Params.empty
-	val start = Ast.TypeId.fromString "bogus"
 	fun mkComment _ = PP.empty
 
 	open Ast

@@ -21,14 +21,14 @@ signature DYNAMIC_TYPE_DECL =
       where type tag =  {c:Ast.ty_id,v:int}
 	and type exp = Ast.exp
 	and type ty_exp = Ast.ty_exp
-        and type VarId.mid = Ast.VarId.mid
-        and type TypeId.mid = Ast.TypeId.mid
+        and type VarId.id = Ast.VarId.id
+        and type TypeId.id = Ast.TypeId.id
   end
 
 signature DYNAMIC_SPEC =
   sig
-    structure Ty : DYNAMIC_TYPE_DECL
-
+    structure Ty    : DYNAMIC_TYPE_DECL
+    structure IdMap : ID_MAP
     val inits : Semant.MEnv.P.init list
     val prims : Semant.type_info list -> Ty.ty_decl list
 

@@ -41,8 +41,8 @@ functor mkTranslateFromTranslator
 	struct
 	  structure IdOrdKey =
 	    struct
-	      type ord_key = Identifier.identifier
-	      val compare = Identifier.compare
+	      type ord_key = S.Field.Id.id
+	      val compare = S.Field.Id.compare
 	    end
 	  structure Set = SplaySetFn(IdOrdKey)
 	  fun translate p menv =
@@ -75,11 +75,11 @@ functor mkTranslateFromTranslator
 		    (Set.empty,Set.empty) defines
 		  fun fixer (tinfo,id) =
 		    if (Set.member(bad,id)) then 
-		      let
-			val base = Id.getBase (S.Type.src_name tinfo)
+		      let val base =
+			Semant.Type.Id.getBase (S.Type.src_name tinfo)
 		      in
-			Identifier.fromString
-			(base^"_"^(Identifier.toString id))
+			Semant.Field.Id.fromString
+			(base^"_"^(Semant.Field.Id.toString id))
 		      end
 		    else id
 		in fixer

@@ -7,10 +7,19 @@
  *
  *)
 
+structure GenericTypeId =
+  mkSourceId(val namespace = SourceIds.mkNameSpace "generic type"
+	     val sep = ".")
+structure GenericVarId =
+  mkSourceId(val namespace = SourceIds.mkNameSpace "generic type"
+	     val sep = ".")
+structure GenericModId =
+  mkSourceId(val namespace = SourceIds.mkNameSpace "generic type"
+	     val sep = ".")
 functor mkLangAst(type decls) =
   struct
-    structure ModuleId :> MODULE_ID = ModuleId
-    type mod_id = ModuleId.mid
+    structure ModuleId :> SOURCE_ID = GenericModId
+    type mod_id = ModuleId.id
     type  decls = decls
     datatype module = Module of {name:mod_id,
 				 imports:mod_id list,
@@ -18,8 +27,8 @@ functor mkLangAst(type decls) =
   end
 structure LangIds :> LANG_IDS =
     struct
-	structure   TypeId :> MODULE_ID = ModuleId
-	structure    VarId :> MODULE_ID = ModuleId
-	type  ty_id = TypeId.mid
-	type     id = VarId.mid
+	structure   TypeId :> SOURCE_ID = GenericTypeId
+	structure    VarId :> SOURCE_ID = GenericVarId
+	type  ty_id = TypeId.id
+	type     id = VarId.id
     end

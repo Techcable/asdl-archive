@@ -9,9 +9,11 @@
 (* work in progress*)
 signature SHARE =
   sig
+
+    datatype 'a share = vDEF of string * 'a | vUSE of string
+(*
     type name = string
     datatype 'a value pklv = DEF of name * 'value | USE of name
-
     type ('share_ref,'value) env
     type 'a sref
     type 'a simple_env = ('a sref,'a) env
@@ -32,13 +34,17 @@ signature SHARE =
 			      newRef: 'a -> 'a sref,
 			      refRef: 'a sref -> 'a ref,
 			     refName: 'a sref -> name}
+*)
 end
 
 structure Share :> SHARE =
 struct
-    type name = string
-    datatype 'value pklv = DEF of name * 'value | USE of name
-    datatype ('share_ref,'value) env =
+  datatype 'a share = vDEF of string * 'a | vUSE of string
+
+  (*
+type name = string
+datatype 'value pklv = DEF of name * 'value | USE of name
+  datatype ('share_ref,'value) env =
       E of {newRef: 'value -> 'share_ref,
            refName: 'share_ref -> name,
           refValue: 'share_ref -> 'value,
@@ -97,5 +103,5 @@ struct
 	  refName=refName,
 	  clear=(fn () => Ht.clear ht)}
       end
-	 
+    *)
 end

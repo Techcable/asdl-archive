@@ -20,9 +20,11 @@ structure AlgolTy : ALGOL_TYPE_DECL =
     open T
   end
 
-functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
+functor mkAlgolSpec(structure Ty    : ALGOL_TYPE_DECL
+		    structure IdMap : ID_MAP) : ALGOL_SPEC =
   struct
 (* todo get rid of all the opens *)
+    structure IdMap = IdMap
     structure Arg =
       struct
 	open Ty.Ast
@@ -44,7 +46,7 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 
 	fun pkl_kind me {xml,std} =
 	  case (Semant.MEnv.P.pickler_kind me) of
-	    (SOME "xml") => xml
+	    ("xml") => xml
 	  | _ => std
 
 	fun die _ =  ProcCall((VarId.fromString "die"),[])
@@ -184,16 +186,18 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 	  end
 	val prims = []
       end
-    structure XMLPklGen = XMLPickler(structure Arg = Arg)
-    structure StdPklGen = StdPickler(structure Arg = Arg)
+    structure XMLPklGen = XMLPickler(structure Arg = Arg
+				     val tag = "std")
+    structure StdPklGen = StdPickler(structure Arg = Arg
+				     val tag = "std")
     open Arg
+    fun mk_info x = Ty.addRdWr "std" x Ty.noInfo
     fun get_aux_decls me =
       pkl_kind me {xml=XMLPklGen.trans, std=StdPklGen.trans}
     fun get_tag_decls tags =
       let
     fun topair {c,v} = (VarId.toString c,v)
-      in
-	[DeclTagTable(List.map topair tags)]
+      in [DeclTagTable(List.map topair tags)]
       end
     
     fun get_reps m k =
@@ -250,7 +254,7 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 	      let val ty = seq_rep (ty_exp t)
 		  val rd = mk_rd rd_list_name tid
 		  val wr = mk_wr wr_list_name (tid,ty)
-	      in (ty,{wr=SOME wr,rd=SOME rd})
+	      in (ty,mk_info {wr=SOME wr,rd=SOME rd})
 	      end
 	  in  ty_con:Ty.ty_con
 	  end
@@ -260,7 +264,7 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 	      let val ty = opt_rep (ty_exp t)
 		  val rd = mk_rd rd_option_name tid
 		  val wr = mk_wr wr_option_name (tid,ty)
-	      in (ty,{wr=SOME wr,rd=SOME rd})
+	      in (ty,mk_info {wr=SOME wr,rd=SOME rd})
 	      end
 	  in ty_con:Ty.ty_con
 	  end
@@ -271,7 +275,7 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 		  val share_ty = (TyShare (ty_exp t))
 		  val rd = (s2p share_ty) (mk_rd rd_share_name tid)
 		  val wr = (mk_wr wr_share_name (tid,share_ty)) o p2s
-	      in (ty,{wr=SOME wr,rd=SOME rd})
+	      in (ty,mk_info {wr=SOME wr,rd=SOME rd})
 	      end
 	  in ty_con:Ty.ty_con
 	  end
@@ -299,10 +303,11 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 	fun addPrim (tinfo,ps) =
 	  let
 	    val tname = Semant.Type.src_name tinfo
-	    val tid = (TypeId.fromPath o Id.toPath) tname
-	    val info = {rd=SOME(read tid), wr=SOME(write tid)}
+	    val tid = (TypeId.fromPath o Semant.Type.Id.toPath) tname
+	    val info = mk_info {rd=SOME(read tid), wr=SOME(write tid)}
 	  in
-	    (tid,Ty.Prim {ty=TyId tid,info=info,name=Id.getBase tname})::
+	    (tid,Ty.Prim {ty=TyId tid,info=info,
+			  name=Semant.Type.Id.getBase tname})::
 	    (seq_tid tid,Ty.App(seq_con,tid))::
 	    (share_tid tid,Ty.App(share_con,tid))::
 	    (opt_tid tid,Ty.App(opt_con,tid))::ps
@@ -332,8 +337,7 @@ functor mkAlgolSpec(structure Ty : ALGOL_TYPE_DECL) : ALGOL_SPEC =
 		      (fn v =>
 		       STMT(ProcCall(VarId.fromPath x,[v,Id stream_id])))))
 	    | NONE => NONE
-	in
-	  {wr=wr,rd=rd}
+	in mk_info {wr=wr,rd=rd}
 	end
       fun get_wrappers ty p =
 	let

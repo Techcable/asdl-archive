@@ -7,7 +7,7 @@ cat > ${cmfile} <<EOF
 Group  is
 $@
 EOF
- <<EOF
+sml-cm <<EOF
 val path = String.tokens (fn x => x = #":") "${cmpath}";
 CM.set_path (SOME (path@(CM.set_path NONE)));
 ((CM.make' ("${cmfile}") handle _ => OS.Process.exit OS.Process.failure);

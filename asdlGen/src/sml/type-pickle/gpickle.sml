@@ -18,7 +18,7 @@ signature GENERIC_PICKLER =
 	structure V: ASDL_VALUE
 	    
 	val read_asdl_value  :
-	    T.type_env -> Id.mid -> T.instream -> V.asdl_value
+	    T.type_env -> SourceId.sid -> T.instream -> V.asdl_value
 
 	val type_labels : T.type_env -> (T.qid option * T.qid option)
 	    -> 'a list ->  ('a * Identifier.identifier) list
@@ -86,7 +86,7 @@ functor GenericPickler(structure T:TYPE_PICKLE
 	      | _ => []
 
 	fun qid2Id {base,qualifier} =
-	    Id.fromPath{base=Identifier.toString base,
+	    SourceId.fromPath{base=Identifier.toString base,
 			qualifier=List.map Identifier.toString qualifier}
 
 

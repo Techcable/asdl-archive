@@ -80,5 +80,5 @@ structure ModuleId :> MODULE_ID =
 	    end
     end
 
-structure  Id = ModuleId
+
 	    

@@ -37,7 +37,7 @@ structure IconPP : DYNAMIC_PP =
 	(* code to fix up scope and locals in Icon *)
 	structure OrdKey =
 	  struct
-	    type ord_key = VarId.mid
+	    type ord_key = VarId.id
 	    val compare = VarId.compare
 	  end
 	structure Env = SplayMapFn(OrdKey)

@@ -97,8 +97,7 @@ structure ModEnvProps :> MOD_ENV_PROPS =
 	val (mono_types,init_mono_types) =
 	  decl_bool p {name="mono_types",default=false}
 	val (pickler_kind,init_pickler_kind) =
-	  decl_string_opt p {name="pickler_kind",
-			     default=SOME "std"}
+	  decl_string p {name="pickler_kind",default="std"}
 	val (explicit_sharing,init_explicit_sharing) =
 	  decl_bool p {name="explicit_sharing",default=false}
     end 

@@ -59,7 +59,9 @@ without any named constructors.
 The [[structure P]] contains query functions for various properties that
 can be changed by a view. 
 **)
-	    structure P : TYP_PROPS
+	    structure P  : TYP_PROPS
+	    structure Id : SOURCE_ID
+
 	    val props    : type_info -> P.props 
 (**:[[signature SEMANT]] [[structure Type]]:
 Clients of [[SEMANT]] should ignore [[tag]] it will go away in the future.
@@ -72,8 +74,8 @@ respectively. Both names are fully qualified and include the name of
 the ASDL module in which they were defined. The names are probably a
 bit confusing.
 **)
-	    val src_name : type_info -> Id.mid
-	    val name     : type_info -> Id.mid
+	    val src_name : type_info -> Id.id
+	    val name     : type_info -> Id.id
 (**:[[signature SEMANT]] [[structure Type]]:
 [[cons]] returns a list of constructors for a given type
 if any.  Product types have no constructors. The [[fields]] function
@@ -101,7 +103,7 @@ right hand side of a type declaration. Its internally by the validation
 function to construct a dependency graph for the types. It is exported
 externally simply for convenience.
 **)
-	    val uses     : type_info -> Id.mid list
+	    val uses     : type_info -> Id.id list
 	  end
 (**)
 (**:[[signature SEMANT]] [[structure Con]]:
@@ -115,6 +117,8 @@ The [[structure P]] contains query functions for various properties that
 can be changed by a view. 
 **)
 	    structure P : CON_PROPS
+	    structure Id : SOURCE_ID
+
 	    val props          : con_info -> P.props
 (**:[[signature SEMANT]] [[structure Con]]:
 The [[tag]] function returns an integer that represents the integer tag
@@ -128,8 +132,8 @@ respectively. Both names are fully qualified and include the name of
 the ASDL module in which they were defined. The names are probably a
 bit confusing.
 **)
-	    val src_name       : con_info -> Id.mid
-	    val name           : con_info -> Id.mid
+	    val src_name       : con_info -> Id.id
+	    val name           : con_info -> Id.id
 (**:[[signature SEMANT]] [[structure Con]]:
 The [[fields]] functions return all {\em non-attribute} fields of a
 constructor. Non-attribute fields are the fields declared by the
@@ -145,6 +149,7 @@ Fields have no view modifiable properties.
 **) 
 	structure Field :
 	  sig
+	    structure Id : SOURCE_ID
 (**:[[signature SEMANT]] [[structure Field]]:
 The function [[kind]] returns any qualifiers (Sequence, Option, or
 Shared) for a particular field or [[NONE]] if the field is not
@@ -154,8 +159,8 @@ The [[src_name]] function returns a uniqe mangle named for fields
 without explicit labels or the label used in the specification.
 **)
 	    val kind         : field_info -> kind option
-	    val name         : field_info -> Identifier.identifier option
-	    val src_name     : field_info -> Identifier.identifier 	    
+	    val name         : field_info -> Id.id option
+	    val src_name     : field_info -> Id.id
 	  end
 (**)
 (**:[[signature SEMANT]] [[structure Module]]:**)
@@ -166,6 +171,8 @@ The [[structure P]] contains query functions for various properties that
 can be changed by a view. 
 **)
 	    structure P    : MOD_PROPS 
+	    structure Id   : SOURCE_ID
+
 	    val props      : module_info -> P.props
 (**:[[signature SEMANT]] [[structure Module]]:
 The [[name]] function returns the name of the module as defined in
@@ -174,8 +181,8 @@ as it should occur in the output source. The [[file]] function is a
 string that is the native path of the input module from where the
 module definition was parsed. 
 **)
-	    val name       : module_info -> Id.mid
-	    val src_name   : module_info -> Id.mid
+	    val name       : module_info -> Id.id
+	    val src_name   : module_info -> Id.id
 	    val file       : module_info -> string
 (**:[[signature SEMANT]] [[structure Module]]:
 The [[imports]] function returns a list of modules imported by this
@@ -184,7 +191,7 @@ that are defined by this module. The [[prim_module]] returns true if this
 module is a primitive module.
 **)
 	    val imports    : module_info -> module_info list 
-	    val types      : module_info -> Id.mid list
+	    val types      : module_info -> Type.Id.id list
 	    val prim_module: module_info -> bool
 (**:[[signature SEMANT]] [[structure Module]]:
 These functions query a module for information about types and constructors 
@@ -193,10 +200,10 @@ the same as [[type_info]] and [[con_info]] but return an option
 rather than raising and exception when the type or constructor cannot be found
 in the module.
 **)	      
-	    val type_info  : module_info -> Id.mid -> type_info
-	    val type_info' : module_info -> Id.mid -> type_info option 
-	    val con_info   : module_info -> Id.mid -> con_info
-	    val con_info'  : module_info -> Id.mid -> con_info option 
+	    val type_info  : module_info -> Type.Id.id -> type_info
+	    val type_info' : module_info -> Type.Id.id -> type_info option 
+	    val con_info   : module_info -> Con.Id.id -> con_info
+	    val con_info'  : module_info -> Con.Id.id -> con_info option 
 (**:[[signature SEMANT]] [[structure Module]]:
 The functions [[con_type]] and [[field_type]] return information
 about the type assoicated with a particular constructor or field. For
@@ -243,7 +250,7 @@ envrionment. This is useful for monomorphic languages where special
 code needs to be generated for each use of a type qualifier on a given type.
 **)
 	    val qualified  : menv_info ->
-	                     module_info -> (Id.mid * kind list) list
+	                     module_info -> (Type.Id.id * kind list) list
 (**:[[signature SEMANT]] [[structure MEnv]]:
 The [[declare]] function builds a module environment from a list of
 AST declarations the name of an "active" view and a list of

@@ -14,7 +14,6 @@ structure GenPickleTranslator:TRANSLATE =
 	structure T = TypePickle
 	structure TU = TypePickleUtil
 	structure Output = BinIOFileOutput
-
 	fun mapi f l = (List.foldl
 			(fn (x,(i,xs)) => (i+1,f(i,x)::xs)) (0,[]) l) 
 	    

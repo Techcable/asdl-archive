@@ -21,7 +21,7 @@ structure PicklePP =
 		val (qualifier,base) =
 		    (List.take (x,len-1),List.drop (x,len - 1))
 	    in
-		Id.fromPath{base=List.hd base,qualifier=qualifier}
+		SourceId.fromPath{base=List.hd base,qualifier=qualifier}
 	    end
 	fun pp_html_list (rd,lbs,ins,outs) s =
 		HTMLListPP.pp_value lbs outs s (rd (qid s) ins)

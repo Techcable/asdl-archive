@@ -57,7 +57,7 @@ functor SMLBuild(structure Params : SML_BUILD_PARAMS) : SML_BUILD =
 	val root_file = Paths.fileToNative root
 	val inp =
 	  String.concat
-	  ["CM.make'(\"",String.toString root_file,"\",true);",
+	  ["CM.make'(\"",String.toString root_file,"\");",
 	   "SMLofNJ.exportFn(\"",String.toString heap_file,"\",",
 	   main,");"]
 	val cmd = B.EXEC_WITH_INPUT(run_cm,[],B.STR inp)

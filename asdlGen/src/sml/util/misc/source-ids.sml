@@ -6,54 +6,57 @@
  * Author: Daniel C. Wang
  *
  *)
-structure SourceId :> SOURCE_ID =
+structure SourceIds :> SOURCE_IDS =
   struct
-    structure Ht = HashTable
-    type path = {base:string,qualifier:string list}
-    type namespace = {ht:(word,path) Ht.hash_table,name:string}
-    type sid = {id:word,ns:namespace,unique:bool}
-    type tostring = (sid -> string)
+    structure HT = HashTable
+      
+    type namespace = (word * string)
+    type path = {ns:namespace,base:string,qualifier:string list}
+    type sid = {id:word,unique:bool,p:path}
+    type ord_key = sid
+    val nextns = ref 0w0
+    val nextid = ref 0w0
     fun mkNameSpace s =
-      {ht=Ht.mkTable
-       (fn x => x,(op =):(word * word) -> bool)
-       (128,Fail ("Lookup in namespace:"^s)),name=s}
+      let val ns = !nextns
+      in nextns := ns+ 0w1;(ns,s)
+      end
+    val bogusNS = mkNameSpace "bogusNS"
+     
+    fun hash_path {ns=(w,s),base,qualifier} =
+      List.foldl (fn (s,w) => w + HashString.hashString s)
+      ((HashString.hashString base)+w)  qualifier
 
-    fun newId (ns as {ht,name}) p =
+    fun eq_path ({ns=(wx,_),base=bx,qualifier=qx},
+		 {ns=(wy,_),base=by,qualifier=qy}) =
+      wx = wy andalso bx = by andalso qx = qy
+
+    val ht : (path,sid) HT.hash_table =
+      HT.mkTable (hash_path,eq_path) (128,Fail "Source Id")
+
+    fun newId p =
       let
-	val id = Word.fromInt (Ht.numItems ht)
-      in Ht.insert ht (id,p);
-	{id=id,ns=ns,unique=false}
+	val id = !nextid
+	val sid = {id=id,unique=false,p=p}
+      in nextid := (id+0w1);
+	HT.insert ht (p,sid);
+	sid
+      end
+    
+    fun uniqueId p =
+      let
+	val id = !nextid
+      in nextid := (id+0w1);
+	{id=id,p=p,unique=true}
       end
 
-    fun uniqueId (ns as {ht,name}) p =
-      let
-	val id = Word.fromInt (Ht.numItems ht)
-      in Ht.insert ht (id,p);
-	{id=id,ns=ns,unique=true}
-      end
+    fun fromPath p =
+      case (HT.find ht p) of
+	NONE => (newId p)
+      | SOME s => s
+    fun toPath ({id,p,...}:sid) = p
 
     fun compare ({id=x,...}:sid,{id=y,...}:sid) = Word.compare(x,y)
-    fun eq (x,y) = compare(x,y) = EQUAL
-    fun getPath ({id,ns={ht,name},...}:sid) = Ht.lookup ht id
 
-    fun pathToString sep {base,qualifier} =
-      let
-	val qualifier = if qualifier = [""] then []
-			else qualifier
-      in ListFormat.fmt
-	{init="",sep=sep,final="",fmt=(fn x => x)}
-	(qualifier @[base])
-      end
-
-    fun mkToString {namespace={ht,name},sep} =
-      let
-	val ht' = Ht.copy ht
-	fun tostring {id,ns,unique} =
-	  let val p = Ht.lookup ht' id
-	  in pathToString sep p
-	  end
-      in tostring
-      end
-    fun toString x y = x y
   end
+
 

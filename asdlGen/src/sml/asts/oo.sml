@@ -127,7 +127,7 @@ structure OOAst: OO_AST =
 	open T
 	structure Env =
 	    SplayMapFn(struct
-			   type ord_key = TypeId.mid
+			   type ord_key = TypeId.id
 			   val compare = TypeId.compare
 		       end)
 	fun add_methods x =

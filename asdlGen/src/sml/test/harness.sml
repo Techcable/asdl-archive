@@ -21,6 +21,9 @@ signature EXTERNAL_PROGRAMS =
 		       inputs: string list,
 		         rest: string list} -> OS.Process.status
 
+	val ocaml_batch: {inputs: string list,
+		     search_path: string list} -> OS.Process.status
+
 	val sml_batch: {inputs: string list,
 		       cm_path: string list} -> OS.Process.status
 
@@ -51,12 +54,12 @@ signature SUPPORT_FILES =
 	val java_classes   : string list
 	val cm_path        : string list
 	val haskell_path   : string list
+	val ocaml_path     : string list
 	val icon_ucode     : string list
     end
 
 structure SupportFiles: SUPPORT_FILES =
     struct
-	
 
 	fun mk_path x =
 	    [OS.Path.toString {isAbs=false,
@@ -74,17 +77,18 @@ structure SupportFiles: SUPPORT_FILES =
 	val cm_path = mk_path ["sml","base"]
 	val icon_ucode = mk_path ["icon"]
 	val haskell_path = (mk_path ["haskell"])@["/usr/local/share/hugs/lib"]
+	val ocaml_path = (mk_path ["ocaml"])
     end
 
-structure UnixExternalProgs:EXTERNAL_PROGRAMS =
+structure UnixExternalProgs : EXTERNAL_PROGRAMS =
     struct
 	val cc_prg  = "gcc"
 	val cxx_prg = "g++"
 	val javac_prg = "javac"
-	val haskell_prg = "hugs"
+	val haskell_prg = "hugs +q -c1000"
 	val icont_prg = "icont"
 	val sml_prg = "sh ../misc/sml-batch"
-
+	val ocaml_prg = "sh ../misc/ocaml-batch"
 	fun prefix x s = x^s
 
 	fun run cmd = OS.Process.system ((*"echo " ^ *)cmd )
@@ -113,17 +117,21 @@ structure UnixExternalProgs:EXTERNAL_PROGRAMS =
 	    let
 		val cm_path = (shpath cm_path)
 		val cmd = (join (sml_prg::cm_path::inputs))
-	    in
-		run cmd
+	    in run cmd
 	    end
+
+	fun ocaml_batch {search_path,inputs} =
+	  let val dash_I = String.concat (List.map (prefix " -I ") search_path)
+	    val cmd = (join (ocaml_prg::("'"^dash_I^"'")::inputs))
+	    in run cmd
+	  end
 
 	fun haskell {haskell_path,inputs} =
 	    let
 		val haskell_path = "-P"^(shpath haskell_path)
 		    
 		val cmd = (join (haskell_prg::"+."::haskell_path::inputs))
-	    in
-		run (cmd ^ " </dev/null")
+	    in run (cmd ^ " </dev/null")
 	    end
 
 	fun javac {class_path,inputs,rest} = 
@@ -174,10 +182,8 @@ structure Test =
 			NONE => false
 		      | SOME x => x = s
 		fun do_it (x,xs) = (List.filter is_type x)@xs
-	    in
-		remove_dups (List.foldr do_it [] outs)
+	    in remove_dups (List.foldr do_it [] outs)
 	    end
-
 	
 	fun java_comp i =
 	    let
@@ -200,9 +206,16 @@ structure Test =
 	    let
 		val outs = get_files "" i
 		val cm_path = S.cm_path
-	    in
-		P.sml_batch{cm_path=cm_path,inputs="asdl-base.cm"::outs}
+	    in P.sml_batch{cm_path=cm_path,inputs="asdl-base.cm"::outs}
 	    end
+
+	fun ocaml_comp i =
+	  let
+	    val outs = get_files "" i
+	    val dirs = Set.addList (Set.empty,List.map OS.Path.dir outs)
+	    val search_path  = (Set.listItems dirs)@S.ocaml_path
+	  in P.ocaml_batch{search_path=search_path,inputs=outs}
+	  end
 
 	fun haskell_comp i =
 	    let
@@ -233,15 +246,16 @@ structure Test =
 	val do_sml =  sml_comp o Link.SML.do_it 
 	val do_haskell =  haskell_comp o Link.Haskell.do_it 
 	val do_icon =  icon_comp o Link.Icon.do_it 
+	val do_ocaml =  ocaml_comp o Link.OCaml.do_it 
 	val keep_going = ref false
 	fun test (name,f,i) () = (name,((f i) = OS.Process.success) orelse
 				  (!keep_going))
 
 	fun test_all n i =
-	  let
-	    val i = ("-d"::"../asdl/tests"::i)
+	  let val i = ("--pickler=sexp,std"::"-d"::"../asdl/tests/work"::i)
 	  in
-	    [test (n^"-ml",do_sml,"--view=SML"::i),
+	    [test (n^"-ocaml",do_ocaml,"--view=OCaml"::i),
+	     test (n^"-ml",do_sml,"--view=SML"::i),
 	     test (n^"-hs",do_haskell,"--view=Haskell"::i),
 	     test (n^"-c",do_c,"--view=C"::i),
 	     test (n^"-cxx",do_cxx,"--view=Cxx"::i),
@@ -260,8 +274,7 @@ structure Test =
 			if t then Error.say (String.concat msg)
 			else raise Error.error msg
 		    end
-	    in
-		List.app check s
+	    in List.app check s
 	    end
 
 	fun mk_path x =

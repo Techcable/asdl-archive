@@ -37,15 +37,16 @@ The following types are completely opaque to clients.
 \item [{[[env]]}] Abstract environment from [[ty_id]]'s to [[ty]]'s
 \end{description}
 **)
-    structure TypeId : MODULE_ID
-    structure VarId : MODULE_ID
+    structure TypeId : SOURCE_ID
+    structure VarId : SOURCE_ID
 
-    type id = VarId.mid
-    type ty_id = TypeId.mid
+    type id = VarId.id
+    type ty_id = TypeId.id
     type ty_exp
     type tag
     type exp 
     type env
+    type ty_info
 (**)
 (**:[[signature TYPE_DECL]] [[ty]] datatype:**)
     datatype ty =
@@ -109,15 +110,25 @@ or variable identifiers derived from the base type bound to the
 		  fields: field list,
                   cnstr : exp list -> exp}
          and ty_decl = (ty_id * ty)
-         and ty_info = {rd : exp option,
-		        wr : (exp -> exp) option}
          and ty_con =  ty_decl -> (ty_exp * ty_info)
 (**)
 (**:[[signature TYPE_DECL]] miscellaneous functions and values:
 The [[noInfo]] value is just [[{rd=NONE,wr=NONE}]]. The remaining
 functions are for manipulating environments.
 **)
+
+
     val noInfo  : ty_info
+
+    val addRdWr : string -> {rd:exp option,
+			     wr:(exp -> exp) option} -> ty_info -> ty_info
+    val getRd   : string -> ty_info -> exp option
+    val getWr   : string -> ty_info -> (exp -> exp) option
+
+    val addRd   : (string * exp) -> ty_info -> ty_info
+    val addWr   : (string * (exp -> exp)) -> ty_info -> ty_info
+    val merge   : (ty_info * ty_info) -> ty_info
+
     val mk_env  : ty_decl list -> env
     val add_env : (ty_decl * env) -> env
     val lookup  : (env * ty_id) -> ty option

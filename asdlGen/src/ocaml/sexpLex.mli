@@ -1,7 +1,7 @@
 type instream 
 type ('a,'b) reader = 'b -> ('a * 'b) option 
 type tok = 
-    LP | RP  | QUOTE 
+    LP | RP  
     | INT of int
 (*    | BIGINT of Big_int.big_int TODO *) 
     | SYM of string

@@ -3,9 +3,8 @@ structure StdPkl :> STD_PKL =
     structure PklInt  = PklInteger(structure Integer = Int)
     type instream = BinIO.instream
     type outstream = BinIO.outstream
-    datatype 'a share = vDEF of string * 'a | vUSE of string
 
-    fun die () = raise Error.error ["Pickler Error"]
+    fun die () = raise Error.error ["Std Pickler Error"]
 
     val write_tag =  PklInt.write
     val read_tag = PklInt.read
@@ -32,16 +31,16 @@ structure StdPkl :> STD_PKL =
 	val v =
 	  case (Int.compare(t,0)) of
 	    EQUAL => die()
-	  | LESS => vDEF (rd_key (~t),rd ins)
-	  | GREATER => vUSE (rd_key t)
+	  | LESS => Share.vDEF (rd_key (~t),rd ins)
+	  | GREATER => Share.vUSE (rd_key t)
       in v end
 
     fun write_share wr x outs =
       case x of
-	vUSE n =>
+	Share.vUSE n =>
 	  (write_tag (String.size n) outs;
 	   BinIO.output(outs,Byte.stringToBytes n))
-      | vDEF (n,v) =>
+      | Share.vDEF (n,v) =>
 	  (write_tag (~(String.size n)) outs;
 	   BinIO.output(outs,Byte.stringToBytes n);
 	   wr v outs)

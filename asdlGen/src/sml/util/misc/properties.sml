@@ -4,26 +4,27 @@ signature PROPERTIES =
 	type props_desc
 	type props
 	type prop_value
-
+	type path = {base:string,qualifier:string list}
 	type init = (string * prop_value)
 	type 'a prop_decl = props_desc ->  
 	    {name:string,default:'a} ->  ((props -> 'a) * ('a -> init))
 
 	val decl_bool       : bool       prop_decl
 	val decl_string     : string     prop_decl
-	val decl_path       : Id.path    prop_decl
 	val decl_int        : int        prop_decl
+	val decl_path       : path       prop_decl
 
 	val decl_bool_opt   : bool    option prop_decl
 	val decl_string_opt : string  option prop_decl
-	val decl_path_opt   : Id.path option prop_decl
 	val decl_int_opt    : int     option prop_decl
 	val decl_props_opt  : props   option prop_decl
+	val decl_path_opt   : path    option prop_decl
 
 	val make_desc : string -> props_desc
 	    
 	val parse_inits : props_desc -> (string * string) list -> init list
 	val from_inits  : props_desc -> init list -> props
+
     end
 
 structure Properties :> PROPERTIES =
@@ -35,11 +36,12 @@ structure Properties :> PROPERTIES =
 		      end)
 
 	type key = int ref
+	type path = {base:string,qualifier:string list}
 	datatype prop_value =
 	    B of bool   option
 	  | I of int    option 
 	  | S of string option
-	  | Q of Id.path option 
+	  | Q of path option 
 	  | P of props  option
 	withtype props = {id:string ref,v:prop_value Vector.vector}
 	and props_desc = {id:string ref,
@@ -103,6 +105,7 @@ structure Properties :> PROPERTIES =
 	  | fromOpt p (SOME y,_) = (SOME y)
 
 	(* hack for now *)
+
 	fun parse_path x =
 	    let
 		fun kill_spc x =
@@ -113,8 +116,7 @@ structure Properties :> PROPERTIES =
 		val len = List.length x
 		val (qualifier,base) =
 		    (List.take (x,len-1),List.drop (x,len - 1))
-	    in
-		{base=List.hd base,qualifier=qualifier}
+	    in {base=List.hd base,qualifier=qualifier}
 	    end
 	fun parse_prop p (B x,s) = B(fromOpt p (Bool.fromString s,x))
 	  | parse_prop p (I x,s) = I(fromOpt p (Int.fromString s,x))

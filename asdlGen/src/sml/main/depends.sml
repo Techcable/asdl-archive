@@ -13,8 +13,8 @@ functor mkDependGen(structure S : SEMANT) : TRANSLATE  =
 
 	structure IdOrdKey =
 	    struct
-		type ord_key = Identifier.identifier
-		val compare = Identifier.compare
+	      type ord_key = Identifier.identifier
+	      val compare = Identifier.compare
 	    end
 	
 	structure Env = SplayMapFn(IdOrdKey)
@@ -28,15 +28,16 @@ functor mkDependGen(structure S : SEMANT) : TRANSLATE  =
 
 	structure Env =
 	    SplayMapFn(struct
-			   type ord_key = Id.mid
-			   val compare = Id.compare
+			   type ord_key = SourceId.sid
+			   val compare = SourceId.compare
 		       end)
 
 	structure Scc =
 	    SCCUtilFun(structure Node =
 			   struct
-			       type ord_key = Id.mid option
-			       fun compare (SOME x,SOME y) = Id.compare(x,y)
+			       type ord_key = SourceId.sid option
+			       fun compare (SOME x,SOME y) =
+				 SourceId.compare(x,y)
 				 | compare (SOME _,NONE) = LESS
 				 | compare (NONE,SOME _) = GREATER
 				 | compare (NONE,NONE) = EQUAL
@@ -74,7 +75,7 @@ functor mkDependGen(structure S : SEMANT) : TRANSLATE  =
 			 ()
 		    else
 			();
-			 print (Id.toString n))
+			 print (SourceId.toString n))
 		  | print_id NONE = print "-- root"
 
 		fun depends (Scc.SIMPLE n) =

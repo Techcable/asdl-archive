@@ -27,11 +27,11 @@ structure YaccGrammarTranslator : SEMANT_TRANSLATOR =
 	val fix_fields = false
 	val inits = []
 
-	val get_module = (fn x => x)
-	    
-	val trans_tid = T.TypeId.fromPath o Id.toPath
-	val trans_id = T.VarId.fromPath o Id.toPath
-
+	structure IdCvt =
+	mkIdCvt(structure Ast = Ast
+		structure IdMap = IdMaps.Empty)
+	open IdCvt
+	  
 	val mangle_seq = T.TypeId.suffixBase "_seq" 
 	val mangle_opt = T.TypeId.suffixBase "_opt" 
 
@@ -43,31 +43,28 @@ structure YaccGrammarTranslator : SEMANT_TRANSLATOR =
 	val end_opt = T.Term (T.VarId.fromString "SPECIAL_END_OPT")
 	fun trans_field p {finfo,kind,name,tname,tinfo,is_local,props} =
 	    let
-	      val tname = trans_tid tname
+	      val tname = trans t2t tname
 	      val tname =
 		case (kind) of
 		NONE => tname
 	      | SOME S.Option => mangle_opt tname
 	      | SOME S.Sequence => mangle_seq tname
 	      | _ => raise Error.unimplemented
-	    in
-	      T.NonTerm tname
+	    in T.NonTerm tname
 	    end
 	fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} =
-	  let
-	    val ra = T.Term(trans_id name)
-	  in
-	    (ra::(attrbs@fields),NONE)
+	  let val ra = T.Term(trans c2v name)
+	  in (ra::(attrbs@fields),NONE)
 	  end
+
 	fun trans_defined p {tinfo,name,cons=[],fields,props} =
-	  (trans_tid name,[(fields,NONE)])
+	  (trans t2t name,[(fields,NONE)])
 	  | trans_defined p {tinfo,name,cons,fields,props} =
-	  (trans_tid name,cons)
-	
+	  (trans t2t name,cons)
 
 	fun trans_type_con p {tinfo,name,kinds,props} =
 	  let
-	    val ty_name = (trans_tid name)
+	    val ty_name = trans t2t name
 	    val seq_name = mangle_seq ty_name
 	    val seq_tmp = mangle_tmp seq_name
 	    val opt_name = mangle_opt ty_name
@@ -80,15 +77,12 @@ structure YaccGrammarTranslator : SEMANT_TRANSLATOR =
 	      [(opt_tmp,[([T.NonTerm ty_name,T.NonTerm opt_tmp],NONE),
 			 ([],NONE)]),
 	       (opt_name,[([beg_opt,T.NonTerm opt_tmp,end_opt],NONE)])]
-	  in
-	    List.foldl do_con [] kinds
+	  in List.foldl do_con [] kinds
 	  end
 
 	fun trans_module p {module,imports,defines,type_cons,props} =
-	  let
-	    val aux = List.foldr (op @) [] type_cons
-	  in
-	    List.foldr (op ::) aux defines 
+	  let val aux = List.foldr (op @) [] type_cons
+	  in List.foldr (op ::) aux defines 
 	  end
 
 	fun add_prim (s,prims) =
@@ -96,12 +90,12 @@ structure YaccGrammarTranslator : SEMANT_TRANSLATOR =
 	    val ty = T.TypeId.fromString s
 	    val seq_name = mangle_seq ty
 	    val seq_tmp = mangle_tmp seq_name
-	  in
-	    [(ty,[([T.Term (T.VarId.fromString ("SPECIAL_"^s))],NONE)]),
-	     (seq_tmp,[([T.NonTerm ty,T.NonTerm seq_tmp],NONE),
-		       ([],NONE)]),
-	     (seq_name,[([beg_seq,T.NonTerm seq_tmp,end_seq],NONE)])]@prims
+	  in [(ty,[([T.Term (T.VarId.fromString ("SPECIAL_"^s))],NONE)]),
+	      (seq_tmp,[([T.NonTerm ty,T.NonTerm seq_tmp],NONE),
+			([],NONE)]),
+	      (seq_name,[([beg_seq,T.NonTerm seq_tmp,end_seq],NONE)])]@prims
 	  end
+
 	val prims = List.foldl add_prim ([]:YaccGrammar.grammar)
 	  ["int","string","identifier"]
 	  

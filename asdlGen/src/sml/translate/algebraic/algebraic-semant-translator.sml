@@ -27,8 +27,7 @@ as CAML or Haskell which have the restriction. Both the [[IdFix]] and
 [[fix_fields]] arguments should really be merged with the [[Spec]] structure. 
 **)
 functor mkAlgebraicSemantTranslator
-  (structure IdFix  : ID_FIX
-   structure Spec   : ALGEBRAIC_SPEC
+  (structure Spec   : ALGEBRAIC_SPEC
    val fix_fields   : bool): SEMANT_TRANSLATOR  =
      struct
 (**:[[functor mkAlgebraicSemantTranslator]]:
@@ -37,15 +36,22 @@ functor mkAlgebraicSemantTranslator
       structure Ty = Spec.Ty
       structure Ast = Ty.Ast
       structure T = Ast
-      structure IdFix = IdFix
+      structure IdCvt =
+	mkIdCvt(structure Ast = Ast
+		structure IdMap = IdMaps.Empty)
+      open IdCvt
 
       val set_dir = true
       val ignore_supress = false
       val fix_fields = fix_fields
-      val fix_id = T.VarId.subst IdFix.id_fix
-      val fix_ty = T.TypeId.subst IdFix.ty_fix
-      val trans_tid  = fix_ty o T.TypeId.fromPath o Id.toPath
       val inits = Spec.inits
+
+      fun bind g te (T.Id x) f = (f x)
+	| bind g te e f =
+	  let val x = T.VarId.tempId "t"
+	  in g([(T.MatchId (x,te),e)],f x)
+	  end
+
 (**:[[functor mkAlgebraicSemantTranslator]] types:
 Each  ASDL definition is translated into an AlgebraicAst tree as
 well as a AlgebraicTy type that describes the semantics
@@ -65,7 +71,7 @@ the final output. All of this code is fairly straight forward.
 **)      
       fun trans_field p {finfo,kind,name,tname,tinfo,is_local,props} =
 	let
-	  val tid = trans_tid tname
+	  val tid = trans t2t tname
 	  val ty = (T.TyId tid)
 	  val {natural_ty,...} = Spec.get_wrappers ty props 
 	  val (ty,tid) =
@@ -75,16 +81,13 @@ the final output. All of this code is fairly straight forward.
 		let val {mkrep,mktid,...} = Spec.get_reps p k
 		in (mkrep natural_ty,mktid tid)
 		end
-	  val trans_fid = (fix_id o T.VarId.fromString o Identifier.toString)
-	  val name = trans_fid name
+	  val name = trans f2v name
 	  val (fd,ulabel,label) =
 	    case (S.Field.name finfo) of
 	      NONE => ({name=name,ty=ty},true,NONE)
-	    | (SOME x) =>({name=name,ty=ty},false,SOME (trans_fid x))
+	    | (SOME x) =>({name=name,ty=ty},false,SOME (trans f2v x))
 	in
-	  {fd=fd,
-	   ulabel=ulabel,
-	   ty_fd={label=label,label'=name,tid=tid}}
+	  {fd=fd,ulabel=ulabel,ty_fd={label=label,label'=name,tid=tid}}
 	end
 (**)
 (**:[[functor mkAlgebraicSemantTranslator]] translate a list of fields:
@@ -124,9 +127,8 @@ the final output. All of this code is fairly straight forward.
 **)            
       fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} =
 	let
-	  val trans_cid = fix_id o T.VarId.fromPath o Id.toPath
 	  val tag_v = S.Con.tag cinfo
-	  val name = trans_cid name
+	  val name = trans c2v name
 	  val {ty,fields,match_exp,bvars,mk_cnstr} =
 	    trans_fields NONE (attrbs @ fields)
 	  val tag = {c={name=name,ty_arg=ty},v=tag_v}
@@ -143,13 +145,15 @@ the final output. All of this code is fairly straight forward.
 **)            
       fun trans_defined p {tinfo,name,fields,cons=[],props} =
 	let
-	  val name = trans_tid name
+	  val name = trans t2t name
 	  val {ty,fields,match_exp,bvars,mk_cnstr} =
 	    trans_fields (SOME name) fields
 	  val {natural_ty,unwrap,wrap,...} =
 	    Spec.get_wrappers (T.TyId name) props 
 	  val info = Spec.get_info props
-	  fun match f e = T.Match(unwrap e,[(match_exp,f bvars)])
+	  fun match f e =
+	    bind T.Let natural_ty (unwrap e)
+	    (fn x => T.Match(x,[(match_exp,f bvars)]))
 	  val product =
 	    {ty=natural_ty,fields=fields,info=info,
 	     match=match,cnstr=mk_cnstr wrap}
@@ -161,13 +165,15 @@ the final output. All of this code is fairly straight forward.
 **)            
 	| trans_defined p {tinfo,name,fields,cons,props} =
 	let
-	  val name = trans_tid name
+	  val name = trans t2t name
 	  val ty = (T.TyId name)
 	  fun mk_clause f {con,choice,match} =  (match,f choice)
 	  val {natural_ty,unwrap,wrap,...} = Spec.get_wrappers ty props 
 	  val info = Spec.get_info props
 	    
-	  fun match f e = T.Match(unwrap e,List.map (mk_clause f) cons)
+	  fun match f e =
+	    bind T.Let natural_ty (unwrap e)
+	    (fn x => T.Match(x,List.map (mk_clause f) cons))
 	  fun mk_cnstr {tag,fields,cnstr} =
 	    {tag=tag,fields=fields,cnstr=wrap o cnstr}
 	  val cnstrs =  List.map (mk_cnstr o #con) cons
@@ -183,7 +189,7 @@ the final output. All of this code is fairly straight forward.
 **)      
       fun trans_type_con p {tinfo,name,props,kinds}  =
 	let
-	  val tid = (trans_tid name)
+	  val tid = trans t2t name
 	  fun do_kind k = 
 	    let val {mktid,con,...} = Spec.get_reps p k
 	    in (mktid tid,Ty.App(con,tid))
@@ -201,7 +207,8 @@ the final output. All of this code is fairly straight forward.
 	  val ty_cons = List.foldr (op @) [] type_cons 
 	  val (ty_decls,decls) =
 	    List.foldr merge (ty_cons,[]) defines
-	  val toMid = Ast.ModuleId.fromPath o Id.toPath o S.Module.name
+	  val toMid =
+	    Ast.ModuleId.fromPath o S.Module.Id.toPath o S.Module.name
 	in
 	  (ty_decls,(T.Module{name=toMid module,
 			     imports=List.map toMid imports,
@@ -212,15 +219,15 @@ the final output. All of this code is fairly straight forward.
 **)      
       fun trans p {modules,prim_types,prim_modules} =
 	let
-
-	  val toMid = Ast.ModuleId.fromPath o Id.toPath o S.Module.name
+	  val toMid =
+	    Ast.ModuleId.fromPath o S.Module.Id.toPath o S.Module.name
 	  val prim_imports =  List.map toMid prim_modules
 	  fun import_prims (tyd,(T.Module{name,imports,decls},mp))=
 	    (tyd,(T.Module{name=name,imports=prim_imports@imports,
 		      decls=decls},mp))
 	  val ms = List.map import_prims modules
 	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs)
-	    (Spec.prims prim_types) ms
+	    (Spec.prims p prim_types) ms
 (* Call the Spec.aux_decls to generate pickler code as well as other useful
    functions *)
 	  val new_decls = (Spec.get_aux_decls p (Ty.mk_env ty_decls))

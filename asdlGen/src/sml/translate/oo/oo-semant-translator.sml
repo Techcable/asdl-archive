@@ -7,28 +7,23 @@
  *)
 
 functor mkOOSemantTranslator
-  (structure Spec   : OO_SPEC
-   val aux_decls    : Spec.Ty.env ->
-                      Spec.Ty.ty_decl list ->
-  (Spec.Ty.ty_id * Spec.Ty.Ast.mth) list) : SEMANT_TRANSLATOR  =
+  (structure Spec   : OO_SPEC) : SEMANT_TRANSLATOR  =
      struct
       structure S = Semant
       structure Ty = Spec.Ty
       structure Ast = Ty.Ast
       structure T = Ast
-      structure IdFix = IdFix
+      structure IdCvt =
+	mkIdCvt(structure Ast = Ast
+		structure IdMap = Spec.IdMap)
+      open IdCvt
 
       val int_kind = Spec.int_kind
       val kind_id = T.VarId.fromString "kind"
       val kind_var = T.VarId.fromString "_kind"
       val set_dir = true
       val fix_fields = false
-      val fix_id = Spec.fix_id
-      val fix_ty = Spec.fix_ty
-	
-      val trans_tid  = fix_ty o T.TypeId.fromPath o Id.toPath
-      val trans_id  = fix_id o T.VarId.fromPath o Id.toPath
-	
+
       type defined_value  = {decls:T.ty_decl list,ty_decl:Ty.ty_decl}
       type field_value    = {fd:T.field,ty_fd:Ty.field}
       type con_value      = {con:Ty.con,
@@ -52,7 +47,7 @@ functor mkOOSemantTranslator
 	  {inline=true,scope=T.Public,args=fds, body={vars=[],body=body}}
 	end
 	fun mk_tag_tid tid =
-	  (if int_kind then fix_ty (T.TypeId.fromString "int")
+	  (if int_kind then (T.TypeId.fromString "int")
 		  else (T.TypeId.suffixBase "_enum" tid))
 
 	val void_ty  = T.TyId (T.TypeId.fromString "void")
@@ -92,7 +87,7 @@ functor mkOOSemantTranslator
 
       fun trans_field p {finfo,kind,name,tname,tinfo,is_local,props} =
 	let
-	  val tid = (trans_tid tname)
+	  val tid = trans t2t tname
 	  val is_prim = S.Type.is_prim tinfo
 	  val ty = if is_prim then (T.TyId tid)
 		   else (T.TyReference (T.TyId tid))
@@ -105,20 +100,17 @@ functor mkOOSemantTranslator
 	    | SOME S.Option =>
 		(Spec.opt_rep natural_ty,Spec.opt_tid tid)
 	    | _ => raise Error.unimplemented
-	  val trans_fid =
-	    (fix_id o T.VarId.fromString o Identifier.toString)
-		  val name = trans_fid name
+	  val name = trans f2v name
 	  val fd = {name=name,ty=ty}
-	  val label = Option.map trans_fid (S.Field.name finfo) 
-	in
-	  {fd=fd,ty_fd={label=label,label'=name,tid=tid}}
+	  val label = Option.map (trans f2v) (S.Field.name finfo) 
+	in {fd=fd,ty_fd={label=label,label'=name,tid=tid}}
 	end
 
       fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} =
 	let
 	  val is_enum = S.Type.is_enum tinfo
-	  val tname = trans_tid (S.Type.src_name tinfo)
-	  val (cname,name) = (trans_id name,trans_tid name)
+	  val tname =  trans t2t (S.Type.src_name tinfo)
+	  val (cname,name) = (trans c2v name,trans c2t name)
 	  val all = attrbs@fields
 	  val vars = List.map (fn {fd={name,ty},...} => (name,ty)) all
 
@@ -178,8 +170,8 @@ functor mkOOSemantTranslator
 
       fun trans_defined p {tinfo,name,fields,cons=[],props} = 
 	let
-	  val cname = trans_id name
-	  val name = trans_tid name
+	  val cname = trans t2v name
+	  val name = trans t2t name
 
 	  val fds = List.map #fd (fields:field_value list)
 	  val user_fields = Spec.get_user_fields props
@@ -223,8 +215,8 @@ functor mkOOSemantTranslator
 	end
 	| trans_defined p {tinfo,name,fields,cons,props} = 
 	let
-	  val cname = trans_id name
-	  val name = trans_tid name
+	  val cname = trans t2v name
+	  val name = trans t2t name
 	  val is_enum = S.Type.is_enum tinfo
 	  val fds = List.map #fd (fields:field_value list)
 	  val user_fields = Spec.get_user_fields props
@@ -309,7 +301,7 @@ functor mkOOSemantTranslator
 
       fun trans_type_con p {tinfo,name,kinds,props} =
 	let
-	  val name = trans_tid name
+	  val name = trans t2t name
 	  val name_opt = Spec.opt_tid name
 	  val name_seq = Spec.seq_tid name
 	  fun do_kind S.Sequence = (name_seq,Ty.App(Spec.seq_con,name))
@@ -330,7 +322,7 @@ functor mkOOSemantTranslator
 	    (ty_decl::ty_decls,decls@rest)
 	  val ty_cons = List.foldr (op @) [] type_cons 	    
 	  val (ty_decls,decls) = List.foldr merge (ty_cons,[]) defines
-	  val toMid = Ast.ModuleId.fromPath o Id.toPath o S.Module.name
+	  val toMid = (trans m2m) o S.Module.src_name
 	  val name = toMid module
 	  val decls = BA.build_aux name
 	    {walker_code=false,copy_code=false} decls
@@ -344,7 +336,7 @@ functor mkOOSemantTranslator
 	let
 	  val ty_decls = List.foldl (fn ((x,_),xs) => x@xs)
 	    (Spec.prims prim_types) ms
-	  val new_decls = (aux_decls (Ty.mk_env ty_decls))
+	  val new_decls = Spec.get_aux_decls p (Ty.mk_env ty_decls)
 	  fun add_decls (ty_decls,(T.Module{name,imports,decls},mp)) =
 	    (T.Module{name=name,
 		     imports=imports,

@@ -27,7 +27,7 @@ let fromInstream (n,_,s) =
   in (loop n;s)
   
 type tok = 
-    LP | RP | QUOTE | INT of int
+    LP | RP | INT of int
 (*   | BIGINT of Big_int.big_int TODO *)
   | SYM of string
   | STR of string
@@ -36,10 +36,9 @@ let string_of_tok x =
   match x with 
     LP -> "("
   | RP -> ")"
-  | QUOTE -> "'"
   | INT i -> string_of_int i
 (*  | BIGINT i -> Big_int.string_of_big_int i *)
-  | SYM s -> s
+  | SYM s -> (s^" ")
 (* fix to use proper escapes *)
   | STR str -> ("\""^(String.escaped str)^"\"")
 
@@ -163,7 +162,6 @@ let scan (getc:'a -> (char * 'a) option) =
     in match (getc s) with
       Some ('(',s) -> Some(LP,s)
     | Some (')',s) -> Some(RP,s)
-    | Some ('\'',s) -> Some(QUOTE,s)
     | Some ('"',s) ->
 	      (match (scan_str s) with
 		Some(str,s) -> Some(STR str,s)

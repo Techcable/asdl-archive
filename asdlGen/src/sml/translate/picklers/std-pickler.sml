@@ -12,7 +12,8 @@
  read and write each type. The functor is parameterized so that it is
  independent of any particular language.
 **)
-functor StdPickler (structure Arg : STD_PICKLER_ARG) : AUX_DECLS =
+functor StdPickler (structure Arg : STD_PICKLER_ARG
+		    val tag : string) : AUX_DECLS =
   struct
 (**:[[functor StdPickler]]:
 The only exported takes a type envrionment and a list of type 
@@ -30,71 +31,76 @@ declarations that are the readers and writers for those bound types.
 	  (case Ty.lookup(env,tid) of
 	    SOME ty => (tid,ty)
 	  | NONE => raise Error.internal)
-
+	fun get_rd info =
+	  (case (Ty.getRd tag info) of
+	     NONE => raise (Error.error ["Can't find primitve reader"])
+	   | SOME rd => rd)
 	fun defaultOrElse (i:Ty.ty_info) f x =
 	  Option.getOpt ((f i),x)
 (**:[[functor StdPickler]] [[fun trans]]:Generate readers
 **)
-	fun rd_decl (ty_id,Ty.Prim {ty,info={rd=SOME rd,...},...}) =
- 	  Arg.read_decl{name=ty_id,ret=ty,body=rd}
+	fun rd_decl (ty_id,Ty.Prim {ty,info,...}) =
+	  Arg.read_decl{name=ty_id,ret=ty,body=get_rd info}
 	  | rd_decl (ty_id,Ty.Prod{ty,fields,cnstr,info,match}) =
-	    let val body = defaultOrElse info #rd
+	    let val body = defaultOrElse info (Ty.getRd tag)
 	      (cnstr (List.map rd_field fields)) 
 	    in Arg.read_decl{name=ty_id,ret=ty,body=body}
 	    end
 	  | rd_decl (ty_id,Ty.Sum{ty,cnstrs,match,info,...}) =
-	    let val body = defaultOrElse info #rd
+	    let val body = defaultOrElse info (Ty.getRd tag)
 	      (Arg.read_tag (List.map rd_con cnstrs))
 	    in Arg.read_decl{name=ty_id,ret=ty,body=body}
 	    end
 	  | rd_decl (ty_id,Ty.App(f,arg)) =
 	    let
-	      val (ty,{rd,wr}) = f (get_ty arg)
-	      val rd = Option.valOf rd
+	      val (ty,info) = f (get_ty arg)
+	      val rd = Option.valOf (Ty.getRd tag info)
 	    in Arg.read_decl{name=ty_id,ret=ty,body=rd}
 	    end
 	  | rd_decl (ty_id,Ty.Alias(ty_id')) =
 	    let val (_,ty) =  get_ty ty_id'
 	    in rd_decl(ty_id,ty)
 	    end
-	  | rd_decl _ = raise Error.internal
 	and rd_con {tag,fields,cnstr} =
 	  (tag,cnstr (List.map rd_field fields))
 
 	and rd_field {tid,...} =
 	  case Ty.lookup(env,tid) of
-	    SOME (Ty.App(f,ty)) => (Option.valOf o #rd o #2 o f o get_ty) ty
-	  | SOME (Ty.Prim{info={rd=SOME rd,...},...}) => rd 
+	    SOME (Ty.App(f,ty)) =>
+	      (Option.valOf o (Ty.getRd tag) o #2 o f o get_ty) ty
+	  | SOME (Ty.Prim{info,...}) =>
+	      (Option.valOf (Ty.getRd tag info))
 	  |  _ => Arg.read tid
 (**:[[functor StdPickler]] [[fun trans]]:Generate writers
 **)		 
-	fun wr_decl (ty_id,Ty.Prim {ty,info={wr=SOME wr,...},...}) =
- 	  Arg.write_decl{name=ty_id,arg=ty,body=wr}
+	fun wr_decl (ty_id,Ty.Prim {ty,info,...}) =
+ 	  Arg.write_decl{name=ty_id,arg=ty,
+			 body=Option.valOf (Ty.getWr tag info)}
 	  | wr_decl (ty_id,Ty.Prod{ty,fields,cnstr,match,info}) =
-	    let val body = defaultOrElse info #wr
+	    let val body = defaultOrElse info (Ty.getWr tag)
 	      (match (Arg.expSeq o (List.map wr_match)))
 	    in Arg.write_decl{name=ty_id,arg=ty,body=body}
 	    end
 	  | wr_decl (ty_id,Ty.Sum{ty,cnstrs,match,info,...}) =
-	    let val body = defaultOrElse info #wr (match wr_con)
+	    let val body = defaultOrElse info (Ty.getWr tag) (match wr_con)
 	    in  Arg.write_decl{name=ty_id,arg=ty,body=body}
 	    end
 	  | wr_decl (ty_id,Ty.App(f,arg)) =
 	    let
-	      val (ty,{rd,wr}) = f (get_ty arg)
-	      val wr = Option.valOf wr
+	      val (ty,info) = f (get_ty arg)
+	      val wr = Option.valOf (Ty.getWr tag info)
 	    in Arg.write_decl{name=ty_id,arg=ty,body=wr}
 	    end
 	  | wr_decl (ty_id,Ty.Alias(ty_id')) =
 	    let val (_,ty) =  get_ty ty_id'
 	    in wr_decl(ty_id,ty)
 	    end
-	 | wr_decl _ = raise Error.internal
 	and wr_match ({tid,...},exp) =
 	  case Ty.lookup(env,tid) of
 	    SOME (Ty.App(f,ty)) =>
-	      ((Option.valOf o #wr o #2 o f o get_ty) ty) exp
-	  | SOME (Ty.Prim{info={wr=SOME wr,...},...}) => wr exp
+	      ((Option.valOf o (Ty.getWr tag) o #2 o f o get_ty) ty) exp
+	  | SOME (Ty.Prim{info,...}) =>
+	      (Option.valOf (Ty.getWr tag info)) exp
 	  |  _ => Arg.write tid exp
 	and wr_con (tag,matches) =
 	  Arg.expSeq ((Arg.write_tag tag)::(List.map wr_match matches))

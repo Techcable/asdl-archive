@@ -6,8 +6,6 @@
  * Author: Daniel C. Wang
  *
  *)
-
-
 structure XMLDTDTranslator : SEMANT_TRANSLATOR =
     struct
 	structure S = Semant
@@ -26,8 +24,10 @@ structure XMLDTDTranslator : SEMANT_TRANSLATOR =
 	val fix_fields = false
 	val inits = []
 	    
-	val trans_tid = T.TypeId.fromPath o Id.toPath
-	val trans_id = T.VarId.fromPath o Id.toPath
+	structure IdCvt =
+	mkIdCvt(structure Ast = Ast
+		structure IdMap = IdMaps.Empty)
+	open IdCvt
 
 	val mangle_seq = T.TypeId.suffixBase "-seq" 
 	val mangle_opt = T.TypeId.suffixBase "-opt" 
@@ -35,31 +35,28 @@ structure XMLDTDTranslator : SEMANT_TRANSLATOR =
 			 att_type=T.CDATA,
 			 default=T.FIXED(T.Str (Int.toString i),[])}
 	fun common_attrbs p =
-	  let
-	  in
 	    [{name=T.VarId.fromString "lb",
 	      att_type=T.OneToken T.NMTOKEN,
 	      default=T.IMPLIED}]
-	  end
 
 	val sz_attrib = {name=T.VarId.fromString "sz",
 			 att_type=T.CDATA,default=T.REQUIRED}
 
 	fun trans_field p {finfo,kind,name,tname,tinfo,is_local,props} =
 	    let
-	      val tname = trans_tid tname
+	      val tname = trans t2t tname
 	      val tname =
 		case (kind) of
 		NONE => tname
 	      | SOME S.Option => mangle_opt tname
 	      | SOME S.Sequence => mangle_seq tname
 	      | _ => raise Error.unimplemented
-	    in
-	      T.Child tname
+	    in T.Child tname
 	    end
+
 	fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} =
 	  let
-	    val name = trans_tid name
+	    val name = T.TypeId.fromPath(Semant.Con.Id.toPath name) 
 	    val tag_v = S.Con.tag cinfo
 	    val content =
 	      case (attrbs,fields) of
@@ -70,23 +67,23 @@ structure XMLDTDTranslator : SEMANT_TRANSLATOR =
 	    val con = {element=name,
 		       content=content,
 		       att_defs=[tag_att tag_v]}
-	  in
-	    (T.Child name,con)
+	  in (T.Child name,con)
 	  end
+
 	fun trans_defined p {tinfo,name,cons=[],fields,props} =
 	    let
-	      val name = trans_tid name
+	      val name = trans t2t name
 	      val att_defs = (common_attrbs p)
-	    in
-	      ({element=name,
+	    in ({element=name,
 	       content=T.Children (T.Seq (hd fields,tl fields)),
 	       att_defs=att_defs},[])
 	    end
+
 	 | trans_defined p {tinfo,name,cons,fields,props} =
 	    let
 	      val con_children = List.map #1 (cons:con_value list)
 	      val con_tags = List.map #2 cons
-	      val name = trans_tid name
+	      val name = trans t2t name
 	      val att_defs = (common_attrbs p)
 	    in
 	      ({element=name,content=T.Children
@@ -96,7 +93,7 @@ structure XMLDTDTranslator : SEMANT_TRANSLATOR =
 
 	fun trans_type_con p {name,tinfo,props,kinds} =
 	  let
-	    val name = trans_tid name
+	    val name = trans t2t name
 	    val child = T.Child name
 	    val opt_name = mangle_opt name
 	    val seq_name = mangle_seq name
@@ -108,8 +105,7 @@ structure XMLDTDTranslator : SEMANT_TRANSLATOR =
 	      | do_kind S.Option =
 	      {element=opt_name,content=T.Children (T.ZeroOrOne child),
 	       att_defs=att_defs}
-	  in
-	    List.map do_kind kinds
+	  in List.map do_kind kinds
 	  end
 
 	fun trans_module p {module,imports,defines,type_cons,props} =
@@ -120,12 +116,11 @@ structure XMLDTDTranslator : SEMANT_TRANSLATOR =
 	    val roots = List.map #1 defines
 
 	    fun mk_spec ({element,...}:T.element_decl) = T.Child element
-	    val mpath = Id.toPath (S.Module.name module)
-	    val toMid = Ast.ModuleId.fromPath o Id.toPath o S.Module.name
-	  in
-	    (T.Module{name=toMid module,
-		     imports=List.map toMid imports,
-		     decls=(roots@tags)},List.map mk_spec roots)
+	    val mpath = Semant.Module.Id.toPath (S.Module.name module)
+	    val toMid = (trans m2m) o S.Module.name
+	  in (T.Module{name=toMid module,
+		       imports=List.map toMid imports,
+		       decls=(roots@tags)},List.map mk_spec roots)
 	  end
 	fun trans p {modules=mv,prim_types,prim_modules} =
 	  let
@@ -140,8 +135,7 @@ structure XMLDTDTranslator : SEMANT_TRANSLATOR =
 			       content=T.Children 
 			       (T.Choice (List.hd roots,List.tl roots)),
 			       att_defs=[]}]}
-	  in
-	    root::mods
+	  in root::mods
 	  end
     end
 

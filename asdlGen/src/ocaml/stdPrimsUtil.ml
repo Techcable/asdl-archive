@@ -18,42 +18,44 @@ let read_identifier = read_std_string
 let write_big_int = write_std_int
 let read_big_int = read_std_int
 
-let out_tok t s = output_string s (SexpLex.string_of_tok t)
-let sexp_wr_std_int i s = out_tok (SexpLex.INT i) s
-let sexp_wr_std_string str s = out_tok (SexpLex.STR str) s
-let sexp_wr_identifier str s = 
-  begin
-    out_tok SexpLex.QUOTE s;
-    out_tok (SexpLex.SYM str) s
-  end
+let out_prim tag f x s = 
+  (SexpPkl.wr_lp s;
+   SexpPkl.wr_sym tag s;
+   output_string s (SexpLex.string_of_tok (f x));
+   SexpPkl.wr_rp s)
 
+let sexp_wr_std_int = out_prim "int" (fun x -> SexpLex.INT x)
+let sexp_wr_std_string = out_prim "string" (fun x -> SexpLex.STR x)
+let sexp_wr_identifier = out_prim "identifier" (fun x -> SexpLex.STR x)
 let sexp_wr_big_int = sexp_wr_std_int 
 
-let get_tok s =
-  let strm = SexpLex.toInstream s in
-  (match (SexpLex.scan SexpLex.input1 strm) with
-    Some (t,strm') -> 
-      (ignore (SexpLex.fromInstream strm'); t)
-  | None -> raise (Failure ("Bad Token")))
+let get_prim tag s =
+  begin 
+    SexpPkl.rd_lp s;
+    SexpPkl.rd_sym tag s;
+    let strm = SexpLex.toInstream s in
+    let t = (match (SexpLex.scan SexpLex.input1 strm) with
+      Some (t,strm') -> 
+	(ignore (SexpLex.fromInstream strm'); t)
+    | None -> raise (Failure ("Bad Token"))) in SexpPkl.rd_rp s; t
+  end
 
 let sexp_rd_std_int s =
-  match (get_tok s) with
+  match (get_prim "int" s) with
    SexpLex.INT i -> i
   | _ -> raise (Failure "Expected int")
 
 let sexp_rd_std_string s =
-  match (get_tok s) with
+  match (get_prim "string" s) with
    SexpLex.STR str -> str
   | _ -> raise (Failure "Expected string")
 
 let sexp_rd_big_int = sexp_rd_std_int
 let sexp_rd_identifier s =
-  match (get_tok s) with
-    SexpLex.QUOTE ->
-      (match (get_tok s) with
-	SexpLex.SYM str -> str
-      |	_ -> raise (Failure "Expected identifier"))
-  | _ -> raise (Failure "Expected '")
+  match (get_prim "identifier" s) with
+    SexpLex.STR str -> str
+  | _ -> raise (Failure "Expected identifier")
+
       
 
 

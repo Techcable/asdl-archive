@@ -55,6 +55,8 @@ structure AsdlParser :> ASDL_PARSER =
 	fun error (e,x,y) = err (x,y) e
 
 	val (decls,_) = Parser.parse(30,stream,error,())
+(*	val _ = List.app (fn d => AsdlUtil.sexp_wr_decl d TextIO.stdErr) decls
+*)
       in cls ins; List.foldl (fn (d,ds) => {file=f,decl=d}::ds) acc decls
       end
     fun parse f = List.foldl parse_one [] f

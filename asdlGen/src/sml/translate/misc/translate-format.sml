@@ -13,6 +13,8 @@ structure FormatTranslator : SEMANT_TRANSLATOR =
 	structure S = Semant
 	structure Ast = FormatDoc
 	structure T = FormatDoc
+	structure Id = Ast.VarId
+
 	type input_value    = S.module_info
 	type output_value   = T.format_doc
 	type defined_value  = T.ditem
@@ -25,50 +27,38 @@ structure FormatTranslator : SEMANT_TRANSLATOR =
 	val ignore_supress = true
 	val fix_fields = false
 	val inits = []
-	    
-	fun trans_long_id id =  id
-	fun trans_short_id id = (Id.fromString o Id.getBase) id
 
 	fun fmt_fields [] = T.RM []
 	  | fmt_fields  f =
-	    let
-		fun comma_sep (x,[]) = [x,T.STR ")"]
+	    let	fun comma_sep (x,[]) = [x,T.STR ")"]
 		  | comma_sep (x,rest) = x::(T.STR ",")::rest
-
-	    in
-		T.RM ((T.STR "(")::(List.foldr comma_sep [] f))
+	    in T.RM ((T.STR "(")::(List.foldr comma_sep [] f))
 	    end
+
 	fun fmt_cons [] r = T.RM []
 	  | fmt_cons c r =
-	    let
-		fun bar_sep ((x,_),[]) = x::r
-		 | bar_sep ((x,_),rest) = x::(T.STR "|")::rest
-	    in
-		T.RM (T.NBS::(List.foldr bar_sep [] c))
+	    let	fun bar_sep ((x,_),[]) = x::r
+		  | bar_sep ((x,_),rest) = x::(T.STR "|")::rest
+	    in T.RM (T.NBS::(List.foldr bar_sep [] c))
 	    end
 
 	fun fmt_cons_doc [] = []
 	  | fmt_cons_doc c =
-	    let
-		fun mk_tag (c,d) =
-		    case d of
-			NONE => {tag=c,fmt=T.RM[]}
-		      |	(SOME s) => {tag=c,fmt=T.STR s}
-			    
-	    in
-		if (List.exists (Option.isSome o #2) c) then
-		    [T.DL (List.map mk_tag c)]
-		else []
+	    let	fun mk_tag (c,d) =
+	      case d of
+		NONE => {tag=c,fmt=T.RM[]}
+	      |	(SOME s) => {tag=c,fmt=T.STR s}
+	    in if (List.exists (Option.isSome o #2) c) then
+	      [T.DL (List.map mk_tag c)] else []
 	    end
 
 	fun trans_field p {finfo,kind,name,tname,tinfo,is_local,props} =
 	    let
-		val toStr = T.STR o Identifier.toString 
+		val toStr = T.STR o S.Field.Id.toString
 		fun toStr' x = T.EM [T.STR (Id.toString  x)]
-		val tid =
-		    if is_local then
-			trans_short_id tname
-		    else trans_long_id tname
+		val tid = if is_local then
+			Id.fromString (S.Type.Id.getBase tname)
+		    else Id.fromPath (S.Type.Id.toPath tname)
 		val (ty,q) = case (kind) of
 		    NONE => (T.REF (tid,[toStr' tid]),[])
 		  | SOME S.Option => (T.REF(tid,[toStr' tid]),[T.STR "?"])
@@ -79,18 +69,17 @@ structure FormatTranslator : SEMANT_TRANSLATOR =
 		    NONE => T.RM(ty::q)
 		  | (SOME x) => T.RM ((ty::q)@[toStr x])
 	    end
-	val id2STR = T.STR o Id.toString 
+	  
 	fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} =
-	    let
-		val doc = S.Con.P.doc_string cprops
-	    in
-		(T.RM ([T.BF [id2STR (trans_short_id name)],
+	    let	val doc = S.Con.P.doc_string cprops
+	    in (T.RM ([T.BF [T.STR (S.Con.Id.getBase name)],
 		      (fmt_fields fields),T.BR]),doc)
 	    end
+
 	fun trans_defined p {tinfo,name,cons,fields,props} =
 	    let
 		val f = fmt_fields fields
-		val tid = trans_short_id name
+		val tid = Id.fromString (S.Type.Id.getBase name)
 		val cdoc = fmt_cons_doc cons
 		val doc =
 		    case (S.Type.P.doc_string props) of
@@ -109,25 +98,25 @@ structure FormatTranslator : SEMANT_TRANSLATOR =
 	    in
 	      {tag=tag,fmt=T.RM[fmt,doc]}
 	    end
-
 	
 	fun trans_type_con p {props,tinfo,name,kinds} =
 	  let
 	    fun do_kind S.Sequence = T.STR "sequence "
 	      | do_kind S.Option = T.STR "option "
 	      | do_kind S.Shared = T.STR "share "
-	  in
-	    T.RM [T.EM[id2STR (trans_long_id name),
-		       T.RM (List.map do_kind kinds)]]
+	  in T.RM [T.EM[T.STR (S.Type.Id.toString name),
+			T.RM (List.map do_kind kinds)]]
 	  end
+
 	fun trans_module p {module,defines,imports,type_cons,props} =
 	    let
-		val mname = Id.toString (S.Module.name module)
+		val mname = S.Module.Id.toString (S.Module.name module)
 		val doc =
 		    case (S.Module.P.doc_string props) of
 		      NONE => []
 		    | SOME s =>  [T.STR s]
-		val toMid = Ast.ModuleId.fromPath o Id.toPath o S.Module.name
+		val toMid = Ast.ModuleId.fromPath o
+		  S.Module.Id.toPath o S.Module.name
 		val decls =
 		  {title="Description for Module "^mname,
 		   body=[T.SECT(1,[T.STR ("Description of Module "^mname)]),
@@ -156,8 +145,7 @@ structure FormatTranslator : SEMANT_TRANSLATOR =
 	    val toc_decl =
 	      {title="Table of Contentes ",
 	       body=[T.DL toc_entries]}
-	  in
-	    T.Module{name=toc_id,imports=[],decls=toc_decl}::mods
+	  in T.Module{name=toc_id,imports=[],decls=toc_decl}::mods
 	  end
     end
 

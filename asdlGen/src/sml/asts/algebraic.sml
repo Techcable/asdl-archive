@@ -26,12 +26,14 @@ structure AlgebraicAst :  ALGEBRAIC_AST =
 	and exp =
 	    Id      of (id)
 	  | Int     of (int)
+	  | Str     of (string)
 	  | Call    of (exp * exp list)
 	  | Cnstr   of (id * exp)
 	  | Tuple   of (exp list * ty_id option)
 	  | Record  of (exp list * field list * ty_id option)
-	  | Match   of (exp * clause list)
-	  | LetBind of (clause list * exp)
+	  | Match   of (id * clause list)
+	  | LetBind of (clause list * exp) 
+	  | Let     of (clause list * exp)
 	  | Seq     of (exp list)
 
 	and match =
@@ -39,6 +41,7 @@ structure AlgebraicAst :  ALGEBRAIC_AST =
 	  | MatchTuple  of match list * ty_exp list * ty_id option
 	  | MatchCnstr  of match      * cnstr	    
 	  | MatchId     of id         * ty_exp 
+	  | MatchStr    of string
 	  | MatchInt    of int
 	  | MatchAny 
 
@@ -47,8 +50,6 @@ structure AlgebraicAst :  ALGEBRAIC_AST =
 	  | DeclSum of (ty_id * cnstr list)
 	  | DeclVar of (id * exp * ty_exp)
 	  | DeclFun of (id * field list * exp * ty_exp )
-	  | DeclLocal of decl
-	  | DeclExtern of (id * ty_exp)
 
 	withtype cnstr = {name:id,ty_arg:ty_exp}
 	    and field  = {name:id,ty:ty_exp}

@@ -18,8 +18,10 @@ structure DynamicTy : DYNAMIC_TYPE_DECL =
     open T
   end
 
-functor mkDynamicSpec(structure Ty : DYNAMIC_TYPE_DECL) =
+functor mkDynamicSpec(structure Ty : DYNAMIC_TYPE_DECL
+		      structure IdMap : ID_MAP) : DYNAMIC_SPEC =
   struct
+    structure IdMap = IdMap
     structure Arg =
       struct 
 	open Ty.Ast
@@ -77,8 +79,10 @@ functor mkDynamicSpec(structure Ty : DYNAMIC_TYPE_DECL) =
       end
 
     open Arg
-    structure StdPklGen = StdPickler(structure Arg = Arg)
+    structure StdPklGen = StdPickler(structure Arg = Arg
+				     val tag = "std" )
 
+    fun mk_info x = Ty.addRdWr "std" x Ty.noInfo
     fun get_aux_decls me env tids = StdPklGen.trans env tids
     fun seq_rep te = TyCon(TypeId.fromString "list",[te])
     fun opt_rep te = TyCon(TypeId.fromString "opt",[te])
@@ -101,7 +105,7 @@ functor mkDynamicSpec(structure Ty : DYNAMIC_TYPE_DECL) =
 	    fun wr e =
 	      Call(Id wr_list_name,
 		   [Id (wr_name tid),e,Id stream_id])
-	  in (ty,{wr=SOME wr,rd=SOME rd})
+	  in (ty,mk_info {wr=SOME wr,rd=SOME rd})
 	  end
       in ty_con
       end
@@ -118,7 +122,7 @@ functor mkDynamicSpec(structure Ty : DYNAMIC_TYPE_DECL) =
 	    fun wr e = Call(Id wr_option_name,
 			    [Id (wr_name tid),e,Id stream_id])
 	  in
-	    (ty,{wr=SOME wr,rd=SOME rd})
+	    (ty,mk_info{wr=SOME wr,rd=SOME rd})
 	  end
       in ty_con
       end
@@ -135,7 +139,7 @@ functor mkDynamicSpec(structure Ty : DYNAMIC_TYPE_DECL) =
 	    fun wr e =
 	      Call(Id wr_share_name,
 		   [Id (wr_name tid),e,Id stream_id])
-	  in (ty,{wr=SOME wr,rd=SOME rd})
+	  in (ty,mk_info{wr=SOME wr,rd=SOME rd})
 	  end
       in ty_con
       end
@@ -148,10 +152,11 @@ functor mkDynamicSpec(structure Ty : DYNAMIC_TYPE_DECL) =
     fun addPrim (tinfo,ps) =
       let
 	val tname = Semant.Type.src_name tinfo
-	val tid = (TypeId.fromPath o Id.toPath) tname
-	val info = {rd=SOME(read tid),
-		    wr=SOME(write tid)}
-      in(tid,Ty.Prim {ty=TyId tid,info=info,name=Id.getBase tname})::
+	val tid = (TypeId.fromPath o Semant.Type.Id.toPath) tname
+	val info = mk_info {rd=SOME(read tid),
+			    wr=SOME(write tid)}
+      in(tid,Ty.Prim {ty=TyId tid,info=info,
+		      name=Semant.Type.Id.getBase tname})::
 	(seq_tid tid,Ty.App(seq_con,tid))::
 	(opt_tid tid,Ty.App(opt_con,tid))::ps
       end
@@ -163,7 +168,7 @@ functor mkDynamicSpec(structure Ty : DYNAMIC_TYPE_DECL) =
       {mktid=opt_tid,mkrep=opt_rep,con=opt_con}
       | get_reps me Semant.Shared = 
       {mktid=share_tid,mkrep=share_rep,con=share_con}
-
+      
     fun get_info p =
       let
 	val rd =
@@ -175,7 +180,7 @@ functor mkDynamicSpec(structure Ty : DYNAMIC_TYPE_DECL) =
 	    (SOME x) =>
 	      SOME (fn e => Call(Id(VarId.fromPath x),[e,Id stream_id]))
 	  | NONE => NONE
-      in {wr=wr,rd=rd}
+      in mk_info {wr=wr,rd=rd}
       end
     
     structure S = Semant

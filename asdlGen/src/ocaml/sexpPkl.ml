@@ -14,7 +14,7 @@ let wr_list f l s =
 	f x s; loop xs 
     end 
   in begin
-    wr_lp s; loop l;wr_rp s
+    wr_lp s; wr_sym "list" s;loop l;wr_rp s
   end
     
 let wr_option f x s =
@@ -65,7 +65,7 @@ let rd_list f s =
     else let x = f s 
     in x::(loop (peek_rp()))
   in begin
-    rd_lp s;loop (peek_rp())
+    rd_lp s;rd_sym "list" s;loop (peek_rp())
   end
 
 let rd_option f s =

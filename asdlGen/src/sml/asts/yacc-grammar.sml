@@ -23,7 +23,7 @@ structure YaccGrammar :> YACC_GRAMMAR =
 
       structure S = SplaySetFn
 	(struct
-	  type ord_key = VarId.mid
+	  type ord_key = VarId.id
 	  val compare = VarId.compare
 	end)
 

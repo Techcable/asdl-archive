@@ -2,11 +2,12 @@ structure PPASDL =
   struct
     structure PP = PPUtil
     structure  T = Asdl
+    structure Id = mkSourceId(val namespace = SourceIds.mkNameSpace "PPASDL"
+			      val sep = ".")
     fun pp_path {base,qualifier=SOME q} =
-      let val mid =
-	ModuleId.fromPath {base=Identifier.toString base,
+      let val sid = Id.fromPath {base=Identifier.toString base,
 			   qualifier=[Identifier.toString q]}
-      in PP.s (ModuleId.toString mid)
+      in PP.s (Id.toString sid)
       end
       | pp_path {base,qualifier=NONE} = PP.s (Identifier.toString base)
     val pp_id = PP.wrap Identifier.toString

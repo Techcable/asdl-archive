@@ -34,7 +34,7 @@ structure HTMLPP : HTML_PP =
 	in
 	fun mk_id id =
 	    let
-		val {qualifier,base} = Id.toPath id
+		val {qualifier,base} = Ast.VarId.toPath id
 		val path = ListFormat.fmt
 		    {init="",sep="/",final=".html#"^base,
 		     fmt=(fn x => x)} qualifier
@@ -66,7 +66,8 @@ structure HTMLPP : HTML_PP =
 	    PP.hblock 2 [group ("H"^(Int.toString i))
 			 (pp_format_list fl)]
 	  | pp_format (LABEL(id,fl)) = 
-	    PP.hblock 2 [PP.s "<a name=\"",PP.s (Id.getBase id),PP.s "\">",
+	    PP.hblock 2 [PP.s "<a name=\"",
+			 PP.s (Ast.VarId.getBase id),PP.s "\">",
 			 (pp_format_list fl),PP.s"</a>"]
 	  | pp_format (REF(id,fl)) = 
 	    PP.hblock 2 [PP.s "<a href=\"",mk_id id,PP.s "\">",

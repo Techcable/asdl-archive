@@ -13,371 +13,242 @@
  *)
 
 structure HaskellPP : ALGEBRAIC_PP =
-    struct 
-	structure Ast  = AlgebraicAst
-	structure PP = PPUtil
-	type code =  (Ast.module * Semant.Module.P.props)
+  struct 
+    structure Ast = AlgebraicAst
+    structure PP = mkPPAst(structure Ast = Ast
+			   structure IdMap = IdMaps.Haskell
+			   val cap_mod = true
+			   val cap_typ = true
+			   val sep = ".")
+    open PP
+    open Ast
+    val semi = cat [str ";",nl]
+    type code =  (Ast.module * Semant.Module.P.props)
+    val cfg = Params.empty
+    val (cfg,base_imp) =
+      Params.declareString cfg
+      {name="base_import",flag=NONE,
+       default="qualified StdPkl"} 
+    val (cfg,data_derives) =
+      Params.declareString cfg
+      {name="haskell_deriving",flag=NONE,
+       default="Prelude.Eq, Prelude.Ord, Prelude.Show"} 
 
-	val cfg = Params.empty
-	val (cfg,base_imp) =
-	    Params.declareString cfg
-	    {name="base_import",flag=NONE,default="qualified StdPkl"} 
+    fun mkComment s = vb 1 (str "{-") (seq nl str s) (str "-}")
 
-	fun mkComment s =
-	   (PP.box 2 [PP.s "{-",
-			 PP.seq_term {fmt=PP.s,sep=PP.nl} s,
-			 PP.s "-}"])
-	   
-        (* val capitalize = fn : string -> string *)
-	local
-	open Ast
-	in
-	fun capitalize s =
-	    let
-		val size = String.size s
-		val first = Char.toUpper(String.sub(s,0))
-		val rest = if size > 1 then
-		    String.extract(s,1,NONE)
-			   else ""
-	    in
-		String.concat [String.str first,rest]
-	    end
+    fun isTyDec (DeclSum _) = true
+      | isTyDec (DeclTy _) = true
+      | isTyDec _ = false
+      
+    fun isSigFun (DeclFun _ ) = true
+      | isSigFun _ = false
 
-	(* is there a better definition for capitalize in SML? *)	
-	fun cap_path {base,qualifier} =
-	    SOME {base=capitalize base,
-		  qualifier=List.map capitalize qualifier}
+    fun isStrFun (DeclFun _ ) = true
+      | isStrFun _ = false
 
-	val rec_con =
-	    VarId.fromPath o TypeId.toPath o
-	    (TypeId.prefixBase "Make") o (TypeId.subst cap_path) 
+    fun pp_mlstr s = str ("\""^(String.toString s)^"\"")
 
-
-
-	(* val pp_ty_id = fn : Identifier.identifier -> PPUtil.pp *)
-
-	val tup_sep =  PP.cat [PP.s ",",PP.ws] (* reig *)
-	val semi_sep = PP.cat [PP.s ";",PP.ws]
-	val comma_sep = PP.cat [PP.s ",",PP.ws]
-	val fun_sep = PP.cat [PP.ws,PP.s "->",PP.ws]
-	val bar_sep = PP.cat [PP.ws,PP.s "| "]
-	(* val dec_sep = PP.cat [PP.nl,PP.nl,PP.s "and "]*) (* reig *)
-	val unit_pp = PP.s "()" (* reig *)
-	val type_sep = PP.cat [PP.nl, PP.s "type "] (* reig *)
-	val data_sep = PP.cat [PP.nl, PP.s "data "] (* reig *)
-
-(* val pp_rec_seq = fn
-  : ('a * Identifier.identifier -> bool)
-    -> string
-       -> string
-          -> PPUtil.pp
-             -> ('a -> PPUtil.pp)
-                -> 'a list
-                   -> {name:Identifier.identifier, ty:'b} list
-                      -> PPUtil.pp list *)
-
-
-	(* val isSum = fn : HaskellTypes.decl -> bool
-	   val isTy = fn : HaskellTypes.decl -> bool 
-	   val isFun = fn : HaskellTypes.decl -> bool *)
-
-	fun isSum (DeclSum _) = true
-	  | isSum (DeclTy (_,TyRecord _ )) = true
-	  | isSum _ = false
-
-	fun isTy (DeclTy (_,TyRecord _)) = false
-	  | isTy (DeclTy _ ) = true
-	  | isTy _ = false
-
-	fun isFun (DeclFun _ ) = true
-	  | isFun _ = false
-
-	(* val translate = fn : Params.params -> HaskellTypes.decl list -> (string list * PPUtil.pp) list *)
-    
-	val import_prologue =
-	    PPUtil.wrap Semant.Module.P.interface_prologue 
-	val import_epilogue =
-	    PPUtil.wrap Semant.Module.P.interface_epilogue
-	val module_prologue =
-	    PPUtil.wrap Semant.Module.P.implementation_prologue 
-	val module_epilogue =
-	    PPUtil.wrap Semant.Module.P.implementation_epilogue
-
-	fun pp_code p (Module{name,decls,imports},props) =
-	    let
-	      val modq = [ModuleId.getBase name]
-	      fun pp_id id =
-		if (modq = VarId.getQualifier id) then
-		  PP.s (VarId.getBase id)
-		else PP.s (VarId.toString id)
-	      fun pp_ty_id id =
-		if (modq = TypeId.getQualifier id) then
-		  PP.s (TypeId.getBase (TypeId.subst cap_path id))
-		else PP.s (TypeId.toString (TypeId.subst cap_path id))
-
-	      fun pp_rec_seq lbracket rbracket separator fmt x y = 
-		let
-		  fun zip_fields ([],[]) = []
-		  | zip_fields  (x::xs,{name=y,ty}::ys) =
-		    (SOME x,y)::(zip_fields  (xs,ys))
-		    | zip_fields _ =  raise Error.internal
-			
-		  fun pp_one (NONE,y) = pp_id y
-		    | pp_one (SOME x,y) =
-		    PP.cat [pp_id y,PP.s "=", fmt x] (* reig*)
-		  val seq = zip_fields (x,y)
-		in
-		  [PP.s lbracket,PP.seq{fmt=pp_one,sep=separator} seq, 
-		   PP.s rbracket]
-		end
-	      
-
-	      fun pp_ty_exp (TyId tid) = pp_ty_id tid
-		| pp_ty_exp (TyList te) =
-		PP.cat [PP.s "[", pp_ty_exp te,PP.s "]"] (*` reig *)
-		| pp_ty_exp (TyOption te) =
-		PP.cat [PP.s "(Maybe ", pp_ty_exp te,PP.s ")"] (* reig *)
-		| pp_ty_exp (TySequence te) =
-		PP.cat [pp_ty_exp te,PP.s " Seq.seq"]
-		| pp_ty_exp (TyVector te) =
-		PP.cat [pp_ty_exp te,PP.s " vector"]
-		| pp_ty_exp (TyCon (tid,[te])) =
-		PP.cat [pp_ty_id tid,PP.s " ",pp_ty_exp te]
-		| pp_ty_exp (TyCon (tid,tes)) =
-		PP.cat [PP.s "(", PP.s " " , pp_ty_id tid,
-			PP.seq{fmt=pp_ty_exp,sep=PP.s " "} tes, PP.s")"]
-		| pp_ty_exp (TyTuple []) = unit_pp
-		| pp_ty_exp (TyTuple tes) =
-		PP.box 1 [PP.s "(" ,
-			  PP.seq{fmt=pp_ty_exp,sep=tup_sep}  tes,
-			  PP.s")"]
-		| pp_ty_exp (TyRecord ([])) = unit_pp  (* ??????? *)
-		| pp_ty_exp (TyRecord (fes)) = 
-		PP.box 1 [PP.s "{",
-			  PP.seq{fmt=pp_field,sep=comma_sep} fes,
-			  PP.s "}"]
-		| pp_ty_exp (TyFunction (args,res)) =
-		PP.box 4
-		[PP.seq'{fmt=pp_ty_exp,
-			 sep=fun_sep,
-			 empty=unit_pp} args,
-		 fun_sep, pp_ty_exp res] (* reig *)
-		
-	      (* val pp_exp = fn : HaskellTypes.exp -> PPUtil.pp *)
-	      and pp_exp (Id id) = pp_id id
-		| pp_exp (Int i) = PP.d i
-		| pp_exp (Call (e,el)) =
-		PP.box 0 [PP.seq {fmt=pp_exp,sep=PP.ws}  (e::el)]
-		| pp_exp (Cnstr(id,Tuple([],_))) = pp_id id
-		| pp_exp (Cnstr(id,Record([],[],_))) = pp_id id
-		
-		(* TODO: add option for tuppled vs curried constructors *)
-		| pp_exp (Cnstr(id,Tuple (es,_))) =
-		PP.box 1 [pp_id id,
-			  PP.ws, 
-			  PP.seq{fmt=pp_exp,sep=PP.ws} es]
-		| pp_exp (Cnstr(id,e)) =
-		PP.box 0 [pp_id id,pp_exp e]
-		| pp_exp (Tuple (el,_)) =
-		PP.box 1
-		[PP.s "(" ,PP.seq{fmt=pp_exp,sep=comma_sep} el, PP.s")"]
-		| pp_exp (Record (el,fl,opt_ty)) =
-		  PP.cat [PP.opt{some=pp_id o rec_con,none=PP.empty} opt_ty,
-		   PP.box 2
-		   (pp_rec_seq "{" "}" comma_sep pp_exp el fl)]
-		| pp_exp (Match(c as Call(e,el),cl)) = (* reig *)
-		PP.box 1 [PP.s "do", PP.nl,
-			  PP.s "i <- ", pp_exp c,  PP.nl,
-			  PP.box 9
-			  [PP.s "let x = (case i of", PP.nl,
-			   PP.seq {fmt=pp_clause,sep=PP.nl} cl, PP.s ")", 
-			   PP.nl ], PP.nl,
-			  PP.s "x", PP.nl]
-		| pp_exp (Match(e,cl)) =
-		PP.box 4 [PP.s "case (",pp_exp e,PP.s ") of ",PP.nl,
-			  PP.seq {fmt=pp_clause,sep=PP.nl} cl]
-		| pp_exp (Seq els) =
-		let
-		  fun flatten (Seq x,xs) =  List.foldr flatten xs x
-		    | flatten (x,xs) = (x::xs)
-		  val el = List.foldr flatten [] els
-		in
-		  PP.box 1  		
-		  [PP.s "do", PP.nl,
-		   PP.box 0
-		   [PP.seq {fmt=pp_exp,sep=PP.nl}	el,PP.nl]]
-		end
-		| pp_exp (LetBind([],e)) =
-		PP.cat [PP.s "return (", pp_exp e, PP.s ")"]
-		| pp_exp (LetBind(cl,e)) =
-		PP.box 4 [PP.s "do ",PP.nl,
-			  PP.seq {fmt=pp_let_clause,sep=PP.nl} cl,
-			  PP.nl,
-			  PP.s "return (",
-			  pp_exp e,
-			  PP.s ")",PP.nl]
-	      (* val pp_match = fn : HaskellTypes.match -> PPUtil.pp *)
-	      and pp_match (MatchRecord(ml,fl,opt_ty)) = 
-		  PP.cat
-		  [PP.opt{some=pp_id o rec_con,none=PP.empty} opt_ty,
-		   PP.box 2 (pp_rec_seq "{" "}" comma_sep pp_match ml fl)]
-		| pp_match (MatchTuple(ml,_,_)) = 
-		PP.box 0 [PP.s "(",
-			  PP.seq {fmt=pp_match,sep=comma_sep} ml,
-			  PP.s ")"]
-		| pp_match (MatchId(id,_)) = pp_id id
-		| pp_match (MatchCnstr(MatchTuple([],_,_),{name,...})) =
-		pp_id name
-		| pp_match (MatchCnstr(MatchTuple(ml,_,_),{name,...})) =(*reig*)
-		(* N.B. must use PP.s " " rather than PP.ws because nl are
-		 signficant in haskell *)
-		PP.box 0 [pp_id name, PP.s " ", 
-			  PP.seq {fmt=pp_match,sep=PP.s " "} ml]
-		| pp_match (MatchCnstr(MatchRecord([],_,_),{name,...})) =
-		pp_id name
-		| pp_match (MatchCnstr(r as  MatchRecord(ml,fl,_),{name,...})) =
-		PP.cat [pp_id name,pp_match (MatchRecord(ml,fl,NONE))]
-		| pp_match (MatchCnstr(m,{name,...})) =
-		PP.cat [pp_id name,pp_match m]
-		| pp_match (MatchInt i) = PP.d i
-		| pp_match (MatchAny) = PP.s "_"
-		
-	      (*val pp_field = fn : {name:Lid, ty:HaskellTypes.ty_exp} -> PPUtil.pp*)
-	      and pp_field {name,ty} =
-		PP.cat [pp_id name,PP.s "::",pp_ty_exp ty] (* reig *)
-		
-	      (* val pp_clause = fn : HaskellTypes.match * HaskellTypes.exp -> PPUtil.pp *)
-	      and pp_clause (match,exp) =
-		PP.box 2 [pp_match match,PP.s " -> ", PP.nl, pp_exp exp] (* reig *)
-	      and pp_let_clause (match,exp) =
-		PP.box 2 [pp_match match,PP.s " <- ",PP.ws,pp_exp exp]
-		
-		
-	      val ast = decls
-	      val mn = ModuleId.toString name
-		
-		
-	      val sdecs = List.filter isSum ast
-	      val decs = List.filter isTy ast
-	      val fdecs = List.filter isFun ast
-		
-
-	      fun pp_sdec (DeclSum (i,cnstrs)) =
-		PP.cat [pp_ty_id i,PP.s " = ",
-			PP.box 4
-			[PP.ws,PP.seq {sep=bar_sep,fmt=pp_cnstr} cnstrs]]
-		| pp_sdec (DeclTy(i, arg as (TyRecord _))) =
-		pp_sdec (DeclSum(i,[{name=rec_con i,ty_arg=arg}]))
-		| pp_sdec _ = raise Error.impossible
-		
-	      (* TODO: add option for tuppled vs curried constructors *)
-	      and pp_cnstr{name,ty_arg=TyTuple([])} = pp_id name
-		| pp_cnstr{name,ty_arg=TyTuple tes} = (* reig *)
-		PP.box 1 [pp_id name,
-			  PP.ws, 
-			  PP.seq{fmt=pp_ty_exp,sep=PP.ws}  tes]
-		| pp_cnstr{name,ty_arg} =
-		PP.cat [ pp_id name, pp_ty_exp ty_arg]
-		
-		
-	      fun pp_dec (DeclTy(i,te)) =
-		PP.cat [pp_ty_id i,PP.s " = ",pp_ty_exp te]
-		| pp_dec _ = raise Error.impossible
-		
-	      fun pp_funs (DeclFun (id,args,body,ret)) =
-		PP.box 4 [pp_id id,PP.s " ",
-			  PP.seq {fmt=pp_id o #name ,sep=PP.s " "} args,
-			  PP.s " = ",PP.nl, pp_exp body]
-		| pp_funs _ = raise Error.impossible
-		
-	      fun pp_fun_sig (DeclFun (id,args,body,ret)) =
-		PP.box 4 [pp_id id,PP.s " :: ", (*reig *)
-			  PP.seq {fmt=pp_ty_exp o #ty ,
-				  sep=PP.s " -> "} args,
-			  PP.s " -> ", pp_ty_exp ret] 
-		| pp_fun_sig _ = raise Error.impossible
-		
-		val pp_ty_decs =
-		    case (sdecs,decs) of
-			([],[]) => []
-		      | (sdecs,[]) =>
-			    [PP.s "data ", (* reig *)
-			     PP.seq{fmt=pp_sdec,sep=data_sep} sdecs, (* reig *)
-			     PP.nl]
-		      | ([],decs) => 
-			    [PP.s "type ",
-			     PP.seq{fmt=pp_dec,sep=type_sep} decs, (* reig *)
-			     PP.nl]
-		      | (sdecs,decs) => 
-			    [PP.s "data ",(* reig *)
-			     PP.seq{fmt=pp_sdec,sep=data_sep} sdecs,(* reig *)
-			     PP.nl,
-			     PP.s "type ",(* reig *)
-			     PP.seq{fmt=pp_dec,sep=type_sep} decs,(* reig *)
-			     PP.nl]
-		val pp_ty_decs = PP.cat pp_ty_decs
-		val pp_fdecs =
-		    PP.cat [PP.nl,(* reig *)
-		     PP.seq{fmt=pp_funs,sep=PP.nl} fdecs] (* reig *)
-
-		val pp_fsigs =
-		    PP.cat [PP.nl,
-			    PP.seq{fmt=pp_fun_sig,sep=PP.nl} fdecs,
-			    PP.nl]
-		fun pp_fun_name (DeclFun (id,_,_,_)) =
-		    pp_id id
-		  | pp_fun_name _ = raise Error.impossible 
-
-
-
-		fun pp_sum_name (DeclSum (i,_)) =
-		    PP.cat [pp_ty_id i,PP.s "(..)"]
-		  | pp_sum_name (DeclTy (i,TyRecord _)) =
-		    PP.cat [pp_ty_id i,PP.s "(..)"]
-		  | pp_sum_name _ = raise Error.impossible 
-
-		fun pp_tup_name (DeclTy(i,_)) =
-		    pp_ty_id i
-		  | pp_tup_name _ = raise Error.impossible 
-
-		val pp_exports =
-		  PP.seq {fmt=(fn x => x),sep=comma_sep}
-		  ((List.map pp_sum_name sdecs) @
-		   (List.map pp_tup_name decs) @
-		   (List.map pp_fun_name fdecs))
-		  
-		fun pp_imports imports =
-		    let
-			fun pp_import x =
-			    PP.cat [PP.s "import qualified ",
-				    PP.wrap ModuleId.toString x]
-		    in
-			PP.seq_term{fmt=pp_import,sep=PP.nl} imports
-		    end
-		
-		fun pp_sig name body incs =
-			PP.box 0
-			[PP.s ("module "^capitalize name^" ("),
-			 PP.box 4 [import_prologue props,
-				   pp_exports,
-				   import_epilogue props,
-				   PP.s ") where "],
-			 PP.nl,
-			 PP.seq_term {fmt=PP.s,sep=PP.nl} incs, 
-			 pp_imports imports,PP.nl,
-			 module_prologue props, PP.nl,
-			 body,PP.nl,
-			 module_epilogue props,PP.nl]
-		val base_import = base_imp p
-	    in
-		[([mn^".hs"], 
-		  pp_sig mn (PP.cat [pp_ty_decs,pp_fsigs,pp_fdecs]) 
-		  ["import Prelude (Maybe(..),return)",
-		   "import "^base_import])]
-	    end
+    fun pp_code p (Module{name,imports,decls},props) =
+      let
+	val pp_id = (local_vid name)
+	val pp_ty_id = (local_tid name)
+	  
+	fun pp_rec_seq eq fmt x y =
+	  let
+	    fun zip_fields ([],[]) = []
+	      | zip_fields  (x::xs,{name=y,ty}::ys) =
+	      if (eq(x,y)) then (NONE,y)::(zip_fields (xs,ys))
+	      else (SOME x,y)::(zip_fields  (xs,ys))
+	      | zip_fields _ = raise Error.internal
+	    fun pp_one (NONE,y) = base_vid y
+	      | pp_one (SOME x,y) = PP.cat [base_vid y,str "=", fmt x]
+	    val s = zip_fields (x,y)
+	  in hb 2 (str "{") (seq (hsep ",") pp_one s) (str "}")
 	  end
-    end
 
+	
+	fun pp_opt_ty tyopt pp =
+	  opt pp (fn x => cat [str "(",pp,str " :: ",pp_ty_id x,str ")"]) tyopt
 
+	fun pp_ty_exp (TyId tid) = pp_ty_id tid
+	  | pp_ty_exp (TyList te) = cat [str "[",pp_ty_exp te,str "]"]
+	  | pp_ty_exp (TyOption te) = cat [str "(Maybe ",pp_ty_exp te,str ")"]
+	  | pp_ty_exp (TySequence te) = cat [str "[",pp_ty_exp te,str "]"]
+	  | pp_ty_exp (TyCon (tid,tes)) =
+	  hb 4  (cat [str "(",pp_ty_id tid,ws])
+	      (seq ws pp_ty_exp tes) (str ")") 
+	  | pp_ty_exp (TyVector te) = cat [str "[",pp_ty_exp te,str "]"]
+	  | pp_ty_exp (TyTuple []) = str "()"
+	  | pp_ty_exp (TyTuple tes) =
+	  hb 4 (str "(") (seq (hsep ",") pp_ty_exp tes) (str ")")
+	  | pp_ty_exp (TyRecord []) = str "()"
+	  | pp_ty_exp (TyRecord fes) =
+	  hb 4 (str "{") (seq (hsep ",") pp_field fes) (str"}")
+	  | pp_ty_exp (TyFunction (args,res)) =
+	  cat [lst (str "()") (seq (hsep " ->") pp_ty_exp) args,
+	       (hsep " ->"), pp_ty_exp res]
+	and pp_exp (Id id) = pp_id id
+	  | pp_exp (Int i) = num i
+	  | pp_exp (Str s) = pp_mlstr s
+	  | pp_exp (Call (e,el)) =
+	  hb 4 (str "(") (seq ws pp_exp (e::el)) (str ")")
+	  | pp_exp (Cnstr(id,Tuple([],_))) = pp_id id
+	  | pp_exp (Cnstr(id,Record([],[],_))) = pp_id id
+	  | pp_exp (Cnstr(id,e)) = cat [pp_id id,pp_exp e]
+	  | pp_exp (Tuple (el,opt_ty)) =
+	    hb 4 (str "(") (seq (hsep ",") pp_exp el) (str ")")
+	  | pp_exp (Record (el,fl,opt_ty)) =
+	    let fun eq _ = false
+	    in (pp_rec_seq eq pp_exp el fl)
+	    end
+	  | pp_exp (Match(v,cl)) =
+	    vb 2 (cat [str "case (",pp_id v,str ") of {"])
+	    (seq semi pp_match_clause cl)
+	    (str "}")
+	  | pp_exp (Let([],e)) =  pp_exp e
+	  | pp_exp (Let(cl,e)) = 
+	    cat [vb 2 (str "let ")(seq semi pp_let_clause cl) (str "in "),
+		 pp_exp e, PP.nl]
+	  (* hacks... need to think more carefully about do notation*)
+	  | pp_exp (LetBind([],e)) = cat [str "return(",pp_exp e,str ")"]
+	  | pp_exp (LetBind(cl,e as Match(_,_))) =
+	    vb 2 (str "do {")
+	    (cat [seq semi pp_do_clause cl,semi,pp_exp e])
+		 (str "}")
+	  | pp_exp (LetBind(cl,Seq es)) =
+	    let fun flatten (Seq x,xs) =  List.foldr flatten xs x
+		  | flatten (x,xs) = (x::xs)
+		val es = List.foldr flatten [] es
+		val len = List.length es
+		val front = List.take (es,len - 1)
+		val e = List.hd (List.drop (es,len - 1))
+		val cl = cl@(List.map (fn e => (MatchAny,e)) front)
+	    in pp_exp (LetBind(cl,e))
+	    end
+	  | pp_exp (LetBind(cl,e)) =
+	    vb 2 (str "do {")
+	    (cat [seq semi pp_do_clause cl,semi,
+		  str "return (",pp_exp e,str ")"])
+		 (str "}")
+	  | pp_exp (Seq [e]) = pp_exp e
+	  | pp_exp (Seq els) =
+	    let fun flatten (Seq x,xs) =  List.foldr flatten xs x
+		   | flatten (x,xs) = (x::xs)
+		val el = List.foldr flatten [] els
+	    in vb 2 (str "do {") (seq semi pp_exp el) (str "}")
+	    end
+	(* end hacks *)
+	and pp_match (MatchRecord(ml,fl,opt_ty)) = 
+	  let fun eq (MatchId (x,_),y)  = VarId.eq (x,y)
+		| eq _ = false
+	  in (cat [pp_rec_seq eq pp_match ml fl])
+	  end
+	  | pp_match (MatchTuple(ml,_,opt_ty)) =
+	  (hb 4 (str "(") (seq (hsep ",") pp_match ml) (str ")"))
+	  | pp_match (MatchId(id,_)) = pp_id id
+	  | pp_match (MatchCnstr(MatchTuple([],_,_),{name,...})) = pp_id name
+	  | pp_match (MatchCnstr(MatchRecord([],_,_),{name,...}))= pp_id name
+	  | pp_match (MatchCnstr(m,{name,...})) =
+	  cat [str "(",pp_id name,pp_match m,str ")"]
+	  | pp_match (MatchInt i) = num i
+	  | pp_match (MatchStr s) = pp_mlstr s
+	  | pp_match (MatchAny) = str "_"
+	and pp_field {name,ty} =
+	  cat [pp_id name,str "::",pp_ty_exp ty]
+	and pp_match_clause (match,exp) =
+	  hb 2 (cat [pp_match match,str " -> "]) (pp_exp exp) empty
+	and pp_let_clause (match,exp) =
+	  cat [pp_match match,str " = ",pp_exp exp]
+	and pp_do_clause (MatchAny,exp) =
+	  cat [pp_exp exp]
+	  |  pp_do_clause (match,exp) =
+	  cat [pp_match match,str " <- ",pp_exp exp]
+	val sig_prologue =
+	  PPUtil.wrap Semant.Module.P.interface_prologue 
+	val sig_epilogue =
+	  PPUtil.wrap Semant.Module.P.interface_epilogue
+	val struct_prologue =
+	  PPUtil.wrap Semant.Module.P.implementation_prologue 
+	val struct_epilogue =
+	  PPUtil.wrap Semant.Module.P.implementation_epilogue
+	  
+	val ast = decls
+	  
+	val ty_decs  = List.filter isTyDec ast
+	val sigfdecs = List.filter isSigFun ast
+	val strfdecs = List.filter isStrFun ast
+	val derives =  data_derives p
+	fun pp_ty_dec (DeclSum (i,cnstrs)) =
+	  vb 2 (cat [str "data ",pp_ty_id i,str " ="])
+	  (cat [str "  ", seq (vsep "| ") pp_cnstr cnstrs])
+	  (str ("  deriving ("^derives^")"))
+	  | pp_ty_dec (DeclTy(i,te)) =
+	  cat [str "type ",pp_ty_id i,str " = ",pp_ty_exp te]
+	  | pp_ty_dec _ = raise Error.impossible	      
+	  
+	and pp_cnstr{name,ty_arg=TyTuple([])} = pp_id name
+	  | pp_cnstr {name,ty_arg} =
+	  cat [pp_id name,str " ",pp_ty_exp ty_arg]
+	  
+	fun pp_fun_str (DeclFun (id,args,body,ret)) =
+	  vb 2 (cat [pp_id id,str " ",
+		     seq (str " ") (base_vid o #name) args, str " = "])
+	  (pp_exp body) empty
+	  | pp_fun_str _ = raise Error.impossible
+	  
+	fun pp_fun_sig (DeclFun (id,args,body,ret)) =
+	  hb 4 (cat [pp_id id,str " :: "])
+	  (cat [seq (hsep " ->") (pp_ty_exp o #ty) args,
+		(hsep " ->"), pp_ty_exp ret]) empty
+	  | pp_fun_sig _ = raise Error.impossible
 
+	fun pp_export (DeclTy(name,_)) = pp_ty_id name
+	  | pp_export (DeclSum(name,_)) = cat [pp_ty_id name,str "(..)"]
+	  | pp_export (DeclVar(name,_,_)) = pp_id name
+	  | pp_export (DeclFun(name,_,_,_)) = pp_id name
+	  
+	val pp_ty_decs = 
+	  lst empty (fn x =>  cat [nl,seq nl pp_ty_dec x]) ty_decs
+	val pp_exports = seq (hsep ",") pp_export ast
+
+	val pp_fdecs =
+	  lst empty (fn x =>  cat [nl,seq nl pp_fun_str x]) strfdecs
+	val pp_fsigs =
+	  lst empty (fn x =>  cat [nl,seq nl pp_fun_sig x]) sigfdecs
+
+	val pp_imports =
+	  seq nl (fn x => cat [str "import qualified ", mid x]) imports
+
+	fun pp_module name exps imps body =
+	  vb 0 (cat [str "module ",mid name,
+		     hb 4 (str "(") exps (str ") where")])
+	  (cat [imps,nl,body])
+	  empty
+	  
+	val exports = cat 
+	  [sig_prologue props,
+	   pp_exports,
+	   sig_epilogue props]
+
+	val body = cat
+	  [struct_prologue props,
+	   pp_ty_decs,
+	   pp_fsigs,
+	   pp_fdecs,nl,
+	   struct_epilogue props]
+	val base_import = base_imp p
+	val imports =
+	  cat [str "import Prelude (Maybe(..),return)",nl,
+	       str "import qualified Prelude",nl,
+	       str "import qualified SexpPkl",nl,
+	       str ("import "^base_import),nl,
+	       pp_imports]
+
+	val module = pp_module name exports imports body
+	val mn = ModuleId.toString (fix_mid name)
+	fun mk_file x b = [OS.Path.joinBaseExt {base=x,ext=SOME b}]
+	val fls = [(mk_file mn "hs", module)]
+      in fls
+      end
+  end
 

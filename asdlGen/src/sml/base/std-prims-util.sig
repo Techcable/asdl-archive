@@ -9,4 +9,16 @@ signature STD_PRIMS_UTIL =
     val read_big_int    : StdPkl.instream -> StdPrims.big_int
     val read_string     : StdPkl.instream -> StdPrims.string
     val read_identifier : StdPkl.instream -> StdPrims.identifier
+
+    (* textual readers and writers *)
+    val sexp_wr_int       : StdPrims.int -> SexpPkl.outstream -> unit
+    val sexp_wr_big_int   : StdPrims.big_int -> SexpPkl.outstream -> unit
+    val sexp_wr_string    : StdPrims.string -> SexpPkl.outstream ->unit
+    val sexp_wr_identifier: StdPrims.identifier -> SexpPkl.outstream ->unit
+      
+    val sexp_rd_int        : SexpPkl.instream -> StdPrims.int
+    val sexp_rd_big_int    : SexpPkl.instream -> StdPrims.big_int
+    val sexp_rd_string     : SexpPkl.instream -> StdPrims.string
+    val sexp_rd_identifier : SexpPkl.instream -> StdPrims.identifier
+
   end

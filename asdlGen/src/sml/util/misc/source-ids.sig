@@ -9,26 +9,27 @@
  * Author: Daniel C. Wang
  *
  *)
-signature SOURCE_ID =
-    sig
-      type namespace
-      type sid
-      type path = {base:string,qualifier:string list}
-      type tostring
+signature SOURCE_IDS =
+  sig
+    type namespace
+    type sid
 
-      val mkNameSpace  : string -> namespace 
-      val newId        : namespace -> path -> sid 
-      val uniqueId     : namespace -> path -> sid
+    type ord_key = sid
+    type path = {ns:namespace,base:string,qualifier:string list}
+      
+    val mkNameSpace : string -> namespace
+        
+    (* make a fresh identifier or reuse a non-unqiue id with the same path *)
+    val fromPath    : path -> sid
+    val toPath      : sid -> path
+    val uniqueId    : path -> sid 
+    val compare     : (sid * sid) -> order
 
-      val compare      : (sid * sid) -> order
-      val eq           : (sid * sid) -> bool
+  end
 
-      val getPath      : sid -> path
 
-      val mkToString   : {namespace:namespace,sep:string} -> tostring
-      val toString     : tostring -> sid -> string
-    end
-  
+
+
 
 
 

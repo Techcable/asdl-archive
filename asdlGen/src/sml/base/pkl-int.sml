@@ -28,6 +28,7 @@ functor PklInteger(structure Integer : INTEGER) : PKL =
 		fun set_continue x = W8.orb(x,0wx80)
 		fun set_neg x = W8.orb(x,0wx40)
 		fun nibble x = (itow8 (Integer.rem(x,c_128)))
+		fun rest x = (itow8 (Integer.rem(x,c_128)))
 		fun finish (~1) x = (set_neg (itow8 x))
 		  | finish _ x  = itow8 x
 		fun loop (x) =
@@ -43,8 +44,7 @@ functor PklInteger(structure Integer : INTEGER) : PKL =
 			 (IO.output1
 			  (s,set_continue(itow8 (Integer.mod(x,c_128))));
 			  Integer.abs(Integer.div(x,c_128))))
-	    in
-		loop (x)
+	    in loop (x)
 	    end
 
 	fun read s =

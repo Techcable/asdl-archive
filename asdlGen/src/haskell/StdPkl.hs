@@ -9,7 +9,7 @@ http://www.dcs.gla.ac.uk/~reig/
 Modified by Daniel Wang for new asdlGen naming convention.
 -}
 
-module StdPkl(Outstream, Instream, IO,
+module StdPkl(Outstream, Instream, InIO, OutIO,
               write_tag, read_tag,
 	      write_list, read_list, 
               write_option,  read_option, die)  where
@@ -17,10 +17,10 @@ module StdPkl(Outstream, Instream, IO,
 import Prelude
 import IO
 import Char (chr, ord)
-type Identifier = String
 type Outstream = Handle
 type Instream = Handle
-
+type InIO a = IO a 
+type OutIO a = IO a 
 -- Bit manipulation routines. 
 
 -- The semantics of 'andb' 'orb' in this code is not that of 
@@ -105,10 +105,10 @@ read_option f s = do
 		   case n of
 		      0 -> return Nothing
 		      1 -> do { o <- f s ; return (Just o)}
-		      _ -> die
+		      _ -> die ()
 
-die :: IO a
-die = fail "Pickler error"
+die :: () -> a
+die = error "StdPkl"
 
 
 

@@ -21,13 +21,15 @@ signature ALGOL_TYPE_DECL =
       where type tag =  {c:Ast.id,v:int}
 	and type exp = (Ast.ty_exp,Ast.id,Ast.exp,Ast.stmt) StmtExp.stmt_exp
 	and type ty_exp = Ast.ty_exp
-        and type VarId.mid = Ast.VarId.mid
-        and type TypeId.mid = Ast.TypeId.mid
+        and type VarId.id = Ast.VarId.id
+        and type TypeId.id = Ast.TypeId.id
   end
 
 signature ALGOL_SPEC =
   sig
-    structure Ty : ALGOL_TYPE_DECL
+    structure Ty    : ALGOL_TYPE_DECL
+    structure IdMap : ID_MAP
+
     val inits : Semant.MEnv.P.init list
 
     val generic_fns : Ty.ty_id -> Ty.Ast.decl list

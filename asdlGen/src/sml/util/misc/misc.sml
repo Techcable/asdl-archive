@@ -11,8 +11,8 @@
 local
     structure IdOrdKey =
 	struct
-	    type ord_key = ModuleId.mid
-	    val compare = ModuleId.compare
+	    type ord_key = SourceId.sid
+	    val compare = SourceId.compare
 	end
 in
     structure S   = SplaySetFn(IdOrdKey)

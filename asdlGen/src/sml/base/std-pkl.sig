@@ -2,7 +2,6 @@ signature STD_PKL =
   sig
     type instream = BinIO.instream
     type outstream = BinIO.outstream
-    datatype 'a share = vDEF of string * 'a | vUSE of string
 
     val die: unit -> 'a
 
@@ -15,8 +14,8 @@ signature STD_PKL =
       -> outstream -> unit
     val read_option  : (instream -> 'a) -> instream -> 'a option
 
-    val read_share  : (instream -> 'a) -> instream -> 'a share
-    val write_share : ('a -> outstream -> unit) -> 'a share
+    val read_share  : (instream -> 'a) -> instream -> 'a Share.share
+    val write_share : ('a -> outstream -> unit) -> 'a Share.share
                         -> outstream -> unit
   end
  

@@ -43,15 +43,16 @@ structure Link =
 	
       structure SMLAlgebraicSpec =
 	mkAlgebraicSpec(structure Ty = AlgebraicTy
+			structure IdMap = IdMaps.SML	  
 			val get_attribs = true
 			val ignore_labels = false
+			val prim_ty = {intT="int",stringT="string"}
 			val streams_ty = NONE
-			val monad_name = NONE)
+			val monad_cons = NONE)
 	
       structure SMLTranslator =
 	mkAlgebraicSemantTranslator
-	(structure IdFix = IdFix.SML
-	 structure Spec = SMLAlgebraicSpec
+	(structure Spec = SMLAlgebraicSpec
 	 val fix_fields = false)
 	   
       structure SMLGen =
@@ -67,15 +68,16 @@ structure Link =
 
       structure OCamlAlgebraicSpec =
 	mkAlgebraicSpec(structure Ty = AlgebraicTy
+			structure IdMap = IdMaps.OCaml
 			val get_attribs = false
 			val ignore_labels = true
+			val prim_ty = {intT="int",stringT="string"}
 			val streams_ty = NONE
-			val monad_name = NONE)
+			val monad_cons = NONE)
 	
       structure OCamlTranslator =
 	mkAlgebraicSemantTranslator
-	(structure IdFix = IdFix.OCaml
-	 structure Spec = OCamlAlgebraicSpec
+	(structure Spec = OCamlAlgebraicSpec
 	 val fix_fields = false)
 	   
       structure OCamlGen =
@@ -91,37 +93,41 @@ structure Link =
 	
        structure HaskellAlgebraicSpec =
 	 mkAlgebraicSpec(structure Ty = AlgebraicTy
+			 structure IdMap = IdMaps.Haskell
 			 val get_attribs = false
 			 val ignore_labels = true
+			 val prim_ty = {intT="Int",stringT="String"}
 			 val streams_ty = 
 			   SOME {ins="Instream",outs="Outstream"}
-			 val monad_name = SOME "IO")
+			 val monad_cons = SOME {inm="InIO",outm="OutIO"})
 	 
-	structure HaskellTranslator =
-	  mkAlgebraicSemantTranslator
-	  (structure IdFix = IdFix.Haskell
-	   structure Spec = HaskellAlgebraicSpec
-	   val fix_fields = true)
+       structure HaskellTranslator =
+	 mkAlgebraicSemantTranslator
+	 (structure Spec = HaskellAlgebraicSpec
+	  val fix_fields = true)
 
        structure HaskellGen =
 	   mkTranslateFromTranslator
 	   (structure T = HaskellTranslator
 	    structure G = mkSourceFileOutput(structure PP = HaskellPP))
+
        structure Haskell =
 	 mkMain(structure S = Semant
 		structure Parser = AsdlParser
 		structure Gen = HaskellGen
 		val dflt_view = "Haskell")
 	 
-       structure AnsiCAlgolSpec = mkAlgolSpec(structure Ty = AlgolTy)
+       structure AnsiCAlgolSpec =
+	 mkAlgolSpec(structure Ty = AlgolTy
+		     structure IdMap = IdMaps.AnsiC)
        structure AnsiCTranslator =
-	 mkAlgolSemantTranslator(structure IdFix = IdFix.AnsiC
-				 structure Spec = AnsiCAlgolSpec)
+	 mkAlgolSemantTranslator(structure Spec = AnsiCAlgolSpec)
 	 
        structure AnsiCGen =
 	 mkTranslateFromTranslator
 	 (structure T = AnsiCTranslator
-	    structure G = mkSourceFileOutput(structure PP = AnsiCPP))
+	  structure G = mkSourceFileOutput(structure PP = AnsiCPP))
+
        structure AnsiC =
 	 mkMain(structure S = Semant
 		structure Parser = AsdlParser
@@ -130,15 +136,14 @@ structure Link =
 	 
        structure JavaOOSpec =
 	 mkOOSpec(structure Ty = OOTy
-		  structure IdFix = IdFix.Java
+		  structure IdMap = IdMaps.Java
 		  val streams_ty =
 		    SOME {ins="java.io.InputStream",
 			  outs="java.io.OutputStream"}
 		  val int_kind = true)
-       structure JavaPklGen = StdPickler(structure Arg = JavaOOSpec)
        structure JavaTranslator =
-	 mkOOSemantTranslator(structure Spec = JavaOOSpec
-			      val aux_decls = JavaPklGen.trans)
+	 mkOOSemantTranslator(structure Spec = JavaOOSpec)
+
        structure JavaGen =
 	   mkTranslateFromTranslator
 	   (structure T = JavaTranslator
@@ -152,14 +157,12 @@ structure Link =
 	 
        structure CPlusPlusOOSpec = 
 	 mkOOSpec(structure Ty = OOTy
-		  structure IdFix = IdFix.CPlusPlus
+		  structure IdMap = IdMaps.CPlusPlus
 		  val streams_ty = NONE
 		  val int_kind = false)
 
-       structure CPlusPlusPklGen = StdPickler(structure Arg = CPlusPlusOOSpec)
        structure CPlusPlusTranslator =
-	 mkOOSemantTranslator(structure Spec = CPlusPlusOOSpec
-			      val aux_decls = CPlusPlusPklGen.trans)
+	 mkOOSemantTranslator(structure Spec = CPlusPlusOOSpec)
 	 
        structure CPlusPlusGen =
 	   mkTranslateFromTranslator
@@ -173,12 +176,11 @@ structure Link =
 		val dflt_view = "Cxx")	   
 
        structure IconDynamicSpec =
-	 mkDynamicSpec(structure Ty = DynamicTy)
+	 mkDynamicSpec(structure Ty = DynamicTy
+		       structure IdMap = IdMaps.Icon)
 
       structure IconTranslator =
-	mkDynamicSemantTranslator
-	(structure IdFix = IdFix.Icon
-	 structure Spec = IconDynamicSpec)
+	mkDynamicSemantTranslator(structure Spec = IconDynamicSpec)
 	   
       structure IconGen =
 	mkTranslateFromTranslator
@@ -190,7 +192,7 @@ structure Link =
 	       structure Parser = AsdlParser
 	       structure Gen = IconGen 
 	       val dflt_view = "Icon")
-
+(*
        structure TypePickler =
 	 mkMain(structure S = Semant
 		structure Parser = AsdlParser
@@ -202,4 +204,5 @@ structure Link =
 		structure Parser = AsdlParser
 		structure Gen =  mkDependGen(structure S = S)
 		val dflt_view = "Check")	   
+*)
     end

@@ -32,7 +32,7 @@ functor mkOOBuildAux(structure T : OO_AST
 
 	structure Env =
 	    SplayMapFn(struct
-			   type ord_key = T.TypeId.mid
+			   type ord_key = T.TypeId.id
 			   val compare = T.TypeId.compare
 		       end)
 

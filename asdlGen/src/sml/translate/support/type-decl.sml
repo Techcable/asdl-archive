@@ -11,8 +11,8 @@ The functor [[mkTypeDecl]] generates a structure that matches the
 [[TYPE_DECL]] signature. The functor is parameterized by all the
 target language specific details.
 **)
-functor mkTypeDecl(structure TypeId : MODULE_ID
-		   structure VarId : MODULE_ID
+functor mkTypeDecl(structure TypeId : SOURCE_ID
+		   structure VarId : SOURCE_ID
 		   type ty_exp
 		   type tag
 		   type exp) : TYPE_DECL =
@@ -20,14 +20,18 @@ functor mkTypeDecl(structure TypeId : MODULE_ID
     structure TypeId = TypeId
     structure VarId = VarId
     structure Env = SplayMapFn
-      (struct type ord_key = TypeId.mid
+      (struct type ord_key = TypeId.id
 	      val compare = TypeId.compare
       end)
-    type id = VarId.mid
-    type ty_id = TypeId.mid
+    type id = VarId.id
+    type ty_id = TypeId.id
     type ty_exp = ty_exp
     type tag = tag
     type exp  = exp
+    datatype info =
+      Rd of string * exp
+    | Wr of string * (exp -> exp)
+    type ty_info = info list
     datatype ty =
       Prim of {ty : ty_exp,
 	     name : string,
@@ -52,15 +56,34 @@ functor mkTypeDecl(structure TypeId : MODULE_ID
 		  fields: field list,
                   cnstr : exp list -> exp}
          and ty_decl = (ty_id * ty)
-         and ty_info = {rd : exp option,
-		        wr : (exp -> exp) option}
          and ty_con =  ty_decl -> (ty_exp * ty_info)
     type env = ty Env.map
+    exception Bad
+    fun find get v [] = NONE
+      | find get v (x::xs) = ((SOME (get(v,x))) handle Bad => find get v xs)
+      
+    fun add f x xs = (f x)::xs
+    fun get_rd (s,Rd(s',x)) = if s = s' then x else raise Bad
+      | get_rd _ = raise Bad
+
+    fun get_wr (s,Wr(s',x)) = if s = s' then x else raise Bad
+      | get_wr _ = raise Bad
+
+    val getRd = find get_rd
+    val getWr = find get_wr
+
+    val addWr = add Wr
+    val addRd = add Rd
+    fun addRdWr s {rd=NONE,wr=NONE} x = x
+      | addRdWr s {rd=SOME rd,wr=SOME wr} x = (addRd(s,rd) (addWr(s,wr) x))
+      | addRdWr s {rd=NONE,wr=SOME wr} x = (addWr(s,wr) x)
+      | addRdWr s {rd=SOME rd,wr=NONE} x = (addRd(s,rd) x)
+
     fun mk_env x = List.foldl Env.insert' Env.empty x
     fun lookup (e,x) = Env.find(e,x)
     fun add_env x = Env.insert' x
-    val noInfo = {rd=NONE,wr=NONE}:ty_info
-
+    val noInfo = []:ty_info
+    fun merge (x,y) = x @ y
   end
 
 

@@ -6,24 +6,22 @@
  *
  *)
 functor mkDynamicSemantTranslator
-  (structure IdFix  : ID_FIX
-   structure Spec   : DYNAMIC_SPEC): SEMANT_TRANSLATOR  =
+  (structure Spec   : DYNAMIC_SPEC): SEMANT_TRANSLATOR  =
      struct
 
       structure S = Semant
       structure Ty = Spec.Ty
-      structure Ast = Ty.Ast
+      structure Ast = Spec.Ty.Ast
       structure T = Ast
-      structure IdFix = IdFix
-
+      structure IdCvt =
+	mkIdCvt(structure Ast = Ast
+		structure IdMap = Spec.IdMap)
+      open IdCvt
+	
       val set_dir = true
       val ignore_supress = false
       val fix_fields = false
-      val fix_id = T.VarId.subst IdFix.id_fix
-      val fix_ty = T.TypeId.subst IdFix.ty_fix
-      val trans_tid  = fix_ty o T.TypeId.fromPath o Id.toPath
       val inits = Spec.inits
-      val temp_var = T.VarId.fromString "t_"
       type defined_value  = {ty_decl:Ty.ty_decl,decls:T.decl list}
       type con_value      = {con:Ty.con,
 		       mk_choice:Ty.exp -> Ty.choice,
@@ -37,7 +35,7 @@ functor mkDynamicSemantTranslator
 
       fun trans_field p {finfo,kind,name,tname,tinfo,is_local,props} =
 	let
-	  val tid = trans_tid tname
+	  val tid = trans t2t tname
 	  val ty = (T.TyId tid)
 	  val {natural_ty,...} = Spec.get_wrappers ty props 
 	  val (ty,tid) =
@@ -47,8 +45,7 @@ functor mkDynamicSemantTranslator
 		let val {mkrep,mktid,...} = Spec.get_reps p k
 		in (mkrep natural_ty,mktid tid)
 		end
-	  val trans_fid = (fix_id o T.VarId.fromString o Identifier.toString)
-	  val name = trans_fid name
+	  val name = trans f2v name
 	  val fd = {name=name,ty=ty}
 	in {fd=fd,ty_fd={label=SOME name,label'=name,tid=tid}}
 	end
@@ -58,7 +55,8 @@ functor mkDynamicSemantTranslator
 	  val fds = List.map #fd (fields:field_value list)
 	  fun f2m x ({fd,ty_fd}) = (ty_fd,T.GetField(x,fd))
 	  val bvars = List.map #name fds
-	  fun mk_binds es = List.map (fn (x,e) => {name=x,v=e}) (ListPair.zip (bvars,es))
+	  fun mk_binds es =
+	    List.map (fn (x,e) => {name=x,v=e}) (ListPair.zip (bvars,es))
 	  fun mk_match e = (List.map (f2m e) fields)
 	  fun cnstr x = 
 	    (T.Bind{binds=mk_binds x,
@@ -68,8 +66,8 @@ functor mkDynamicSemantTranslator
 
       fun trans_con p {cinfo,tinfo,name,fields,attrbs,tprops,cprops} =
 	let
-	  val tname = (T.TypeId.fromPath o Id.toPath) (S.Type.name tinfo)
-	  val name = trans_tid name
+	  val tname = trans t2t (S.Type.name tinfo)
+	  val name = trans c2t name
 	  val tag_v = S.Con.tag cinfo
 	  val fields = (attrbs@fields)
 	  val {mk_match,cnstr} = trans_fields name fields
@@ -82,14 +80,16 @@ functor mkDynamicSemantTranslator
 
       fun trans_defined p {tinfo,name,fields,cons=[],props} =
 	let
-	  val name = trans_tid name
+	  val name = trans t2t name
 	  val {cnstr,mk_match}= trans_fields name fields
 	  val {natural_ty,unwrap,wrap,...} =
 	    Spec.get_wrappers (T.TyId name) props 
 	  val info = Spec.get_info props
 	  fun match f e =
-	    T.Bind{binds=[{name=temp_var,v=unwrap e}],
-		 body=f (mk_match (T.Id temp_var))}
+	    let val temp_var = T.VarId.tempId "t"
+	    in T.Bind{binds=[{name=temp_var,v=unwrap e}],
+		      body=f (mk_match (T.Id temp_var))}
+	    end
 	  val product =
 	    {ty=natural_ty,
 	     fields=List.map #ty_fd fields,
@@ -101,7 +101,7 @@ functor mkDynamicSemantTranslator
 	end
 	| trans_defined p {tinfo,name,fields,cons,props} =
 	let
-	  val name = trans_tid name
+	  val name = trans t2t name
 	  val ty = (T.TyId name)
 	  fun mk_clause e f {con,mk_choice,ty,decl} =
 	    {const=T.TypeName ty,body=f (mk_choice e)}
@@ -109,10 +109,14 @@ functor mkDynamicSemantTranslator
 	  val info = Spec.get_info props
 	    
 	  fun match f e =
-	    T.Bind{binds=[{name=temp_var,v=unwrap e}],
-		 body=T.Case{test=T.GetStructType(T.Id temp_var),
-			  clauses=List.map (mk_clause (T.Id temp_var) f) cons,
-			  default=(T.Error "wrong type")}}
+	    let val temp_var = T.VarId.tempId "t"
+	    in T.Bind{binds=[{name=temp_var,v=unwrap e}],
+		      body=
+		      T.Case{test=T.GetStructType(T.Id temp_var),
+			     clauses=List.map
+			     (mk_clause (T.Id temp_var) f) cons,
+			     default=(T.Error "wrong type")}}
+	    end
 	  fun mk_cnstr {tag,fields,cnstr} =
 	    {tag=tag,fields=fields,cnstr=wrap o cnstr}
 	  val cnstrs =  List.map (mk_cnstr o #con) cons
@@ -125,7 +129,7 @@ functor mkDynamicSemantTranslator
 	end
       fun trans_type_con p {tinfo,name,props,kinds}  =
 	let
-	  val tid = (trans_tid name)
+	  val tid = trans t2t name
 	  fun do_kind k = 
 	    let val {mktid,con,...} = Spec.get_reps p k
 	    in (mktid tid,Ty.App(con,tid))
@@ -140,7 +144,7 @@ functor mkDynamicSemantTranslator
 	  val ty_cons = List.foldr (op @) [] type_cons 
 	  val (ty_decls,decls) =
 	    List.foldr merge (ty_cons,[]) defines
-	  val toMid = Ast.ModuleId.fromPath o Id.toPath o S.Module.name
+	  val toMid = (trans m2m) o Semant.Module.src_name
 	in
 	  (ty_decls,(T.Module{name=toMid module,
 			     imports=List.map toMid imports,

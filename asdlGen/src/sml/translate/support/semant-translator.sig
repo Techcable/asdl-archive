@@ -62,13 +62,13 @@ extra information to make the translation a bit easier.
 	val trans_defined: Semant.MEnv.P.props ->
 	    {tinfo:Semant.type_info,
 	     props:Semant.Type.P.props,
- 	      name:Id.mid,
+ 	      name:Semant.Type.Id.id,
 	      cons:con_value list,
 	    fields:field_value list} -> defined_value
 
 	val trans_type_con : Semant.MEnv.P.props ->
 	    {tinfo:Semant.type_info,	     
-	     name:Id.mid,
+	      name:Semant.Type.Id.id,
 	     kinds:Semant.kind list,
 	     props:Semant.Type.P.props} -> type_con_value 
 	  
@@ -77,15 +77,15 @@ extra information to make the translation a bit easier.
 	    cprops:Semant.Con.P.props,
 	    tprops:Semant.Type.P.props,
 	     tinfo:Semant.type_info,
-	      name:Id.mid,
+	      name:Semant.Con.Id.id,
 	    attrbs:field_value list,
 	    fields:field_value list} -> con_value
        
 	val trans_field: Semant.MEnv.P.props ->
 	    {finfo:Semant.field_info,
 	      kind:Semant.kind option,
-	      name:Identifier.identifier,
-	     tname:Id.mid,
+	      name:Semant.Field.Id.id,
+	     tname:Semant.Type.Id.id,
 	  is_local:bool, 
 	     tinfo:Semant.type_info,
 	     props:Semant.Type.P.props} -> field_value

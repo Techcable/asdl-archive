@@ -2,8 +2,9 @@ Group is
 ../util/sources.cm
 ../base/asdl-base.cm
 smlnj-lib.cm
-types.sig
+(*types.sig
 types.sml
+*)
 oo.sig
 oo.sml
 misc.sml

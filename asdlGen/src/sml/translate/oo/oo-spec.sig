@@ -21,19 +21,20 @@ signature OO_TYPE_DECL =
       where type tag =  {c:Ast.id,v:int}
 	and type exp = (Ast.ty_exp,Ast.id,Ast.exp,Ast.stmt) StmtExp.stmt_exp
 	and type ty_exp = Ast.ty_exp
-        and type VarId.mid = Ast.VarId.mid
-        and type TypeId.mid = Ast.TypeId.mid
+        and type VarId.id = Ast.VarId.id
+        and type TypeId.id = Ast.TypeId.id
   end
 
 signature OO_SPEC =
   sig
-    structure Ty : OO_TYPE_DECL
+    structure Ty    : OO_TYPE_DECL
+    structure IdMap : ID_MAP
 
     val inits  : Semant.MEnv.P.init list
-    val fix_id : Ty.Ast.id -> Ty.Ast.id
-    val fix_ty : Ty.Ast.ty_id -> Ty.Ast.ty_id
+    val prims  : Semant.type_info list -> Ty.ty_decl list
 
-    val prims : Semant.type_info list -> Ty.ty_decl list
+    val get_aux_decls : Semant.MEnv.P.props -> Ty.env ->  Ty.ty_decl list ->
+      (Ty.ty_id * Ty.Ast.mth) list
 
     val seq_rep : Ty.ty_exp -> Ty.ty_exp
     val seq_con : Ty.ty_con
@@ -56,6 +57,7 @@ signature OO_SPEC =
              wrap: Ty.exp -> Ty.exp,
            unwrap: Ty.exp -> Ty.exp}
     val get_user_fields : Semant.Type.P.props -> Ty.Ast.field list
+    
 
     val die    : string -> Ty.Ast.stmt
   end

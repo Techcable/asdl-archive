@@ -1,6 +1,8 @@
-Library 
+Group 
 structure Error
 structure Identifier
+structure SexpLex
+structure SexpPkl
 structure StdPkl
 structure StdPrims
 structure StdPrimsUtil
@@ -9,6 +11,8 @@ structure StdTypesUtil
 
 signature ERROR
 signature IDENTIFIER
+signature SEXP_LEX
+signature SEXP_PKL
 signature STD_PKL
 signature STD_PRIMS
 signature STD_PRIMS_UTIL
@@ -31,6 +35,11 @@ pkl-int.sml
 std-pkl.sig
 std-pkl.sml
 
+sexp-pkl.sig
+sexp-pkl.sml
+sexp-lex.sig
+sexp-lex.sml
+
 std-prims.sig
 std-prims.sml
 
@@ -38,7 +47,8 @@ std-prims-util.sig
 std-prims-util.sml
 
 std-types.sml
+share.sml
 (*
 pkl-real.sml
-share.sml
+
 *)

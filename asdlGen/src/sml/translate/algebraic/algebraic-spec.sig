@@ -39,8 +39,8 @@ signature ALGEBRAIC_TYPE_DECL =
       where type tag =  {c:Ast.cnstr,v:int}
 	and type exp = Ast.exp
 	and type ty_exp = Ast.ty_exp
-        and type VarId.mid = Ast.VarId.mid
-        and type TypeId.mid = Ast.TypeId.mid
+        and type VarId.id = Ast.VarId.id
+        and type TypeId.id = Ast.TypeId.id
   end
 (**)
 (**:[[signature ALGEBRAIC_SPEC]]:
@@ -50,13 +50,14 @@ language.
 **)
 signature ALGEBRAIC_SPEC =
   sig
-    structure Ty : ALGEBRAIC_TYPE_DECL
+    structure Ty    : ALGEBRAIC_TYPE_DECL
 (**:[[signature ALGEBRAIC_SPEC]]:
 The [[inits]] values is a list of defaults properties for this
 transalation. The [[prims]] is a list of the primitive types for this language.
 **)
     val inits : Semant.MEnv.P.init list
-    val prims : Semant.type_info list -> Ty.ty_decl list
+    val prims : Semant.MEnv.P.props ->
+      Semant.type_info list -> Ty.ty_decl list
 (**:[[signature ALGEBRAIC_SPEC]]:
 We split the generated code into two different modules. One that just
 contains the types and the other the pickler and other auxiliary

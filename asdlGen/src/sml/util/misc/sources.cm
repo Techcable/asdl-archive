@@ -3,10 +3,12 @@ smlnj-lib.cm
 ../../base/asdl-base.cm
 counter.sml
 scc.sml
-misc.sml
-module-id.sig
-module-id.sml
 parameters.sml
 properties.sml
-source-ids.sig
 source-ids.sml
+source-ids.sig
+
+source-id.sml
+source-id.sig
+
+cvt-case.sml

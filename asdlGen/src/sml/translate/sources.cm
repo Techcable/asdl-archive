@@ -14,14 +14,22 @@ support/semant-translator.sig
 support/semant-translate.sml
 support/file-translate.sml
 support/source-translate.sml
-support/idfix.sml
+support/idcvt.sig
+support/idcvt.sml
+support/idmaps.sml
 support/stmt-exp.sig
 support/stmt-exp.sml
+support/pp-ast.sig
+support/pp-ast.sml
 
 picklers/std-pickler.sml
 picklers/std-pickler.sig
 picklers/xml-pickler.sml
 picklers/xml-pickler.sig
+picklers/pickler.sig
+picklers/sexp-pickler.sig
+picklers/sexp-pickler.sml
+
 
 utils/attrib-getter.sig
 utils/attrib-getter.sml

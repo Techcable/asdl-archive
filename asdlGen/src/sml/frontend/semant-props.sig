@@ -40,7 +40,7 @@ is a human readable string descriping some entity.
 **)
 signature COMMON_PROPS =
   sig	include PROPS
-    val source_name         :  props -> Id.path option
+    val source_name         :  props -> Properties.path option
     val doc_string          :  props -> string option
   end
 (**)
@@ -58,15 +58,15 @@ types. In object oriented languges the [[base_class]] property
 determines the base class of all classes generated. These properties
 are output language specfic.
 **)
-    val user_attribute      : props -> Id.path option
-    val user_init           : props -> Id.path option
-    val base_class          : props -> Id.path option
+    val user_attribute      : props -> Properties.path option
+    val user_init           : props -> Properties.path option
+    val base_class          : props -> Properties.path option
 (**:[[signature TYP_PROPS]]: 
 All languages support properties that allow users to define
 specialized readers and writer functions for a particular type.
 **)      
-    val reader              : props -> Id.path option
-    val writer              : props -> Id.path option
+    val reader              : props -> Properties.path option
+    val writer              : props -> Properties.path option
 (**:[[signature TYP_PROPS]]: 
 The [[natural_type]] and [[natural_type_con]] allow user views to
 overide the representation of a type in the generated source. These
@@ -77,10 +77,10 @@ representation and a user defined specialized representation. The
 from the specialized type to the default generic representation.
 The [[unwrapper]] property specifies a coercion function to do the reverse.
 **)      
-    val natural_type        : props -> Id.path option
-    val natural_type_con    : props -> Id.path option
-    val wrapper             : props -> Id.path option
-    val unwrapper           : props -> Id.path option
+    val natural_type        : props -> Properties.path option
+    val natural_type_con    : props -> Properties.path option
+    val wrapper             : props -> Properties.path option
+    val unwrapper           : props -> Properties.path option
   end
 (**)
 (**:[[signature CON_PROPS]]:
@@ -118,8 +118,8 @@ signature MOD_ENV_PROPS =
   sig include COMMON_PROPS
     val mono_types   : props -> bool
     val init_mono_types : bool -> init
-    val pickler_kind : props -> string option
-    val init_pickler_kind : string option -> init
+    val pickler_kind : props -> string 
+    val init_pickler_kind : string -> init
     val explicit_sharing : props -> bool
     val init_explicit_sharing : bool -> init
   end
