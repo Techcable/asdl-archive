@@ -90,6 +90,30 @@ int_ty         from_generic_int(void *x);
 void*          to_generic_identifier(identifier_ty x);
 identifier_ty  from_generic_identifier(void* x);
 
+void xml_write_int(int x,outstream_ty s);
+void xml_write_string(string_ty x,outstream_ty s);
+void xml_write_identifier(identifier_ty x,outstream_ty s);
+int xml_read_int(instream_ty s);
+string_ty xml_read_string(instream_ty s);
+identifier_ty xml_read_identifier(instream_ty s);
+
+
+void xml_write_element_begin(const char* n,outstream_ty s);
+void xml_write_element_end(const char* n,outstream_ty s);
+void xml_read_element_begin(const char* n,instream_ty s);
+void xml_read_element_end(const char* n,instream_ty s);
+int xml_read_tagged_element(instream_ty s);
+
+
+opt_ty xml_read_option(const char *n,generic_reader_ty rd, instream_ty s);
+void xml_write_option(const char *n,generic_writer_ty wr, 
+		                   opt_ty v, outstream_ty s);
+
+list_ty xml_read_list(const char *n,generic_reader_ty rd,instream_ty s);
+void xml_write_list(const char *n,generic_writer_ty wr, list_ty v, 
+		    outstream_ty s);
+
+
 #endif /* _ASDL_BASE_ */
 
 
