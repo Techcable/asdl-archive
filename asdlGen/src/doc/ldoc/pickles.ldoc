@@ -13,12 +13,12 @@ As part of the output code every defined type has a <tt/read/ and <tt/write/
 function that writes values of that type to or from a stream. There are also
 <tt/read_tagged/ and <tt/write_tagged/ functions that first output a unique
 tag before writing out the rest of the type. These functions are useful when
-you expect to write several different kinds of pickles to the same stream,
+you expect to write several different kinds of pickles to the same stream
 and want a minimal level of error checking. 
 
 The ASDL pickle format requires that both the reader and writer
 of the pickler agree on the type of the pickle. Other than constructor tags
-for sum types there is no explicit type information in the pickle. In the
+for sum types, there is no explicit type information in the pickle. In the
 case of an error the behavior is undefined. It is also important for the
 streams to be opened in binary mode to prevent line feed translations from
 corrupting the pickle. 
@@ -32,20 +32,22 @@ asdlGen --pp_pkl [ --text | (--html [--lists|--tables]) ] <em/file.typ/ <em/file
 <em/type-id/ ...
 </tscreen>
 
-&asdlGen; has an option that will dump pickles into either a simple textual
-format or HTML. In order to display a pickle &asdlGen; needs to have a
-description of the type environment and the name of the type in the
-pickle. A description of the type environment which produced the pickle is
-obtained by running &asdlGen; with the <tt/--typ/ option on the set of files
-the describe the modules that produced the code which produced the
-pickle. The resulting <tt/.typ/ should be the first file provided to the
-&asdlGen; after the <tt/--pp_pkl/ argument. The file that contains the
-pickle comes next, and finally a list of fully qualified type identifiers
+&asdlGen; has an option that will dump pickles into either a simple
+textual format or HTML. In order to display a pickle &asdlGen; needs
+to have a description of the type environment and the name of the type
+in the pickle. A description of the type environment, which produced
+the pickle, is obtained by running &asdlGen; with the <tt/--typ/ option
+on the set of files that describe the modules that produced the code
+which produced the pickle. The resulting <tt/env.typ/ should be the
+first file provided to &asdlGen; after the <tt/--pp_pkl/
+argument. The <tt/--output_file/> option can be use to change the name
+of the resulting type environment. The file that contains the pickle
+comes next, and finally a list of fully qualified type identifiers
 that describe the pickles in the file.
 
-<em/Produce/ <tt/slp.typ/ 
+<em/Produce a type environment/
 <tscreen>
-% asdlGen --typ slp.asdl
+% asdlGen --typ slp.asdl --output_file=slp.typ
 </tscreen>
 <em/Produce a pickle file called/ <tt/slp.pkl/ <em/that contains/ <tt/Slp.exp/ 
 <em/and/ <tt/Slp.stm/ 
