@@ -17,6 +17,7 @@ xlate_SOURCES = xlate.c
 xlate_LDADD =  libasdl.a libcii.a
 
 pkginclude_HEADERS = gpickle.h	match.h \
+                     pkl-int.h \
 		     cii_base.h  cii_big_base.h  \
 		     AsdlValue.h TypePickle.h 
 
