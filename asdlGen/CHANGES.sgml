@@ -13,8 +13,8 @@
 <item> Bug in Java code that would cause pickler to go into
 infinite loop.
 <item> Bug in Java code handling of StdTypes.bool.
+<item> Fixed code so asdlGen does not silently fail on errors.
 </itemize>
-<item> Fixed code so asdlGen does not silently fail on an error.
 <sect1>Incompatible Changes<p>
 <itemize>
 <item>Command line syntax has changed. See the Reference manual for details.
