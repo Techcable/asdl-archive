@@ -137,13 +137,18 @@ view SML {
     }
 
     Slp.exp <= {
-natural_type_con: ref
-       wrapper: ref
+natural_type_con: Ref
+       wrapper: mkRef
      unwrapper: !	
     }
-
+module Slp <= interface_prologue 
+%%
+type 'a Ref = 'a ref
+%%
 module Slp <= implementation_prologue 
 %%
+type 'a Ref = 'a ref
+val mkRef = ref
 structure User =
    struct
     fun pos_reader x = raise Fail ""
